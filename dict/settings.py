@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-63q9h(znz#1e)m&74w9#_n5nakdb!qx*fqhfi=&k7e3bwmaia$
 DEBUG = True
 
 ALLOWED_HOSTS = ['mfalme.up.railway.app', '127.0.0.1', 'www.mfalmebetterdayscapital.com']
-CSRF_TRUSTED_ORIGINS = ['https://mfalme.up.railway.app', 'https://127.0.0.1', 'https://www.mfalmebetterdayscapital.com']
+CSRF_TRUSTED_ORIGINS = ['https://mfalme-betterdays-capital-production.up.railway.app', 'https://127.0.0.1', 'https://www.mfalmebetterdayscapital.com']
 
 # Application definition
 
