@@ -1,0 +1,486 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="TemplateMo">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-... (hash value) ..." crossorigin="anonymous" />
+  
+    <link rel="icon" href="{% static 'assets/images/logos.jpg' %}">
+  
+    <title>Mfalme Betterdays Capital</title>
+  
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+    
+      gtag('config', 'G-18CYB7X1PG');
+    </script>
+  
+    <!-- Additional CSS Files -->
+    <link rel="stylesheet" href="{% static 'assets/css/fontawesome.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/owl.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/payment.css' %}">
+  
+    <!-- Static CSS File -->
+    <link rel="stylesheet" href="{% static 'assets/css/static.css' %}">
+  
+  
+    <style>
+      .navbar {
+        background-color: #000000 !important;
+      }
+  
+      .navbar-brand {
+        display: flex;
+        align-items: center;
+        color: white;
+      }
+  
+      .navbar-nav .nav-link {
+        color: #000000 !important;
+      }
+  
+      .navbar-nav .nav-link:hover {
+        color: yellow !important;
+      }
+  
+      @media (max-width: 991px) {
+        .navbar-brand h2 {
+          font-size: 20px;
+        }
+  
+        .navbar-brand img{
+          margin-top: -10px;
+        }
+        .navbar {
+          background-color: #000000 !important;
+          height: 65px;
+        }
+      }
+  
+      @media (max-width: 767px) {
+        .navbar-brand h2 {
+          font-size: 18px;
+        }
+  
+        .navbar-collapse {
+          display: none;
+          flex-direction: column;
+          align-items: center;
+          background-color: gold;
+          width: 100%;
+          padding: 10px 0;
+        }
+  
+        .navbar-collapse.show {
+          display: flex;
+        }
+  
+        .navbar-nav {
+          flex-direction: column;
+          width: 100%;
+        }
+  
+        .navbar-nav .nav-item {
+          margin: 10px 0;
+        }
+      }
+  
+      .sub-header {
+        background-color: gold;
+        padding: 10px 0;
+      }
+  
+      .navbar-collapse {
+      background-color: gold;
+      color: #000000;
+    }
+  
+      .left-info a,
+      .right-icons a {
+        color: black;
+      }
+  
+      .left-info a:hover,
+      .right-icons a:hover {
+        color: yellow;
+      }
+  
+      .cart-icon {
+        font-size: 1rem;
+      }
+  
+      
+  
+      .cart-badge {
+        position: absolute;
+        margin-top: 25px;
+        top: 0;
+        right: 0;
+        transform: translate(50%, -50%);
+        background-color: gold;
+        color: #000;
+        border-radius: 50%;
+        padding: 2px 6px;
+        font-size: 0.75rem;
+      }
+  
+      .navbar-toggler {
+          display: block;
+          color: gold;
+          background: #000000;
+          position: absolute;
+          right: 10px;
+          top: 10px;
+        }
+      @media (max-width: 767px) {
+        .navbar-toggler {
+          display: block;
+          color: gold;
+          background: #000000;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sub-header">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-8 col-xs-12">
+            <ul class="left-info">
+              <li><a href="#"><i class="fa fa-clock-o"></i>Mon-Fri 09:00-17:00</a></li>
+              <li><a href="#"><i class="fa fa-phone"></i>0706286667</a></li>
+            </ul>
+          </div>
+          <div class="col-md-4">
+            <ul class="right-icons">
+              <li><a href="https://www.facebook.com/BetterdaysEMPIRE?mibextid=LQQJ4d"><i class="fa fa-facebook"></i></a></li>
+              <li><a href="https://www.tiktok.com/@mfalme_betterdays?_t=8kjRNhFcDDC&_r=1"><i class="fab fa-tiktok"></i></a></li>
+              <li><a href="https://www.instagram.com/mfalme_betterdays_capital?igsh=MXhua2lqcG85NXZhNg%3D%3D&utm_source=qr"><i class="fab fa-instagram"></i></a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <header>
+      <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+          <a class="navbar-brand" href="{% url 'index' %}">
+            <img src="{% static 'assets/images/logo11-removebg-preview.png' %}" alt="" style="width: 160px;">
+          </a>
+          <button class="navbar-toggler" onclick="toggleNavbar()" style="color: #FFD700;background-color: #000000;font-size: 30px;width: 70px;">☰</button>
+          <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ml-auto">
+              <li class="nav-item active">
+                <a class="nav-link" href="{% url 'index' %}">Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'about' %}">About</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'services' %}">Services</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'contact' %}">Contact</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'shop' %}">Shop</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'journals' %}">Journals</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'events' %}">Events</a>
+              </li>
+              <li class="nav-item">
+                {% if not user_authenticated %}
+                <a class="nav-link position-relative" href="{% url 'cart' %}">
+                  <i class="fas fa-shopping-cart cart-icon"></i>
+                  <span class="badge badge-pill badge-danger cart-badge">0</span>
+                </a>
+                {% else %}
+                <a class="nav-link position-relative" href="{% url 'cart' %}">
+                  <i class="fas fa-shopping-cart cart-icon"></i>
+                  <span class="badge badge-pill badge-danger cart-badge">{{ product_count }}</span>
+                </a>
+                {% endif %}
+              </li>
+            </ul>
+            <ul class="navbar-nav ml-auto">
+              {% if not user_authenticated %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
+              </li>
+              {% else %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'logout' %}"><i class="fas fa-sign-in-alt"></i> Logout</a>
+              </li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+      </nav>
+    </header>
+    <script>
+      function toggleNavbar() {
+        var navbarResponsive = document.getElementById('navbarResponsive');
+        navbarResponsive.classList.toggle('show');
+      }
+    </script>
+      <style>
+        .cart-icon {
+       font-size: 1rem; /* Adjust the size as needed */
+   }
+   
+   .position-relative {
+       position: relative;
+   }
+   
+   .cart-badge {
+       position: absolute;
+       margin-top: 25px;
+       top: 0;
+       right: 0;
+       transform: translate(50%, -50%);
+       background-color: gold;
+       color: #000;
+       border-radius: 50%;
+       padding: 2px 6px;
+       font-size: 0.75rem; /* Adjust the size as needed */
+   }
+         .navbar-brand h2 {
+             margin: 0;
+             font-size: 1.5rem;
+             white-space: nowrap;
+         }
+         
+         @media (max-width: 992px) {
+             .navbar-brand {
+                 flex-grow: 1;
+             }
+             .navbar-nav {
+                 flex-direction: column;
+                 width: 100%;
+             }
+             .navbar-nav .nav-item {
+                 width: 100%;
+                 text-align: center;
+             }
+         }
+         
+         @media (min-width: 992px) {
+             .navbar-brand {
+                 display: flex;
+                 align-items: center;
+             }
+             .navbar-nav {
+                 flex-direction: row;
+                 margin-left: auto;
+             }
+             .navbar-nav .nav-item {
+                 margin-left: 15px;
+             }
+         }
+         </style>
+
+<!-- product section -->
+<!-- product section -->
+<section class="product_section layout_padding">
+   <div class="container">
+      <div class="heading_container heading_center" style="margin-bottom: 15px;">
+         <h2>
+            Our <span>Trading Journal</span>
+         </h2>
+      </div>
+      <div class="row">
+        {%for video in videos%}
+         <!-- Product 1 -->
+         <div class="col-md-4">
+            <div class="box">
+               <div class="img-box">
+                  <video src="{{video.video_url}}" controls></video>
+               </div>
+               <div class="detail-box">
+                  <h5>{{video.timestamp}}</h5>
+                  <h6>Mfalme Betterdays Capital</h6>
+               </div>
+            </div>
+         </div>
+         {% endfor %}
+       
+        
+     
+        
+         <!-- Add more products similarly -->
+         <!-- Add the rest of the products similarly -->
+      </div>
+   </div>
+</section>
+<!-- end product section -->
+
+<style>
+.product_section .img-box video {
+    width: 100%;
+    height: 500px; /* Adjust as needed */
+    object-fit: contain; /* Ensure the entire video fits within the container */
+    background-color: black; /* Optional: Add a background color to handle letterboxing */
+}
+</style>
+
+
+
+
+
+
+<!-- end product section -->
+
+<style>
+   .product_section {
+      padding-top: 100px; /* Adjust this value to push the section from the navbar */
+   }
+   
+   .heading_container.heading_center {
+      text-align: center;
+      position: relative;
+   }
+   
+   .product_section .box {
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 30px;
+      border-radius: 5px;
+   }
+   
+   .product_section .box .img-box {
+      position: relative;
+      border-radius: 5px;
+   }
+   
+   .product_section .box .img-box img {
+      width: 100%;
+      transition: transform 0.3s, filter 0.3s;
+   }
+   
+   .product_section .box:hover .img-box img {
+      transform: scale(1.1);
+      filter: brightness(50%);
+   }
+   
+   .product_section .box .option_container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+   }
+   
+   .product_section .box:hover .option_container {
+      opacity: 1;
+   }
+   
+   .product_section .box .option_container a {
+      padding: 10px 20px;
+      background: gold;
+      color: black;
+      border-radius: 5px;
+      text-decoration: none;
+   }
+   
+   .product_section .box .detail-box {
+      padding: 20px;
+      text-align: center;
+   }
+   
+   .product_section .box .detail-box h5,
+   .product_section .box .detail-box h6 {
+      color: #333; /* Add text color to the product details */
+   }
+   
+   .checkout_btn_container {
+      position: absolute;
+      top: 0;
+      right: 20px;
+   }
+   
+   .checkout_btn {
+      padding: 10px 20px;
+      background: gold;
+      color: black;
+      border-radius: 5px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+   }
+   
+   .checkout_btn i {
+      margin-right: 5px;
+   }
+   
+   /* Media Queries for Responsive Design */
+
+@media (max-width: 768px) {
+   .product_section .box .option_container {
+      flex-direction: column;
+      align-items: center;
+   }
+
+   .product_section .box .option_container a {
+      margin: 5px 0;
+   }
+
+   .checkout_btn_container {
+      position: relative;
+      top: auto;
+      right: auto;
+      margin-top: 20px;
+   }
+
+   .checkout_btn {
+      justify-content: center;
+      width: 100%;
+   }
+}
+
+@media (max-width: 576px) {
+   .product_section .box .option_container {
+      top: 40%;
+   }
+
+   .product_section .box:hover .option_container {
+      top: 50%;
+   }
+}
+   
+</style>
+
+   <!-- Bootstrap JS and Other Libraries -->
+    <!-- Bootstrap core JavaScript -->
+    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Additional Scripts -->
+    <script src="{% static 'assets/js/custom.js' %}"></script>
+    <script src="{% static 'assets/js/owl.js' %}"></script>
+    <script src="{% static 'assets/js/slick.js' %}"></script>
+    <script src="{% static 'assets/js/accordions.js' %}"></script>
+    <script src="{% static 'assets/js/sms.js' %}"></script>
+
+  
+</body>
+
+</html>

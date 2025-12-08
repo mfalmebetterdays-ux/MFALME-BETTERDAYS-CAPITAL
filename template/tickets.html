@@ -1,0 +1,101 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1a1a1a;
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-4xl mx-auto p-4 bg-white dark:bg-zinc-800 rounded-lg shadow-md">
+        <div class="flex flex-col md:flex-row">
+            <div class="flex-1 p-4 bg-zinc-100 dark:bg-zinc-700 rounded-lg">
+
+                <div class="mb-4">
+                    <p class="text-lg font-semibold text-zinc-800 dark:text-zinc-200"> Available Tickets:{{tickets_available}}</p>
+                    <p class="text-lg font-semibold text-zinc-800 dark:text-zinc-200">Location :Kasarani Sports View Hotel</p>
+                    <p id="location" class="text-zinc-600 dark:text-zinc-400"></p>
+                    <p class="text-zinc-600 dark:text-zinc-400">Date: 6 th September 2024</p>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-lg font-semibold text-zinc-800 dark:text-zinc-200">Add Ticket</p>
+                        <p class="text-zinc-600 dark:text-zinc-400" style="color: gold;">USD 100</p>
+
+                    </div>
+                    <div class="flex items-center">
+                        <button id="decrease" class="bg-blue-500 text-white p-2 rounded-lg"style="background-color: gold;color:#000000;">-</button>
+                        <span id="ticketCount" class="mx-4" style="color: black;">0</span>
+                        <button id="increase" class="bg-blue-500 text-white p-2 rounded-lg" style="background-color: gold;color:#000000;">+</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex-1 p-4 bg-zinc-100 dark:bg-zinc-700 rounded-lg mt-4 md:mt-0 md:ml-4">
+                <h2 class="text-lg font-semibold text-zinc-800 dark:text-zinc-200 mb-4">Total</h2>
+                <div class="flex justify-between mb-2">
+                    <p class="text-zinc-600 dark:text-zinc-400">Tickets</p>
+                    <p id="totalTickets" class="text-zinc-800 dark:text-zinc-200">0</p>
+                </div>
+                <div class="flex justify-between mb-2">
+                    <p class="text-zinc-600 dark:text-zinc-400">Processing fees</p>
+                    <p id="processingFees" class="text-zinc-800 dark:text-zinc-200">0</p>
+                </div>
+                <div class="flex justify-between mb-4">
+                    <p class="text-zinc-600 dark:text-zinc-400">Applied discount (0%)</p>
+                    <p id="discount" class="text-zinc-800 dark:text-zinc-200">0</p>
+                </div>
+                <div class="flex justify-between mb-4">
+                    <p class="text-zinc-600 dark:text-zinc-400">Total Amount (USD)</p>
+                    <p id="totalAmount" class="text-zinc-800 dark:text-zinc-200" >0</p>
+                </div>
+                <a id="paymentLink" href="/payments/0"><button id="purchase" class="w-full bg-red-500 text-white p-2 rounded-lg "style="background-color: gold;color:#000000;" >Purchase tickets</button></a>
+            </div>
+        </div>
+    </div>
+    <script>
+        const ticketPrice = 100;
+        let ticketCount = 0;
+
+        const ticketCountElement = document.getElementById('ticketCount');
+        const totalTicketsElement = document.getElementById('totalTickets');
+        const totalAmountElement = document.getElementById('totalAmount');
+        const processingFeesElement = document.getElementById('processingFees');
+        const discountElement = document.getElementById('discount');
+        
+
+       
+
+        document.getElementById('increase').addEventListener('click', () => {
+            ticketCount++;
+            updateTotals();
+        });
+
+        document.getElementById('decrease').addEventListener('click', () => {
+            if (ticketCount > 0) {
+                ticketCount--;
+                updateTotals();
+            }
+        });
+
+        function updateTotals() {
+            ticketCountElement.textContent = ticketCount;
+            totalTicketsElement.textContent = ticketCount;
+            const totalAmount = ticketCount * ticketPrice;
+            totalAmountElement.textContent = totalAmount;
+            processingFeesElement.textContent = 0; // Update if there are processing fees
+            discountElement.textContent = 0; // Update if there are discounts
+            paymentLink.href = `/payments/${totalAmount}`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+
+
+.payment-container {
+    text-align: center;
+    padding: 20px;
+}
+
+
+.payment-option {
+    flex: 1; /* Each option takes up equal space */
+    margin: 10px;
+    padding: 20px;
+    color: #000;
+    text-align: center;
+    border: 2px solid #FFD700; /* Thin border */
+    border-radius: 10px; /* Rounded edges */
+}
+
+
+.payment-option {
+    margin: 0 10px;
+}
+
+.payment-option img {
+    width: 100px;
+    height: 100px;
+}
+
+.payment-option p {
+    margin-top: 10px;
+}
+
+
