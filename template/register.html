@@ -1,0 +1,377 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="TemplateMo">
+  <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-... (hash value) ..." crossorigin="anonymous" />
+
+  <link rel="icon" href="{% static 'assets/images/logos.jpg' %}">
+
+  <title>Mfalme Betterdays Capital</title>
+
+  <!-- Bootstrap core CSS -->
+  <link href="{% static 'assets/vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+  <!-- Additional CSS Files -->
+  <link rel="stylesheet" href="{% static 'assets/css/fontawesome.css' %}">
+  <link rel="stylesheet" href="{% static 'assets/css/styles.css' %}">
+  <link rel="stylesheet" href="{% static 'assets/css/owl.css' %}">
+  <link rel="stylesheet" href="{% static 'assets/css/payment.css' %}">
+
+  <!-- Static CSS File -->
+  <link rel="stylesheet" href="{% static 'assets/css/static.css' %}">
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'G-18CYB7X1PG');
+  </script>
+
+    <style>
+        body {
+            font-family: 'Heebo', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .register-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+            
+        }
+        .register-form {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 50px;
+            width: 420px;
+            text-align: center;
+            margin-top: 100px;
+            
+        }
+        .register-form input {
+            width: calc(100% - 20px); /* Adjusted width */
+            padding: 10px;
+            margin-bottom: -5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            /* Add icons and color */
+            padding-left: 40px; /* Space for icon */
+            
+        }
+        .register-form input#phone {
+            margin-bottom: 15px; /* Increased spacing */
+        }
+        .register-form input::placeholder {
+            color: #000000;
+        }
+        .register-form button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            
+            color: #ffffff;
+            cursor: pointer;
+        }
+        
+       
+
+    </style>
+<style>
+  .navbar {
+    background-color: #000000 !important;
+  }
+
+  .navbar-brand {
+    display: flex;
+    align-items: center;
+    color: white;
+  }
+
+  .navbar-nav .nav-link {
+    color: #000000 !important;
+  }
+
+  .navbar-nav .nav-link:hover {
+    color: yellow !important;
+  }
+
+  @media (max-width: 991px) {
+    .navbar-brand h2 {
+      font-size: 20px;
+    }
+
+    .navbar-brand img{
+      margin-top: -10px;
+    }
+    .navbar {
+      background-color: #000000 !important;
+      height: 65px;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .navbar-brand h2 {
+      font-size: 18px;
+    }
+
+    .navbar-collapse {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      background-color: gold;
+      width: 100%;
+      padding: 10px 0;
+    }
+
+    .navbar-collapse.show {
+      display: flex;
+    }
+
+    .navbar-nav {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .navbar-nav .nav-item {
+      margin: 10px 0;
+    }
+  }
+
+  .sub-header {
+    background-color: gold;
+    padding: 10px 0;
+  }
+
+  .navbar-collapse {
+  background-color: gold;
+  color: #000000;
+}
+
+  .left-info a,
+  .right-icons a {
+    color: black;
+  }
+
+  .left-info a:hover,
+  .right-icons a:hover {
+    color: yellow;
+  }
+
+  .cart-icon {
+    font-size: 1rem;
+  }
+
+  
+
+  .cart-badge {
+    position: absolute;
+    margin-top: 25px;
+    top: 0;
+    right: 0;
+    transform: translate(50%, -50%);
+    background-color: gold;
+    color: #000;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+  }
+
+  .navbar-toggler {
+          display: block;
+          color: gold;
+          background: #000000;
+          position: absolute;
+          right: 10px;
+          top: 10px;
+        }
+
+  @media (max-width: 767px) {
+    .navbar-toggler {
+      display: block;
+      color: gold;
+      background: #000000;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="sub-header">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 col-xs-12">
+        <ul class="left-info">
+          <li><a href="#"><i class="fa fa-clock-o"></i>Mon-Fri 09:00-17:00</a></li>
+          <li><a href="#"><i class="fa fa-phone"></i>0706286667</a></li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <ul class="right-icons">
+          <li><a href="https://www.facebook.com/BetterdaysEMPIRE?mibextid=LQQJ4d"><i class="fa fa-facebook"></i></a></li>
+          <li><a href="https://www.tiktok.com/@mfalme_betterdays?_t=8kjRNhFcDDC&_r=1"><i class="fab fa-tiktok"></i></a></li>
+          <li><a href="https://www.instagram.com/mfalme_betterdays_capital?igsh=MXhua2lqcG85NXZhNg%3D%3D&utm_source=qr"><i class="fab fa-instagram"></i></a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<header>
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'index' %}">
+        <img src="{% static 'assets/images/logo11-removebg-preview.png' %}" alt="" style="width: 160px;">
+      </a>
+      <button class="navbar-toggler" onclick="toggleNavbar()" style="color: #FFD700;background-color: #000000;font-size: 30px;width: 70px;">☰</button>
+      <div class="collapse navbar-collapse" id="navbarResponsive">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item active">
+            <a class="nav-link" href="{% url 'index' %}">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'about' %}">About</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'services' %}">Services</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'contact' %}">Contact</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'shop' %}">Shop</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'journals' %}">Journals</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'events' %}">Events</a>
+          </li>
+          <li class="nav-item">
+            {% if not user_authenticated %}
+            <a class="nav-link position-relative" href="{% url 'cart' %}">
+              <i class="fas fa-shopping-cart cart-icon"></i>
+              <span class="badge badge-pill badge-danger cart-badge">0</span>
+            </a>
+            {% else %}
+            <a class="nav-link position-relative" href="{% url 'cart' %}">
+              <i class="fas fa-shopping-cart cart-icon"></i>
+              <span class="badge badge-pill badge-danger cart-badge">{{ product_count }}</span>
+            </a>
+            {% endif %}
+          </li>
+        </ul>
+        <ul class="navbar-nav ml-auto">
+          {% if not user_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
+          </li>
+          {% else %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'logout' %}"><i class="fas fa-sign-in-alt"></i> Logout</a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+</header>
+<script>
+  function toggleNavbar() {
+    var navbarResponsive = document.getElementById('navbarResponsive');
+    navbarResponsive.classList.toggle('show');
+  }
+</script>
+   <!-- Register Form Section -->
+<div class="register-container" style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+  <div class="register-form" style="margin-top: 100px;">
+      <h2>Register</h2>
+      <form action="/create_account/" method="POST">
+          {% csrf_token %}
+          <div class="form-group">
+              <input type="text" name="username" placeholder="Username" required>
+          </div>
+          <div class="form-group">
+              <!-- Include the International Telephone Input field with search -->
+              <input type="number" name="phone" placeholder="Phone Number" required class="search-input" style="width: 300px;">
+          </div>
+          <div class="form-group">
+              <input type="email" name="email" placeholder="Email" required style="margin-top: -5px;">
+          </div>
+          <div class="form-group" style="position: relative;">
+              <input type="password" name="password" placeholder="Password" required id="password">
+              <span id="togglePassword" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer;">
+                  <i class="fas fa-eye"></i>
+              </span>
+          </div>
+          <div class="form-group" style="position: relative;">
+              <input type="password" name="password1" placeholder="Confirm Password" required id="confirmPassword">
+              <span id="toggleConfirmPassword" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer;">
+                  <i class="fas fa-eye"></i>
+              </span>
+          </div>
+          <button type="submit" style="background-color: gold; color:#000;">Register</button>
+      </form>
+      <a href="/login/"><h5 style="color: blue;">already have account? login</h5></a>
+      
+      {{message}}
+  </div>
+</div>
+<!-- End Register Form Section -->
+
+<!-- Add FontAwesome for the eye icon -->
+<script src="https://kit.fontawesome.com/a076d05399.js"></script>
+
+<!-- JavaScript to toggle password visibility -->
+<script>
+  function togglePasswordVisibility(inputId, toggleId) {
+      const passwordInput = document.getElementById(inputId);
+      const toggleIcon = document.getElementById(toggleId).querySelector('i');
+      const isPassword = passwordInput.getAttribute('type') === 'password';
+      
+      passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+      toggleIcon.classList.toggle('fa-eye');
+      toggleIcon.classList.toggle('fa-eye-slash');
+  }
+
+  document.getElementById('togglePassword').addEventListener('click', function () {
+      togglePasswordVisibility('password', 'togglePassword');
+  });
+
+  document.getElementById('toggleConfirmPassword').addEventListener('click', function () {
+      togglePasswordVisibility('confirmPassword', 'toggleConfirmPassword');
+  });
+</script>
+
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+
+    <!-- Additional Scripts -->
+    <script src="{% static 'assets/js/custom.js' %}"></script>
+    <script src="{% static 'assets/js/owl.js' %}"></script>
+    <script src="{% static 'assets/js/slick.js' %}"></script>
+    <script src="{% static 'assets/js/accordions.js' %}"></script>
+    <script src="{% static 'assets/js/sms.js' %}"></script>
+
+  
+    <!-- International Telephone Input JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+    
+  
+</body>
+
+</html>

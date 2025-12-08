@@ -1,0 +1,225 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{% static 'assets/img/mfalme2.jpg' %}">
+    <title>Biggest Forex Event 2024</title>
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #000000;
+            color: #FFFFFF;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #000000;
+            padding: 20px;
+            text-align: center;
+        }
+        header h1 {
+            color: #FFD700;
+        }
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .timer-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            width: 100%;
+        }
+        .timer-container .logo {
+            width: 150px;
+            height: auto;
+        }
+        .countdown {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 0 20px;
+        }
+        .countdown div {
+            margin: 10px;
+            padding: 20px;
+            text-align: center;
+            background-color: #1a1a1a;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            border: 3px solid #FFD700;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .countdown div span {
+            font-size: 2em;
+            color: #FFD700;
+        }
+        .countdown div small, .countdown div p.unit {
+            font-size: 1em;
+            color: #FFFFFF;
+        }
+        .buy-ticket {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            padding: 15px;
+            text-align: center;
+            background-color: #FFD700;
+            color: #000000;
+            font-size: 1.2em;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .cta-message {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.2em;
+            color: #FFD700;
+        }
+        .contact-form img{
+            text-align: center;
+            display: flex;
+    justify-content: center;
+            margin: 50px auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 600px;
+            background-color: #1a1a1a;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .contact-form input, .contact-form textarea {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #FFD700;
+            border-radius: 5px;
+            background-color: #333333;
+            color: #FFFFFF;
+        }
+        .contact-form button {
+            padding: 10px 20px;
+            background-color: #FFD700;
+            color: #000000;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        .contact-form button:hover {
+            background-color: #ffcc00;
+        }
+        footer {
+            background-color: #111111;
+            color: #BBBBBB;
+            text-align: center;
+            padding: 20px;
+        }
+        @media (max-width: 768px) {
+            .timer-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .timer-container .logo {
+                display: none;
+            }
+            .timer-container .poster {
+                width: 100%;
+                max-width: 300px;
+                margin-bottom: 20px;
+            }
+            .countdown {
+                order: 2;
+                margin: 20px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>MFALME BETTERDAYS MEGA LEVERAGING SEMINAR</h1>
+    </header>
+
+    <div class="content">
+        <div class="timer-container">
+            <img src="{% static 'assets/images/mfalme2.png' %}" alt="Logo" class="logo" style="height: auto; width:250px;">
+            <section class="countdown" id="countdown">
+                <div>
+                    <span id="months"></span>
+                    <small>Months</small>
+                    <p class="unit">TO GO</p>
+                </div>
+                <div>
+                    <span id="days"></span>
+                    <small>Days</small>
+                    <p class="unit">TO GO</p>
+                </div>
+                <div>
+                    <span id="hours"></span>
+                    <small>Hours</small>
+                    <p class="unit">TO GO</p>
+                </div>
+                <div>
+                    <span id="seconds"></span>
+                    <small>Seconds</small>
+                    <p class="unit">TO GO</p>
+                </div>
+            </section>
+            <img src="{% static 'assets/images/mfalme2.png' %}" alt="Poster" class="poster" style="height: auto; width:250px;">
+        </div>
+    </div>
+
+    <div class="cta-message">Grab your ticket today and receive a seat number!</div>
+
+    <a href="/tickets" class="buy-ticket">Buy Ticket</a>
+
+    <section class="contact-form">
+        
+        
+           <img src="{% static 'assets/images/poster.jpeg' %}" >
+        
+    </section>
+    
+
+    <footer>
+        <p>&copy; 2024 Forex Mega Event. All rights reserved.</p>
+        <p>Follow us on:</p>
+        <p>Facebook | Twitter | Instagram</p>
+    </footer>
+
+    <script>
+        function countdown() {
+            const eventDate = new Date("September 7, 2024 00:00:00").getTime();
+            const now = new Date().getTime();
+            const distance = eventDate - now;
+
+            const months = Math.floor(distance / (1000 * 60 * 60 * 24 * 30));
+            const days = Math.floor((distance % (1000 * 60 * 60 * 24 * 30)) / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const seconds = Math.floor((distance % (1000 * 60 * 60)) / 1000);
+
+            document.getElementById("months").innerHTML = months;
+            document.getElementById("days").innerHTML = days;
+            document.getElementById("hours").innerHTML = hours;
+            document.getElementById("seconds").innerHTML = seconds;
+
+            if (distance < 0) {
+                clearInterval(x);
+                document.getElementById("countdown").innerHTML = "EXPIRED";
+            }
+        }
+
+        setInterval(countdown, 1000);
+    </script>
+</body>
+</html>

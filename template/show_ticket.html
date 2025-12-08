@@ -1,0 +1,120 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Image</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000000;
+        }
+        .ticket-container {
+            position: relative;
+            display: inline-block;
+            width: 80%;
+            max-width: 600px;
+        }
+        .ticket-image {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        .ticket-number {
+            position: absolute;
+            font-weight: bolder;
+            bottom: 10px;
+            left: 40px; /* Moved 5px to the right */
+            color: gold;
+            font-size: 35px;
+            font-family: Arial, sans-serif;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+        .download-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: gold;
+            color: #000000;
+            border-radius: 15px;
+            font-weight: bold;
+            outline: none;
+        }
+        @media (max-width: 600px) {
+            .ticket-number {
+                font-size: 20px;
+                bottom: 10px;
+                left: 40px;
+            }
+            .download-button {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 style="color: gold; font-size: 25px;">Your Event Ticket</h1>
+    <div class="ticket-container" id="ticketContainer">
+        <img src="{% static 'assets/images/showticket.jpeg' %}" alt="Ticket Image" class="ticket-image" id="ticketImage">
+        <div class="ticket-number" id="ticketNumber">$ {{price}}</div>
+    </div>
+    <button class="download-button" onclick="downloadImage()">Download Ticket</button>
+
+    <script>
+        function downloadImage() {
+            const container = document.getElementById('ticketContainer');
+            const ticketNumber = document.getElementById('ticketNumber').textContent;
+
+            // Create a canvas
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            // Load the image
+            const image = new Image();
+            image.src = document.getElementById('ticketImage').src;
+
+            image.onload = function() {
+                // Set canvas size to match the image size
+                canvas.width = image.width;
+                canvas.height = image.height;
+
+                // Draw the image on the canvas
+                context.drawImage(image, 0, 0);
+
+                // Set the font properties for the ticket number
+                context.font = "35px Arial";
+                context.fillStyle = "gold";
+                context.textShadow = "2px 2px 4px rgba(0, 0, 0, 0.7)";
+
+                // Calculate the position (bottom left, moved 5px to the right)
+                const textX = 40;
+                const textY = image.height - 10;
+
+                // Add the ticket number to the image
+                context.fillText(ticketNumber, textX, textY);
+
+                // Create a link element and set its href attribute to the data URL of the canvas
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/jpeg');
+                link.download = 'ticket.jpeg';
+
+                // Trigger a click event on the link to start the download
+                link.click();
+            };
+        }
+    </script>
+</body>
+</html>
+
+
