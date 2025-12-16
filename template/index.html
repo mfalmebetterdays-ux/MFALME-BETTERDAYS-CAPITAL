@@ -5,15 +5,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="">
+  <meta name="description" content="Mfalme Betterdays Capital - Website Under Maintenance">
   <meta name="author" content="TemplateMo">
   <link href="https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-... (hash value) ..." crossorigin="anonymous" />
 
   <link rel="icon" href="{% static 'assets/images/logos.jpg' %}">
-	<script src="//code.tidio.co/2e2utckih41rebevurutejjgedznfem8.js" async></script>
+  <script src="//code.tidio.co/2e2utckih41rebevurutejjgedznfem8.js" async></script>
 
-  <title>Mfalme Betterdays Capital</title>
+  <title>Mfalme Betterdays Capital - Under Maintenance</title>
 
   <!-- Bootstrap core CSS -->
   <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
@@ -22,1057 +22,338 @@
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
  
-
   <!-- Additional CSS Files -->
   <link rel="stylesheet" href="{% static 'assets/css/fontawesome.css' %}">
   <link rel="stylesheet" href="{% static 'assets/css/styles.css' %}">
   <link rel="stylesheet" href="{% static 'assets/css/owl.css' %}">
-  <link rel="stylesheet" href="{% static 'assets/css/payment.css' %}">
 
-  <!-- Static CSS File -->
-  <link rel="stylesheet" href="{% static 'assets/css/styles.css' %}">
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-  
-    gtag('config', 'G-18CYB7X1PG');
-  </script>
+  <style>
+    .maintenance-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #000;
+      color: #fff;
+      text-align: center;
+      padding: 50px 20px;
+    }
+    
+    .maintenance-content {
+      max-width: 800px;
+      padding: 50px;
+      background: rgba(255, 215, 0, 0.1);
+      border-radius: 20px;
+      border: 2px solid gold;
+    }
+    
+    .maintenance-icon {
+      font-size: 80px;
+      color: gold;
+      margin-bottom: 30px;
+    }
+    
+    .maintenance-title {
+      font-size: 3rem;
+      color: gold;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+    
+    .maintenance-subtitle {
+      font-size: 1.5rem;
+      color: #fff;
+      margin-bottom: 30px;
+    }
+    
+    .maintenance-message {
+      font-size: 1.2rem;
+      line-height: 1.6;
+      margin-bottom: 40px;
+      color: #ddd;
+    }
+    
+    .countdown-container {
+      margin: 40px 0;
+      padding: 20px;
+      background: rgba(255, 215, 0, 0.05);
+      border-radius: 10px;
+      border: 1px solid gold;
+    }
+    
+    .countdown-title {
+      color: gold;
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+    }
+    
+    .countdown {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .countdown-item {
+      text-align: center;
+      min-width: 80px;
+    }
+    
+    .countdown-number {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: gold;
+      display: block;
+    }
+    
+    .countdown-label {
+      font-size: 0.9rem;
+      color: #ddd;
+      text-transform: uppercase;
+    }
+    
+    .contact-info {
+      background: rgba(255, 215, 0, 0.05);
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 30px;
+      border: 1px solid gold;
+    }
+    
+    .contact-title {
+      color: gold;
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+    }
+    
+    .contact-details {
+      color: #ddd;
+      font-size: 1.1rem;
+    }
+    
+    .contact-details a {
+      color: gold;
+      text-decoration: none;
+    }
+    
+    .contact-details a:hover {
+      color: #fff;
+      text-decoration: underline;
+    }
+    
+    .social-icons-maintenance {
+      margin-top: 30px;
+    }
+    
+    .social-icons-maintenance a {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      line-height: 50px;
+      background: gold;
+      color: #000;
+      border-radius: 50%;
+      margin: 0 10px;
+      font-size: 1.2rem;
+      transition: all 0.3s ease;
+    }
+    
+    .social-icons-maintenance a:hover {
+      background: #fff;
+      color: #000;
+      transform: translateY(-5px);
+    }
+    
+    .progress-container {
+      width: 100%;
+      background-color: #333;
+      border-radius: 10px;
+      margin: 30px 0;
+      overflow: hidden;
+    }
+    
+    .progress-bar {
+      width: 75%;
+      height: 20px;
+      background: linear-gradient(90deg, gold, #ffed4e);
+      border-radius: 10px;
+      position: relative;
+      animation: progress-animation 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes progress-animation {
+      0% { width: 75%; }
+      100% { width: 85%; }
+    }
+    
+    .progress-text {
+      color: gold;
+      font-size: 1rem;
+      margin-top: 10px;
+    }
+    
+    @media (max-width: 768px) {
+      .maintenance-title {
+        font-size: 2rem;
+      }
+      
+      .maintenance-subtitle {
+        font-size: 1.2rem;
+      }
+      
+      .maintenance-content {
+        padding: 30px 20px;
+      }
+      
+      .countdown-number {
+        font-size: 2rem;
+      }
+    }
+  </style>
 </head>
 
-
-  <body>
-
-    <!-- ***** Preloader Start ***** -->
-    <div id="preloader">
-        <div class="jumper">
-            <div></div>
-            <div></div>
-            <div></div>
-        </div>
-    </div>  
-    <!-- ***** Preloader End ***** -->
-
-    <style>
-      .navbar {
-        background-color: #000000 !important;
-      }
-    
-      .navbar-brand {
-        display: flex;
-        align-items: center;
-        color: white;
-      }
-    
-      .navbar-nav .nav-link {
-        color: #000000!important;
-      }
-    
-      .navbar-nav .nav-link:hover {
-        color: #ffffff !important;
-      }
-    
-      .cart-icon {
-        font-size: 1rem;
-      }
-    
-      .cart-badge {
-        position: absolute;
-        margin-top: 25px;
-        top: 0;
-        right: 0;
-        transform: translate(50%, -50%);
-        background-color: gold;
-        color: #000;
-        border-radius: 50%;
-        padding: 2px 6px;
-        font-size: 0.75rem;
-      }
-
-      .sub-header {
-        background-color: gold;
-        padding: 10px 0;
-      }
-
-      .navbar-collapse {
-      background-color: gold;
-      color: #000000!important;
-    }
+<body style="background-color: #000;">
   
-    
-      @media (max-width: 991px) {
-        .navbar-brand img {
-          margin-top: -10px;
-        }
-    
-        .navbar {
-          background-color: #000000 !important;
-          height: 75px;
-        }
-      }
-    
-      @media (max-width: 767px) {
-        .navbar-collapse {
-          display: none;
-          flex-direction: column;
-          align-items: center;
-          background-color: gold;
-          width: 100%;
-          padding: 10px 0;
-        }
-
-        .navbar {
-          background-color: #000000 !important;
-          height: 75px;
-        }
-    
-        .navbar-collapse.show {
-          display: flex;
-        }
-    
-        .navbar-nav {
-          flex-direction: column;
-          width: 100%;
-        }
-    
-        .navbar-nav .nav-item {
-          margin: 10px 0;
-        }
-    
-        .navbar-toggler {
-          display: block;
-          color: gold;
-          background: #000000;
-          position: absolute;
-          right: 10px;
-          top: 10px;
-        }
-      }
-    </style>
-   
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
-      <style>
-        .navbar {
-          background-color: #000000 !important;
-        }
-    
-        .navbar-brand {
-          display: flex;
-          align-items: center;
-          color: white;
-        }
-    
-        .navbar-nav .nav-link {
-          color: #000000 !important;
-        }
-    
-        .navbar-nav .nav-link:hover {
-          color: #ffffff!important;
-        }
-    
-        .cart-icon {
-          font-size: 1rem;
-        }
-    
-        .cart-badge {
-          position: absolute;
-          margin-top: 25px;
-          top: 0;
-          right: 0;
-          transform: translate(50%, -50%);
-          background-color: gold;
-          color: #000;
-          border-radius: 50%;
-          padding: 2px 6px;
-          font-size: 0.75rem;
-        }
-    
-        @media (max-width: 991px) {
-          .navbar-brand img {
-            margin-top: -10px;
-          }
-    
-          .navbar {
-            background-color: #000000 !important;
-            height: 65px;
-          }
-        }
-    
-        @media (max-width: 767px) {
-          .navbar-collapse {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            background-color: gold;
-            width: 100%;
-            padding: 10px 0;
-          }
-    
-          .navbar-collapse.show {
-            display: flex;
-          }
-    
-          .navbar-nav {
-            flex-direction: column;
-            width: 100%;
-          }
-    
-          .navbar-nav .nav-item {
-            margin: 10px 0;
-          }
-    
-          .navbar-toggler {
-            display: block;
-            color: gold;
-            background: #000000;
-            position: absolute;
-            right: 10px;
-            top: 10px;
-          }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="sub-header">
-        <div class="container">
-          <div class="row">
-            <div class="col-md-8 col-xs-12">
-              <ul class="left-info">
-                <li style="color: #000000;"><a href="#"><i class="fa fa-clock-o" style="color: #000000;"></i>Mon-Fri 09:00-17:00</a></li>
-                <li style="color: #000000;"><a href="#"><i class="fa fa-phone"></i>+254706286667</a></li>
-              </ul>
-            </div>
-            <div class="col-md-4">
-              <ul class="right-icons">
-                <li><a href="https://www.facebook.com/BetterdaysEMPIRE?mibextid=LQQJ4d"><i class="fa fa-facebook"></i></a></li>
-                <li><a href="https://www.tiktok.com/@mfalme_betterdays?_t=8kjRNhFcDDC&_r=1"><i class="fab fa-tiktok"></i></a></li>
-                <li><a href="https://www.instagram.com/mfalme_betterdays_capital?igsh=MXhua2lqcG85NXZhNg%3D%3D&utm_source=qr"><i class="fab fa-instagram"></i></a></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    
-      <header>
-        <nav class="navbar navbar-expand-lg navbar-dark">
-          <div class="container">
-            <a class="navbar-brand" href="{% url 'index' %}">
-              <img src="{% static 'assets/images/logo11-removebg-preview.png' %}" alt="" style="width: 160px;">
-            </a>
-            <button class="navbar-toggler" onclick="toggleNavbar()" style="color: #FFD700;background-color: #000000;font-size: 30px;width: 70px;">☰</button>
-            <div class="collapse navbar-collapse" id="navbarResponsive">
-              <ul class="navbar-nav ml-auto">
-                <li class="nav-item active">
-                  <a class="nav-link" href="{% url 'index' %}">Home</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'about' %}">About</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'services' %}">Services</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'contact' %}">Contact</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'shop' %}">Shop</a>
-                </li>
-                
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'events' %}">Events</a>
-                </li>
-                <li class="nav-item">
-                  {% if not user_authenticated %}
-                  <a class="nav-link position-relative" href="{% url 'cart' %}">
-                    <i class="fas fa-shopping-cart cart-icon"></i>
-                    <span class="badge badge-pill badge-danger cart-badge">0</span>
-                  </a>
-                  {% else %}
-                  <a class="nav-link position-relative" href="{% url 'cart' %}">
-                    <i class="fas fa-shopping-cart cart-icon"></i>
-                    <span class="badge badge-pill badge-danger cart-badge">{{ product_count }}</span>
-                  </a>
-                  {% endif %}
-                </li>
-              </ul>
-              <ul class="navbar-nav ml-auto">
-                {% if not user_authenticated %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
-                </li>
-                {% else %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'logout' %}"><i class="fas fa-sign-in-alt"></i> Logout</a>
-                </li>
-                {% endif %}
-              </ul>
-            </div>
-          </div>
-        </nav>
-      </header>
-    
-      <script>
-        function toggleNavbar() {
-          var navbarResponsive = document.getElementById('navbarResponsive');
-          navbarResponsive.classList.toggle('show');
-        }
-      </script>
-
-    <!-- Page Content -->
-    <!-- Banner Starts Here -->
-   <!-- Banner Starts Here -->
-<div class="main-banner header-text" id="top">
-  <div class="Modern-Slider">
-      <!-- Item -->
-      <div class="item new-item-1">
-          <div class="img-fill">
-              <div class="text-content">
-                  <h6>we are ready to help you</h6>
-                  <h4>Develop skills<br>&amp; Competence</h4>
-                  <p>We equip you with essential trading skills and foster competence through comprehensive training and hands-on experience.</p>
-                  <a href="/contact" class="filled-button">Contact Us</a>
-              </div>
-          </div>
-      </div>
-      <!-- // Item -->
-      <!-- Item -->
-      <div class="item new-item-2">
-          <div class="img-fill">
-              <div class="text-content">
-                  <h6>we are here to support you</h6>
-                  <h4>Research<br>&amp; Problem solving</h4>
-                  <p>We provide extensive research and adept problem-solving to tackle financial issues, ensuring you navigate trading with confidence and success.</p>
-                  <a href="/contact" class="filled-button">Contact Us</a>
-              </div>
-          </div>
-      </div>
-      <!-- // Item -->
-      <!-- Item -->
-      <div class="item new-item-3">
-          <div class="img-fill">
-              <div class="text-content">
-                  <h6>we have a solid background</h6>
-                  <h4>Market Analysis<br>&amp; Strategy</h4>
-                  <p>Our robust foundation is built on the bulletproof ELQUAGO strategy, honed through victorious battles, relentless practice, and meticulous market analysis.</p>
-                  <a href="/contact" class="filled-button">Contact Us</a>
-              </div>
-          </div>
-      </div>
-      <!-- // Item -->
-  </div>
-</div>
-<!-- Banner Ends Here -->
-
-<style>
-  .new-item-1 .img-fill {
-    background-image: url('static/assets/images/trend1.jpg');
-    background-size: cover;
-    background-position: center;
-}
-
-.new-item-2 .img-fill {
-    background-image: url('static/assets/images/trend4.png');
-    background-size: cover;
-    background-position: center;
-}
-
-.new-item-3 .img-fill {
-    background-image: url('static/assets/images/trend3.webp');
-    background-size: cover;
-    background-position: center;
-}
-
-</style>
-    <!-- Banner Ends Here -->
-
-    <div class="request-form">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-8">
-            <h4>Request a call back right now ?</h4>
-            <span>24/7 client support available for you from wherever you are around the globe.</span>
-          </div>
-          <div class="col-md-4">
-            <a href="/contact/" class="border-button">Contact Us</a>
-          </div>
-        </div>
-      </div>
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #000 !important; border-bottom: 2px solid gold;">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <img src="{% static 'assets/images/logo11-removebg-preview.png' %}" alt="Mfalme Betterdays Capital" style="width: 160px; filter: brightness(0) invert(1);">
+      </a>
     </div>
+  </nav>
 
-    <div class="services">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="section-heading">
-              <h2>Trading <em>Packages</em></h2>
-              <span>Select your lifeline to a new  horizon of success and financial stability</span>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="service-item">
-              <img src="{%static 'assets/images/s1.jfif'%}" alt="">
-              <div class="down-content">
-                <h4>Lifetime Signals</h4>
-                <p>Step into a realm of unparalleled trading proficiency with Lifetime Signals. Unlock access to our elite trading channel, delivering meticulously crafted signals across indices, currencies, and commodities. Trust in our expertise to guide you towards sustained profitability and financial empowerment. Elevate your trading journey with us today and experience a shift.</p>
-                <a href="/payment/200" class="copy-button">Join @ $200</a>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="service-item">
-              <img src="{%static 'assets/images/trend1.jpg'%}" alt="">
-              <div class="down-content">
-                <h4>Lifetime Mentorship</h4>
-                <p>Enroll in our exclusive forex mentorship program, incorporating Mfalme Betterdays' El-quago strategy. Experience personalized Zoom sessions three times a week, supplemented with extensive research materials. Learn profound insights, robust risk management techniques, and receive expert guidance until you become a skilled forex trader. At just 1000$.</p>
-                <a href="/payment/1000" class="copy-button">Join @ $1000</a>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="service-item">
-              <img src="{%static 'assets/images/trend3.webp'%}" alt="">
-              <div class="down-content">
-                <h4>Leveraging Package</h4>
-                <p>Embark on a thrilling journey with our leveraging package, requiring a minimum $10000 deposit. Utilizing defined standard deviation, we leverage amounts for high-stakes trading. Brace yourself for a high-pressure showcase of skills, where outcomes can redefine your life in just 48 hours. Embrace the fear and unlock life-altering transformations today.</p>
-                <a href="/payment/10000" class="copy-button">Join @ $10000</a>
-              </div>
-            </div>
-          </div>
-        </div>
+  <!-- Maintenance Content -->
+  <div class="maintenance-container">
+    <div class="maintenance-content">
+      <div class="maintenance-icon">
+        <i class="fas fa-tools"></i>
       </div>
-    </div>
-
-    <div class="payment-container">
-      <h1>Payment Methods</h1>
-      <p style="font-size: 20px;color: black;">All Proof Of Payment Must Be Sent Via Whatsapp 0706286667-Mfalme Betterdays Capital</p>
-      <div class="payment-options-wrapper">
-        <div class="payment-option">
-          <img src="{%static 'assets/images/mpesa-removebg-preview.png'%}" alt="M-Pesa">
-          <p style="color: black; font-size: 20px;"> Paybill: 247247 <br> A/c No: 1180284568232 <br></p>
-          <p style="color: black; font-size: 15px;">You can chose to pay via Mpesa or Card</p>
-         
-
-           
-           
-          <a href="/payment/200" class="copy-button">Lifetime signals</a>
-          <a href="/payment/1000" class="copy-button">Lifetime Mentorship</a>
-          <a href="/payment/10000" class="copy-button">Leveraging Package</a>
-           <p style="color: black; font-size: 20px; font-weight: bold;">Payment via M-PESA</p>
-        </div>
-        <div class="payment-option">
-          <img src="{%static 'assets/images/bitm-removebg-preview.png'%}" alt="Bitcoin">
-          <p style="color: black; font-size: 15px;">Using Bitcoin or digital currency as a payment method allows you to pay much less commission. We estimate credit card/debit card commission of around 3% for all transactions. </p>
-          <button class="copy-button" onclick="copyToClipboard('bc1qfdr3w9kqshrjhywj2kjmugww7lh2mvxpdvfqqn')">Click to Copy Wallet ID</button>
-          <p style="color: black; font-size: 20px; font-weight: bold;">Payment via Bitcoin</p>
-
-        </div>
-        <div class="payment-option">
-          <img src="{% static 'assets/images/usdt.png'%}" alt="USDT">
-          <p style="color: black; font-size: 15px;">Paying with USDT offers unparalleled convenience for crypto holders, removes cross-border restrictions, and allows for verification of all transactions.Safe and secure anywhere you are.</p>
-          <button class="copy-button" onclick="copyToClipboard('TL7tx1WbQKR4mHwjViAf8Y6DKVsDXnzMmN')">Click to Copy Wallet ID</button>
-          <p style="color: black; font-size: 20px; font-weight: bold;">Payment via USDT (TRC20)</p>
-        </div>
-        <div class="payment-option">
-          <img src=" {%static 'assets/images/bank-removebg-preview.png'%}" alt="Equity Bank">
-          <p style="color: black; font-size: 20px;"> A/c Name: MFALME BETTERDAYS CAPITAL <br> A/c No: 1180284568232 <br> Branch Code: 118 <br> Bank Code: 68 <br> Swift Code: EQDLKENA</p>
-          <p style="color: black; font-size: 20px; font-weight: bold;">Payment via Equity Bank</p>
-        </div>
+      
+      <h1 class="maintenance-title">WEBSITE UNDER MAINTENANCE</h1>
+      
+      <h2 class="maintenance-subtitle">We're Working Hard to Improve Your Experience</h2>
+      
+      <div class="progress-container">
+        <div class="progress-bar"></div>
       </div>
-    </div>
- <style>
-  .payment-container {
-    text-align: center;
-  }
-  
-  .payment-options-wrapper {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center; /* Center horizontally */
-  }
-  
-  .payment-option {
-    margin: 10px;
-    padding: 20px; /* Equal padding on all sides */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    border-radius: 10px;
-  }
-  
-  .copy-button {
-    background-color: #FFD700;
-    color: #000;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-top: 5px;
-  }
-  
-  .copy-button:hover {
-    background-color: #000000;
-    color: #ffffff;
-  }
-  
-  @media only screen and (max-width: 768px) {
-    .payment-option {
-      flex: 0 1 90%; /* Adjusting width on smaller screens */
-    }
-  
-    .copy-button {
-      padding: 5px 10px;
-    }
-  }
-  
- </style>    
- 
- <section class="partnership-packages" style="background-color: #000000; color: #ffffff; text-align: center; padding: 50px 0;">
-      <h1 style="font-size: 2rem; " class="section-heading">Our Partnership Programmes Rates</h1>
-      <p style="font-size: 1rem; max-width: 700px; margin: 0 auto; margin-top: -50px;color:#ffffff;">
-        Partner with us to elevate your brand's visibility and engagement through tailored sponsorship packages.
+      <div class="progress-text">Updates in Progress: 75% Complete</div>
+      
+      <p class="maintenance-message">
+        We're currently performing essential maintenance and updates to serve you better. 
+        Our team is working diligently to enhance our platform with new features and improvements. 
+        We appreciate your patience and understanding during this temporary downtime.
       </p>
       
-      <div class="container" style="display: flex; justify-content: center; gap: 20px; padding-top: 30px; flex-wrap: wrap;">
-        <!-- Bronze Package -->
-        <div class="package bronze" style="border: 2px solid #b08d57; border-radius: 15px; padding: 30px; width: calc(33.33% - 20px); margin-bottom: 20px;">
-          <i class="fas fa-medal" style="font-size: 2rem; color: #b08d57;"></i>
-          <h2 style="font-size: 1.5rem; font-weight: bold;">BRONZE</h2>
-          <ul style="list-style-type: none; padding: 0; font-size: 1rem;">
-            <li>Company Showcase</li>
-            <li>Social Media Mentions</li>
-            <li>Targeted Digital Exposure</li>
-          </ul>
-          <p style="font-size: 1.3rem; font-weight: bold;color:gold;" >$25,000 USD</p>
-        </div>
-        
-        <!-- Gold Package -->
-        <div class="package gold" style="border: 2px solid gold; border-radius: 15px; padding: 30px; width: calc(33.33% - 20px); margin-bottom: 20px;">
-          <i class="fas fa-crown" style="font-size: 2rem; color: gold"></i>
-          <h2 style="font-size: 1.5rem; font-weight: bold;">GOLD</h2>
-          <ul style="list-style-type: none; padding: 0; font-size: 1rem;">
-            <li>Exclusive Speaking Opportunities</li>
-            <li>Premium Branding and Visibility</li>
-            <li>Exclusive Product/Service Showcase</li>
-            <li>Custom Seminar Content</li>
-            <li>Lead Generation/Data Sharing</li>
-            <li>Website Placement</li>
-          </ul>
-          <p style="font-size: 1.3rem; font-weight: bold;color:gold;">$100,000 USD</p>
-        </div>
-        
-        <!-- Silver Package -->
-        <div class="package silver" style="border: 2px solid #C0C0C0; border-radius: 15px; padding: 30px; width: calc(33.33% - 20px); margin-bottom: 20px;">
-          <i class="fas fa-star" style="font-size: 2rem; color: #C0C0C0;"></i>
-          <h2 style="font-size: 1.5rem; font-weight: bold;">SILVER</h2>
-          <ul style="list-style-type: none; padding: 0; font-size: 1rem;">
-            <li>Product/Service Display</li>
-            <li>Branding and Visibility</li>
-            <li>Seminar Video Content</li>
-            <li>Workshop Sponsorship</li>
-            <li>On-site Brand Activation</li>
-          </ul>
-          <p style="font-size: 1.3rem; font-weight: bold;color:gold;">$50,000 USD</p>
+      <div class="countdown-container">
+        <div class="countdown-title">Estimated Completion Time</div>
+        <div class="countdown" id="countdown">
+          <div class="countdown-item">
+            <span class="countdown-number" id="days">00</span>
+            <span class="countdown-label">Days</span>
+          </div>
+          <div class="countdown-item">
+            <span class="countdown-number" id="hours">00</span>
+            <span class="countdown-label">Hours</span>
+          </div>
+          <div class="countdown-item">
+            <span class="countdown-number" id="minutes">00</span>
+            <span class="countdown-label">Minutes</span>
+          </div>
+          <div class="countdown-item">
+            <span class="countdown-number" id="seconds">00</span>
+            <span class="countdown-label">Seconds</span>
+          </div>
         </div>
       </div>
-      <style>
-        @media only screen and (max-width: 768px) {
-          .container {
-            flex-direction: column;
-          }
-          .package {
-            width: 100%;
-            margin-bottom: 20px;
-          }
-          .container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
-          }
-          
-          .package {
-            flex: 1;
-            min-width: 300px;
-            margin-bottom: 20px;
-          }
-          
-          @media only screen and (max-width: 768px) {
-            .container {
-              flex-direction: column;
-              align-items: center;
-            }
-            .package {
-              width: 100%;
-              margin-bottom: 20px;
-            }
-          }
-        }
-      </style>
-    </section>
-
-<style>
-  .fun-facts {
-	margin-top: 140px;
-  background-image: url("{% static 'assets/images/fun-facts-bg.jpg' %}");
-	background-position: center center;
-	background-repeat: no-repeat;
-	background-size: cover;
-	background-attachment: fixed;
-	padding: 140px 0px;
-	color: #fff;
-}
-</style>
-
-    <div class="fun-facts">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-6">
-            <div class="left-content">
-              <span>A TOUR INTO OUR CONSULTING BUSINESS MODEL</span>
-              <h2>Our solutions for your <em>business growth</em></h2>
-              <p>Experience the dawn of financial empowerment with MFALME BETTERDAYS CAPITAL. Our approach revolutionizes the way you access credit, leveraging your credit score and affordability to unlock substantial funds from banks and financial institutions. Through our groundbreaking ELQUAGO strategy, we facilitate rapid wealth accumulation, transcending the barriers imposed by traditional financial paradigms. 
-              <br><br>We recognize the weight of debt and the shackles of a low credit score, offering a lifeline to those seeking liberation. Together, we envision a future where dreams of extravagant homes and luxury cars are not mere fantasies but tangible realities, achievable through strategic financial planning and empowerment.</p>
-              <a href="/contact/" class="filled-button">Reach Out Now</a>
-            </div>
-          </div>
-          
-          <div class="col-md-6 align-self-center">
-            <div class="row">
-              <div class="col-md-6">
-                <div class="count-area-content">
-                  <div class="count-digit">8760</div>
-                  <div class="count-title">Worked Hours</div>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="count-area-content">
-                  <div class="count-digit">280</div>
-                  <div class="count-title">Lives Changed</div>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="count-area-content">
-                  <div class="count-digit">578</div>
-                  <div class="count-title">Trades Executed</div>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="count-area-content">
-                  <div class="count-digit">500</div>
-                  <div class="count-title">Battles Won</div>
-                </div>
-              </div>
-            </div>
-          </div>
+      
+      <div class="contact-info">
+        <div class="contact-title">Need Immediate Assistance?</div>
+        <div class="contact-details">
+          <p><i class="fas fa-phone" style="color: gold;"></i> Call us: <a href="tel:+254706286667">+254706286667</a></p>
+          <p><i class="fas fa-envelope" style="color: gold;"></i> Email: <a href="mailto:betterdaysforexconsultants@gmail.com">betterdaysforexconsultants@gmail.com</a></p>
+          <p><i class="fas fa-clock" style="color: gold;"></i> Support Hours: Mon-Fri 09:00-17:00</p>
         </div>
+      </div>
+      
+      <div class="social-icons-maintenance">
+        <a href="https://www.facebook.com/BetterdaysEMPIRE?mibextid=LQQJ4d" target="_blank" title="Facebook">
+          <i class="fab fa-facebook-f"></i>
+        </a>
+        <a href="https://www.tiktok.com/@mfalme_betterdays?_t=8kjRNhFcDDC&_r=1" target="_blank" title="TikTok">
+          <i class="fab fa-tiktok"></i>
+        </a>
+        <a href="https://www.instagram.com/mfalme_betterdays_capital?igsh=MXhua2lqcG85NXZhNg%3D%3D&utm_source=qr" target="_blank" title="Instagram">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a href="https://wa.me/254706286667" target="_blank" title="WhatsApp">
+          <i class="fab fa-whatsapp"></i>
+        </a>
+      </div>
+      
+      <div style="margin-top: 40px; font-size: 0.9rem; color: #999;">
+        <p>© 2024 Mfalme Betterdays Capital. All rights reserved.</p>
+        <p>We'll be back online soon with an enhanced trading experience!</p>
       </div>
     </div>
+  </div>
 
-    <div class="more-info">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="more-info-content">
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="left-image">
-                    <img src="{%static 'assets/images/mfa1.jpg'%}" alt="">
-                  </div>
-                </div>
-                <div class="col-md-6 align-self-center">
-                  <div class="right-content">
-                    <span></span>
-                    <h2>Get to know about <em>our journey</em></h2>
-                    <p>In the ethereal realm of finance, MFALME BETTERDAYS CAPITAL emerges as a phoenix, rising from the ashes of failure. Through countless trials, we've forged our path, mastering trends and nurturing invaluable skills. Failure, though abundant, has not deterred our resolve; instead, it has fueled our unstoppable momentum. With an abundance mindset, we navigate the intricate labyrinth of emotions and minds, fearless and unyielding. Our mental fortitude, defined by balls of steel, guides us through turbulent waters, shaping us into indomitable warriors.<br><br>Amidst the chaos, our loyal soldiers manifest unprecedented numbers, their dedication echoing through the cosmos. We perceive the world from a unique vantage point, transcending limitations and connecting with it in ways unimaginable. In this mystical journey, our story intertwines with the universe, painting a tapestry of resilience, courage, and unparalleled success.</p>
-                    <a href="/contact/" class="filled-button">Join Us Today</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="testimonials">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="section-heading">
-              <h2>What they say <em>about us</em></h2>
-              <span>testimonials from our greatest partners</span>
-            </div>
-          </div>
-          <div class="col-md-12">
-            <div class="owl-testimonials owl-carousel">
-              
-              <div class="testimonial-item">
-                <div class="inner-content">
-                  <h4>Levi Munyua</h4>
-                  <span>Financial Analyst</span>
-                  <p>"Affluence, Abundance, Rain, simply amaizing...........FIRE🧨🧨🧨."</p>
-                </div>
-                <img src="{% static 'assets/images/dp.jpg' %}" alt="">
-              </div>
-              
-              <div class="testimonial-item">
-                <div class="inner-content">
-                  <h4>Mwangi Mesh</h4>
-                  <span>Mechanic</span>
-                  <p>"Master has no possessions.
-                    The more to others,
-                    the wealthier he is."</p>
-                </div>
-                <img src="{% static 'assets/images/dp.jpg' %}" alt="">
-              </div>
-              
-              <div class="testimonial-item">
-                <div class="inner-content">
-                  <h4>David Wangai</h4>
-                  <span> Accountant</span>
-                  <p>"."</p>
-                </div>
-                <img src="{% static 'assets/images/dp.jpg' %}" alt="">
-              </div>
-              
-              <div class="testimonial-item">
-                <div class="inner-content">
-                  <h4>Andrew Bonuke</h4>
-                  <span>Marketing </span>
-                  <p>"."</p>
-                </div>
-                <img src="{% static 'assets/images/dp.jpg' %}" alt="">
-              </div>
-              
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="callback-form contact-us">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="section-heading">
-              <h2>Send us a <em>message</em></h2>
-              <span>24/7 client support available for you from wherever you are around the globe</span>
-            </div>
-          </div>
-          <div class="col-md-12">
-            <div class="contact-form">
-              <form action="/booking" method="post">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-lg-4 col-md-12 col-sm-12">
-                        <fieldset>
-                            <input name="name" type="text" class="form-control" placeholder="Full Name" required>
-                        </fieldset>
-                    </div>
-                    <div class="col-lg-4 col-md-12 col-sm-12">
-                        <fieldset>
-                            <input name="phone" type="number" class="form-control" id="phone" placeholder="Your Whatsapp Number" required>
-                        </fieldset>
-                    </div>
-                    <div class="col-lg-4 col-md-12 col-sm-12">
-                        <fieldset>
-                            <select name="package" class="form-control" required>
-                                <option value="">Select Package</option>
-                                <option value="Leveraging Package">Leveraging Package</option>
-                                <option value="Lifetime Mentorship">Lifetime Mentorship</option>
-                                <option value="Lifetime Signals">Lifetime Signals</option>
-                            </select>
-                        </fieldset>
-                    </div>
-                    <div class="col-lg-12">
-                        <fieldset>
-                            <textarea name="message" rows="6" class="form-control" id="message" placeholder="Your Message" required></textarea>
-                        </fieldset>
-                    </div>
-                    <div class="col-lg-12">
-                        <fieldset>
-                            <button type="submit"  class="filled-button">Send Message</button>
-                        </fieldset>
-                    </div>
-                </div>
-            </form>
-            
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="partners">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="owl-partners owl-carousel">
-            
-              <div class="partner-item">
-                <img src="{% static 'assets/images/logos.jpg'%}" title="1" alt="1">
-              </div>
-              
-              <div class="partner-item">
-                <img src="{% static 'assets/images/logos.jpg'%}"title="2" alt="2">
-              </div>
-              
-              <div class="partner-item">
-                <img src="{% static 'assets/images/logos.jpg'%}"title="3" alt="3">
-              </div>
-              
-              <div class="partner-item">
-                <img src="{% static 'assets/images/logos.jpg'%}"title="4" alt="4">
-              </div>
-              
-              <div class="partner-item">
-                <img src="{% static 'assets/images/logos.jpg'%}" title="5" alt="5">
-              </div>
-              
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- Footer Starts Here -->
-    <footer>
-      <div class="container">
-        <div class="row">
-          <div class="col-md-3 footer-item">
-            <h4>Mfalme Betterdays Capital</h4>
-            <p>We require clients to embody resilience and fortitude; at MFALME BETTERDAYS CAPITAL, there's no room for fragility or excuses.</p>
-            <ul class="social-icons">
-              <li><a rel="" href="https://www.facebook.com/BetterdaysEMPIRE?mibextid=LQQJ4d"><i class="fa fa-facebook"></i></a></li>
-              <li><a href="https://www.tiktok.com/@mfalme_betterdays?_t=8kjRNhFcDDC&_r=1"><i class="fab fa-tiktok"></i></a></li>
-              <li><a href="https://www.instagram.com/mfalme_betterdays_capital?igsh=MXhua2lqcG85NXZhNg%3D%3D&utm_source=qr"><i class="fab fa-instagram"></i></a></li>
-              
-            </ul>
-          </div>
-          <div class="col-md-3 footer-item">
-            <h4>Useful Links</h4>
-            <ul class="menu-list">
-              <li><a href="/contact/">Contact Us</a></li>
-             
-              <li><a href="/services/">Our Packages </a></li>
-            </ul>
-          </div>
-          <div class="col-md-3 footer-item">
-            <h4>Additional Pages</h4>
-            <ul class="menu-list">
-              <li><a href="/about/">About Us</a></li>
-             
-            </ul>
-          </div>
-          <div class="col-md-3 footer-item last-item">
-            <h4>Contact Us</h4>
-            <div class="contact-form">
-              <form id="contact">
-                <div class="row">
-                    <div class="col-lg-4 col-md-12 col-sm-12">
-                        
-                           <p> Tel:+254706286667</p>
-                           <p> Email:betterdaysforexconsultants@gmail.com</p>
-                        
-                    
-                    
-                </div>
-            </form>
-            </div>
-          </div>
-        </div>
-      </div>
-    </footer>
-    
-    <div class="sub-footer">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12">
-            <p>Copyright &copy; 2024 Mfalme Betterdays Capital.
-            
-            
+  <!-- Footer -->
+  <footer style="background-color: #000; color: #fff; padding: 20px 0; border-top: 2px solid gold;">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12 text-center">
+          <p style="margin-bottom: 10px; color: gold;">
+            <strong>Mfalme Betterdays Capital</strong>
           </p>
-          </div>
+          <p style="font-size: 0.9rem; color: #ddd;">
+            Trading Excellence • Financial Empowerment • Strategic Success
+          </p>
+          <p style="font-size: 0.8rem; color: #999; margin-top: 20px;">
+            Copyright &copy; 2024 Mfalme Betterdays Capital. Website under scheduled maintenance.
+          </p>
         </div>
       </div>
     </div>
-    
-      <script>
-        function copyToClipboard(text) {
-          const input = document.createElement('input');
-          input.value = text;
-          document.body.appendChild(input);
-          input.select();
-          document.execCommand('copy');
-          document.body.removeChild(input);
-          alert('Wallet ID copied to clipboard: ' + text);
-        }
-      </script>
+  </footer>
 
-    <!-- Bootstrap core JavaScript -->
-    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
-    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-
-    <!-- Additional Scripts -->
-    <script src="{% static 'assets/js/custom.js' %}"></script>
-    <script src="{% static 'assets/js/owl.js' %}"></script>
-    <script src="{% static 'assets/js/slick.js' %}"></script>
-    <script src="{% static 'assets/js/accordions.js' %}"></script>
-    <script src="{% static 'assets/js/sms.js' %}"></script>
-
-    <script language = "text/Javascript"> 
-      cleared[0] = cleared[1] = cleared[2] = 0; //set a cleared flag for each field
-      function clearField(t){                   //declaring the array outside of the
-      if(! cleared[t.id]){                      // function makes it static and global
-          cleared[t.id] = 1;  // you could use true and false, but that's more typing
-          t.value='';         // with more chance of typos
-          t.style.color='#fff';
-          }
+  <script>
+    // Countdown Timer (24 hours from now)
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const endTime = now + (24 * 60 * 60 * 1000); // 24 hours from now
+      
+      const distance = endTime - now;
+      
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+      
+      document.getElementById('days').innerHTML = days.toString().padStart(2, '0');
+      document.getElementById('hours').innerHTML = hours.toString().padStart(2, '0');
+      document.getElementById('minutes').innerHTML = minutes.toString().padStart(2, '0');
+      document.getElementById('seconds').innerHTML = seconds.toString().padStart(2, '0');
+      
+      if (distance < 0) {
+        clearInterval(countdownInterval);
+        document.getElementById('countdown').innerHTML = "<div style='color: gold; font-size: 1.5rem;'>Maintenance Complete!</div>";
       }
-
+    }
     
-    </script>
-
-    <style>
-       
-    </style>
+    const countdownInterval = setInterval(updateCountdown, 1000);
+    updateCountdown();
     
-    <style>
-     
-      .btn-primary {
-        background-color: #FFD700;
-        border: none;
-        border-radius: 5px;
-        padding: 10px 30px;
-        color: #000;
-        cursor: pointer;
-      }
+    // Animated progress text
+    const progressText = document.querySelector('.progress-text');
+    const progressValues = ['75% Complete', '80% Complete', '85% Complete', '90% Complete', '95% Complete', 'Almost There!'];
+    let progressIndex = 0;
     
-      .btn-primary:hover {
-        background-color: green;
-        color: #000;
-      }
-    
-      /* Adjust close button size */
-      .modal-header .close {
-        padding: 10px; /* Increase padding */
-      }
-    
-      .modal-header .close:hover{
-        background-color: red;
-        
-      }
-    
-      /* Center modal vertically */
-      .lipa-na-mpesa-modal,
-      .card-modal {
-        text-align: center;
-        padding: 0!important;
-        margin-top: 90px; /* 250px margin from the top */
-        
-      }
-    
-      .lipa-na-mpesa-modal:before,
-      .card-modal:before {
-        content: '';
-        display: inline-block;
-        height: 100%;
-        vertical-align: middle;
-        margin-right: -4px; /* Adjusts for spacing */
-        
-      }
-    
-      .lipa-na-mpesa-modal .modal-dialog,
-      .card-modal .modal-dialog {
-        display: inline-block;
-        text-align: left;
-        vertical-align: middle;
-        width: 400px;
-      }
-    </style>
-    
-    <!-- Lipa na M-Pesa Modal -->
-    <div id="lipaNaMpesaModal" class="modal fade lipa-na-mpesa-modal" role="dialog">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h4 class="modal-title">Lipa na M-Pesa</h4>
-            <button type="button" class="close" data-dismiss="modal">&times;</button>
-          </div>
-          <div class="modal-body">
-            <img src="assets/images/mpesa-removebg-preview.png" alt="M-Pesa" style="width: 170px;">
-            <button type="button" class="btn btn-primary" onclick="proceedToPay()">Proceed to Pay</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Card Payment Modal -->
-    <div id="cardModal" class="modal fade card-modal" role="dialog">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h4 class="modal-title">Pay With Card</h4>
-            <button type="button" class="close" data-dismiss="modal">&times;</button>
-          </div>
-          <div class="modal-body">
-            <img src="assets/images/card.png" alt="M-Pesa" style="width: 170px;">
-            <button type="button" class="btn btn-primary" onclick="proceedToPay()"> Pay Now</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    setInterval(() => {
+      progressText.textContent = progressValues[progressIndex];
+      progressIndex = (progressIndex + 1) % progressValues.length;
+    }, 3000);
+  </script>
 
-<script>
-  function showMpesaModal() {
-    $('#lipaNaMpesaModal').modal('show');
-  }
-
-  function proceedToPay() {
-    // Your logic to proceed with payment
-    console.log("Proceeding to pay...");
-  }
-
-  function cardModal() {
-    $('#cardModal').modal('show');
-  }
-
-
-  function copyToClipboard(text) {
-      // Your logic to copy wallet ID to clipboard
-      // This function can be further customized as per your requirements
-      console.log("Copying to clipboard:", text);
-  }
-</script>
-
-<script>
-  function copyToClipboard(text) {
-    const input = document.createElement('input');
-    input.value = text;
-    document.body.appendChild(input);
-    input.select();
-    document.execCommand('copy');
-    document.body.removeChild(input);
-    alert('Wallet ID copied to clipboard: ' + text);
-  }
-</script>
-
- <!-- Bootstrap JS and jQuery (for navbar toggler and modals) -->
- <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
- <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@1.16.1/dist/umd/popper.min.js"></script>
- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
- <!-- Bootstrap core JavaScript -->
- <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
-
-
-
-  </body>
+</body>
 </html>
