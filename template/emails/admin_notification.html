@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>New User Registration - MFALME BETTERDAYS CAPITAL</title>
+    <style>
+        /* Import Inter font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        :root {
+            /* GOLDEN THEME - Premium Gold Dominance */
+            --gold-primary: #FFD700;
+            --gold-bright: #FFEC8B;
+            --gold-light: #FFF8DC;
+            --gold-dark: #DAA520;
+            --gold-darker: #B8860B;
+            --gold-gradient: linear-gradient(135deg, #FFD700 0%, #FFC125 30%, #DAA520 100%);
+            --gold-gradient-light: linear-gradient(135deg, #FFEC8B 0%, #FFD700 50%, #FFC125 100%);
+            
+            /* Dark Backgrounds */
+            --deep-navy: #0A1520;
+            --navy-dark: #08111A;
+            --navy-medium: #0E1A29;
+            --navy-light: #142338;
+            
+            /* Alert Colors */
+            --red-alert: #EF4444;
+            --red-alert-light: #FCA5A5;
+            --red-alert-dark: #DC2626;
+            --green-success: #10B981;
+            --green-success-light: #A7F3D0;
+            
+            /* Accent Colors */
+            --white: #FFFFFF;
+            --white-smoke: #F5F5F5;
+            --platinum: #E5E4E2;
+            --light-gray: #CCCCCC;
+            
+            /* Shadows & Effects */
+            --shadow-gold: 0 10px 40px rgba(255, 215, 0, 0.25);
+            --shadow-gold-intense: 0 15px 50px rgba(255, 215, 0, 0.4);
+            --shadow-dark: 0 20px 60px rgba(0, 0, 0, 0.5);
+            --shadow-red: 0 10px 30px rgba(239, 68, 68, 0.3);
+            --glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+            
+            /* Font */
+            --font-inter: 'Inter', sans-serif;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--font-inter);
+            background-color: var(--navy-dark);
+            margin: 0;
+            padding: 20px;
+            color: var(--white);
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--deep-navy);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid rgba(239, 68, 68, 0.3);
+            box-shadow: var(--shadow-dark);
+        }
+        
+        /* Header - Alert Style */
+        .email-header {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.08));
+            padding: 50px 40px;
+            text-align: center;
+            border-bottom: 4px solid var(--red-alert);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .email-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(239, 68, 68, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
+            z-index: 1;
+        }
+        
+        .email-header > * {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .alert-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--red-alert);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: var(--shadow-red);
+            margin-bottom: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .email-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin: 15px 0;
+            color: var(--white);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .email-subtitle {
+            color: var(--red-alert-light);
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Content Section */
+        .email-content {
+            padding: 50px 40px;
+        }
+        
+        .alert-heading {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--gold-primary);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .alert-message {
+            color: var(--white-smoke);
+            font-size: 1.15rem;
+            margin-bottom: 40px;
+            background: rgba(255, 215, 0, 0.05);
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 4px solid var(--gold-primary);
+        }
+        
+        /* Soldier ID Highlight */
+        .soldier-id-highlight {
+            background: var(--gold-gradient);
+            color: var(--deep-navy);
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-weight: 900;
+            font-size: 1.8rem;
+            text-align: center;
+            margin: 30px auto;
+            display: inline-block;
+            border: 3px solid var(--gold-primary);
+            box-shadow: var(--shadow-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            max-width: 90%;
+        }
+        
+        /* Section Titles */
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--gold-primary);
+            margin: 40px 0 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        /* User Information Card */
+        .user-info-card {
+            background: var(--navy-medium);
+            border-radius: 15px;
+            padding: 40px;
+            margin: 30px 0;
+            border: 2px solid rgba(255, 215, 0, 0.1);
+            box-shadow: var(--shadow-dark);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .user-info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--gold-gradient);
+        }
+        
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+        
+        .user-item {
+            background: var(--navy-light);
+            border-radius: 12px;
+            padding: 25px;
+            border: 2px solid rgba(255, 215, 0, 0.1);
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .user-item:hover {
+            transform: translateY(-5px);
+            border-color: var(--gold-primary);
+            box-shadow: var(--shadow-gold);
+        }
+        
+        .user-label {
+            color: var(--gold-bright);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .user-value {
+            color: var(--white);
+            font-size: 1.2rem;
+            font-weight: 700;
+            word-break: break-all;
+        }
+        
+        /* Platform Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin: 40px 0;
+        }
+        
+        .stat-card {
+            background: var(--navy-medium);
+            border-radius: 15px;
+            padding: 30px 25px;
+            text-align: center;
+            border: 2px solid rgba(255, 215, 0, 0.1);
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--gold-primary);
+            box-shadow: var(--shadow-gold-intense);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--gold-primary);
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+        }
+        
+        .stat-label {
+            color: var(--gold-bright);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        
+        /* Action Required Section */
+        .action-required {
+            background: linear-gradient(145deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+            border-radius: 15px;
+            padding: 40px;
+            margin: 50px 0;
+            border-left: 5px solid var(--red-alert);
+            border: 2px solid rgba(239, 68, 68, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .action-required h3 {
+            color: var(--red-alert);
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .action-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .action-list li {
+            color: var(--white-smoke);
+            padding: 20px 0;
+            padding-left: 45px;
+            position: relative;
+            border-bottom: 1px solid rgba(239, 68, 68, 0.1);
+            font-size: 1.05rem;
+        }
+        
+        .action-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .action-list li strong {
+            color: var(--gold-primary);
+        }
+        
+        .action-list li:before {
+            content: '⚡';
+            position: absolute;
+            left: 0;
+            color: var(--red-alert);
+            font-weight: bold;
+            font-size: 1.3rem;
+            width: 35px;
+            height: 35px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--red-alert);
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin: 50px 0;
+        }
+        
+        .action-button {
+            background: var(--gold-gradient);
+            color: var(--deep-navy);
+            text-decoration: none;
+            padding: 25px 20px;
+            border-radius: 15px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            box-shadow: var(--shadow-gold);
+        }
+        
+        .action-button:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(255, 215, 0, 0.4);
+            border-color: var(--gold-primary);
+        }
+        
+        .button-icon {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+        
+        /* Notes Section */
+        .notes-section {
+            background: var(--navy-medium);
+            border-radius: 15px;
+            padding: 35px;
+            margin: 40px 0;
+            border: 2px solid rgba(255, 215, 0, 0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .notes-section h4 {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 800;
+        }
+        
+        .notes-content {
+            color: var(--white-smoke);
+            line-height: 1.8;
+            font-size: 1.05rem;
+        }
+        
+        .notes-content strong {
+            color: var(--gold-primary);
+            font-weight: 700;
+        }
+        
+        /* Footer */
+        .email-footer {
+            background: var(--navy-dark);
+            padding: 50px 40px;
+            text-align: center;
+            border-top: 3px solid var(--red-alert);
+        }
+        
+        .footer-info {
+            color: var(--light-gray);
+            font-size: 0.95rem;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .footer-info strong {
+            color: var(--red-alert);
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            font-weight: 800;
+        }
+        
+        .footer-alert {
+            color: var(--red-alert-light);
+            font-weight: 700;
+            font-size: 1rem;
+            margin-top: 25px;
+            padding: 20px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 12px;
+            border: 2px solid rgba(239, 68, 68, 0.2);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .email-content,
+            .email-header {
+                padding: 30px 20px;
+            }
+            
+            .email-title {
+                font-size: 1.8rem;
+            }
+            
+            .alert-badge {
+                font-size: 1rem;
+                padding: 12px 25px;
+            }
+            
+            .soldier-id-highlight {
+                font-size: 1.4rem;
+                padding: 15px 25px;
+            }
+            
+            .user-grid,
+            .stats-grid,
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+            
+            .user-info-card,
+            .action-required,
+            .notes-section {
+                padding: 25px 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .email-title {
+                font-size: 1.5rem;
+            }
+            
+            .email-subtitle {
+                font-size: 0.9rem;
+            }
+            
+            .alert-heading {
+                font-size: 1.3rem;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+            
+            .action-button {
+                padding: 20px 15px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="email-header">
+            <div class="alert-badge">
+                <i class="fas fa-bell"></i> ACTION REQUIRED
+            </div>
+            <h1 class="email-title">NEW ELITE SOLDIER REGISTRATION</h1>
+            <p class="email-subtitle">Elite Circle Expansion Alert • Immediate Attention Required</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="email-content">
+            <h2 class="alert-heading">
+                <i class="fas fa-user-plus"></i> New Trading Soldier Joined the Elite Circle
+            </h2>
+            
+            <div class="alert-message">
+                A new member has successfully registered and verified their account. Immediate onboarding required.
+            </div>
+            
+            <!-- Soldier ID Highlight -->
+            <div style="text-align: center;">
+                <div class="soldier-id-highlight">
+                    <i class="fas fa-id-badge"></i> SOLDIER ID: #{{ soldier_id }}
+                </div>
+            </div>
+            
+            <!-- User Information -->
+            <h3 class="section-title">
+                <i class="fas fa-user-circle"></i> USER INFORMATION
+            </h3>
+            
+            <div class="user-info-card">
+                <div class="user-grid">
+                    <div class="user-item">
+                        <div class="user-label">
+                            <i class="fas fa-user"></i> FULL NAME
+                        </div>
+                        <div class="user-value">{{ username }}</div>
+                    </div>
+                    
+                    <div class="user-item">
+                        <div class="user-label">
+                            <i class="fas fa-envelope"></i> EMAIL ADDRESS
+                        </div>
+                        <div class="user-value">{{ email }}</div>
+                    </div>
+                    
+                    <div class="user-item">
+                        <div class="user-label">
+                            <i class="fas fa-phone"></i> PHONE NUMBER
+                        </div>
+                        <div class="user-value">{{ phone }}</div>
+                    </div>
+                    
+                    <div class="user-item">
+                        <div class="user-label">
+                            <i class="fas fa-clock"></i> REGISTRATION TIME
+                        </div>
+                        <div class="user-value">{{ registration_time }}</div>
+                    </div>
+                    
+                    <div class="user-item">
+                        <div class="user-label">
+                            <i class="fas fa-map-marker-alt"></i> IP ADDRESS
+                        </div>
+                        <div class="user-value">{{ ip_address }}</div>
+                    </div>
+                    
+                    <div class="user-item">
+                        <div class="user-label">
+                            <i class="fas fa-shield-alt"></i> VERIFICATION STATUS
+                        </div>
+                        <div class="user-value" style="color: var(--green-success); font-weight: 800;">
+                            ✅ VERIFIED & ACTIVE
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Platform Stats -->
+            <h3 class="section-title">
+                <i class="fas fa-chart-line"></i> PLATFORM STATISTICS
+            </h3>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">{{ total_users }}</div>
+                    <div class="stat-label">Total Soldiers</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-number">{{ today_registrations }}</div>
+                    <div class="stat-label">Today's Signups</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-number">{{ week_growth }}%</div>
+                    <div class="stat-label">Weekly Growth</div>
+                </div>
+            </div>
+            
+            <!-- Action Required -->
+            <div class="action-required">
+                <h3>
+                    <i class="fas fa-tasks"></i> REQUIRED ONBOARDING ACTIONS
+                </h3>
+                
+                <ul class="action-list">
+                    <li>Verify user email confirmation status ✅</li>
+                    <li>Send welcome package and login credentials</li>
+                    <li>Assign to mentor: <strong>{{ recommended_mentor }}</strong></li>
+                    <li>Add to Telegram channels & communication groups</li>
+                    <li>Schedule onboarding call within 24 hours</li>
+                    <li>Activate trading package: <strong>{{ recommended_package }}</strong></li>
+                    <li>Send platform access instructions</li>
+                </ul>
+            </div>
+            
+            <!-- Quick Actions -->
+            <h3 class="section-title">
+                <i class="fas fa-bolt"></i> QUICK ACTIONS
+            </h3>
+            
+            <div class="quick-actions">
+                <a href="{{ admin_user_url }}" class="action-button">
+                    <div class="button-icon">👤</div>
+                    View Full Profile
+                </a>
+                
+                <a href="{{ send_welcome_url }}" class="action-button">
+                    <div class="button-icon">📧</div>
+                    Resend Welcome Email
+                </a>
+                
+                <a href="{{ assign_mentor_url }}" class="action-button">
+                    <div class="button-icon">🎓</div>
+                    Assign Mentor
+                </a>
+                
+                <a href="{{ admin_dashboard_url }}" class="action-button">
+                    <div class="button-icon">📊</div>
+                    Admin Dashboard
+                </a>
+            </div>
+            
+            <!-- Notes Section -->
+            <div class="notes-section">
+                <h4>
+                    <i class="fas fa-sticky-note"></i> ONBOARDING NOTES & RECOMMENDATIONS
+                </h4>
+                <div class="notes-content">
+                    {{ onboarding_notes|default:"No additional notes provided." }}<br><br>
+                    <strong>Recommended Package:</strong> {{ recommended_package|default:"Elite Starter Package" }}<br>
+                    <strong>Suggested Mentor:</strong> {{ recommended_mentor }}<br>
+                    <strong>Priority Level:</strong> <span style="color: var(--red-alert); font-weight: 800;">HIGH PRIORITY</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="email-footer">
+            <div class="footer-info">
+                <strong>ADMIN NOTIFICATION SYSTEM • MFALME BETTERDAYS CAPITAL</strong>
+                <p>
+                    This is an automated notification from the registration system.<br>
+                    <strong>Generated at:</strong> {{ notification_time }}<br>
+                    <strong>Notification ID:</strong> #{{ notification_id }}
+                </p>
+            </div>
+            
+            <div class="footer-alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                Immediate action required within 24 hours for optimal user experience
+            </div>
+        </div>
+    </div>
+</body>
+</html>

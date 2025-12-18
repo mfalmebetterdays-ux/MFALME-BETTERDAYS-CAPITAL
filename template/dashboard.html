@@ -1,0 +1,1021 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MFALME BETTERDAYS CAPITAL | Client Dashboard</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --gold-primary: #FFD700;
+            --gold-bright: #FFEC8B;
+            --gold-gradient: linear-gradient(135deg, #FFD700 0%, #FFC125 30%, #DAA520 100%);
+            --deep-navy: #0A1520;
+            --navy-dark: #08111A;
+            --navy-medium: #0E1A29;
+            --navy-light: #142338;
+            --navy-lighter: #1E2F3F;
+            --white: #FFFFFF;
+            --white-smoke: #F5F5F5;
+            --green-success: #10B981;
+            --blue-info: #3B82F6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--navy-dark);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Sidebar */
+        .dashboard-sidebar {
+            background: var(--navy-medium);
+            min-height: 100vh;
+            padding: 0;
+            border-right: 1px solid rgba(255, 215, 0, 0.1);
+            position: fixed;
+            width: 260px;
+            z-index: 100;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+            text-align: center;
+        }
+        
+        .sidebar-header img {
+            height: 40px;
+            margin-bottom: 10px;
+        }
+        
+        .sidebar-header h3 {
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--gold-primary);
+            margin-bottom: 3px;
+        }
+        
+        .sidebar-header p {
+            color: var(--gold-bright);
+            font-size: 0.75rem;
+            margin-bottom: 0;
+        }
+        
+        .user-profile {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            background: var(--gold-gradient);
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--navy-dark);
+            font-weight: 800;
+            border: 2px solid var(--gold-primary);
+        }
+        
+        .user-info h4 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 5px;
+        }
+        
+        .user-info p {
+            color: var(--gold-bright);
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+        
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--white-smoke);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            font-size: 0.9rem;
+        }
+        
+        .menu-item:hover {
+            background: rgba(255, 215, 0, 0.05);
+            color: var(--gold-primary);
+        }
+        
+        .menu-item.active {
+            background: rgba(255, 215, 0, 0.1);
+            color: var(--gold-primary);
+            border-left-color: var(--gold-primary);
+            font-weight: 600;
+        }
+        
+        .menu-item i {
+            font-size: 1rem;
+            width: 20px;
+        }
+        
+        /* Main Content */
+        .dashboard-main {
+            margin-left: 260px;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .dashboard-header {
+            background: var(--navy-medium);
+            padding: 15px 25px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 99;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        
+        .page-title h1 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--white);
+            margin-bottom: 3px;
+        }
+        
+        .page-title p {
+            color: var(--gold-bright);
+            font-size: 0.85rem;
+            margin-bottom: 0;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .current-date {
+            color: var(--gold-bright);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .logout-btn {
+            background: rgba(255, 215, 0, 0.1);
+            color: var(--gold-primary);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+        }
+        
+        /* Dashboard Content */
+        .dashboard-content {
+            padding: 20px;
+        }
+        
+        /* Soldier Badge Section - CLEAN LOGO */
+        .soldier-badge-section {
+            background: var(--navy-medium);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            text-align: center;
+        }
+        
+        .soldier-badge {
+            background: linear-gradient(145deg, rgba(20, 35, 56, 0.9), rgba(14, 26, 41, 0.9));
+            border: 2px solid var(--gold-primary);
+            border-radius: 12px;
+            padding: 20px;
+            display: inline-block;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 350px;
+            width: 100%;
+        }
+        
+        /* CLEAN LOGO - NO GOLD, NO BORDER, NOTHING */
+        .badge-logo {
+            margin: 0 auto 15px;
+            text-align: center;
+        }
+        
+        .badge-logo img {
+            height: 50px;
+            width: auto;
+        }
+        
+        .soldier-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 6px;
+        }
+        
+        .soldier-number {
+            font-size: 2rem;
+            font-weight: 900;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 8px 0;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .soldier-name {
+            color: var(--gold-primary);
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+        
+        .badge-status {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--green-success);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 8px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .badge-footer {
+            margin-top: 12px;
+            color: var(--gold-bright);
+            font-size: 0.75rem;
+            font-style: italic;
+        }
+        
+        /* Compact Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: var(--navy-medium);
+            border-radius: 10px;
+            padding: 18px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .stat-card:hover {
+            border-color: var(--gold-primary);
+            transform: translateY(-2px);
+        }
+        
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            color: var(--gold-primary);
+            font-size: 1.1rem;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+        
+        .stat-title {
+            font-size: 0.8rem;
+            color: var(--white-smoke);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--white);
+            margin-bottom: 3px;
+        }
+        
+        .stat-subtitle {
+            color: var(--gold-bright);
+            font-size: 0.75rem;
+        }
+        
+        /* Content Sections */
+        .content-sections {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 992px) {
+            .content-sections {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        /* Latest Updates Section */
+        .updates-section {
+            background: var(--navy-medium);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .section-header i {
+            color: var(--gold-primary);
+            font-size: 1.1rem;
+        }
+        
+        .section-header h3 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--white);
+            margin: 0;
+        }
+        
+        .updates-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .update-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 3px solid var(--gold-primary);
+            transition: all 0.3s ease;
+        }
+        
+        .update-item:hover {
+            background: rgba(255, 215, 0, 0.05);
+            transform: translateX(3px);
+        }
+        
+        .update-date {
+            color: var(--gold-primary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        
+        .update-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: var(--white);
+        }
+        
+        .update-content {
+            color: var(--white-smoke);
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        
+        .no-updates {
+            text-align: center;
+            padding: 30px 15px;
+            color: var(--gold-bright);
+        }
+        
+        .no-updates i {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+        
+        .no-updates h4 {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+        
+        .no-updates p {
+            font-size: 0.8rem;
+        }
+        
+        /* Message Admin Section */
+        .message-section {
+            background: var(--navy-medium);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .online-status {
+            width: 8px;
+            height: 8px;
+            background: var(--green-success);
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .online-status::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: var(--green-success);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 250px;
+            padding-right: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            max-width: 85%;
+        }
+        
+        .message.received {
+            margin-right: auto;
+        }
+        
+        .message.sent {
+            margin-left: auto;
+        }
+        
+        .message-bubble {
+            background: rgba(255, 215, 0, 0.05);
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .message.sent .message-bubble {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: rgba(255, 215, 0, 0.2);
+        }
+        
+        .message-text {
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        
+        .message-time {
+            font-size: 0.7rem;
+            color: var(--gold-bright);
+            margin-top: 4px;
+            text-align: right;
+        }
+        
+        .message-input-area {
+            display: flex;
+            gap: 8px;
+            margin-top: auto;
+        }
+        
+        .message-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: var(--white);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+        }
+        
+        .message-input:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .send-btn {
+            background: var(--gold-gradient);
+            color: var(--navy-dark);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        /* Footer */
+        .dashboard-footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 215, 0, 0.1);
+            text-align: center;
+            color: var(--gold-bright);
+            font-size: 0.8rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .dashboard-sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .dashboard-sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .dashboard-main {
+                margin-left: 0;
+            }
+            
+            .mobile-menu-toggle {
+                display: block;
+            }
+            
+            .content-sections {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-content {
+                padding: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            
+            .soldier-number {
+                font-size: 1.8rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .soldier-badge {
+                padding: 15px;
+            }
+            
+            .soldier-number {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="dashboard-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="{% static 'assets/images/logo11-removebg-preview.png' %}" alt="MFALME BETTERDAYS CAPITAL">
+            <h3>MFALME BETTERDAYS CAPITAL</h3>
+            <p>Client Portal</p>
+        </div>
+        
+        <div class="user-profile">
+            <div class="user-avatar">
+                {{ user.username|slice:":1"|upper }}
+            </div>
+            <div class="user-info">
+                <h4>{{ user.username }}</h4>
+                <p>{{ user.email }}</p>
+            </div>
+        </div>
+        
+        <div class="sidebar-menu">
+            <a href="#" class="menu-item active">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <a href="{% url 'logout' %}" class="menu-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="dashboard-main">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <button class="mobile-menu-toggle d-lg-none" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="page-title">
+                        <h1>Welcome, Soldier</h1>
+                        <p>MFALME BETTERDAYS CAPITAL</p>
+                    </div>
+                </div>
+                
+                <div class="header-right">
+                    <div class="current-date" id="currentDate"></div>
+                    <a href="{% url 'logout' %}" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dashboard Content -->
+        <div class="dashboard-content">
+            <!-- Soldier Badge Section - CLEAN LOGO -->
+            <div class="soldier-badge-section">
+                <div class="soldier-badge">
+                    <!-- CLEAN LOGO - NO GOLD, NO BORDER -->
+                    <div class="badge-logo">
+                        <img src="{% static 'assets/images/logo11-removebg-preview.png' %}" alt="MFALME">
+                    </div>
+                    <div class="soldier-title">MFALME BETTERDAYS CAPITAL</div>
+                    <div class="soldier-number">SOLDIER BADGE NO:{{ user.id|add:1000 }}</div>
+                    <div class="soldier-name">{{ user.username|upper }}</div>
+                    <div class="badge-status">
+                        <i class="fas fa-shield-alt"></i> ELITE MEMBER
+                    </div>
+                    <div class="badge-footer">
+                        Certified Member of the Elite Trading Circle
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Compact Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="stat-title">STATUS</div>
+                    <div class="stat-value">ACTIVE</div>
+                    <div class="stat-subtitle">Elite Soldier</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-title">MEMBER SINCE</div>
+                    <div class="stat-value">{% now "M Y" %}</div>
+                    <div class="stat-subtitle">Active Account</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <div class="stat-title">SUPPORT</div>
+                    <div class="stat-value">24/7</div>
+                    <div class="stat-subtitle">Available</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="stat-title">ACCESS</div>
+                    <div class="stat-value">ELITE</div>
+                    <div class="stat-subtitle">Full Portal</div>
+                </div>
+            </div>
+            
+            <!-- Main Content Sections -->
+            <div class="content-sections">
+                <!-- Latest Updates Section -->
+                <div class="updates-section">
+                    <div class="section-header">
+                        <i class="fas fa-bullhorn"></i>
+                        <h3>LATEST FROM MBC</h3>
+                    </div>
+                    
+                    <div class="updates-list">
+                        <!-- Default: No updates -->
+                        <div class="no-updates" id="noUpdates">
+                            <i class="far fa-newspaper"></i>
+                            <h4>No Recent Events or Activities</h4>
+                            <p>Check back later for updates from MFALME</p>
+                        </div>
+                        
+                        <!-- Updates Container -->
+                        <div id="updatesContainer"></div>
+                    </div>
+                </div>
+                
+                <!-- Message Admin Section -->
+                <div class="message-section">
+                    <div class="message-header">
+                        <div class="online-status"></div>
+                        <h3>CONTACT ADMIN</h3>
+                    </div>
+                    
+                    <!-- Messages Container -->
+                    <div class="messages-container" id="messagesContainer">
+                        <!-- Initial message -->
+                        <div class="message received">
+                            <div class="message-bubble">
+                                <div class="message-text">
+                                    Welcome to MFALME. Send your questions or concerns here.
+                                </div>
+                                <div class="message-time">Admin • Just now</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Message Input -->
+                    <div class="message-input-area">
+                        <input type="text" class="message-input" id="messageInput" placeholder="Type your message...">
+                        <button class="send-btn" onclick="sendMessage()">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="dashboard-footer">
+                <p>MFALME BETTERDAYS CAPITAL © {% now "Y" %}</p>
+                <p>Emergency: +254 706 286 667 | WhatsApp 24/7</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Toggle sidebar on mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        }
+        
+        // Update current date
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+        }
+        
+        // Send message function
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const messageText = input.value.trim();
+            
+            if (!messageText) return;
+            
+            const messagesContainer = document.getElementById('messagesContainer');
+            
+            // Create user message
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message sent';
+            userMessage.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-text">${messageText}</div>
+                    <div class="message-time">You • Just now</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(userMessage);
+            input.value = '';
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Save message to local storage
+            saveMessage(messageText, 'sent');
+            
+            // Simulate admin response after 2 seconds
+            setTimeout(() => {
+                const adminResponses = [
+                    "Message received. We'll respond soon.",
+                    "Thanks for your message. We've noted it.",
+                    "We'll get back to you shortly.",
+                    "Received. For urgent help: +254 706 286 667"
+                ];
+                
+                const randomResponse = adminResponses[Math.floor(Math.random() * adminResponses.length)];
+                
+                const adminMessage = document.createElement('div');
+                adminMessage.className = 'message received';
+                adminMessage.innerHTML = `
+                    <div class="message-bubble">
+                        <div class="message-text">${randomResponse}</div>
+                        <div class="message-time">Admin • Just now</div>
+                    </div>
+                `;
+                
+                messagesContainer.appendChild(adminMessage);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                
+                saveMessage(randomResponse, 'received');
+            }, 2000);
+        }
+        
+        // Save message to local storage
+        function saveMessage(message, type) {
+            let messages = JSON.parse(localStorage.getItem('mfalme_messages') || '[]');
+            messages.push({
+                text: message,
+                time: new Date().toISOString(),
+                type: type
+            });
+            localStorage.setItem('mfalme_messages', JSON.stringify(messages));
+        }
+        
+        // Load saved messages
+        function loadMessages() {
+            const messages = JSON.parse(localStorage.getItem('mfalme_messages') || '[]');
+            const messagesContainer = document.getElementById('messagesContainer');
+            
+            // Clear initial message if we have saved messages
+            if (messages.length > 0) {
+                messagesContainer.innerHTML = '';
+            }
+            
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${msg.type}`;
+                
+                const time = new Date(msg.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                messageDiv.innerHTML = `
+                    <div class="message-bubble">
+                        <div class="message-text">${msg.text}</div>
+                        <div class="message-time">${msg.type === 'sent' ? 'You' : 'Admin'} • ${time}</div>
+                    </div>
+                `;
+                
+                messagesContainer.appendChild(messageDiv);
+            });
+            
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Load updates (if any)
+        function loadUpdates() {
+            const updates = []; // Empty array = no updates
+            
+            const updatesContainer = document.getElementById('updatesContainer');
+            const noUpdates = document.getElementById('noUpdates');
+            
+            if (updates.length > 0) {
+                noUpdates.style.display = 'none';
+                
+                updates.forEach(update => {
+                    const updateDiv = document.createElement('div');
+                    updateDiv.className = 'update-item';
+                    updateDiv.innerHTML = `
+                        <div class="update-date">${update.date}</div>
+                        <div class="update-title">${update.title}</div>
+                        <div class="update-content">${update.content}</div>
+                    `;
+                    
+                    updatesContainer.appendChild(updateDiv);
+                });
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCurrentDate();
+            loadMessages();
+            loadUpdates();
+            
+            // Update date every minute
+            setInterval(updateCurrentDate, 60000);
+            
+            // Enter key to send message
+            document.getElementById('messageInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Auto-focus message input
+            setTimeout(() => {
+                document.getElementById('messageInput').focus();
+            }, 500);
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(event) {
+                const sidebar = document.getElementById('sidebar');
+                const mobileToggle = document.querySelector('.mobile-menu-toggle');
+                
+                if (window.innerWidth < 992 && 
+                    !sidebar.contains(event.target) && 
+                    !mobileToggle.contains(event.target) && 
+                    sidebar.classList.contains('show')) {
+                    sidebar.classList.remove('show');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

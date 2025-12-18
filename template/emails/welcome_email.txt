@@ -1,0 +1,18 @@
+Welcome to MFALME BETTERDAYS CAPITAL!
+
+Congratulations {{ username }}!
+
+Your account has been successfully verified and activated.
+
+Account Details:
+- Email: {{ email }}
+- Phone: {{ phone }}
+- Joined: {{ date_joined }}
+
+Access your dashboard: {{ dashboard_url }}
+
+Start your trading journey today!
+
+Need help? Contact our support team anytime.
+
+© {{ current_year }} MFALME BETTERDAYS CAPITAL

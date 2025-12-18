@@ -242,31 +242,31 @@
             <a class="nav-link" href="{% url 'index' %}">Home</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'about' %}">About</a>
+            <a class="nav-link" href="#">About</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'services' %}">Services</a>
+            <a class="nav-link" href="#">Services</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'contact' %}">Contact</a>
+            <a class="nav-link" href="#">Contact</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'shop' %}">Shop</a>
+            <a class="nav-link" href="#">Shop</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'journals' %}">Journals</a>
+            <a class="nav-link" href="#">Journals</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'events' %}">Events</a>
+            <a class="nav-link" href="#">Events</a>
           </li>
           <li class="nav-item">
             {% if not user_authenticated %}
-            <a class="nav-link position-relative" href="{% url 'cart' %}">
+            <a class="nav-link position-relative" href="#">
               <i class="fas fa-shopping-cart cart-icon"></i>
               <span class="badge badge-pill badge-danger cart-badge">0</span>
             </a>
             {% else %}
-            <a class="nav-link position-relative" href="{% url 'cart' %}">
+            <a class="nav-link position-relative" href="#">
               <i class="fas fa-shopping-cart cart-icon"></i>
               <span class="badge badge-pill badge-danger cart-badge">{{ product_count }}</span>
             </a>
@@ -276,7 +276,7 @@
         <ul class="navbar-nav ml-auto">
           {% if not user_authenticated %}
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
+            <a class="nav-link" href="{% url 'login_page' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
           </li>
           {% else %}
           <li class="nav-item">

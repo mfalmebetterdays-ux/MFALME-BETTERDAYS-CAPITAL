@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to MFALME BETTERDAYS CAPITAL</title>
+    <style>
+        /* Import Inter font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        :root {
+            /* GOLDEN THEME - Premium Gold Dominance */
+            --gold-primary: #FFD700;
+            --gold-bright: #FFEC8B;
+            --gold-light: #FFF8DC;
+            --gold-dark: #DAA520;
+            --gold-darker: #B8860B;
+            --gold-gradient: linear-gradient(135deg, #FFD700 0%, #FFC125 30%, #DAA520 100%);
+            --gold-gradient-light: linear-gradient(135deg, #FFEC8B 0%, #FFD700 50%, #FFC125 100%);
+            
+            /* Dark Backgrounds */
+            --deep-navy: #0A1520;
+            --navy-dark: #08111A;
+            --navy-medium: #0E1A29;
+            --navy-light: #142338;
+            
+            /* Accent Colors */
+            --white: #FFFFFF;
+            --white-smoke: #F5F5F5;
+            --platinum: #E5E4E2;
+            --light-gray: #CCCCCC;
+            
+            /* Shadows & Effects */
+            --shadow-gold: 0 10px 40px rgba(255, 215, 0, 0.25);
+            --shadow-gold-intense: 0 15px 50px rgba(255, 215, 0, 0.4);
+            --shadow-dark: 0 20px 60px rgba(0, 0, 0, 0.5);
+            --glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+            
+            /* Font */
+            --font-inter: 'Inter', sans-serif;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--font-inter);
+            background-color: var(--navy-dark);
+            margin: 0;
+            padding: 20px;
+            color: var(--white);
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--deep-navy);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 215, 0, 0.2);
+            box-shadow: var(--shadow-dark);
+        }
+        
+        /* Header Section */
+        .email-header {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+            padding: 50px 40px;
+            text-align: center;
+            border-bottom: 3px solid var(--gold-primary);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .email-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 215, 0, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
+            z-index: 1;
+        }
+        
+        .email-header > * {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .email-logo {
+            margin-bottom: 25px;
+        }
+        
+        .email-logo img {
+            height: 70px;
+            filter: brightness(0) invert(1);
+        }
+        
+        .email-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin: 15px 0;
+            background: linear-gradient(to right, #FFFFFF, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .email-subtitle {
+            color: var(--gold-bright);
+            font-size: 1.1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        /* Content Section */
+        .email-content {
+            padding: 50px 40px;
+        }
+        
+        .welcome-message {
+            font-size: 1.15rem;
+            line-height: 1.7;
+            color: var(--white-smoke);
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        
+        .gold-text {
+            color: var(--gold-primary) !important;
+            font-weight: 700;
+        }
+        
+        .gold-gradient-text {
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Soldier ID Card - Matching Package Cards Style */
+        .soldier-card {
+            background: var(--navy-medium);
+            border-radius: 15px;
+            padding: 40px;
+            margin: 40px 0;
+            text-align: center;
+            border: 2px solid rgba(255, 215, 0, 0.1);
+            box-shadow: var(--shadow-dark);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .soldier-card:hover {
+            border-color: var(--gold-primary);
+            box-shadow: var(--shadow-gold-intense);
+        }
+        
+        .soldier-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--gold-gradient);
+        }
+        
+        .soldier-id {
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: var(--gold-primary);
+            margin: 20px 0;
+            text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+            font-family: var(--font-inter);
+            letter-spacing: 3px;
+        }
+        
+        .soldier-subtitle {
+            color: var(--gold-bright);
+            font-size: 1rem;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+        
+        /* Credentials Section */
+        .credentials-section {
+            margin: 50px 0;
+        }
+        
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--gold-primary);
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .credential-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .credential-item {
+            background: var(--navy-light);
+            border-radius: 12px;
+            padding: 25px;
+            border: 2px solid rgba(255, 215, 0, 0.1);
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .credential-item:hover {
+            transform: translateY(-5px);
+            border-color: var(--gold-primary);
+            box-shadow: var(--shadow-gold);
+        }
+        
+        .credential-label {
+            color: var(--gold-bright);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .credential-value {
+            color: var(--white);
+            font-size: 1.2rem;
+            font-weight: 700;
+            word-break: break-all;
+        }
+        
+        /* Security Alert - Matching Alert Styles */
+        .security-alert {
+            background: linear-gradient(145deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+            border-left: 5px solid #EF4444;
+            padding: 30px;
+            margin: 40px 0;
+            border-radius: 12px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        
+        .security-alert h4 {
+            color: #EF4444;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+        
+        .security-alert p {
+            color: #FCA5A5;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+        
+        /* Action Grid - Matching Service Cards */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin: 50px 0;
+        }
+        
+        .action-card {
+            background: var(--navy-medium);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            border: 2px solid rgba(255, 215, 0, 0.1);
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .action-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--gold-primary);
+            box-shadow: var(--shadow-gold-intense);
+        }
+        
+        .action-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--gold-primary);
+        }
+        
+        .action-title {
+            color: var(--white);
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        
+        .action-description {
+            color: var(--light-gray);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        /* Account Info - Matching Stats Style */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin: 50px 0;
+            padding: 40px;
+            background: rgba(255, 215, 0, 0.03);
+            border-radius: 15px;
+            border: 2px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .info-item {
+            text-align: center;
+            padding: 20px;
+            background: var(--navy-light);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .info-label {
+            color: var(--gold-bright);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .info-value {
+            color: var(--white);
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        /* CTA Button - Matching Website Buttons */
+        .cta-button {
+            display: inline-block;
+            background: var(--gold-gradient);
+            color: var(--navy-dark);
+            text-decoration: none;
+            padding: 18px 45px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            box-shadow: var(--shadow-gold);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(255, 215, 0, 0.4);
+        }
+        
+        /* Checklist - Matching Partnership Features */
+        .checklist {
+            background: var(--navy-medium);
+            border-radius: 15px;
+            padding: 40px;
+            margin: 50px 0;
+            border: 2px solid rgba(255, 215, 0, 0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .checklist-title {
+            color: var(--gold-primary);
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .checklist-items {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .checklist-items li {
+            color: var(--white-smoke);
+            padding: 15px 0;
+            padding-left: 40px;
+            position: relative;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+            font-size: 1.05rem;
+        }
+        
+        .checklist-items li:last-child {
+            border-bottom: none;
+        }
+        
+        .checklist-items li strong {
+            color: var(--gold-primary);
+        }
+        
+        .checklist-items li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--gold-primary);
+            font-weight: bold;
+            font-size: 1.2rem;
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--gold-primary);
+        }
+        
+        /* Quote Section - Matching Testimonial Style */
+        .quote-section {
+            background: linear-gradient(145deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+            border-radius: 15px;
+            padding: 40px;
+            margin: 50px 0;
+            text-align: center;
+            border: 2px solid rgba(255, 215, 0, 0.2);
+            position: relative;
+        }
+        
+        .quote-section:before {
+            content: '"';
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            font-size: 6rem;
+            color: rgba(255, 215, 0, 0.1);
+            font-family: Georgia, serif;
+            line-height: 1;
+        }
+        
+        .quote-text {
+            color: var(--gold-bright);
+            font-style: italic;
+            font-size: 1.2rem;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .quote-author {
+            color: var(--gold-primary);
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* Footer - Matching Website Footer */
+        .email-footer {
+            background: var(--navy-dark);
+            padding: 50px 40px;
+            text-align: center;
+            border-top: 3px solid var(--gold-primary);
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .footer-links a {
+            color: var(--gold-bright);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .footer-links a:hover {
+            color: var(--gold-primary);
+            transform: translateY(-2px);
+        }
+        
+        .contact-info {
+            color: var(--light-gray);
+            font-size: 0.95rem;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .contact-info strong {
+            color: var(--gold-primary);
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        
+        .footer-disclaimer {
+            color: #9FA6AD;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 215, 0, 0.1);
+            margin-top: 30px;
+        }
+        
+        .footer-disclaimer a {
+            color: var(--gold-bright);
+            text-decoration: none;
+        }
+        
+        .footer-disclaimer a:hover {
+            color: var(--gold-primary);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .email-content,
+            .email-header {
+                padding: 30px 20px;
+            }
+            
+            .email-title {
+                font-size: 2rem;
+            }
+            
+            .credential-grid,
+            .action-grid,
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-links {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .soldier-id {
+                font-size: 2.2rem;
+            }
+            
+            .checklist {
+                padding: 30px 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .email-title {
+                font-size: 1.6rem;
+            }
+            
+            .email-subtitle {
+                font-size: 0.9rem;
+            }
+            
+            .cta-button {
+                padding: 15px 30px;
+                font-size: 1rem;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="email-header">
+            
+            <h1 class="email-title">WELCOME TO THE ELITE CIRCLE</h1>
+            <p class="email-subtitle">Your Trading Journey Begins Now</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="email-content">
+            <p class="welcome-message">
+                Congratulations, <strong class="gold-text">{{ username }}</strong>! 🎉<br><br>
+                On behalf of the entire MFALME BETTERDAYS CAPITAL family, we extend our warmest welcome to you! 
+                Your account has been successfully verified and you now have full access to our elite trading platform.
+            </p>
+            
+            <!-- Soldier ID Card -->
+            <div class="soldier-card">
+                <h2 style="color: var(--gold-primary); margin-bottom: 15px; font-size: 1.2rem; letter-spacing: 2px;">
+                    ELITE TRADING SOLDIER IDENTIFICATION
+                </h2>
+                <div class="soldier-id">SOLDIER #{{ soldier_id }}</div>
+                <p class="soldier-subtitle">
+                    This unique identifier grants you exclusive access to our community, signals, and mentorship
+                </p>
+            </div>
+            
+            <!-- Credentials Section -->
+            <div class="credentials-section">
+                <h3 class="section-title">
+                    <i class="fas fa-key"></i> YOUR ACCOUNT CREDENTIALS
+                </h3>
+                
+                <div class="credential-grid">
+                    <div class="credential-item">
+                        <div class="credential-label">
+                            <i class="fas fa-user"></i> USERNAME
+                        </div>
+                        <div class="credential-value">{{ username }}</div>
+                    </div>
+                    
+                    <div class="credential-item">
+                        <div class="credential-label">
+                            <i class="fas fa-envelope"></i> REGISTERED EMAIL
+                        </div>
+                        <div class="credential-value">{{ email }}</div>
+                    </div>
+                    
+                    <div class="credential-item">
+                        <div class="credential-label">
+                            <i class="fas fa-phone"></i> PHONE NUMBER
+                        </div>
+                        <div class="credential-value">{{ phone }}</div>
+                    </div>
+                    
+                    <div class="credential-item">
+                        <div class="credential-label">
+                            <i class="fas fa-id-card"></i> ACCOUNT ID
+                        </div>
+                        <div class="credential-value">#{{ user_id }}</div>
+                    </div>
+                    
+                    <div class="credential-item">
+                        <div class="credential-label">
+                            <i class="fas fa-crown"></i> ACCOUNT TIER
+                        </div>
+                        <div class="credential-value" style="color: #10B981; text-transform: uppercase;">ELITE TRADER</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Alert -->
+            <div class="security-alert">
+                <h4>
+                    <i class="fas fa-shield-alt"></i> IMPORTANT SECURITY NOTICE
+                </h4>
+                <p>
+                    <strong>Never share your credentials with anyone!</strong> Our support team will NEVER ask for your password. 
+                    For security, we recommend changing your password immediately after first login and enabling two-factor authentication.
+                </p>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="action-grid">
+                <div class="action-card">
+                    <div class="action-icon">📈</div>
+                    <div class="action-title">Access Dashboard</div>
+                    <div class="action-description">Login to your personalized trading dashboard</div>
+                </div>
+                
+                <div class="action-card">
+                    <div class="action-icon">🎓</div>
+                    <div class="action-title">Start Training</div>
+                    <div class="action-description">Access trading courses & mentorship</div>
+                </div>
+                
+                <div class="action-card">
+                    <div class="action-icon">💬</div>
+                    <div class="action-title">Join Community</div>
+                    <div class="action-description">Connect with elite traders</div>
+                </div>
+                
+                <div class="action-card">
+                    <div class="action-icon">🛡️</div>
+                    <div class="action-title">Secure Account</div>
+                    <div class="action-description">Enable 2FA & security settings</div>
+                </div>
+            </div>
+            
+            <!-- Account Info -->
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Registration Date</div>
+                    <div class="info-value">{{ signup_date }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Account Status</div>
+                    <div class="info-value" style="color: #10B981;">✅ ACTIVE</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Security Level</div>
+                    <div class="info-value">🛡️ PREMIUM</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Support Priority</div>
+                    <div class="info-value">⭐ ELITE</div>
+                </div>
+            </div>
+            
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 50px 0;">
+                <a href="{{ dashboard_url }}" class="cta-button">
+                    <i class="fas fa-rocket"></i> LAUNCH MY DASHBOARD
+                </a>
+            </div>
+            
+            <!-- Onboarding Checklist -->
+            <div class="checklist">
+                <h3 class="checklist-title">
+                    <i class="fas fa-clipboard-check"></i> Your Elite Onboarding Checklist
+                </h3>
+                <ul class="checklist-items">
+                    <li><strong>Complete Profile:</strong> Add trading preferences & goals</li>
+                    <li><strong>Security Setup:</strong> Enable two-factor authentication</li>
+                    <li><strong>Explore Packages:</strong> Review premium trading packages</li>
+                    <li><strong>Join Telegram:</strong> Access real-time signals</li>
+                    <li><strong>Schedule Call:</strong> Book 1-on-1 mentorship session</li>
+                    <li><strong>First Deposit:</strong> Fund account to start trading</li>
+                </ul>
+            </div>
+            
+            <!-- Quote -->
+            <div class="quote-section">
+                <p class="quote-text">
+                    "The secret to success is to be ready when your opportunity comes. Welcome to the opportunity you've been waiting for."
+                </p>
+                <p class="quote-author">
+                    - MFALME BETTERDAYS CAPITAL Team
+                </p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="email-footer">
+            <div class="footer-links">
+                <a href="{{ website_url }}">Platform</a>
+                <a href="{{ signals_url }}">Trading Signals</a>
+                <a href="{{ community_url }}">Community</a>
+                <a href="{{ mentorship_url }}">Mentorship</a>
+                <a href="{{ support_url }}">24/7 Support</a>
+            </div>
+            
+            <div class="contact-info">
+                <strong>MFALME BETTERDAYS CAPITAL</strong><br>
+                Elite Trading & Financial Freedom Platform<br>
+                📍 Nairobi, Kenya | 🌐 Global Coverage<br>
+                📞 <a href="tel:+254706286667" style="color: var(--gold-primary);">+254 706 286 667</a><br>
+                📧 <a href="mailto:support@mfalmebetterdayscapital.com" style="color: var(--gold-primary);">support@mfalmebetterdayscapital.com</a>
+            </div>
+            
+            <div class="footer-disclaimer">
+                <strong>Disclaimer:</strong> Trading involves risk. Only trade with capital you can afford to lose.<br>
+                This email contains confidential information intended only for the recipient.<br>
+                © 2024 MFALME BETTERDAYS CAPITAL. All Rights Reserved. | 
+                <a href="{{ privacy_url }}">Privacy Policy</a> | 
+                <a href="{{ terms_url }}">Terms of Service</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
