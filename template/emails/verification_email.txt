@@ -1,0 +1,17 @@
+Verify Your Account - MFALME BETTERDAYS CAPITAL
+
+Hello {{ username }},
+
+Thank you for registering with MFALME BETTERDAYS CAPITAL!
+
+Your verification code is: {{ verification_code }}
+
+Enter this 6-digit code on the verification page to activate your account.
+
+Verification Link: {{ verification_url }}
+
+This code will expire in 30 minutes.
+
+If you didn't create an account, please ignore this email.
+
+© {{ current_year }} MFALME BETTERDAYS CAPITAL

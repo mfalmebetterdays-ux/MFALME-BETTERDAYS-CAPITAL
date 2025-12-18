@@ -1,828 +1,664 @@
-
-from django.http import response
-from django.shortcuts import render,redirect,get_object_or_404
-import requests
-from myapp.models import MfalmeUsers,Payments,Cart,Products,Journals,EventsPayments,AvailableTickets
-import logging
-from django.http import HttpResponse,JsonResponse
-# from intasend import APIService
-import json
-from django.db.models import Sum
-from myapp.notifications import sendsms,sendproductsms ,sendproductsemail,sendemailuser
-from django.core.mail import send_mail
+from django.shortcuts import render, redirect, reverse
+from django.contrib import messages
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 from django.conf import settings
+from django.http import JsonResponse, HttpResponse
+from .models import MfalmeUsers
+from datetime import datetime
+import random
+import string
+import logging
+import json
 
-from dotenv import load_dotenv
-load_dotenv()
-import os
+# Set up logging
+logger = logging.getLogger(__name__)
 
-
-# Create your views here.
-def index(request):
-    user_id=request.session.get('user_id')
-    if user_id is  not None:
-        user=MfalmeUsers.objects.get(id=user_id)
-        product_count=Cart.objects.filter(user=user,status='addedtocart').count()
-        return  render(request,'index.html',{'product_count':product_count})
-    return render(request,'index.html')
-
-def about(request):
-    user_id=request.session.get('user_id')
-    if user_id is  not None:
-        user=MfalmeUsers.objects.get(id=user_id)
-        product_count=Cart.objects.filter(user=user,status='addedtocart').count()
-        return render(request,'about.html',{'product_count':product_count})
-    return render(request,'about.html')
-
-def login(request):
-    return render(request,'login.html')
-
-def services(request):
-    user_id=request.session.get('user_id')
-    if user_id is  not None:
-        user=MfalmeUsers.objects.get(id=user_id)
-        product_count=Cart.objects.filter(user=user,status='addedtocart').count()
-        return render(request,'services.html',{'product_count':product_count})
-    return render(request,'services.html')
-def shop(request):
-    user_id=request.session.get('user_id')
-    if user_id is  not None:
-        user=MfalmeUsers.objects.get(id=user_id)
-        product_count=Cart.objects.filter(user=user,status='addedtocart').count()
-        #get all products and pass to the shop.html
-        products=Products.objects.all()
-        
-
-        return render(request,'shops.html',{'products':products,'product_count':product_count})
-    else:
-        products=Products.objects.all()
-        
-
-        return render(request,'shops.html',{'products':products})
-
-def cart(request):
-    user_id=request.session.get('user_id')
-    
-    if user_id is  not None:
-     #get all products in cart for the logged user and pass to the shop.html
-        user=MfalmeUsers.objects.get(id=user_id)
-        products=Cart.objects.filter(user=user,status='addedtocart')
-        product_count=Cart.objects.filter(user=user,status='addedtocart').count()
-        total = Cart.objects.filter(user=user, status='addedtocart').aggregate(total_price=Sum('product__priceusd'))['total_price'] or 0.0
-        print("total for my cart is ",total)
-
-        context={
-            'products':products,
-            'total':total,
-            'product_count':product_count
-
-        }
-
-        return render(request,'carts.html',context)
-    else:
-        return redirect("/login")
-
-def addcart(request,product_id):
-    user_id=request.session.get('user_id')
-    if user_id is  not None:
-        #get product to add
-        product=Products.objects.get(id=product_id)
-
-        #get logged in user
-        user=MfalmeUsers.objects.get(id=user_id)
-
-        #add object
-        cart=Cart.objects.create(user=user,product=product)
-        
-
-        return redirect("/shop/")
-    else:
-        return redirect("/login")
-def removecart(request,product_id):
-    user_id=request.session.get('user_id')
-    if user_id is  not None:
-        #get product to add
-        product=Products.objects.get(id=product_id)
-
-        #get logged in user
-        user=MfalmeUsers.objects.get(id=user_id)
-
-        #add object
-        cart=Cart.objects.filter(user=user,product=product).latest('id')
-        cart.delete()
-        return redirect ("/cart")
-    else:
-        return redirect("/login/")
-
-
-def contact(request):
-    user_id=request.session.get('user_id')
-    if user_id is  not None:
-    
-        user=MfalmeUsers.objects.get(id=user_id)
-        product_count=Cart.objects.filter(user=user,status='addedtocart').count()
-        return render(request,'contact.html',{'product_count':product_count})
-    return render(request,'contact.html')
-
-def create_account(request):
-
-    password1= request.POST.get('password', False)
-    print(password1)
-    password2 = request.POST.get('password1', False)
-    print(password2)
-    email = request.POST.get('email', False)
-    print(email)
-    phone = request.POST.get('phone', False)
-    print(phone)
-    username = request.POST.get('username', False)
-    print(username)
-    
-
-
-    if  password1 != password2:
-        message="the two passwords are diffrent."
-        return render(request, "register.html", {"message": message})
-
-        # Check if email and password are provided
-    if not email or not password1:
-        message="Email and password are required."
-        return render(request, "register.html", {"message": message})
-
-        # Check if user already exists
-    if MfalmeUsers.objects.filter(email=email).exists():
-        
-        message="User with this email already exists.."
-        return render(request, "register.html", {"message": message})
-
-        # Create user
-    user = MfalmeUsers.objects.create(email=email, password=password1,phone=phone,username=username)
+# ===== EMAIL FUNCTIONS =====
+def send_verification_email(user, verification_code):
+    """Send verification email with the code - HANDLES MISSING TEMPLATES"""
     try:
+        subject = 'Verify Your Account - MFALME BETTERDAYS CAPITAL'
         
-       
-        return redirect("/login/")
-    
+        # Context for template
+        context = {
+            'username': user.username,
+            'verification_code': verification_code,
+            'verification_url': 'http://127.0.0.1:8000/verify-account/',
+            'current_year': datetime.now().year,
+        }
+        
+        # Try to render HTML template
+        try:
+            html_content = render_to_string('emails/verification_email.html', context)
+        except:
+            # Fallback HTML
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <h2>Verify Your Account - MFALME BETTERDAYS CAPITAL</h2>
+                <p>Hello {user.username},</p>
+                <p>Your verification code is: <strong>{verification_code}</strong></p>
+                <p>Go to: http://127.0.0.1:8000/verify-account/</p>
+                <p>This code will expire in 30 minutes.</p>
+            </body>
+            </html>
+            """
+        
+        # Try to render text template
+        try:
+            text_content = render_to_string('emails/verification_email.txt', context)
+        except:
+            # Fallback text
+            text_content = f"""
+            Verify Your Account - MFALME BETTERDAYS CAPITAL
+            
+            Hello {user.username},
+            
+            Your verification code is: {verification_code}
+            
+            Go to: http://127.0.0.1:8000/verify-account/
+            
+            This code will expire in 30 minutes.
+            """
+        
+        # Send email
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user.email],
+            reply_to=[settings.DEFAULT_FROM_EMAIL]
+        )
+        
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+        
+        print(f"✅ VERIFICATION EMAIL SENT TO: {user.email}")
+        return True
+        
     except Exception as e:
-        logging.error(f"Failed to send email. Error message: {str(e)}")
-        return redirect("/index")
-    
+        print(f"❌ VERIFICATION EMAIL FAILED: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
 
-        # Respond with success message
+
+def notify_admin_new_registration(user):
+    """Send email to admin about new registration - HANDLES MISSING TEMPLATES"""
+    try:
+        # ⚠️ IMPORTANT: CHANGE THIS TO YOUR ACTUAL ADMIN EMAIL!
+        admin_email = 'mfalmebetterdays@gmail.com'  # CHANGE THIS!
+        
+        subject = f'🆕 New User Registration: {user.email}'
+        
+        # Create simple text content
+        text_content = f"""
+        🆕 NEW USER REGISTRATION - MFALME BETTERDAYS CAPITAL
+        
+        User Details:
+        ---------------
+        Full Name: {user.username}
+        Email: {user.email}
+        Phone: {user.phone}
+        Registration Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        Status: {'Verified' if user.email_verified else 'Pending Verification'}
+        User ID: {user.id}
+        
+        This is an automated notification.
+        """
+        
+        # Try to render HTML template
+        try:
+            context = {
+                'username': user.username,
+                'email': user.email,
+                'phone': user.phone,
+                'registration_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'is_verified': user.email_verified,
+                'user_id': user.id,
+            }
+            html_content = render_to_string('emails/admin_notification.html', context)
+        except:
+            # Fallback HTML
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <h2>🆕 New User Registration</h2>
+                <p><strong>Name:</strong> {user.username}</p>
+                <p><strong>Email:</strong> {user.email}</p>
+                <p><strong>Phone:</strong> {user.phone}</p>
+                <p><strong>ID:</strong> {user.id}</p>
+                <p><strong>Status:</strong> {'Verified' if user.email_verified else 'Pending Verification'}</p>
+            </body>
+            </html>
+            """
+        
+        # Create email
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[admin_email]
+        )
+        
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+        
+        print(f"✅ ADMIN NOTIFICATION SENT TO: {admin_email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ ADMIN NOTIFICATION ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def send_welcome_email(user):
+    """Send welcome email after verification - HANDLES MISSING TEMPLATES"""
+    try:
+        subject = f'Welcome to MFALME BETTERDAYS CAPITAL'
+        
+        # Create simple text content
+        text_content = f"""
+        Welcome to MFALME BETTERDAYS CAPITAL!
+        
+        Congratulations {user.username}!
+        
+        Your account has been successfully verified and activated.
+        
+        Account Details:
+        - Email: {user.email}
+        - Phone: {user.phone}
+        - Joined: {user.date_joined.strftime('%B %d, %Y')}
+        
+        Access your dashboard: http://127.0.0.1:8000/dashboard/
+        
+        Start your trading journey today!
+        """
+        
+        # Try to render HTML template
+        try:
+            context = {
+                'username': user.username,
+                'email': user.email,
+                'phone': user.phone,
+                'date_joined': user.date_joined.strftime('%B %d, %Y'),
+                'dashboard_url': 'http://127.0.0.1:8000/dashboard/',
+                'current_year': datetime.now().year,
+            }
+            html_content = render_to_string('emails/welcome_email.html', context)
+        except:
+            # Fallback HTML
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <h2>Welcome to MFALME BETTERDAYS CAPITAL!</h2>
+                <p>Congratulations {user.username}!</p>
+                <p>Your account has been successfully verified and activated.</p>
+                <p><a href="http://127.0.0.1:8000/dashboard/">Go to Dashboard →</a></p>
+            </body>
+            </html>
+            """
+        
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user.email]
+        )
+        
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+        
+        print(f"✅ WELCOME EMAIL SENT TO: {user.email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ WELCOME EMAIL ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+# ===== BASIC VIEWS =====
+def index(request):
+    return render(request, 'index.html')
+
+def login_page(request):
+    if 'user_id' in request.session:
+        return redirect('dashboard')
     
+    # Get active tab from URL or session
+    active_tab = request.GET.get('tab', 'login')
+    form_data = request.session.pop('form_data', {})
+    
+    # Get all messages
+    message_list = []
+    for message in messages.get_messages(request):
+        message_list.append({
+            'text': message.message,
+            'tags': message.tags
+        })
+    
+    return render(request, 'login.html', {
+        'active_tab': active_tab,
+        'form_data': form_data,
+        'message_list': message_list
+    })
+
+def register_page(request):
+    # Redirect to login page with signup tab
+    return redirect(f'{reverse("login_page")}?tab=signup')
 
 def login_user(request):
-    email = request.POST.get('email',False)
-    password = request.POST.get('password',False)
-
-        # Check if an email and password are provided
-    if not email or not password:
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '').strip()
         
-        message= "Email and password are required."
-        return render( request,"login.html", {"message": message})
-
-    try:
-            # Check if user exists
-        user = MfalmeUsers.objects.get(email=email,password=password)
-    except MfalmeUsers.DoesNotExist:
+        print(f"\n🔐 LOGIN ATTEMPT: {email}")
         
-        message= "User does not exist.You need to sign up please."
-        return render(request, "register.html", {"message": message})
-
-        # Check if password is correct
-    if user.password != password:
+        if not email or not password:
+            messages.error(request, 'Email and password are required.')
+            return redirect('login_page')
         
-        message= "You provided an incorrect password."
-        return render(request, "login.html", {"message": message})
-
-        # If everything is correct, respond with user details
-    # Store the user ID in the session
-    request.session['user_id'] = user.id
-    print(user.id)
-    return render(request,"index.html",{'user_id':user.id})
-
-def logout(request):
-    user_id=request.session.get('user_id')
-    if user_id is  not None:
-        del request.session['user_id']
-        return redirect("/index")
-    else:
-        return redirect("/index")
-    
-def login(request):
-    return render(request,"login.html")
-
-def register(request):
-    return render(request,"register.html")
-
-
-def mpesa_checkout(request):
-     #getting user id from session
-    user_id=request.session.get('user_id')
-    print(user_id)
-    if user_id is not None:
-        
-
-        #getting saf number from form
-        phone = request.POST.get('phone', False)
-        print(phone)
-        #email of the user
-        email = MfalmeUsers.objects.get(id=user_id).email
-        #cost of course
-        keprice = request.session.get('keprice')
-        print(keprice)
-        amountusd = request.session.get('usdprice')
-        print(amountusd)
-        
-        if phone.startswith('0'):
-                phone = '254' + phone[1:]
-                #print(phone)
-                
-        payment_instance=Payments.objects.create(mpesa_number=phone,email=email,keprice=keprice,amountusd=amountusd,userId=user_id)
-        payment_instance.save()
-        
-
         try:
-                # Initialize the APIService
-            print("before token")
-            token = os.getenv("token")
-            print(token)
-            publishable_key = os.getenv("publishable_key")
-            print(publishable_key)
-            print("after token")
-            service = APIService(token=token, publishable_key=publishable_key, test=False)
-            print("errornot here")
-
-                # Trigger M-Pesa STK Push
-            response = service.collect.mpesa_stk_push(phone_number=phone, email=email, amount=keprice,narrative="buyingcourse",api_ref="mfalmepayment")
-            print(response)
+            user = MfalmeUsers.objects.get(email=email)
             
-            
-            
-
-                # Return the response from the M-Pesa STK Push
-            return render(request,"loading.html")
-
+            # Check password
+            if user.password == password:
+                # Check if email is verified
+                if not user.email_verified:
+                    # Store user ID for verification
+                    request.session['pending_user_id'] = user.id
+                    request.session['pending_user_email'] = user.email
+                    
+                    # Generate new verification code
+                    verification_code = ''.join(random.choices(string.digits, k=6))
+                    request.session['verification_code'] = verification_code
+                    
+                    # Send verification email
+                    send_verification_email(user, verification_code)
+                    
+                    messages.error(request, 'Please verify your email first. A new verification code has been sent to your email.')
+                    return redirect('verify_account_page')
+                
+                # Set session
+                request.session['user_id'] = user.id
+                request.session['user_email'] = user.email
+                request.session['username'] = user.username
+                
+                # Update last login
+                user.last_login = datetime.now()
+                user.save()
+                
+                messages.success(request, 'Login successful!')
+                print(f"✅ LOGIN SUCCESS: {email}")
+                return redirect('dashboard')
+            else:
+                print(f"❌ WRONG PASSWORD: {email}")
+                messages.error(request, 'Invalid email or password.')
+                return redirect('login_page')
+                
+        except MfalmeUsers.DoesNotExist:
+            print(f"❌ USER NOT FOUND: {email}")
+            messages.error(request, 'Invalid email or password.')
+            return redirect('login_page')
         except Exception as e:
-                # Return an error if there's an exception
-            return render(request,"index.html",{"error": "try again later "})
-    else:
-        return redirect('/login')
+            print(f"❌ LOGIN ERROR: {str(e)}")
+            messages.error(request, 'An error occurred during login.')
+            return redirect('login_page')
+    
+    return redirect('login_page')
 
 
-
-def CardPayments(request):
-    #getting user id from session
-    user_id=request.session.get('user_id')
-    if user_id is not None:
-       
-
-        #getting saf number from form
-        #phone = request.POST.get('phone', False)
-        #email of the user
-        email = MfalmeUsers.objects.get(id=user_id).email
-        #cost of course
-        amountusd = request.session.get('usdprice')
+def create_account(request):
+    """Handle account creation with email verification"""
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '').strip()
+        password1 = request.POST.get('password1', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        username = request.POST.get('username', '').strip()
         
+        print(f"\n📝 REGISTRATION STARTED:")
+        print(f"Email: {email}")
+        print(f"Username: {username}")
         
-                
-        payment_instance=Payments.objects.create(email=email,amountusd=amountusd,userId=user_id)
-        payment_instance.save()
-        
-
-        
-        try:
-            token = os.getenv("token")
-            publishable_key = os.getenv("publishable_key")
-            
-            service = APIService(token=token, publishable_key=publishable_key, test=False)
-
-            response = service.collect.checkout(email=email, amount=amountusd, currency="USD", api_ref="mfalmepayment", redirect_url="http://example.com/thank-you")
-            url=response.get("url")
-            print(url)
-            
-            return redirect(url)
-
-        except:
-            return redirect("/index")
-    else:
-        return redirect("/login")
-    
-from django.views.decorators.csrf import csrf_exempt
-
-@csrf_exempt  
-def PaymentCallback(request):
-    try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON data in the request."}, status=400)
-    print(data)
-    
-
-        # Check if transaction state is complete
-    if data["state"] == "COMPLETE" and data["api_ref"] =="mfalmepayment":
-        account = data["account"]  # Get the account information from data
-
-        # Initialize phone and email variables with None
-        phone = None
-        email = None
-
-        try:
-            int_account = int(account)  # Try converting account to an integer
-            phone = (int_account)    # Convert the integer to a character (assuming this is intended for phone number processing)
-            print(phone)
-        except ValueError:
-            # If account is not an integer, treat it as an email
-            email = account
-            print(email)
-
-        if phone is not None:
-            # Process payments based on phone number
-            try:
-                payment_instance = Payments.objects.filter(mpesa_number=phone).latest('id')
-                payment_instance.payment_status = 'completed'
-                payment_instance.save()
-                print("status saved")
-
-                #get id of the user 
-                user_id=payment_instance.userId
-                print("user id is ",user_id)
-                #get user
-                user=MfalmeUsers.objects.get(id=user_id)
-                print(user)
-                #amount trasacted 
-
-                
-                amountusd=payment_instance.amountusd
-                print(amountusd)
-
-                
-                
-
-                
-                try:
-                    if amountusd ==200:
-                        message=' To join lifetime signals group'
-                        sendsms(phone,message)
-                        message=f'{phone} has paid for lifetime signals'
-                        sendsms(254706286667,message)
-                    if amountusd==1000:
-                        message='To join Lifetime Mentorship group'
-                        sendsms(phone,message)
-                        message=f'{phone} has paid for Lifetime Mentorship'
-                        sendsms(254706286667,message)
-                    if amountusd==10000:
-                        message='To join Leveraging Package group'
-                        sendsms(phone,message)
-                        message=f'{phone} has paid for lifetime signals'
-                        sendsms(254706286667,message)
-                    else:
-                        #get items paid from the cart
-                        # Assuming 'user' is the user object for which you want to get the product names
-                        items = Cart.objects.filter(user=user)
-                        print(items)
-
-                        #update the status of cart items to bought
-                        items.update(status='bought')
-
-                        # Extracting product names using list comprehension
-                        product_names = [item.product.name for item in items]
-                        print(product_names)
-                        sendproductsms(phone,product_names)
-                    
-                    return JsonResponse({'message':'mpesa payment complete'})
-                except:
-                    return JsonResponse({'message':'mpesa payment complete'})
-                
-
-            except Payments.DoesNotExist:
-                return JsonResponse({"message": "No payment found for this phone number."})
-
-        elif email is not None:
-            # Process payments based on email
-            try:
-                payment_instance = Payments.objects.filter(email=email).latest('id')
-                payment_instance.payment_status = 'completed'
-                payment_instance.payment_method = 'card'
-                payment_instance.save()
-
-                
-                
-
-                
-                try:
-                    #send_mail(subject, message, from_email, recipient_list)
-                    if amountusd ==200:
-                        message=' To join lifetime signals group'
-                        sendemailuser(email,message)
-                        message=f'{phone} has paid for lifetime signals'
-                        sendemailuser('info@mfalmebetterdayscapital.com',message)
-                    if amountusd==1000:
-                        message='To join Lifetime Mentorship group'
-                        sendemailuser(email,message)
-                        message=f'{phone} has paid for Lifetime Mentorship'
-                        sendemailuser('info@mfalmebetterdayscapital.com',message)
-                    if amountusd==10000:
-                        message='To join Leveraging Package group'
-                        sendemailuser(email,message)
-                        message=f'{phone} has paid for lifetime signals'
-                        sendemailuser('info@mfalmebetterdayscapital.com',message)
-                    else:
-                        #get items paid from the cart
-                        # Assuming 'user' is the user object for which you want to get the product names
-                        items = Cart.objects.filter(user=user)
-
-                        #update the status of cart items to bought
-                        items.update(status='bought')
-
-                        # Extracting product names using list comprehension
-                        product_names = [item.product.name for item in items]
-
-                        sendproductsemail(email,product_names)
-                    
-                    return JsonResponse({'message':'mpesa payment complete'})
-                except:
-                    return JsonResponse({'message':'mpesa payment complete'})
-                
-
-            except Payments.DoesNotExist:
-                return JsonResponse({"message": "No payment found for this email."})
-
-        else:
-            return JsonResponse({"message": "No email or phone provided."})
-
-        
-    
-    
-    elif data["state"] == "COMPLETE" and data["api_ref"] =="eventsmfalmepayment":
-        account = data["account"]  # Get the account information from data
-
-        # Initialize phone and email variables with None
-        phone = None
-        email = None
-
-        try:
-            int_account = int(account)  # Try converting account to an integer
-            phone = (int_account)    # Convert the integer to a character (assuming this is intended for phone number processing)
-            print(phone)
-        except ValueError:
-            # If account is not an integer, treat it as an email
-            email = account
-            print(email)
-
-        if phone is not None:
-            # Process payments based on phone number
-            try:
-                payment_instance = EventsPayments.objects.filter(mpesa_number=phone).latest('id')
-                payment_instance.payment_status = 'completed'
-                amountusd=payment_instance.amountusd
-                tickets = int(float(amountusd/100))
-                payment_instance.no_of_seats=tickets
-                ticket_number=payment_instance.tickets_number
-                payment_instance.save()
-                print("status saved")
-
-                #get id of the user 
-                user_id=payment_instance.userId
-                print("user id is ",user_id)
-                #get user
-                user=MfalmeUsers.objects.get(id=user_id)
-                print(user)
-                #amount trasacted
-
-                
-                
-
-                
-                try:
-                    
-                    print("1")
-                    available_tickets=get_object_or_404(AvailableTickets, pk=1)
-                    print("2")
-                    available_tickets.amount= available_tickets.amount -tickets
-                    print("3")
-                    available_tickets.save()
-                    print("1")
-                    message=f"We have received your payment of {tickets} tickets.Download  your ticket here https://www.mfalmebetterdayscapital.com/download_ticket/{ticket_number}."
-                    print("1")
-                    sendsms(phone,message)
-                    print("4")
-                    message=f"{phone} has purchased {tickets} tickets."
-                    print("1")
-                    sendsms(254706286667,message)
-                    print("6")
-                    return JsonResponse({'message':'mpesa payment complete'})
-                    
-                except:
-                    return JsonResponse({'message':'mpesa payment complete'})
-                
-
-            except Payments.DoesNotExist:
-                return JsonResponse({"message": "No payment found for this phone number."})
-
-        elif email is not None:
-            # Process payments based on email
-            try:
-                payment_instance = EventsPayments.objects.filter(email=email).latest('id')
-                payment_instance.payment_status = 'completed'
-                payment_instance.payment_method = 'card'
-                amountusd=payment_instance.amountusd
-                tickets = int(float(amountusd/100))
-                ticket_number=payment_instance.tickets_number
-                payment_instance.no_of_seats=tickets
-                payment_instance.save()
-
-                
-                
-
-                
-                try:
-                    #send_mail(subject, message, from_email, recipient_list)
-                    
-                    available_tickets=get_object_or_404(AvailableTickets, pk=1)
-                    available_tickets.amount= available_tickets.amount -tickets
-                    available_tickets.save()
-                    message=f"We have received your payment of {tickets} tickets.View your ticket here https://www.mfalmebetterdayscapital.com/download_ticket/{ticket_number}."
-                    sendemailuser(email,message)
-                    message=f'{phone} has purchased ',tickets ,'tickets'
-                    sendemailuser('info@mfalmebetterdayscapital.com',message)
-                    return JsonResponse({'message':'mpesa payment complete'})
-                    
-                    
-                        
-                    
-                    
-                except:
-                    return JsonResponse({'message':'mpesa payment complete'})
-                
-
-            except Payments.DoesNotExist:
-                return JsonResponse({"message": "No payment found for this email."})
-
-        else:
-            return JsonResponse({"message": "No email or phone provided."})
-
-        
-    else:
-        return JsonResponse({"message": "Transaction state is not complete."})
-    
-def payment(request,amount):
-    user_id=request.session.get('user_id')
-    
-
-    if user_id is not None:
-
-        usdprice=amount
-        keprice=int(amount*135)
-            
-        request.session['usdprice'] = usdprice
-        request.session['keprice'] = keprice
-        return render(request,"payment.html",{"usdprice":usdprice})
-    else:
-        return redirect("/login")
-def payments(request,amount):
-    user_id=request.session.get('user_id')
-    
-
-    if user_id is not None:
-
-        usdprice=amount
-        keprice=int(amount*130)
-            
-        request.session['usdprice'] = usdprice
-        request.session['keprice'] = keprice
-        return render(request,"payments.html",{"usdprice":usdprice})
-    else:
-        return redirect("/login")
-
-    
-def reset_password(request):
-    email = request.POST.get('email',False)
-    print(email)
-    try:
-        
-        password=MfalmeUsers.objects.get(email=email).password
-        subject = 'Your password'
-        message = '''Your password is {}..'''.format(password) 
-        from_email = settings.EMAIL_HOST_USER   
-        recipient_list = [email]
-        print("sending email")
-        send_mail(subject, message, from_email, recipient_list)
-        print('email sent ')
-        message="your password has been sent to your email"
-        return render(request,"forgot_password.html",{"message":message})
-    except Exception as e:
-        logging.error(f"Failed to send email. Error message: {str(e)}")
-        message='use the correct email'
-        return render(request,"forgot_password.html",{"message":message})
-def forgot_password(request):
-    return render(request,'forgot_password.html')
-
-def journals(request):
-    user_id=request.session.get('user_id')
-    if user_id is not None:
-        user=MfalmeUsers.objects.get(id=user_id)
-        product_count=Cart.objects.filter(user=user,status='addedtocart').count()
-        #get all the videos
-        videos=Journals.objects.all()
-        #pass the videos to the journals template
-
-        return render (request,'journal.html',{'videos':videos,'product_count':product_count})
-    else:
-        
-        #get all the videos
-        videos=Journals.objects.all()
-        #pass the videos to the journals template
-
-        return render (request,'journal.html',{'videos':videos})
-
-def booking (request):
-    phone = request.POST.get('phone',False)
-    package = request.POST.get('package',False)
-    name = request.POST.get('name',False)
-    message = request.POST.get('message',False)
-    sender=settings.EMAIL_HOST_USER
-    recipients = ['info@mfalmebetterdayscapital.com']
-    subject="message from  "  + name
-    print(subject)
-    message=f'{name} chose  {package}.\n\nPhone: {phone}\nMessage: {message}'
-    
-    
-
-    try:
-        send_mail(subject, message, sender, recipients)
-
-        print('Your message has been sent successfully.')
-        return redirect('/index')  # Redirect to a success page or some other page
-    except Exception as e:
-        print('An error occurred: {e}')
-        return redirect('/index')
-    
-def events(request):
-    return render(request,'events.html')
-
-def tickets(request):
-    
-    tickets_available = get_object_or_404(AvailableTickets, pk=1)
-    tickets_available=tickets_available.amount
-    return render(request,'tickets.html',{"tickets_available":tickets_available})
-
-def event_mpesa_checkout(request):
-     #getting user id from session
-    user_id=request.session.get('user_id')
-    print(user_id)
-    if user_id is not None:
-        
-
-        #getting saf number from form
-        phone = request.POST.get('phone', False)
-        print(phone)
-        #email of the user
-        email = MfalmeUsers.objects.get(id=user_id).email
-        #cost of course
-        keprice = request.session.get('keprice')
-        print(keprice)
-        amountusd = request.session.get('usdprice')
-        print(amountusd)
-        
-        if phone.startswith('0'):
-                phone = '254' + phone[1:]
-                #print(phone)
-                
-        payment_instance=EventsPayments.objects.create(mpesa_number=phone,email=email,keprice=keprice,amountusd=amountusd,userId=user_id)
-        payment_instance.save()
-        
-
-        try:
-                # Initialize the APIService
-            print("before token")
-            token = os.getenv("token")
-            print(token)
-            publishable_key = os.getenv("publishable_key")
-            print(publishable_key)
-            print("after token")
-            service = APIService(token=token, publishable_key=publishable_key, test=False)
-            print("errornot here")
-
-                # Trigger M-Pesa STK Push
-            response = service.collect.mpesa_stk_push(phone_number=phone, email=email, amount=keprice,narrative="buyingticket",api_ref="eventsmfalmepayment")
-            print(response)
-            
-            
-            
-
-                # Return the response from the M-Pesa STK Push
-            return render(request,"buyingticketloader.html")
-
-        except Exception as e:
-                # Return an error if there's an exception
-            return render(request,"index.html",{"error": "try again later "})
-    else:
-        return redirect('/login')
-
-
-
-def event_CardPayments(request):
-    #getting user id from session
-    user_id=request.session.get('user_id')
-    if user_id is not None:
-       
-
-        #getting saf number from form
-        #phone = request.POST.get('phone', False)
-        #email of the user
-        email = MfalmeUsers.objects.get(id=user_id).email
-        #cost of course
-        amountusd = request.session.get('usdprice')
-        
-        
-                
-        payment_instance=EventsPayments.objects.create(email=email,amountusd=amountusd,userId=user_id)
-        payment_instance.save()
-        
-
-        
-        try:
-            token = os.getenv("token")
-            publishable_key = os.getenv("publishable_key")
-            
-            service = APIService(token=token, publishable_key=publishable_key, test=False)
-
-            response = service.collect.checkout(email=email, amount=amountusd, currency="USD", api_ref="eventsmfalmepayment", redirect_url="http://example.com/thank-you")
-            url=response.get("url")
-            print(url)
-            
-            return redirect(url)
-
-        except:
-            return redirect("/index")
-    else:
-        return redirect("/login")
-
-def redirection(request):
-    user_id=request.session.get('user_id')
-    if user_id is not None:
-        from datetime import datetime, timedelta
-        from django.utils import timezone
-        today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        today_end = today_start + timedelta(days=1)
-        purchases=Cart.objects.filter(user=user_id,status='bought',timestamp__gte=today_start,timestamp__lt=today_end)
-        product_ids = purchases.values_list('product', flat=True)
-
-        # Query all products using the extracted product IDs
-        products = Products.objects.filter(id__in=product_ids)
-
-
-
-        return render (request,"redirection.html",{"products":products})
-    return redirect("/login")
-
-def download_ticket(request,ticket_number):
-    
-    
-    ticket_instance=EventsPayments.objects.get(tickets_number=ticket_number)
-    
-    
-    price=ticket_instance.no_of_seats * 100
-    context={
-            "ticket_instance":ticket_instance,
-            
-            "price":price
-            
-
+        # Store form data in session to repopulate on error
+        request.session['form_data'] = {
+            'email': email,
+            'username': username,
+            'phone': phone
         }
-    return render(request,'download_ticket.html', context)
-       
+        
+        # Validation
+        errors = []
+        
+        if not username:
+            errors.append('Full name is required.')
+        
+        if not email:
+            errors.append('Email is required.')
+        elif '@' not in email:
+            errors.append('Please enter a valid email address.')
+        
+        if not password:
+            errors.append('Password is required.')
+        elif len(password) < 6:
+            errors.append('Password must be at least 6 characters.')
+        
+        if password != password1:
+            errors.append('Passwords do not match.')
+        
+        if not phone:
+            errors.append('Phone number is required.')
+        
+        # Check if user exists
+        if MfalmeUsers.objects.filter(email=email).exists():
+            errors.append('Email already registered.')
+        
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+            return redirect(f'{reverse("login_page")}?tab=signup')
+        
+        try:
+            # Create user
+            user = MfalmeUsers.objects.create(
+                email=email,
+                password=password,
+                phone=phone,
+                username=username,
+                is_active=False,
+                email_verified=False
+            )
+            
+            print(f"✅ USER CREATED: ID={user.id}")
+            
+            # Send admin notification
+            print(f"\n📧 SENDING ADMIN NOTIFICATION...")
+            admin_notified = notify_admin_new_registration(user)
+            if admin_notified:
+                print(f"✅ ADMIN NOTIFIED")
+            else:
+                print(f"⚠️ ADMIN NOTIFICATION FAILED")
+            
+            # Clear form data from session
+            if 'form_data' in request.session:
+                del request.session['form_data']
+            
+            # Generate verification code
+            verification_code = ''.join(random.choices(string.digits, k=6))
+            print(f"📧 VERIFICATION CODE: {verification_code}")
+            
+            # Store in session
+            request.session['pending_user_id'] = user.id
+            request.session['pending_user_email'] = user.email
+            request.session['verification_code'] = verification_code
+            
+            # Send verification email
+            print(f"\n📧 ATTEMPTING TO SEND VERIFICATION EMAIL...")
+            email_sent = send_verification_email(user, verification_code)
+            
+            if email_sent:
+                messages.success(request, 'Registration successful! Check your email for verification code.')
+                print(f"✅ VERIFICATION EMAIL SENT TO: {email}")
+            else:
+                messages.success(request, f'Registration successful! Your verification code: {verification_code}')
+                print(f"⚠️ EMAIL FAILED, SHOWING CODE: {verification_code}")
+            
+            return redirect('verify_account_page')
+            
+        except Exception as e:
+            print(f"❌ REGISTRATION ERROR: {str(e)}")
+            messages.error(request, f'Registration failed: {str(e)}')
+            return redirect(f'{reverse("login_page")}?tab=signup')
     
-
-def nav(request):
-    return render(request,"nav.html")
+    return redirect('login_page')
 
 
-def redirectionafterticket(request):
-    return render (request,"afterticketredirection.html")
+def logout_user(request):
+    """Handle user logout"""
+    if 'user_id' in request.session:
+        del request.session['user_id']
+        del request.session['user_email']
+        del request.session['username']
+    messages.success(request, 'Logged out successfully!')
+    return redirect('index')
 
-def cpanel(request):
-    return redirect ("https://mfalmebetterdayscapital.com/cpanel")
 
-def CPANEL(request):
-    return redirect ("https://mfalmebetterdayscapital.com/cpanel")
-
-def show_ticket(request):
-    price=200
-    return render(request,'show_ticket.html',{'price':price})
-
-from django.db.models import Q 
-
-def completed_payments_view(request):
-    # Filter payments where payment_status is 'completed' 
-    # and either keprice > 10000 or amountusd > 90
-    payments = EventsPayments.objects.filter(
-        payment_status='completed'
-    ).filter(
-        Q(keprice__gt=10000) | Q(amountusd__gt=90)
-    )
+# ===== VERIFICATION VIEWS =====
+def verify_account_page(request):
+    """Verification page"""
+    if 'pending_user_id' not in request.session:
+        messages.error(request, 'No pending verification. Please register first.')
+        return redirect(f'{reverse("login_page")}?tab=signup')
     
-    context = {
-        'payments': payments
+    user_email = request.session.get('pending_user_email', '')
+    verification_code = request.session.get('verification_code', '')
+    
+    print(f"\n🔑 VERIFICATION PAGE ACCESSED:")
+    print(f"Email: {user_email}")
+    print(f"Code (for testing): {verification_code}")
+    
+    return render(request, 'verify_account.html', {
+        'user_email': user_email,
+        'verification_code': verification_code  # For testing only
+    })
+
+
+def verify_account_process(request):
+    """Process verification code"""
+    if request.method == 'POST':
+        user_id = request.session.get('pending_user_id')
+        entered_code = request.POST.get('verification_code', '').strip()
+        
+        print(f"\n🔍 VERIFICATION ATTEMPT:")
+        print(f"User ID: {user_id}")
+        print(f"Entered Code: {entered_code}")
+        
+        if not user_id:
+            messages.error(request, 'Session expired. Please register again.')
+            return redirect(f'{reverse("login_page")}?tab=signup')
+        
+        if not entered_code or len(entered_code) != 6:
+            messages.error(request, 'Please enter a valid 6-digit code.')
+            return redirect('verify_account_page')
+        
+        try:
+            user = MfalmeUsers.objects.get(id=user_id)
+            stored_code = request.session.get('verification_code', '')
+            
+            if entered_code == stored_code:
+                # Activate user
+                user.is_active = True
+                user.email_verified = True
+                user.verified_at = datetime.now()
+                user.save()
+                
+                # Clear pending session
+                session_keys = ['pending_user_id', 'pending_user_email', 'verification_code']
+                for key in session_keys:
+                    if key in request.session:
+                        del request.session[key]
+                
+                # Log user in
+                request.session['user_id'] = user.id
+                request.session['user_email'] = user.email
+                request.session['username'] = user.username
+                
+                print(f"✅ VERIFICATION SUCCESS: {user.email}")
+                
+                # Send welcome email
+                send_welcome_email(user)
+                
+                messages.success(request, 'Account verified successfully! Welcome to MFALME BETTERDAYS CAPITAL.')
+                return redirect('dashboard')
+            else:
+                print(f"❌ INVALID CODE: {entered_code}")
+                messages.error(request, 'Invalid verification code.')
+                return redirect('verify_account_page')
+                
+        except MfalmeUsers.DoesNotExist:
+            messages.error(request, 'User not found.')
+            return redirect(f'{reverse("login_page")}?tab=signup')
+        except Exception as e:
+            print(f"❌ VERIFICATION ERROR: {str(e)}")
+            messages.error(request, 'Verification failed. Please try again.')
+            return redirect('verify_account_page')
+    
+    return redirect('verify_account_page')
+
+
+def resend_verification(request):
+    """Resend verification code"""
+    if request.method == 'POST':
+        user_id = request.session.get('pending_user_id')
+        
+        if not user_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Session expired.'
+            })
+        
+        try:
+            user = MfalmeUsers.objects.get(id=user_id)
+            
+            # Generate new code
+            verification_code = ''.join(random.choices(string.digits, k=6))
+            
+            # Update session
+            request.session['verification_code'] = verification_code
+            
+            # Send email
+            email_sent = send_verification_email(user, verification_code)
+            
+            if email_sent:
+                print(f"✅ CODE RESENT: {verification_code} to {user.email}")
+                return JsonResponse({
+                    'success': True,
+                    'message': 'New verification code sent to your email.'
+                })
+            else:
+                print(f"⚠️ EMAIL FAILED, CODE: {verification_code}")
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Email failed. Your new code: {verification_code}'
+                })
+                
+        except Exception as e:
+            print(f"❌ RESEND ERROR: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'message': 'Failed to resend verification code.'
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request.'
+    })
+
+
+# ===== DASHBOARD =====
+def dashboard(request):
+    """User dashboard"""
+    user_id = request.session.get('user_id')
+    if not user_id:
+        messages.error(request, 'Please login to access dashboard.')
+        return redirect('login_page')
+    
+    try:
+        user = MfalmeUsers.objects.get(id=user_id)
+        
+        context = {
+            'user': user,
+            'username': user.username,
+            'email': user.email,
+            'phone': user.phone,
+            'date_joined': user.date_joined,
+            'last_login': user.last_login,
+        }
+        
+        return render(request, 'dashboard.html', context)
+        
+    except MfalmeUsers.DoesNotExist:
+        messages.error(request, 'User not found.')
+        return redirect('login_page')
+
+
+# ===== OTHER PAGES =====
+def services(request):
+    return render(request, 'services.html')
+
+def contact_page(request):
+    return render(request, 'contact.html')
+
+def about(request):
+    return render(request, 'about.html')
+
+def partnership(request):
+    return render(request, 'partnership.html')
+
+
+# ===== TEST FUNCTIONS =====
+def test_all_emails(request):
+    """Test all email templates are working"""
+    try:
+        # Create a test user
+        test_user = MfalmeUsers.objects.create(
+            email='test@example.com',
+            password='test123',
+            phone='+254700000000',
+            username='Test User',
+            is_active=False,
+            email_verified=False
+        )
+        
+        verification_code = '123456'
+        
+        print(f"\n🧪 TESTING ALL EMAIL FUNCTIONS...")
+        
+        # Test 1: Verification Email
+        print(f"1. Testing verification email...")
+        verification_result = send_verification_email(test_user, verification_code)
+        
+        # Test 2: Admin Notification
+        print(f"2. Testing admin notification...")
+        admin_result = notify_admin_new_registration(test_user)
+        
+        # Test 3: Welcome Email
+        print(f"3. Testing welcome email...")
+        welcome_result = send_welcome_email(test_user)
+        
+        # Clean up test user
+        test_user.delete()
+        
+        results = f"""
+        Email Functions Test Results:
+        -----------------------------
+        1. Verification Email: {'✅ SUCCESS' if verification_result else '❌ FAILED'}
+        2. Admin Notification: {'✅ SUCCESS' if admin_result else '❌ FAILED'}
+        3. Welcome Email: {'✅ SUCCESS' if welcome_result else '❌ FAILED'}
+        
+        Check console for detailed logs.
+        """
+        
+        return HttpResponse(results)
+        
+    except Exception as e:
+        return HttpResponse(f"Test failed: {str(e)}")
+
+
+# ===== CONTEXT PROCESSOR =====
+def user_authenticated(request):
+    return {
+        'user_authenticated': 'user_id' in request.session,
+        'user_email': request.session.get('user_email', ''),
+        'username': request.session.get('username', '')
     }
-    
-    return render(request, 'completed_payments.html', context)

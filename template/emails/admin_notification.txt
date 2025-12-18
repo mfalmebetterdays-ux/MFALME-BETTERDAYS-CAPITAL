@@ -1,0 +1,14 @@
+🆕 NEW USER REGISTRATION - MFALME BETTERDAYS CAPITAL
+
+A new user has registered on the platform.
+
+User Details:
+-------------
+Full Name: {{ username }}
+Email: {{ email }}
+Phone: {{ phone }}
+Registration Date: {{ registration_date }}
+Status: {% if is_verified %}Verified{% else %}Pending Verification{% endif %}
+User ID: {{ user_id }}
+
+This is an automated notification.
