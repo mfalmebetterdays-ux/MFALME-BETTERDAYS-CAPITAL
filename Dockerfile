@@ -1,44 +1,36 @@
 FROM python:3.10-alpine
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV DEBUG 0
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV DEBUG=0
 
 # Set work directory
 WORKDIR /app
 
-# Install dependencies
+# Install system dependencies (if needed for your packages)
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    python3-dev \
+    libffi-dev \
+    openssl-dev
+
+# Copy requirements first to leverage Docker cache
 COPY ./requirements.txt .
 
+# Upgrade pip and install all dependencies in one layer
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install -r requirements.txt
 
-
-RUN pip install --upgrade pip
-
-RUN pip install --upgrade setuptools
-
-RUN pip install gunicorn
-RUN pip install Pillow
-RUN pip install python-dotenv
-
-
-
-
-
-
-
-RUN pip install intasend-python
+# Install additional packages that might not be in requirements.txt
+RUN pip install gunicorn python-dotenv
 
 # Copy project
 COPY . .
-RUN pip install -r requirements.txt
 
-# Make migrations
-#
-
-
-
+# Run migrations and start server
 EXPOSE 8080
-#CMD python manage.py migrate notifications 
-
-CMD  python manage.py makemigrations &&  python manage.py migrate && gunicorn dict.wsgi:application --bind 0.0.0.0:$PORT
+CMD python manage.py makemigrations && \
+    python manage.py migrate && \
+    gunicorn dict.wsgi:application --bind 0.0.0.0:$PORT
