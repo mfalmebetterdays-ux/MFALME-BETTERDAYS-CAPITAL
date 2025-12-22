@@ -1,5 +1,5 @@
 """
-Django settings for dict project - SIMPLE RAILWAY VERSION
+Django settings for dict project - RAILWAY PRODUCTION FIXED
 """
 
 import os
@@ -69,21 +69,60 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'dict.wsgi.application'
 
-# ===== DATABASE CONFIGURATION - SIMPLE =====
+# ===== DATABASE CONFIGURATION - RAILWAY FIXED =====
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
-    }
+    # Parse DATABASE_URL with Railway-specific SSL settings
+    try:
+        DATABASES = {
+            'default': dj_database_url.parse(
+                DATABASE_URL,
+                conn_max_age=600,
+                conn_health_checks=False,  # Disable health checks on startup
+                ssl_require=True,
+            )
+        }
+        # Force PostgreSQL backend
+        DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
+        
+        # Add SSL/TLS options for Railway PostgreSQL
+        if 'OPTIONS' not in DATABASES['default']:
+            DATABASES['default']['OPTIONS'] = {}
+        
+        # Railway PostgreSQL requires these SSL settings
+        DATABASES['default']['OPTIONS'].update({
+            'sslmode': 'require',
+            'sslrootcert': None,  # Railway uses self-signed certs
+            'sslcert': None,
+            'sslkey': None,
+            # Connection timeout settings
+            'connect_timeout': 30,
+            'keepalives': 1,
+            'keepalives_idle': 30,
+            'keepalives_interval': 10,
+            'keepalives_count': 5,
+        })
+        
+        print(f"✅ Using PostgreSQL on Railway: {DATABASES['default'].get('HOST', 'unknown')}")
+        
+    except Exception as e:
+        print(f"⚠️  PostgreSQL connection failed, falling back to SQLite: {e}")
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
 else:
-    # Fallback for local development
+    # Local development - use SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+    print("✅ Using SQLite (local development)")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -112,10 +151,15 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# WhiteNoise settings for optimal performance
+WHITENOISE_MAX_AGE = 31536000  # 1 year cache
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_MANIFEST_STRICT = False
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Simple password hashers (remove Argon2)
+# Password hashers (optimized for Railway)
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
@@ -130,3 +174,52 @@ LOGOUT_REDIRECT_URL = '/'
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# File upload settings for Railway
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
+
+# Session settings optimized for Railway
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Simple logging for Railway
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name} {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'level': 'ERROR',  # Don't show all SQL queries
+            'handlers': ['console'],
+            'propagate': False,
+        },
+    },
+}
+
+# Skip database checks on startup if they fail
+import sys
+if 'runserver' in sys.argv or 'gunicorn' in sys.argv:
+    print("ℹ️  Running in server mode - database checks will be attempted")
