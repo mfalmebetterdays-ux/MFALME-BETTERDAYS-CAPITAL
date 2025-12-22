@@ -68,62 +68,30 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'dict.wsgi.application'
-
-# ===== DATABASE CONFIGURATION - RAILWAY FIXED =====
+# ===== DATABASE CONFIGURATION =====
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
-    # Parse DATABASE_URL with Railway-specific SSL settings
-    try:
-        DATABASES = {
-            'default': dj_database_url.parse(
-                DATABASE_URL,
-                conn_max_age=600,
-                conn_health_checks=False,  # Disable health checks on startup
-                ssl_require=True,
-            )
-        }
-        # Force PostgreSQL backend
-        DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
-        
-        # Add SSL/TLS options for Railway PostgreSQL
-        if 'OPTIONS' not in DATABASES['default']:
-            DATABASES['default']['OPTIONS'] = {}
-        
-        # Railway PostgreSQL requires these SSL settings
-        DATABASES['default']['OPTIONS'].update({
-            'sslmode': 'require',
-            'sslrootcert': None,  # Railway uses self-signed certs
-            'sslcert': None,
-            'sslkey': None,
-            # Connection timeout settings
-            'connect_timeout': 30,
-            'keepalives': 1,
-            'keepalives_idle': 30,
-            'keepalives_interval': 10,
-            'keepalives_count': 5,
-        })
-        
-        print(f"✅ Using PostgreSQL on Railway: {DATABASES['default'].get('HOST', 'unknown')}")
-        
-    except Exception as e:
-        print(f"⚠️  PostgreSQL connection failed, falling back to SQLite: {e}")
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-        }
+    # Railway provides DATABASE_URL automatically
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+    print(f"✅ Database configured via DATABASE_URL")
 else:
-    # Local development - use SQLite
+    # Local development
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-    print("✅ Using SQLite (local development)")
+    print("⚠️  Using SQLite (local development or DATABASE_URL missing)")
 
+    
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
