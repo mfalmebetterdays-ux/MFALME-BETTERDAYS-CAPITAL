@@ -11,13 +11,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ===== SECURITY SETTINGS =====
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-key-change-in-prod')
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'  
 
 ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
     'https://*.railway.app',
     'https://*.up.railway.app',
+    'http://127.0.0.1:9000',
+    'http://localhost:9000'
 ]
 
 if not DEBUG:
