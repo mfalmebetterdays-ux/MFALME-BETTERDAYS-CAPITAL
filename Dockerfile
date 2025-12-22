@@ -25,4 +25,4 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 8080
 
 # ✅ CORRECT: Only start gunicorn, NO migrations here!
-CMD gunicorn dict.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120
+CMD gunicorn dict.wsgi:application --bind 0.0.0.0:$PORT --preload --workers 1 --timeout 120 --access-logfile - --error-logfile -
