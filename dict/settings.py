@@ -121,6 +121,11 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),  # Your source static folder
+]
+
 # WhiteNoise settings for optimal performance
 WHITENOISE_MAX_AGE = 31536000  # 1 year cache
 WHITENOISE_USE_FINDERS = True
