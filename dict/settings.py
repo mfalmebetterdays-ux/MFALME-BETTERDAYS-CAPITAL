@@ -117,7 +117,7 @@ USE_TZ = True
 # ===== STATIC FILES =====
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # WhiteNoise settings for optimal performance
 WHITENOISE_MAX_AGE = 31536000  # 1 year cache
