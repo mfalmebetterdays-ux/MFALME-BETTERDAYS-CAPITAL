@@ -199,3 +199,8 @@ if 'runserver' in sys.argv or 'gunicorn' in sys.argv:
     print(f"🌐 ALLOWED_HOSTS: {ALLOWED_HOSTS}")
     print(f"📦 DATABASE configured: {'yes' if DATABASE_URL else 'no'}")
 
+
+if 'runserver' not in sys.argv and 'migrate' not in sys.argv:
+    # Skip startup database checks for gunicorn
+    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True    
+
