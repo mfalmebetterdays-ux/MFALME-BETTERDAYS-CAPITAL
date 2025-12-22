@@ -91,7 +91,7 @@ else:
     }
     print("⚠️  Using SQLite (local development or DATABASE_URL missing)")
 
-    
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -191,3 +191,11 @@ LOGGING = {
 import sys
 if 'runserver' in sys.argv or 'gunicorn' in sys.argv:
     print("ℹ️  Running in server mode - database checks will be attempted")
+
+
+if 'runserver' in sys.argv or 'gunicorn' in sys.argv:
+    print("🚀 Django application starting...")
+    print(f"🔧 DEBUG mode: {DEBUG}")
+    print(f"🌐 ALLOWED_HOSTS: {ALLOWED_HOSTS}")
+    print(f"📦 DATABASE configured: {'yes' if DATABASE_URL else 'no'}")
+
