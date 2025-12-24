@@ -19,7 +19,9 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.railway.app',
     'https://*.up.railway.app',
     'http://127.0.0.1:9000',
-    'http://localhost:9000'
+    'http://localhost:9000',
+    'https://www.mfalmebetterdayscapital.com',  
+    'https://mfalmebetterdayscapital.com',
 ]
 
 if not DEBUG:
