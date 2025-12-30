@@ -1068,7 +1068,7 @@ def send_package_activation_email(user, transaction):
         email = EmailMultiAlternatives(
             subject=subject,
             body=text_content,
-            from_email=f"MFALME BETTERDAYS CAPITAL <{settings.DEFAULT_FROM_EMAIL}>",
+            from_email="MFALME BETTERDAYS CAPITAL <" + str(settings.DEFAULT_FROM_EMAIL) + ">",
             to=[user.email]
         )
         email.attach_alternative(html_content, "text/html")
