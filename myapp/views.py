@@ -1055,11 +1055,7 @@ def send_package_activation_email(user, transaction):
         Activation Date: {context['activation_date']}
         
         🚀 NEXT STEPS
-         f"""
-        ...
         {os.linesep.join([f'• {step}' for step in context['next_steps']])}
-        ...
-        """
         
         📞 SUPPORT
         Phone: {context['support_contact']}
@@ -1136,7 +1132,7 @@ def send_education_enrollment_email(user, transaction):
         Enrollment Date: {context['enrollment_date']}
         
         🚀 NEXT STEPS
-        {'\n'.join([f'• {step}' for step in context['next_steps']])}
+        {os.linesep.join([f'• {step}' for step in context['next_steps']])}
         
         📞 SUPPORT
         Phone: {context['support_contact']}
@@ -1214,7 +1210,7 @@ def send_partnership_approval_request(user, transaction):
         Application Date: {context['application_date']}
         
         ⏳ REVIEW PROCESS
-        {'\n'.join([f'• {step}' for step in context['next_steps']])}
+        {os.linesep.join([f'• {step}' for step in context['next_steps']])}
         
         📞 PARTNERSHIP TEAM
         Phone: {context['support_contact']}
@@ -1293,7 +1289,7 @@ def send_custom_payment_confirmation(user, transaction):
         Payment Date: {context['payment_date']}
         
         🔄 NEXT STEPS
-        {'\n'.join([f'• {step}' for step in context['next_steps']])}
+        {os.linesep.join([f'• {step}' for step in context['next_steps']])}
         
         📞 CUSTOMER SUPPORT
         Phone: {context['support_contact']}
@@ -1675,7 +1671,7 @@ def send_welcome_email(user, request):
         4. Contact Mentor: {context['mentor_name']} ({context['mentor_contact']})
         
         📋 YOUR NEXT STEPS
-        {'\n'.join([f'• {step}' for step in context['next_steps']])}
+        {os.linesep.join([f'• {step}' for step in context['next_steps']])}
         
         💎 ELITE FEATURES NOW AVAILABLE
         • Live Trading Signals
