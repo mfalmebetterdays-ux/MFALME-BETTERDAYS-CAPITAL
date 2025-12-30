@@ -186,7 +186,6 @@ def paystack_webhook(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 # ===== PAYMENT VIEWS =====
-
 def initiate_package_payment(request, package_type, amount):
     """
     Initiate payment for trading packages
@@ -320,13 +319,36 @@ def initiate_package_payment(request, package_type, amount):
                 return redirect(result['data']['authorization_url'])
             else:
                 error_msg = result.get('message', 'Failed to initialize payment')
+                # STAY ON SAME PAGE, DON'T REDIRECT TO SERVICES
                 messages.error(request, f'Paystack Error: {error_msg}')
+                transaction.status = 'failed'
+                transaction.error_message = error_msg
+                transaction.save()
+                
+                # Return to payment page with error
+                return render(request, 'payments/error.html', {
+                    'user': user,
+                    'package_info': package_info,
+                    'error': error_msg,
+                    'usd_amount': usd_amount,
+                    'kes_amount': kes_amount,
+                })
         else:
-            messages.error(request, f'Payment service error: {response.status_code}')
-        
-        transaction.status = 'failed'
-        transaction.save()
-        return redirect('services')
+            # STAY ON SAME PAGE, DON'T REDIRECT TO SERVICES
+            error_msg = f'Payment service error: {response.status_code}'
+            messages.error(request, error_msg)
+            transaction.status = 'failed'
+            transaction.error_message = error_msg
+            transaction.save()
+            
+            # Return to payment page with error
+            return render(request, 'payments/error.html', {
+                'user': user,
+                'package_info': package_info,
+                'error': error_msg,
+                'usd_amount': usd_amount,
+                'kes_amount': kes_amount,
+            })
             
     except MfalmeUsers.DoesNotExist:
         messages.error(request, 'User account not found.')
@@ -334,7 +356,12 @@ def initiate_package_payment(request, package_type, amount):
     except Exception as e:
         print(f"❌ Payment initialization error: {str(e)}")
         messages.error(request, f'Payment initialization failed: {str(e)}')
-        return redirect('services')
+        
+        # Create error page response
+        return render(request, 'payments/error.html', {
+            'error': str(e),
+            'package_type': package_type if 'package_type' in locals() else 'unknown',
+        })
 
 def initiate_education_payment(request, program_type, duration):
     """

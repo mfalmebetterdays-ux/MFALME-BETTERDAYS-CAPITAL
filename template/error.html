@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Failed - MFALME BETTERDAYS CAPITAL</title>
+    <style>
+        :root {
+            /* Mfalme Color Scheme */
+            --gold-primary: #D4AF37;
+            --gold-secondary: #FFD700;
+            --gold-light: #FFF8E1;
+            --gold-gradient: linear-gradient(135deg, #D4AF37 0%, #FFD700 100%);
+            
+            --dark-bg: #0A1520;
+            --dark-card: #1A2432;
+            --dark-border: #2A3442;
+            
+            --error-red: #DC3545;
+            --error-red-light: rgba(220, 53, 69, 0.1);
+            --success-green: #28A745;
+            
+            --text-primary: #FFFFFF;
+            --text-secondary: #B0B7C3;
+            --text-muted: #6C757D;
+            
+            --shadow-light: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.2);
+            --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.25);
+            
+            --border-radius: 12px;
+            --border-radius-sm: 8px;
+            
+            --font-primary: 'Segoe UI', 'Inter', -apple-system, sans-serif;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--font-primary);
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .error-container {
+            max-width: 500px;
+            width: 100%;
+            background: var(--dark-card);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            box-shadow: var(--shadow-medium);
+            border: 1px solid var(--dark-border);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .error-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gold-gradient);
+        }
+        
+        .error-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--error-red) 0%, #C82333 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            box-shadow: var(--shadow-gold);
+            font-size: 40px;
+            color: white;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .company-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gold-primary);
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        
+        .error-title {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+        
+        .error-subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        
+        .error-details {
+            background: var(--error-red-light);
+            border-radius: var(--border-radius-sm);
+            padding: 20px;
+            margin: 25px 0;
+            border-left: 4px solid var(--error-red);
+            text-align: left;
+        }
+        
+        .error-details h4 {
+            color: var(--error-red);
+            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .error-message {
+            color: var(--text-primary);
+            font-size: 15px;
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            word-break: break-word;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 35px;
+        }
+        
+        .btn {
+            padding: 16px 24px;
+            border-radius: var(--border-radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: var(--gold-gradient);
+            color: var(--dark-bg);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-gold);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--dark-border);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--gold-primary);
+        }
+        
+        .btn-icon {
+            font-size: 18px;
+        }
+        
+        /* Troubleshooting Tips */
+        .troubleshooting {
+            background: rgba(212, 175, 55, 0.05);
+            border-radius: var(--border-radius-sm);
+            padding: 20px;
+            margin-top: 30px;
+            border: 1px solid rgba(212, 175, 55, 0.1);
+            text-align: left;
+        }
+        
+        .troubleshooting h4 {
+            color: var(--gold-primary);
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .troubleshooting ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .troubleshooting li {
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .troubleshooting li:before {
+            content: '•';
+            color: var(--gold-primary);
+            position: absolute;
+            left: 0;
+            font-size: 20px;
+        }
+        
+        /* Support Info */
+        .support-info {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--dark-border);
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        
+        .support-contact {
+            color: var(--gold-primary);
+            font-weight: 600;
+            margin-top: 5px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 576px) {
+            .error-container {
+                padding: 30px 20px;
+            }
+            
+            .error-title {
+                font-size: 24px;
+            }
+            
+            .error-icon {
+                width: 70px;
+                height: 70px;
+                font-size: 35px;
+            }
+            
+            .btn {
+                padding: 14px 20px;
+                font-size: 15px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        
+        <div class="company-logo">
+            MFALME BETTERDAYS CAPITAL
+        </div>
+        
+        <h1 class="error-title">Payment Processing Failed</h1>
+        
+        <p class="error-subtitle">
+            We encountered an issue while processing your payment. Please review the details below and try again.
+        </p>
+        
+        <div class="error-details">
+            <h4>
+                <i class="fas fa-exclamation-circle"></i>
+                Error Details
+            </h4>
+            <div class="error-message">
+                {{ error }}
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="{% url '/' %}" class="btn btn-primary">
+                <i class="fas fa-redo btn-icon"></i>
+                Try Payment Again
+            </a>
+            
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                <i class="fas fa-tachometer-alt btn-icon"></i>
+                Go to Dashboard
+            </a>
+        </div>
+        
+        <div class="troubleshooting">
+            <h4>
+                <i class="fas fa-lightbulb"></i>
+                Troubleshooting Tips
+            </h4>
+            <ul>
+                <li>Check that your payment details are correct</li>
+                <li>Ensure you have sufficient funds in your account</li>
+                <li>Verify your card hasn't expired</li>
+                <li>Try using a different payment method</li>
+                <li>Contact your bank if issues persist</li>
+            </ul>
+        </div>
+        
+        <div class="support-info">
+            <p>Need assistance? Our support team is here to help.</p>
+            <p class="support-contact">
+                <i class="fas fa-envelope"></i>
+                support@mfalme.com
+                &nbsp;&nbsp;
+                <i class="fas fa-phone"></i>
+                +1 (800) 123-4567
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Add some interactive elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate the error icon on load
+            const errorIcon = document.querySelector('.error-icon');
+            errorIcon.style.transform = 'scale(0)';
+            
+            setTimeout(() => {
+                errorIcon.style.transition = 'transform 0.5s ease';
+                errorIcon.style.transform = 'scale(1)';
+            }, 100);
+            
+            // Add click animation to buttons
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    // Create ripple effect
+                    const ripple = document.createElement('span');
+                    const rect = this.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size/2;
+                    const y = e.clientY - rect.top - size/2;
+                    
+                    ripple.style.cssText = `
+                        position: absolute;
+                        border-radius: 50%;
+                        background: rgba(255, 255, 255, 0.7);
+                        transform: scale(0);
+                        animation: ripple-animation 0.6s linear;
+                        width: ${size}px;
+                        height: ${size}px;
+                        top: ${y}px;
+                        left: ${x}px;
+                        pointer-events: none;
+                    `;
+                    
+                    this.style.position = 'relative';
+                    this.style.overflow = 'hidden';
+                    this.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                        ripple.remove();
+                    }, 600);
+                });
+            });
+        });
+        
+        // Add CSS for ripple animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes ripple-animation {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
