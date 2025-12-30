@@ -1011,7 +1011,7 @@ def send_package_activation_email(user, transaction):
         
         text_content = f"""
         🎉 PACKAGE ACTIVATION CONFIRMATION
-        {'='*60}
+        {'=' * 60}
         
         Congratulations {user.username}!
         
@@ -1053,9 +1053,7 @@ def send_package_activation_email(user, transaction):
         print(f"❌ Package activation email error: {str(e)}")
         return False
 
-# [The rest of your views.py remains exactly the same from your original file...
-# All the helper functions, authentication views, etc. stay unchanged]
-# I'll continue with the exact same code you already have...
+
 
 def get_client_ip(request):
     """Get client IP address with proxy support"""
