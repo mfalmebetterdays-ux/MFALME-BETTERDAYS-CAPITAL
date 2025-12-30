@@ -1,0 +1,340 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Payment Failed | MFALME BETTERDAYS CAPITAL</title>
+    
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --gold-primary: #FFD700;
+            --gold-bright: #FFEC8B;
+            --gold-gradient: linear-gradient(135deg, #FFD700 0%, #FFC125 30%, #DAA520 100%);
+            --navy-dark: #0A1520;
+            --navy-medium: #0E1A29;
+            --navy-light: #142338;
+            --white: #FFFFFF;
+            --white-smoke: #F5F5F5;
+            --error-red: #EF4444;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--navy-dark);
+            color: var(--white);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .payment-container {
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .payment-card {
+            background: var(--navy-medium);
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            border: 2px solid rgba(239, 68, 68, 0.2);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .payment-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #EF4444, #DC2626);
+        }
+        
+        .error-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 30px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid var(--error-red);
+        }
+        
+        .error-icon i {
+            font-size: 3.5rem;
+            color: var(--error-red);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 15px;
+            color: var(--error-red);
+        }
+        
+        .subtitle {
+            color: var(--gold-bright);
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        
+        .error-details {
+            background: rgba(239, 68, 68, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(239, 68, 68, 0.1);
+            text-align: left;
+        }
+        
+        .error-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(239, 68, 68, 0.1);
+        }
+        
+        .error-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .error-item i {
+            color: var(--error-red);
+            font-size: 1.2rem;
+            min-width: 20px;
+        }
+        
+        .error-text {
+            color: var(--white-smoke);
+            line-height: 1.6;
+        }
+        
+        .solutions {
+            background: rgba(255, 215, 0, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .solutions h3 {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .solution-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .solution-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 15px;
+            color: var(--white-smoke);
+        }
+        
+        .solution-list li:last-child {
+            margin-bottom: 0;
+        }
+        
+        .solution-list i {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+            margin-top: 2px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .btn-retry, .btn-contact, .btn-home {
+            padding: 15px 35px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-retry {
+            background: var(--gold-gradient);
+            color: var(--navy-dark);
+            border: none;
+        }
+        
+        .btn-retry:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 215, 0, 0.3);
+            color: var(--navy-dark);
+        }
+        
+        .btn-contact {
+            background: transparent;
+            color: var(--error-red);
+            border: 2px solid var(--error-red);
+        }
+        
+        .btn-contact:hover {
+            background: rgba(239, 68, 68, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        .btn-home {
+            background: transparent;
+            color: var(--gold-primary);
+            border: 2px solid var(--gold-primary);
+        }
+        
+        .btn-home:hover {
+            background: rgba(255, 215, 0, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        .transaction-info {
+            margin-top: 30px;
+            color: var(--gold-bright);
+            font-size: 0.9rem;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        
+        .transaction-code {
+            font-family: monospace;
+            color: var(--white);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+        
+        @media (max-width: 768px) {
+            .payment-card {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn-retry, .btn-contact, .btn-home {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <div class="payment-card">
+            <div class="error-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            
+            <h1>Payment Failed</h1>
+            <p class="subtitle">We encountered an issue processing your payment. Please try again or contact support.</p>
+            
+            <div class="error-details">
+                <div class="error-item">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span class="error-text">
+                        Your transaction could not be completed. This may be due to insufficient funds, incorrect card details, or bank restrictions.
+                    </span>
+                </div>
+                <div class="error-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span class="error-text">
+                        No charges were made to your account. All transaction details have been securely logged for reference.
+                    </span>
+                </div>
+            </div>
+            
+            <div class="solutions">
+                <h3>Recommended Solutions</h3>
+                <ul class="solution-list">
+                    <li>
+                        <i class="fas fa-credit-card"></i>
+                        <span>Check your card details and ensure sufficient funds are available</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Try the payment again in a few minutes</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-university"></i>
+                        <span>Contact your bank to ensure international transactions are enabled</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-headset"></i>
+                        <span>Reach out to our support team for immediate assistance</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="javascript:history.back()" class="btn-retry">
+                    <i class="fas fa-redo"></i> Try Again
+                </a>
+                <a href="https://wa.me/254706286667" target="_blank" class="btn-contact">
+                    <i class="fas fa-headset"></i> Contact Support
+                </a>
+                <a href="{% url 'index' %}" class="btn-home">
+                    <i class="fas fa-home"></i> Back to Home
+                </a>
+            </div>
+            
+            <div class="transaction-info">
+                <i class="fas fa-info-circle"></i>
+                <span>Reference Code for Support:</span>
+                <div class="transaction-code">{{ reference|default:"NOT-APPLICABLE" }}</div>
+                <p style="margin-top: 10px; font-size: 0.85rem;">
+                    Please provide this code when contacting support for faster resolution.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

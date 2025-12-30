@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEW PARTNERSHIP REQUEST - MFALME BETTERDAYS CAPITAL</title>
+    <style>
+        :root {
+            --gold-primary: #FFD700;
+            --gold-bright: #FFEC8B;
+            --gold-gradient: linear-gradient(135deg, #FFD700 0%, #FFC125 30%, #DAA520 100%);
+            --navy-dark: #0A1520;
+            --navy-medium: #0E1A29;
+            --white: #FFFFFF;
+            --white-smoke: #F5F5F5;
+            --urgent-red: #EF4444;
+            --priority-orange: #F59E0B;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--navy-dark);
+            color: var(--white);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--navy-medium);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 215, 0, 0.2);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(245, 158, 11, 0.1));
+            padding: 40px;
+            text-align: center;
+            border-bottom: 3px solid var(--urgent-red);
+            position: relative;
+        }
+        
+        .urgent-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--urgent-red);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        h1 {
+            color: var(--white);
+            font-size: 2.2rem;
+            margin: 0 0 10px;
+            font-weight: 900;
+        }
+        
+        .subtitle {
+            color: var(--gold-bright);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+        
+        .priority-section {
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px solid var(--priority-orange);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .priority-title {
+            color: var(--priority-orange);
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        
+        .priority-note {
+            color: var(--white);
+            font-weight: 600;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .applicant-card {
+            background: rgba(255, 215, 0, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .applicant-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .applicant-name {
+            font-size: 1.8rem;
+            color: var(--gold-primary);
+            font-weight: 800;
+        }
+        
+        .applicant-tier {
+            background: var(--gold-gradient);
+            color: var(--navy-dark);
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+        
+        .applicant-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        @media (max-width: 480px) {
+            .applicant-details {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .detail-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .detail-label {
+            color: var(--gold-bright);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+            display: block;
+        }
+        
+        .detail-value {
+            color: var(--white);
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        .detail-value a {
+            color: var(--gold-primary);
+            text-decoration: none;
+        }
+        
+        .detail-value a:hover {
+            text-decoration: underline;
+        }
+        
+        .payment-details {
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .payment-title {
+            color: #10B981;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            font-weight: 800;
+            text-align: center;
+        }
+        
+        .payment-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .payment-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .payment-label {
+            color: var(--gold-bright);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .payment-value {
+            color: var(--white);
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        .action-required {
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        
+        .action-title {
+            color: var(--urgent-red);
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            font-weight: 800;
+            text-align: center;
+        }
+        
+        .action-steps {
+            list-style: none;
+            padding: 0;
+            counter-reset: step-counter;
+        }
+        
+        .action-steps li {
+            counter-increment: step-counter;
+            margin-bottom: 20px;
+            padding-left: 60px;
+            position: relative;
+            color: var(--white-smoke);
+        }
+        
+        .action-steps li:before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: var(--gold-gradient);
+            color: var(--navy-dark);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2rem;
+        }
+        
+        .action-steps strong {
+            color: var(--gold-primary);
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+        
+        .admin-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+        
+        .admin-btn {
+            background: var(--gold-gradient);
+            color: var(--navy-dark);
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(255, 215, 0, 0.3);
+        }
+        
+        .timeline {
+            margin: 40px 0;
+        }
+        
+        .timeline-title {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-align: center;
+        }
+        
+        .timeline-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        .timeline-steps:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(255, 215, 0, 0.3);
+            z-index: 1;
+        }
+        
+        .timeline-step {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            flex: 1;
+        }
+        
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid var(--gold-primary);
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold-primary);
+            font-weight: 800;
+        }
+        
+        .step-label {
+            color: var(--white-smoke);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .step-circle.current {
+            background: var(--gold-primary);
+            color: var(--navy-dark);
+            animation: pulse 2s infinite;
+        }
+        
+        .notes-section {
+            background: rgba(255, 215, 0, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .notes-title {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        .notes-content {
+            color: var(--white-smoke);
+            line-height: 1.8;
+        }
+        
+        .footer {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .footer p {
+            color: var(--white-smoke);
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        
+        .disclaimer {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+        
+        .timestamp {
+            color: var(--gold-bright);
+            font-size: 0.9rem;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="urgent-badge">⚠️ ACTION REQUIRED</div>
+            <h1>🤝 NEW PARTNERSHIP REQUEST</h1>
+            <p class="subtitle">High-Value Partnership Application Received</p>
+        </div>
+        
+        <div class="priority-section">
+            <div class="priority-title">HIGH PRIORITY - RESPONSE REQUIRED WITHIN 24 HOURS</div>
+            <p class="priority-note">This is a premium partnership application requiring immediate attention and personalized follow-up.</p>
+        </div>
+        
+        <div class="timestamp">
+            📅 Request Received: {{ application_date }}
+        </div>
+        
+        <div class="content">
+            <div class="applicant-card">
+                <div class="applicant-header">
+                    <div class="applicant-name">{{ applicant_name }}</div>
+                    <div class="applicant-tier">{{ partnership_tier }} PARTNER</div>
+                </div>
+                
+                <div class="applicant-details">
+                    <div class="detail-card">
+                        <span class="detail-label">Contact Email</span>
+                        <span class="detail-value">
+                            <a href="mailto:{{ applicant_email }}">{{ applicant_email }}</a>
+                        </span>
+                    </div>
+                    <div class="detail-card">
+                        <span class="detail-label">Phone Number</span>
+                        <span class="detail-value">
+                            <a href="tel:{{ applicant_phone }}">{{ applicant_phone }}</a>
+                        </span>
+                    </div>
+                    <div class="detail-card">
+                        <span class="detail-label">Soldier ID</span>
+                        <span class="detail-value">{{ soldier_id }}</span>
+                    </div>
+                    <div class="detail-card">
+                        <span class="detail-label">MFALME Status</span>
+                        <span class="detail-value" style="color: #10B981;">
+                            ✅ VERIFIED MEMBER
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="payment-details">
+                <h2 class="payment-title">💰 PARTNERSHIP INVESTMENT</h2>
+                <div class="payment-info">
+                    <div class="payment-item">
+                        <div class="payment-label">Investment Amount</div>
+                        <div class="payment-value">${{ amount }}</div>
+                    </div>
+                    <div class="payment-item">
+                        <div class="payment-label">Transaction ID</div>
+                        <div class="payment-value">{{ transaction_id }}</div>
+                    </div>
+                    <div class="payment-item">
+                        <div class="payment-label">Payment Status</div>
+                        <div class="payment-value" style="color: #10B981;">✅ COMPLETED</div>
+                    </div>
+                    <div class="payment-item">
+                        <div class="payment-label">Tier Benefits</div>
+                        <div class="payment-value">Full {{ partnership_tier }} Package</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-required">
+                <h2 class="action-title">🚨 IMMEDIATE ACTIONS REQUIRED</h2>
+                <ol class="action-steps">
+                    <li>
+                        <strong>Initial Contact</strong>
+                        Contact applicant within 24 hours to acknowledge receipt and schedule introductory call
+                    </li>
+                    <li>
+                        <strong>Due Diligence</strong>
+                        Review applicant profile, trading experience, and partnership alignment
+                    </li>
+                    <li>
+                        <strong>Partnership Agreement</strong>
+                        Prepare and send customized partnership agreement for {{ partnership_tier }} tier
+                    </li>
+                    <li>
+                        <strong>Onboarding Schedule</strong>
+                        Schedule onboarding sessions and assign partnership manager
+                    </li>
+                    <li>
+                        <strong>Resource Allocation</strong>
+                        Grant access to partner resources, tools, and communication channels
+                    </li>
+                </ol>
+                
+                <div class="admin-links">
+                    <a href="{{ admin_url }}" class="admin-btn">
+                        <i class="fas fa-user-tie"></i> View Full Profile
+                    </a>
+                    <a href="mailto:{{ applicant_email }}" class="admin-btn">
+                        <i class="fas fa-envelope"></i> Contact Applicant
+                    </a>
+                    <a href="tel:{{ applicant_phone }}" class="admin-btn">
+                        <i class="fas fa-phone"></i> Call Now
+                    </a>
+                </div>
+            </div>
+            
+            <div class="timeline">
+                <h3 class="timeline-title">📅 PARTNERSHIP ONBOARDING TIMELINE</h3>
+                <div class="timeline-steps">
+                    <div class="timeline-step">
+                        <div class="step-circle current">1</div>
+                        <div class="step-label">Initial Contact</div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="step-circle">2</div>
+                        <div class="step-label">Agreement Signing</div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="step-circle">3</div>
+                        <div class="step-label">Onboarding</div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="step-circle">4</div>
+                        <div class="step-label">Active Partnership</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="notes-section">
+                <h3 class="notes-title">📝 PARTNERSHIP NOTES</h3>
+                <div class="notes-content">
+                    <p><strong>Recommended Approach:</strong> This {{ partnership_tier }} partner represents significant growth opportunity. Recommend personalized welcome from CEO Levi Muriuki.</p>
+                    <p><strong>Special Considerations:</strong> Applicant has completed payment in full. Ensure premium onboarding experience with executive touchpoints.</p>
+                    <p><strong>Integration Plan:</strong> Add to partner portal, schedule quarterly review meetings, and include in partner network communications.</p>
+                </div>
+            </div>
+            
+            <p style="text-align: center; color: var(--gold-bright); font-weight: 600; font-size: 1.1rem; margin-top: 40px;">
+                "Great things in business are never done by one person. They're done by a team of people."<br>
+                <span style="font-size: 0.9rem; color: var(--white-smoke);">- Steve Jobs</span>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>MFALME BETTERDAYS CAPITAL PARTNERSHIPS</strong></p>
+            <p>Strategic Alliances & Growth Partnerships</p>
+            <p>Partnerships Team: partnerships@mfalmebetterdays.com | +254706286667</p>
+            
+            <div class="admin-links" style="margin: 20px 0;">
+                <a href="{{ dashboard_url }}" class="admin-btn" style="background: transparent; color: var(--gold-primary); border: 2px solid var(--gold-primary);">
+                    <i class="fas fa-tachometer-alt"></i> Partner Dashboard
+                </a>
+            </div>
+            
+            <p class="disclaimer">
+                This is an automated notification from the MFALME Partnership System.<br>
+                All partnership applications require review and approval by the Partnerships Committee.<br>
+                © 2025 MFALME BETTERDAYS CAPITAL. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

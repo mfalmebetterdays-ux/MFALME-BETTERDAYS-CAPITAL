@@ -213,3 +213,24 @@ if 'runserver' not in sys.argv and 'migrate' not in sys.argv:
     # Skip startup database checks for gunicorn
     DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True    
 
+# ===== EMAIL CONFIGURATION =====
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'mfalmebetterdays@gmail.com'  # Your Gmail
+EMAIL_HOST_PASSWORD = 'bccpooxkwxdassxh'  # Your App Password
+DEFAULT_FROM_EMAIL = 'mfalmebetterdays@gmail.com'
+
+
+# ===========PAYSTACK INTEGRATION============#
+PAYSTACK_SECRET_KEY="sk_live_fc4f550a27a942bc0f6ce014c57b1834c4b6195d"
+PAYSTACK_PUBLIC_KEY="pk_live_197cf61799bc7493f737268952280f5da78cc7a4"
+
+# IMPORTANT: Gmail requires these settings
+EMAIL_USE_SSL = False  # Use TLS instead
+EMAIL_TIMEOUT = 10  # Timeout in seconds
+
+# ALWAYS use SMTP, never fallback to console
+print(f"📧 Email configured for REAL sending via Gmail SMTP")
+print(f"📧 Sender: {EMAIL_HOST_USER}")

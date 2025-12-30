@@ -1,0 +1,392 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Payment Successful | MFALME BETTERDAYS CAPITAL</title>
+    
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --gold-primary: #FFD700;
+            --gold-bright: #FFEC8B;
+            --gold-gradient: linear-gradient(135deg, #FFD700 0%, #FFC125 30%, #DAA520 100%);
+            --navy-dark: #0A1520;
+            --navy-medium: #0E1A29;
+            --navy-light: #142338;
+            --white: #FFFFFF;
+            --white-smoke: #F5F5F5;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--navy-dark);
+            color: var(--white);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .payment-container {
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .payment-card {
+            background: var(--navy-medium);
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            border: 2px solid rgba(255, 215, 0, 0.2);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .payment-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: var(--gold-gradient);
+        }
+        
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 30px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #10B981;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        
+        .success-icon i {
+            font-size: 3.5rem;
+            color: #10B981;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 15px;
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: var(--gold-bright);
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        
+        .transaction-details {
+            background: rgba(255, 215, 0, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            text-align: left;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .detail-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            color: var(--gold-bright);
+            font-weight: 600;
+        }
+        
+        .detail-value {
+            color: var(--white);
+            font-weight: 700;
+        }
+        
+        .next-steps {
+            background: rgba(255, 215, 0, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .next-steps h3 {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .steps-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .steps-list li {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            color: var(--white-smoke);
+        }
+        
+        .steps-list li:last-child {
+            margin-bottom: 0;
+        }
+        
+        .steps-list i {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .btn-primary, .btn-secondary {
+            padding: 15px 35px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: var(--gold-gradient);
+            color: var(--navy-dark);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 215, 0, 0.3);
+            color: var(--navy-dark);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--gold-primary);
+            border: 2px solid var(--gold-primary);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 215, 0, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        .confirmation-message {
+            margin-top: 30px;
+            color: var(--gold-bright);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .confirmation-message i {
+            color: var(--gold-primary);
+            margin-right: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .payment-card {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <div class="payment-card">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            
+            <h1>Payment Successful!</h1>
+            <p class="subtitle">Your payment has been processed successfully. Welcome to the MFALME elite community.</p>
+            
+            <div class="transaction-details">
+                <div class="detail-item">
+                    <span class="detail-label">Transaction ID:</span>
+                    <span class="detail-value">{{ reference|default:"MFALME-XXXX-XXXX" }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Payment Type:</span>
+                    <span class="detail-value">
+                        {% if payment_type == 'package' %}
+                            Trading Package
+                        {% elif payment_type == 'education' %}
+                            Education Program
+                        {% elif payment_type == 'partnership' %}
+                            Partnership Program
+                        {% elif payment_type == 'custom' %}
+                            Custom Payment
+                        {% else %}
+                            Payment
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value" style="color: #10B981;">COMPLETED ✓</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Date & Time:</span>
+                    <span class="detail-value" id="currentDateTime"></span>
+                </div>
+            </div>
+            
+            <div class="next-steps">
+                <h3>What Happens Next?</h3>
+                <ul class="steps-list">
+                    {% if payment_type == 'package' %}
+                    <li><i class="fas fa-bolt"></i> Your package will be activated within 5 minutes</li>
+                    <li><i class="fas fa-envelope"></i> Check your email for activation details</li>
+                    <li><i class="fas fa-users"></i> You'll be added to exclusive groups</li>
+                    <li><i class="fas fa-calendar"></i> Schedule your onboarding session</li>
+                    {% elif payment_type == 'education' %}
+                    <li><i class="fas fa-graduation-cap"></i> Course access will be granted immediately</li>
+                    <li><i class="fas fa-video"></i> Learning materials sent to your email</li>
+                    <li><i class="fas fa-chalkboard-teacher"></i> Mentor assigned within 24 hours</li>
+                    <li><i class="fas fa-book"></i> Study schedule provided</li>
+                    {% elif payment_type == 'partnership' %}
+                    <li><i class="fas fa-handshake"></i> Partnership team will contact you</li>
+                    <li><i class="fas fa-file-contract"></i> Agreement preparation in progress</li>
+                    <li><i class="fas fa-chart-line"></i> Access to partner resources</li>
+                    <li><i class="fas fa-network-wired"></i> Added to partner network</li>
+                    {% else %}
+                    <li><i class="fas fa-check"></i> Payment confirmed and recorded</li>
+                    <li><i class="fas fa-envelope"></i> Confirmation email sent</li>
+                    <li><i class="fas fa-headset"></i> Our team will contact you shortly</li>
+                    <li><i class="fas fa-clock"></i> Service processing begins</li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'dashboard' %}" class="btn-primary">
+                    <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                </a>
+                <a href="{% url 'index' %}" class="btn-secondary">
+                    <i class="fas fa-home"></i> Back to Home
+                </a>
+            </div>
+            
+            <div class="confirmation-message">
+                <i class="fas fa-info-circle"></i>
+                <span>A detailed receipt has been sent to your email. For any questions, contact support: +254706286667</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Set current date and time
+        const now = new Date();
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true 
+        };
+        document.getElementById('currentDateTime').textContent = now.toLocaleDateString('en-US', options);
+        
+        // Add confetti effect on success
+        setTimeout(() => {
+            createConfetti();
+        }, 500);
+        
+        function createConfetti() {
+            const confettiCount = 100;
+            const container = document.querySelector('.payment-card');
+            
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.innerHTML = '🎉';
+                confetti.style.position = 'absolute';
+                confetti.style.fontSize = Math.random() * 20 + 10 + 'px';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-50px';
+                confetti.style.opacity = '0.8';
+                confetti.style.zIndex = '9999';
+                confetti.style.pointerEvents = 'none';
+                
+                container.appendChild(confetti);
+                
+                // Animation
+                const animation = confetti.animate([
+                    { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+                    { transform: `translateY(${window.innerHeight}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+                ], {
+                    duration: Math.random() * 3000 + 2000,
+                    easing: 'cubic-bezier(0.215, 0.61, 0.355, 1)'
+                });
+                
+                animation.onfinish = () => confetti.remove();
+            }
+        }
+    </script>
+</body>
+</html>

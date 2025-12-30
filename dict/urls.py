@@ -1,30 +1,27 @@
 # dict/urls.py
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from myapp import views
 
 urlpatterns = [
+    # Admin panel
     path('admin/', admin.site.urls),
     
-    # Basic pages
-    path('', views.index, name='index'),
-    path('dashboard/', views.dashboard, name='dashboard'),
+    # Include all app URLs
+    path('', include('myapp.urls')),
     
-    # Auth
-    path('login/', views.login_page, name='login_page'),
-    path('login_user/', views.login_user, name='login_user'),
-    path('register/', views.register_page, name='register_page'),
-    path('create_account/', views.create_account, name='create_account'),
-    path('logout/', views.logout_user, name='logout'),
-    
-    # Verification
-    path('verify-account/', views.verify_account_page, name='verify_account_page'),
-    path('verify-account/process/', views.verify_account_process, name='verify_account_process'),
-    path('resend-verification/', views.resend_verification, name='resend_verification'),
-    
-    # Other pages
-    path('services/', views.services, name='services'),
-    path('contact/', views.contact_page, name='contact'),
-    path('about/', views.about, name='about'),
-    path('partnership/', views.partnership, name='partnership'),
+    # Error handlers
+    path('404/', views.custom_404, name='404'),
+    path('500/', views.custom_500, name='500'),
 ]
+
+# Add media files support in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Custom error handlers
+handler404 = 'myapp.views.custom_404'
+handler500 = 'myapp.views.custom_500'

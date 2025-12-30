@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Education Enrollment Confirmation - MFALME BETTERDAYS CAPITAL</title>
+    <style>
+        :root {
+            --gold-primary: #FFD700;
+            --gold-bright: #FFEC8B;
+            --gold-gradient: linear-gradient(135deg, #FFD700 0%, #FFC125 30%, #DAA520 100%);
+            --navy-dark: #0A1520;
+            --navy-medium: #0E1A29;
+            --white: #FFFFFF;
+            --white-smoke: #F5F5F5;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--navy-dark);
+            color: var(--white);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--navy-medium);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 215, 0, 0.2);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(218, 165, 32, 0.1));
+            padding: 40px;
+            text-align: center;
+            border-bottom: 3px solid var(--gold-primary);
+        }
+        
+        h1 {
+            color: var(--white);
+            font-size: 2rem;
+            margin: 0 0 10px;
+            font-weight: 900;
+        }
+        
+        .subtitle {
+            color: var(--gold-bright);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .greeting {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: var(--white);
+        }
+        
+        .highlight {
+            color: var(--gold-primary);
+            font-weight: 700;
+        }
+        
+        .enrollment-card {
+            background: rgba(255, 215, 0, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            text-align: center;
+        }
+        
+        .program-badge {
+            background: var(--gold-gradient);
+            color: var(--navy-dark);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 800;
+            display: inline-block;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 480px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .detail-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: left;
+        }
+        
+        .detail-label {
+            color: var(--gold-bright);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .detail-value {
+            color: var(--white);
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        
+        .access-instructions {
+            margin: 40px 0;
+        }
+        
+        .instructions-title {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-align: center;
+        }
+        
+        .instructions-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .instructions-list li {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            color: var(--white-smoke);
+            padding: 12px;
+            background: rgba(255, 215, 0, 0.03);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .instructions-list li:hover {
+            background: rgba(255, 215, 0, 0.08);
+            transform: translateX(5px);
+        }
+        
+        .instructions-list li:last-child {
+            margin-bottom: 0;
+        }
+        
+        .instruction-icon {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+            min-width: 30px;
+        }
+        
+        .cta-button {
+            display: block;
+            width: 100%;
+            background: var(--gold-gradient);
+            color: var(--navy-dark);
+            text-align: center;
+            padding: 18px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 1.1rem;
+            margin: 30px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 215, 0, 0.3);
+        }
+        
+        .mentor-section {
+            background: rgba(255, 215, 0, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .mentor-title {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+            text-align: center;
+        }
+        
+        .mentor-profile {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        
+        .mentor-avatar {
+            width: 80px;
+            height: 80px;
+            background: var(--gold-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--navy-dark);
+            font-weight: 800;
+        }
+        
+        .mentor-info h4 {
+            margin: 0 0 5px;
+            color: var(--white);
+        }
+        
+        .mentor-info p {
+            margin: 0;
+            color: var(--gold-bright);
+        }
+        
+        .schedule-cta {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .schedule-btn {
+            background: transparent;
+            color: var(--gold-primary);
+            border: 2px solid var(--gold-primary);
+            padding: 10px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .schedule-btn:hover {
+            background: rgba(255, 215, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .resources-section {
+            margin: 40px 0;
+        }
+        
+        .resources-title {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+            text-align: center;
+        }
+        
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        @media (max-width: 480px) {
+            .resources-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .resource-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .resource-item:hover {
+            background: rgba(255, 215, 0, 0.08);
+            transform: translateY(-3px);
+        }
+        
+        .resource-icon {
+            font-size: 2rem;
+            color: var(--gold-primary);
+            margin-bottom: 10px;
+        }
+        
+        .resource-name {
+            color: var(--white);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .resource-desc {
+            color: var(--white-smoke);
+            font-size: 0.9rem;
+        }
+        
+        .footer {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .footer p {
+            color: var(--white-smoke);
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .social-link {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .social-link:hover {
+            color: var(--gold-bright);
+            transform: translateY(-3px);
+        }
+        
+        .disclaimer {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>📚 Enrollment Confirmed!</h1>
+            <p class="subtitle">Welcome to MFALME Education Programs</p>
+        </div>
+        
+        <div class="content">
+            <p class="greeting">
+                Dear <span class="highlight">{{ username }}</span>,
+            </p>
+            
+            <p>Congratulations! Your enrollment in the <span class="highlight">{{ program_name }}</span> has been confirmed. You are now officially a student of MFALME BETTERDAYS CAPITAL's elite education program.</p>
+            
+            <div class="enrollment-card">
+                <div class="program-badge">{{ program_name }}</div>
+                <h3 style="color: var(--white); margin-bottom: 20px;">Program Enrollment Details</h3>
+                
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Student ID</div>
+                        <div class="detail-value">{{ soldier_id }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Program</div>
+                        <div class="detail-value">{{ program_name }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Duration</div>
+                        <div class="detail-value">{{ duration }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Amount</div>
+                        <div class="detail-value">${{ amount }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Transaction ID</div>
+                        <div class="detail-value">{{ transaction_id }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Enrollment Date</div>
+                        <div class="detail-value">{{ enrollment_date }}</div>
+                    </div>
+                </div>
+                
+                <p style="color: #10B981; font-weight: 700; margin-top: 20px;">
+                    ✅ ENROLLMENT ACTIVE - Access Granted
+                </p>
+            </div>
+            
+            <div class="access-instructions">
+                <h3 class="instructions-title">How to Access Your Program</h3>
+                <ul class="instructions-list">
+                    <li>
+                        <span class="instruction-icon">🔐</span>
+                        <span><strong>Login to Dashboard:</strong> Use your MFALME credentials</span>
+                    </li>
+                    <li>
+                        <span class="instruction-icon">🎥</span>
+                        <span><strong>Access Learning Portal:</strong> All videos and materials available</span>
+                    </li>
+                    <li>
+                        <span class="instruction-icon">📱</span>
+                        <span><strong>Join Student Community:</strong> Telegram group for discussions</span>
+                    </li>
+                    <li>
+                        <span class="instruction-icon">📅</span>
+                        <span><strong>Schedule Sessions:</strong> Book mentor sessions via dashboard</span>
+                    </li>
+                    <li>
+                        <span class="instruction-icon">📖</span>
+                        <span><strong>Download Materials:</strong> PDFs, spreadsheets, and tools</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <a href="{{ dashboard_url }}" class="cta-button">
+                🚀 ACCESS LEARNING PORTAL NOW
+            </a>
+            
+            <div class="mentor-section">
+                <h3 class="mentor-title">Your Assigned Mentor</h3>
+                <p style="text-align: center; color: var(--white-smoke); margin-bottom: 20px;">
+                    You have been assigned to work with our Senior Trading Mentor:
+                </p>
+                
+                <div class="mentor-profile">
+                    <div class="mentor-avatar">
+                        LM
+                    </div>
+                    <div class="mentor-info">
+                        <h4>Levi Muriuki</h4>
+                        <p>Senior Trading Mentor & CEO</p>
+                        <p style="color: var(--white-smoke); font-size: 0.9rem; margin-top: 5px;">
+                            15+ years trading experience | Specialized in Forex & Options
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="schedule-cta">
+                    <a href="{{ schedule_url }}" class="schedule-btn">
+                        📅 Schedule First Mentor Session
+                    </a>
+                </div>
+            </div>
+            
+            <div class="resources-section">
+                <h3 class="resources-title">Available Resources</h3>
+                <div class="resources-grid">
+                    <div class="resource-item">
+                        <div class="resource-icon">🎬</div>
+                        <div class="resource-name">Video Lessons</div>
+                        <div class="resource-desc">100+ hours of premium content</div>
+                    </div>
+                    <div class="resource-item">
+                        <div class="resource-icon">📊</div>
+                        <div class="resource-name">Trading Tools</div>
+                        <div class="resource-desc">Proprietary spreadsheets & calculators</div>
+                    </div>
+                    <div class="resource-item">
+                        <div class="resource-icon">📈</div>
+                        <div class="resource-name">Live Analysis</div>
+                        <div class="resource-desc">Weekly market breakdowns</div>
+                    </div>
+                    <div class="resource-item">
+                        <div class="resource-icon">🤝</div>
+                        <div class="resource-name">Community</div>
+                        <div class="resource-desc">Network with fellow students</div>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="text-align: center; color: var(--gold-bright); font-weight: 600; font-size: 1.1rem;">
+                "The beautiful thing about learning is that no one can take it away from you."<br>
+                <span style="font-size: 0.9rem; color: var(--white-smoke);">- B.B. King</span>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>MFALME BETTERDAYS CAPITAL EDUCATION</strong></p>
+            <p>Transforming Retail Traders into Professional Investors</p>
+            <p>Support: +254706286667 | education@mfalmebetterdays.com</p>
+            
+            <div class="social-links">
+                <a href="#" class="social-link">📘</a>
+                <a href="#" class="social-link">📷</a>
+                <a href="#" class="social-link">🎵</a>
+                <a href="#" class="social-link">💬</a>
+            </div>
+            
+            <p class="disclaimer">
+                This email was sent to {{ email }} as confirmation of your enrollment.<br>
+                Your program access is valid for the duration of your enrollment period.<br>
+                © 2025 MFALME BETTERDAYS CAPITAL. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
