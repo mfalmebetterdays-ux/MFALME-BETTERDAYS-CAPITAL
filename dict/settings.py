@@ -215,17 +215,17 @@ if 'runserver' not in sys.argv and 'migrate' not in sys.argv:
 
 # ===== EMAIL CONFIGURATION =====
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'mfalmebetterdays@gmail.com'  # Your Gmail
-EMAIL_HOST_PASSWORD = 'bccpooxkwxdassxh'  # Your App Password
-DEFAULT_FROM_EMAIL = 'mfalmebetterdays@gmail.com'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
 
 
-# ===========PAYSTACK INTEGRATION============#
-PAYSTACK_SECRET_KEY="sk_live_fc4f550a27a942bc0f6ce014c57b1834c4b6195d"
-PAYSTACK_PUBLIC_KEY="pk_live_197cf61799bc7493f737268952280f5da78cc7a4"
+# ===== PAYSTACK INTEGRATION =====
+PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY')
+PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY')
 
 # IMPORTANT: Gmail requires these settings
 EMAIL_USE_SSL = False  # Use TLS instead
