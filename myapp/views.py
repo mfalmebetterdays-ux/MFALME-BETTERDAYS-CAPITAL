@@ -1055,7 +1055,11 @@ def send_package_activation_email(user, transaction):
         Activation Date: {context['activation_date']}
         
         🚀 NEXT STEPS
-        {'\n'.join([f'• {step}' for step in context['next_steps']])}
+         f"""
+        ...
+        {os.linesep.join([f'• {step}' for step in context['next_steps']])}
+        ...
+        """
         
         📞 SUPPORT
         Phone: {context['support_contact']}
