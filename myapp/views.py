@@ -15,6 +15,7 @@ import json
 from .models import MfalmeUsers, VerificationCode, PaymentTransaction
 from django.views.decorators.csrf import csrf_exempt
 import time
+import os  # Added for proper path handling
 
 # ===== PAYSTACK PAYMENT INTEGRATION =====
 try:
@@ -1080,6 +1081,242 @@ def send_package_activation_email(user, transaction):
         print(f"❌ Package activation email error: {str(e)}")
         return False
 
+def send_education_enrollment_email(user, transaction):
+    """Send education enrollment email with conversion details"""
+    try:
+        metadata = transaction.metadata or {}
+        usd_amount = metadata.get('amount_usd', transaction.amount)
+        kes_amount = metadata.get('amount_kes', 0)
+        exchange_rate = metadata.get('exchange_rate', 0)
+        
+        subject = f'🎓 Enrollment Confirmed - {metadata.get("program_name", "Education Program")}'
+        
+        context = {
+            'username': user.username,
+            'soldier_id': user.soldier_id,
+            'program_name': metadata.get('program_name', 'Education Program'),
+            'duration': metadata.get('duration', 'N/A'),
+            'amount_usd': usd_amount,
+            'amount_kes': kes_amount,
+            'exchange_rate': exchange_rate,
+            'transaction_id': transaction.reference,
+            'enrollment_date': timezone.now().strftime('%B %d, %Y'),
+            'next_steps': [
+                'Access your learning dashboard',
+                'Join the student portal',
+                'Download course materials',
+                'Schedule orientation session',
+                'Connect with your instructor',
+            ],
+            'support_contact': '+254706286667',
+        }
+        
+        html_content = render_to_string('emails/education_enrollment.html', context)
+        
+        text_content = f"""
+        🎓 EDUCATION ENROLLMENT CONFIRMATION
+        {'=' * 60}
+        
+        Congratulations {user.username}!
+        
+        You have been successfully enrolled in {context['program_name']}.
+        
+        📋 ENROLLMENT DETAILS
+        Soldier ID: {user.soldier_id}
+        Program: {context['program_name']}
+        Duration: {context['duration']}
+        Amount Paid: ${usd_amount:,.2f} USD
+        Equivalent: KES {kes_amount:,.2f}
+        Exchange Rate: 1 USD = {exchange_rate:,.2f} KES
+        Transaction ID: {transaction.reference}
+        Enrollment Date: {context['enrollment_date']}
+        
+        🚀 NEXT STEPS
+        {'\n'.join([f'• {step}' for step in context['next_steps']])}
+        
+        📞 SUPPORT
+        Phone: {context['support_contact']}
+        Email: {settings.DEFAULT_FROM_EMAIL}
+        
+        Best regards,
+        MFALME BETTERDAYS CAPITAL Education Team
+        {'='*60}
+        """
+        
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=f"MFALME Education <{settings.DEFAULT_FROM_EMAIL}>",
+            to=[user.email]
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+        
+        print(f"✅ Education enrollment email sent to {user.email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Education enrollment email error: {str(e)}")
+        return False
+
+def send_partnership_approval_request(user, transaction):
+    """Send partnership approval request email"""
+    try:
+        metadata = transaction.metadata or {}
+        usd_amount = metadata.get('amount_usd', transaction.amount)
+        kes_amount = metadata.get('amount_kes', 0)
+        exchange_rate = metadata.get('exchange_rate', 0)
+        
+        subject = f'🤝 Partnership Application - {metadata.get("tier", "Partnership Tier")}'
+        
+        context = {
+            'username': user.username,
+            'soldier_id': user.soldier_id,
+            'tier_name': metadata.get('tier', 'Partnership'),
+            'company_name': metadata.get('company_name', user.username),
+            'amount_usd': usd_amount,
+            'amount_kes': kes_amount,
+            'exchange_rate': exchange_rate,
+            'transaction_id': transaction.reference,
+            'application_date': timezone.now().strftime('%B %d, %Y'),
+            'next_steps': [
+                'Application under review (24-48 hours)',
+                'Partnership agreement preparation',
+                'Onboarding session scheduling',
+                'Access to partner dashboard',
+                'Integration with partner network',
+            ],
+            'support_contact': '+254706286667',
+        }
+        
+        html_content = render_to_string('emails/partnership_approval.html', context)
+        
+        text_content = f"""
+        🤝 PARTNERSHIP APPLICATION SUBMITTED
+        {'=' * 60}
+        
+        Dear {user.username},
+        
+        Your partnership application for {context['tier_name']} has been received.
+        
+        📋 APPLICATION DETAILS
+        Soldier ID: {user.soldier_id}
+        Company/Individual: {context['company_name']}
+        Partnership Tier: {context['tier_name']}
+        Amount Paid: ${usd_amount:,.2f} USD
+        Equivalent: KES {kes_amount:,.2f}
+        Exchange Rate: 1 USD = {exchange_rate:,.2f} KES
+        Transaction ID: {transaction.reference}
+        Application Date: {context['application_date']}
+        
+        ⏳ REVIEW PROCESS
+        {'\n'.join([f'• {step}' for step in context['next_steps']])}
+        
+        📞 PARTNERSHIP TEAM
+        Phone: {context['support_contact']}
+        Email: {settings.DEFAULT_FROM_EMAIL}
+        
+        We will contact you within 24-48 hours.
+        
+        Best regards,
+        MFALME BETTERDAYS CAPITAL Partnership Team
+        {'='*60}
+        """
+        
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=f"MFALME Partnerships <{settings.DEFAULT_FROM_EMAIL}>",
+            to=[user.email]
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+        
+        print(f"✅ Partnership approval request email sent to {user.email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Partnership approval email error: {str(e)}")
+        return False
+
+def send_custom_payment_confirmation(user, transaction):
+    """Send custom payment confirmation email"""
+    try:
+        metadata = transaction.metadata or {}
+        usd_amount = metadata.get('amount_usd', transaction.amount)
+        kes_amount = metadata.get('amount_kes', 0)
+        exchange_rate = metadata.get('exchange_rate', 0)
+        
+        subject = f'✅ Payment Received - {metadata.get("description", "Custom Service")}'
+        
+        context = {
+            'username': user.username,
+            'soldier_id': user.soldier_id,
+            'service_description': metadata.get('description', 'Custom Service'),
+            'service_type': metadata.get('service_type', 'Service'),
+            'amount_usd': usd_amount,
+            'amount_kes': kes_amount,
+            'exchange_rate': exchange_rate,
+            'transaction_id': transaction.reference,
+            'payment_date': timezone.now().strftime('%B %d, %Y'),
+            'next_steps': [
+                'Service processing will begin shortly',
+                'You will receive updates via email',
+                'Contact support for any questions',
+                'Check your dashboard for status updates',
+            ],
+            'support_contact': '+254706286667',
+        }
+        
+        html_content = render_to_string('emails/custom_payment.html', context)
+        
+        text_content = f"""
+        ✅ CUSTOM PAYMENT CONFIRMATION
+        {'=' * 60}
+        
+        Dear {user.username},
+        
+        Your payment for {context['service_description']} has been received.
+        
+        📋 PAYMENT DETAILS
+        Soldier ID: {user.soldier_id}
+        Service: {context['service_description']}
+        Type: {context['service_type']}
+        Amount Paid: ${usd_amount:,.2f} USD
+        Equivalent: KES {kes_amount:,.2f}
+        Exchange Rate: 1 USD = {exchange_rate:,.2f} KES
+        Transaction ID: {transaction.reference}
+        Payment Date: {context['payment_date']}
+        
+        🔄 NEXT STEPS
+        {'\n'.join([f'• {step}' for step in context['next_steps']])}
+        
+        📞 CUSTOMER SUPPORT
+        Phone: {context['support_contact']}
+        Email: {settings.DEFAULT_FROM_EMAIL}
+        
+        Thank you for your business!
+        
+        Best regards,
+        MFALME BETTERDAYS CAPITAL Support Team
+        {'='*60}
+        """
+        
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=f"MFALME Support <{settings.DEFAULT_FROM_EMAIL}>",
+            to=[user.email]
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+        
+        print(f"✅ Custom payment confirmation email sent to {user.email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Custom payment confirmation email error: {str(e)}")
+        return False
 
 
 def get_client_ip(request):

@@ -224,8 +224,8 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
 
 
 # ===== PAYSTACK INTEGRATION =====
-PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY')
-PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY')
+PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY','sk_live_fc4f550a27a942bc0f6ce014c57b1834c4b6195d')
+PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', 'pk_live_197cf61799bc7493f737268952280f5da78cc7a4')
 
 # IMPORTANT: Gmail requires these settings
 EMAIL_USE_SSL = False  # Use TLS instead
