@@ -214,13 +214,15 @@ if 'runserver' not in sys.argv and 'migrate' not in sys.argv:
     DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True    
 
 # ===== EMAIL CONFIGURATION =====
+# ===== EMAIL CONFIGURATION =====
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'mfalmebetterdays@gmail.com'
+EMAIL_HOST_PASSWORD = 'bccpooxkwxdassxh'  # Your App Password
+DEFAULT_FROM_EMAIL = 'mfalmebetterdays@gmail.com'
+ADMIN_EMAILS = ['mfalmebetterdays@gmail.com']
 
 
 # ===== PAYSTACK INTEGRATION =====

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Verify Your Account - MFALME BETTERDAYS CAPITAL</title>
+</head>
+<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color: #f5f7fa;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f7fa;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff; border-radius:10px; margin:20px;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg, #FFD700 0%, #DAA520 100%); padding:40px; text-align:center;">
+                            <h1 style="color:#0A1520; margin:0; font-size:28px; font-weight:bold;">
+                                🔐 VERIFY YOUR ACCOUNT
+                            </h1>
+                            <p style="color:#0A1520; margin:10px 0 0 0; font-size:16px;">
+                                MFALME BETTERDAYS CAPITAL
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding:40px;">
+                            <p style="color:#333; font-size:16px; line-height:1.6;">
+                                Hello <strong>{{ username }}</strong>,<br><br>
+                                Welcome to MFALME BETTERDAYS CAPITAL! Your Soldier ID is: 
+                                <strong style="color:#FFD700;">{{ soldier_id }}</strong>
+                            </p>
+                            
+                            <!-- Verification Code -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:30px 0; text-align:center;">
+                                <tr>
+                                    <td>
+                                        <div style="background-color:#0A1520; color:#FFD700; font-family:'Courier New',monospace; font-size:32px; font-weight:bold; padding:20px; border-radius:10px; letter-spacing:10px; display:inline-block; border:3px solid #FFD700;">
+                                            {{ verification_code }}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="color:#333; font-size:14px; text-align:center;">
+                                ⏰ This code expires in 15 minutes
+                            </p>
+                            
+                            <!-- Instructions -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:30px 0; background-color:#f8f9fa; border-radius:10px; padding:20px;">
+                                <tr>
+                                    <td>
+                                        <h3 style="color:#0A1520; margin:0 0 15px 0;">How to verify:</h3>
+                                        <ol style="color:#333; font-size:14px; line-height:1.8; padding-left:20px; margin:0;">
+                                            <li>Return to the verification page</li>
+                                            <li>Enter the 6-digit code above</li>
+                                            <li>Click "Verify Account"</li>
+                                            <li>You'll be redirected to your dashboard</li>
+                                        </ol>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Security Note -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:30px 0; background-color:#fff3cd; border-radius:10px; border-left:4px solid #ffc107; padding:20px;">
+                                <tr>
+                                    <td>
+                                        <p style="color:#856404; margin:0; font-size:14px;">
+                                            <strong>🔒 Security Notice:</strong> Never share this code with anyone. 
+                                            MFALME will never ask for your verification code via email or phone.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Button -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ verification_url }}" style="background-color:#FFD700; color:#0A1520; text-decoration:none; padding:15px 40px; border-radius:5px; font-weight:bold; font-size:16px; display:inline-block;">
+                                            VERIFY ACCOUNT NOW
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="color:#666; font-size:12px; text-align:center; margin-top:30px;">
+                                Trouble clicking? Copy this link: {{ verification_url }}
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color:#0A1520; color:#ffffff; padding:30px; text-align:center;">
+                            <p style="margin:0 0 20px 0; font-size:14px;">
+                                <strong>MFALME BETTERDAYS CAPITAL</strong><br>
+                                Elite Trading Platform
+                            </p>
+                            <p style="margin:0 0 10px 0; font-size:12px;">
+                                📞 +254 706 286 667<br>
+                                📧 support@mfalmebetterdayscapital.com
+                            </p>
+                            <p style="margin:0; font-size:10px; color:#999;">
+                                This is an automated message. Please do not reply.<br>
+                                © {% now "Y" %} MFALME BETTERDAYS CAPITAL
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
