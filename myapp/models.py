@@ -47,7 +47,7 @@ class MfalmeUsers(AbstractBaseUser, PermissionsMixin):
     
     # ===== BASIC INFO =====
     email = models.EmailField(unique=True, verbose_name='Email Address')
-    username = models.CharField(max_length=100, unique=True)
+    username = models.CharField(max_length=100)
     phone = models.CharField(max_length=30)
     first_name = models.CharField(max_length=100, blank=True)
     last_name = models.CharField(max_length=100, blank=True)
@@ -172,7 +172,6 @@ class MfalmeUsers(AbstractBaseUser, PermissionsMixin):
     
     def __str__(self):
         return f'{self.soldier_id} - {self.email}'
-    
     def save(self, *args, **kwargs):
         # Generate SOLDIER ID if not exists
         if not self.soldier_id:
@@ -181,6 +180,31 @@ class MfalmeUsers(AbstractBaseUser, PermissionsMixin):
         # Generate referral code if not exists
         if not self.referral_code:
             self.referral_code = self.generate_referral_code()
+        
+        # AUTO-FIX: Ensure username is unique if provided
+        if self.username:
+            original_username = self.username
+            counter = 1
+            
+            # Check if username already exists (excluding current user)
+            query = MfalmeUsers.objects.filter(username=self.username)
+            if self.pk:
+                query = query.exclude(pk=self.pk)
+            
+            while query.exists():
+                self.username = f"{original_username}{counter}"
+                counter += 1
+                
+                # Update query with new username
+                query = MfalmeUsers.objects.filter(username=self.username)
+                if self.pk:
+                    query = query.exclude(pk=self.pk)
+                
+                # Safety limit to prevent infinite loop
+                if counter > 100:
+                    import uuid
+                    self.username = f"{original_username}_{uuid.uuid4().hex[:8]}"
+                    break
         
         # Set elite rank based on investment
         if self.investment_amount:

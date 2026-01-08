@@ -236,3 +236,4 @@ EMAIL_TIMEOUT = 10  # Timeout in seconds
 # ALWAYS use SMTP, never fallback to console
 print(f"📧 Email configured for REAL sending via Gmail SMTP")
 print(f"📧 Sender: {EMAIL_HOST_USER}")
+# views.py - COMPLETE FILE...
