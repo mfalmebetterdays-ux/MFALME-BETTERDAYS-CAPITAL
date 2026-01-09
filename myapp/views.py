@@ -4460,3 +4460,744 @@ def api_get_mentorship_programs(request):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)    
+    
+    
+# ===== PARTNERSHIP APPLICATION VIEW =====
+@csrf_exempt
+def submit_partnership_application(request):
+    """Handle partnership application form submission"""
+    if request.method != 'POST':
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid request method. Use POST.'
+        }, status=400)
+    
+    try:
+        # Get JSON data
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+        else:
+            # Handle form data
+            data = request.POST.dict()
+        
+        print(f"📝 Partnership application received: {data.get('company_name', 'Unknown Company')}")
+        
+        # Prepare email subject
+        tier = data.get('partnership_tier', 'general')
+        tier_names = {
+            'bronze': 'Bronze Partnership',
+            'silver': 'Silver Partnership',
+            'gold': 'Gold Partnership',
+            'platinum': 'Platinum Partnership',
+            'portfolio': 'Portfolio Management'
+        }
+        
+        tier_name = tier_names.get(tier, 'Partnership Inquiry')
+        
+        # HTML email content for admin
+        admin_html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; padding: 20px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 800px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                <!-- Header -->
+                <tr>
+                    <td style="background: #FFD700; padding: 30px; text-align: center;">
+                        <h1 style="color: #000; margin: 0; font-size: 24px;">🚀 NEW PARTNERSHIP APPLICATION</h1>
+                        <p style="color: #000; margin: 10px 0 0 0; font-weight: bold;">{tier_name.upper()}</p>
+                    </td>
+                </tr>
+                
+                <!-- Content -->
+                <tr>
+                    <td style="padding: 30px;">
+                        <h2 style="color: #0A1520; border-bottom: 2px solid #FFD700; padding-bottom: 10px;">📋 Application Details</h2>
+                        
+                        <!-- Contact Information -->
+                        <div style="margin-bottom: 25px;">
+                            <h3 style="color: #FFD700;">👤 Contact Information</h3>
+                            <table width="100%" style="border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Full Name:</strong></td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{data.get('contact_name', 'N/A')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Position:</strong></td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{data.get('contact_position', 'N/A')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Email:</strong></td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{data.get('contact_email', 'N/A')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Phone:</strong></td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{data.get('contact_phone', 'N/A')}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <!-- Company Information -->
+                        <div style="margin-bottom: 25px;">
+                            <h3 style="color: #FFD700;">🏢 Company Information</h3>
+                            <table width="100%" style="border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Company Name:</strong></td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{data.get('company_name', 'N/A')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Website:</strong></td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{data.get('company_website', 'N/A')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Type:</strong></td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{data.get('company_type', 'N/A')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Established:</strong></td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{data.get('year_established', 'N/A')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Headquarters:</strong></td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{data.get('headquarters', 'N/A')}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <!-- Financial Details -->
+                        <div style="margin-bottom: 25px;">
+                            <h3 style="color: #FFD700;">💰 Financial Details</h3>
+                            <table width="100%" style="border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>AUM Range:</strong></td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{data.get('aum_range', 'N/A')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Client Count:</strong></td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{data.get('client_count', 'N/A')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Trading Volume:</strong></td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{data.get('trading_volume', 'N/A')}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Primary Markets:</strong></td>
+                                    <td style="padding: 8px; border-bottom: 1px solid #eee;">{data.get('primary_markets', 'N/A')}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <!-- Partnership Objectives -->
+                        <div style="margin-bottom: 25px;">
+                            <h3 style="color: #FFD700;">🎯 Partnership Objectives</h3>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #FFD700;">
+                                {data.get('partnership_objectives', 'N/A').replace(chr(10), '<br>')}
+                            </div>
+                        </div>
+                        
+                        <!-- Technology Stack -->
+                        {f'''
+                        <div style="margin-bottom: 25px;">
+                            <h3 style="color: #FFD700;">💻 Technology Stack</h3>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                {data.get('technology_stack', 'N/A').replace(chr(10), '<br>')}
+                            </div>
+                        </div>
+                        ''' if data.get('technology_stack') else ''}
+                        
+                        <!-- Agreement Status -->
+                        <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                            <h3 style="color: #0A1520; margin-top: 0;">📜 Agreement Status</h3>
+                            <ul style="margin: 0; padding-left: 20px;">
+                                <li><strong>NDA Agreement:</strong> {'✅ YES' if data.get('agree_nda') else '❌ NO'}</li>
+                                <li><strong>Terms Accepted:</strong> {'✅ YES' if data.get('agree_terms') else '❌ NO'}</li>
+                                <li><strong>Contact Consent:</strong> {'✅ YES' if data.get('agree_contact') else '❌ NO'}</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Footer -->
+                        <div style="text-align: center; padding-top: 20px; border-top: 1px solid #eee;">
+                            <p style="color: #666; font-size: 12px;">
+                                <strong>Application ID:</strong> PART-{datetime.now().strftime('%Y%m%d%H%M%S')}<br>
+                                <strong>Submitted:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}<br>
+                                <strong>IP Address:</strong> {get_client_ip(request)}
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+                
+                <!-- Action Required Footer -->
+                <tr>
+                    <td style="background: #0A1520; color: #FFD700; padding: 20px; text-align: center;">
+                        <h3 style="margin: 0 0 10px 0;">🎯 ACTION REQUIRED</h3>
+                        <p style="margin: 0; font-size: 14px;">
+                            Please review this application within 24 hours and contact the applicant.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        """
+        
+        # Plain text version for admin
+        admin_text_content = f"""
+        🚀 NEW PARTNERSHIP APPLICATION - {tier_name.upper()}
+        {'='*70}
+        
+        📋 APPLICATION DETAILS
+        {'='*70}
+        
+        👤 CONTACT INFORMATION:
+        Full Name: {data.get('contact_name', 'N/A')}
+        Position: {data.get('contact_position', 'N/A')}
+        Email: {data.get('contact_email', 'N/A')}
+        Phone: {data.get('contact_phone', 'N/A')}
+        
+        🏢 COMPANY INFORMATION:
+        Company Name: {data.get('company_name', 'N/A')}
+        Website: {data.get('company_website', 'N/A')}
+        Type: {data.get('company_type', 'N/A')}
+        Established: {data.get('year_established', 'N/A')}
+        Headquarters: {data.get('headquarters', 'N/A')}
+        
+        💰 FINANCIAL DETAILS:
+        AUM Range: {data.get('aum_range', 'N/A')}
+        Client Count: {data.get('client_count', 'N/A')}
+        Trading Volume: {data.get('trading_volume', 'N/A')}
+        Primary Markets: {data.get('primary_markets', 'N/A')}
+        
+        🎯 PARTNERSHIP OBJECTIVES:
+        {data.get('partnership_objectives', 'N/A')}
+        
+        💻 TECHNOLOGY STACK:
+        {data.get('technology_stack', 'N/A')}
+        
+        📜 AGREEMENT STATUS:
+        NDA Agreement: {'YES' if data.get('agree_nda') else 'NO'}
+        Terms Accepted: {'YES' if data.get('agree_terms') else 'NO'}
+        Contact Consent: {'YES' if data.get('agree_contact') else 'NO'}
+        
+        {'='*70}
+        Application ID: PART-{datetime.now().strftime('%Y%m%d%H%M%S')}
+        Submitted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        IP Address: {get_client_ip(request)}
+        {'='*70}
+        
+        🎯 ACTION REQUIRED: Review within 24 hours
+        {'='*70}
+        """
+        
+        # Send email to admin(s)
+        admin_emails = getattr(settings, 'ADMIN_EMAILS', ['mfalmebetterdays@gmail.com'])
+        
+        admin_success = True
+        for admin_email in admin_emails:
+            try:
+                send_email_compatible(
+                    subject=f'🚀 Partnership Application: {data.get("company_name", "Unknown")} - {tier_name}',
+                    html_content=admin_html_content,
+                    text_content=admin_text_content,
+                    recipient_list=[admin_email],
+                    from_email=settings.DEFAULT_FROM_EMAIL
+                )
+                print(f"✅ Partnership application sent to admin: {admin_email}")
+            except Exception as email_error:
+                admin_success = False
+                print(f"❌ Failed to send to admin {admin_email}: {str(email_error)}")
+        
+        # Send confirmation to applicant
+        applicant_email = data.get('contact_email')
+        if applicant_email:
+            try:
+                # Applicant confirmation HTML
+                applicant_html_content = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; padding: 20px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                        <!-- Header -->
+                        <tr>
+                            <td style="background: #FFD700; padding: 30px; text-align: center;">
+                                <h1 style="color: #000; margin: 0; font-size: 24px;">🤝 THANK YOU!</h1>
+                                <p style="color: #000; margin: 10px 0 0 0; font-weight: bold;">Your Partnership Application Has Been Received</p>
+                            </td>
+                        </tr>
+                        
+                        <!-- Content -->
+                        <tr>
+                            <td style="padding: 30px;">
+                                <p style="font-size: 16px; margin-bottom: 20px;">
+                                    Dear <strong>{data.get('contact_name')}</strong>,
+                                </p>
+                                
+                                <p style="font-size: 16px; margin-bottom: 20px;">
+                                    Thank you for submitting your partnership application for the <strong>{tier_name}</strong> with Mfalme Betterdays Capital.
+                                </p>
+                                
+                                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                                    <h3 style="color: #FFD700; margin-top: 0;">📋 Application Summary</h3>
+                                    <p><strong>Company:</strong> {data.get('company_name')}</p>
+                                    <p><strong>Application Reference:</strong> PART-{datetime.now().strftime('%Y%m%d%H%M%S')}</p>
+                                    <p><strong>Partnership Tier:</strong> {tier_name}</p>
+                                </div>
+                                
+                                <!-- Next Steps -->
+                                <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                                    <h3 style="color: #0A1520; margin-top: 0;">🚀 Next Steps</h3>
+                                    <ol style="margin: 0; padding-left: 20px;">
+                                        <li><strong>Review Process:</strong> Our executive team will review your application within 24 hours</li>
+                                        <li><strong>Initial Contact:</strong> We'll reach out to schedule a discovery call</li>
+                                        <li><strong>NDA & Documentation:</strong> Formal NDA and partnership agreement preparation</li>
+                                        <li><strong>Onboarding:</strong> Integration into our partner ecosystem</li>
+                                    </ol>
+                                </div>
+                                
+                                <!-- Timeline -->
+                                <div style="margin-bottom: 25px;">
+                                    <h3 style="color: #FFD700;">⏰ Estimated Timeline</h3>
+                                    <table width="100%" style="border-collapse: collapse;">
+                                        <tr>
+                                            <td style="padding: 10px; border: 1px solid #eee;"><strong>Step 1:</strong> Application Review</td>
+                                            <td style="padding: 10px; border: 1px solid #eee; text-align: right;">24-48 hours</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px; border: 1px solid #eee;"><strong>Step 2:</strong> Initial Discussion</td>
+                                            <td style="padding: 10px; border: 1px solid #eee; text-align: right;">1-3 days</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px; border: 1px solid #eee;"><strong>Step 3:</strong> Agreement Finalization</td>
+                                            <td style="padding: 10px; border: 1px solid #eee; text-align: right;">3-5 days</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px; border: 1px solid #eee;"><strong>Step 4:</strong> Full Onboarding</td>
+                                            <td style="padding: 10px; border: 1px solid #eee; text-align: right;">1-2 weeks</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                
+                                <!-- Contact Information -->
+                                <div style="text-align: center; padding: 20px; background: #0A1520; border-radius: 8px; color: white;">
+                                    <h3 style="color: #FFD700; margin-top: 0;">📞 Need Immediate Assistance?</h3>
+                                    <p style="margin: 10px 0;">
+                                        <strong>Partnership Team:</strong><br>
+                                        📧 Email: partnership@mfalmebetterdayscapital.com<br>
+                                        📱 Phone: +254 706 286 667<br>
+                                        ⏰ Hours: Mon-Fri, 9:00 AM - 5:00 PM EAT
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                            <td style="background: #0A1520; color: #FFD700; padding: 20px; text-align: center;">
+                                <p style="margin: 0; font-size: 12px;">
+                                    This is an automated confirmation. Please do not reply to this email.<br>
+                                    © {datetime.now().year} MFALME BETTERDAYS CAPITAL. All rights reserved.
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                """
+                
+                # Plain text for applicant
+                applicant_text_content = f"""
+                🤝 PARTNERSHIP APPLICATION CONFIRMATION
+                {'='*70}
+                
+                Dear {data.get('contact_name')},
+                
+                Thank you for submitting your partnership application for the {tier_name} with Mfalme Betterdays Capital.
+                
+                📋 APPLICATION SUMMARY:
+                Company: {data.get('company_name')}
+                Application Reference: PART-{datetime.now().strftime('%Y%m%d%H%M%S')}
+                Partnership Tier: {tier_name}
+                
+                🚀 NEXT STEPS:
+                1. Review Process: Our executive team will review your application within 24 hours
+                2. Initial Contact: We'll reach out to schedule a discovery call
+                3. NDA & Documentation: Formal NDA and partnership agreement preparation
+                4. Onboarding: Integration into our partner ecosystem
+                
+                ⏰ ESTIMATED TIMELINE:
+                • Step 1: Application Review - 24-48 hours
+                • Step 2: Initial Discussion - 1-3 days
+                • Step 3: Agreement Finalization - 3-5 days
+                • Step 4: Full Onboarding - 1-2 weeks
+                
+                📞 NEED IMMEDIATE ASSISTANCE?
+                Partnership Team:
+                📧 Email: partnership@mfalmebetterdayscapital.com
+                📱 Phone: +254 706 286 667
+                ⏰ Hours: Mon-Fri, 9:00 AM - 5:00 PM EAT
+                
+                {'='*70}
+                This is an automated confirmation. Please do not reply to this email.
+                {'='*70}
+                """
+                
+                send_email_compatible(
+                    subject=f'🤝 Partnership Application Confirmation - {data.get("company_name")}',
+                    html_content=applicant_html_content,
+                    text_content=applicant_text_content,
+                    recipient_list=[applicant_email],
+                    from_email=settings.DEFAULT_FROM_EMAIL
+                )
+                print(f"✅ Confirmation email sent to applicant: {applicant_email}")
+                
+            except Exception as applicant_email_error:
+                print(f"⚠️ Failed to send confirmation to applicant: {str(applicant_email_error)}")
+        
+        # Return success response
+        return JsonResponse({
+            'success': True,
+            'message': 'Partnership application submitted successfully!',
+            'application_id': f'PART-{datetime.now().strftime("%Y%m%d%H%M%S")}',
+            'timestamp': datetime.now().isoformat(),
+            'admin_notified': admin_success,
+            'applicant_notified': bool(applicant_email)
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON data provided.'
+        }, status=400)
+        
+    except Exception as e:
+        print(f"❌ Partnership application error: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': f'Server error: {str(e)}'
+        }, status=500)    
+
+
+# ===== CONTACT FORM SUBMISSION FUNCTION =====
+
+@csrf_exempt
+def contact_form_submit(request):
+    """Handle contact form submission with AJAX support"""
+    if request.method == 'POST':
+        try:
+            print("📧 Contact form submission received")
+            
+            # Get form data
+            if request.content_type == 'application/json':
+                import json
+                data = json.loads(request.body)
+            else:
+                data = request.POST
+            
+            # Extract data
+            name = data.get('name', '').strip()
+            phone = data.get('phone', '').strip()
+            email = data.get('email', '').strip().lower()
+            package = data.get('package', '').strip()
+            message = data.get('message', '').strip()
+            
+            print(f"📝 Form data: {name}, {phone}, {package}")
+            
+            # Basic validation
+            errors = []
+            
+            if not name or len(name) < 2:
+                errors.append({'field': 'name', 'message': 'Please enter your full name'})
+            
+            if not phone:
+                errors.append({'field': 'phone', 'message': 'Phone number is required'})
+            else:
+                # Clean phone number
+                import re
+                digits = re.sub(r'[^\d]', '', phone)
+                if len(digits) < 10:
+                    errors.append({'field': 'phone', 'message': 'Please enter a valid phone number'})
+            
+            if not package or package == '':
+                errors.append({'field': 'package', 'message': 'Please select a package'})
+            
+            if not message or len(message) < 20:
+                errors.append({'field': 'message', 'message': 'Message must be at least 20 characters'})
+            elif len(message) > 500:
+                errors.append({'field': 'message', 'message': 'Message cannot exceed 500 characters'})
+            
+            # Email validation (optional)
+            if email:
+                from django.core.validators import validate_email
+                from django.core.exceptions import ValidationError
+                try:
+                    validate_email(email)
+                except ValidationError:
+                    errors.append({'field': 'email', 'message': 'Please enter a valid email address'})
+            
+            # If there are errors, return them
+            if errors:
+                print(f"❌ Form validation errors: {errors}")
+                return JsonResponse({
+                    'success': False,
+                    'errors': errors
+                }, status=400)
+            
+            # Get client info
+            ip_address = get_client_ip(request)
+            location = get_location_from_ip(ip_address)
+            
+            # Prepare email subject
+            subject = f"📞 New Contact: {name} - {package}"
+            
+            # HTML content for admin
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                    .container {{ max-width: 600px; margin: 0 auto; background: #f5f5f5; padding: 20px; }}
+                    .header {{ background: #FFD700; color: #000; padding: 20px; text-align: center; }}
+                    .content {{ background: white; padding: 30px; }}
+                    .field {{ margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }}
+                    .label {{ font-weight: bold; color: #666; }}
+                    .value {{ color: #333; margin-top: 5px; }}
+                    .highlight {{ background: #fff8e1; padding: 10px; border-left: 4px solid #FFD700; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>📞 NEW CONTACT FORM</h1>
+                        <p>MFALME BETTERDAYS CAPITAL</p>
+                    </div>
+                    <div class="content">
+                        <div class="highlight">
+                            <strong>Time:</strong> {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}<br>
+                            <strong>IP:</strong> {ip_address}<br>
+                            <strong>Location:</strong> {location.get('city', 'Unknown')}, {location.get('country', 'Unknown')}
+                        </div>
+                        
+                        <div class="field">
+                            <div class="label">👤 Full Name:</div>
+                            <div class="value">{name}</div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="label">📱 WhatsApp Number:</div>
+                            <div class="value">{phone}</div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="label">📧 Email Address:</div>
+                            <div class="value">{email if email else 'Not provided'}</div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="label">📦 Selected Package:</div>
+                            <div class="value" style="color: #FFD700; font-weight: bold;">{package}</div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="label">💬 Message:</div>
+                            <div class="value" style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                {message.replace(chr(10), '<br>')}
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #FFD700;">
+                            <p style="color: #666; font-size: 12px;">
+                                <strong>ACTION REQUIRED:</strong> Contact within 24 hours<br>
+                                <strong>Priority:</strong> {'HIGH' if 'Lifetime' in package or 'Leveraging' in package else 'MEDIUM'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+            
+            # Plain text version
+            text_content = f"""
+            NEW CONTACT FORM - MFALME BETTERDAYS CAPITAL
+            
+            📋 CONTACT DETAILS:
+            Name: {name}
+            Phone: {phone}
+            Email: {email if email else 'Not provided'}
+            Package: {package}
+            
+            💬 MESSAGE:
+            {message}
+            
+            📊 SUBMISSION INFO:
+            Time: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}
+            IP Address: {ip_address}
+            Location: {location.get('city', 'Unknown')}, {location.get('country', 'Unknown')}
+            
+            🎯 ACTION REQUIRED: Contact within 24 hours!
+            """
+            
+            # Send email to admin
+            admin_emails = getattr(settings, 'ADMIN_EMAILS', ['mfalmebetterdays@gmail.com'])
+            
+            email_sent = False
+            try:
+                for admin_email in admin_emails:
+                    send_email_compatible(
+                        subject=subject,
+                        html_content=html_content,
+                        text_content=text_content,
+                        recipient_list=[admin_email],
+                        from_email=settings.DEFAULT_FROM_EMAIL
+                    )
+                email_sent = True
+                print(f"✅ Contact form email sent to admins")
+            except Exception as email_error:
+                print(f"❌ Email sending error: {str(email_error)}")
+                # Continue anyway - we'll still show success to user
+            
+            # Send confirmation to user if email provided
+            user_confirmation_sent = False
+            if email:
+                try:
+                    user_subject = f"✅ Message Received - Mfalme Betterdays Capital"
+                    
+                    user_html_content = f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                    </head>
+                    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; padding: 20px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                            <tr>
+                                <td style="background: #FFD700; padding: 30px; text-align: center;">
+                                    <h1 style="color: #000; margin: 0; font-size: 24px;">✅ THANK YOU!</h1>
+                                    <p style="color: #000; margin: 10px 0 0 0;">Your Message Has Been Received</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 30px;">
+                                    <p>Dear <strong>{name}</strong>,</p>
+                                    
+                                    <p>Thank you for contacting Mfalme Betterdays Capital!</p>
+                                    
+                                    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #FFD700;">
+                                        <p style="margin: 0 0 10px 0;"><strong>📋 Summary:</strong></p>
+                                        <p style="margin: 5px 0;"><strong>Package:</strong> {package}</p>
+                                        <p style="margin: 5px 0;"><strong>Submitted:</strong> {timezone.now().strftime('%B %d, %Y at %H:%M')}</p>
+                                        <p style="margin: 5px 0;"><strong>Reference:</strong> CONTACT-{timezone.now().strftime('%Y%m%d%H%M')}</p>
+                                    </div>
+                                    
+                                    <h3 style="color: #0A1520;">🚀 What Happens Next?</h3>
+                                    <ol style="color: #333; line-height: 1.8;">
+                                        <li>Our team will review your inquiry within 24 hours</li>
+                                        <li>We'll contact you via WhatsApp/Phone for initial discussion</li>
+                                        <li>Schedule a consultation call (if applicable)</li>
+                                        <li>Provide detailed package information</li>
+                                    </ol>
+                                    
+                                    <div style="background: #e8f4fd; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                                        <h4 style="color: #0A1520; margin-top: 0;">📞 Need Immediate Assistance?</h4>
+                                        <p style="margin: 10px 0;">
+                                            <strong>Phone/WhatsApp:</strong> +254 706 286 667<br>
+                                            <strong>Response Time:</strong> Usually within 2-4 hours
+                                        </p>
+                                    </div>
+                                    
+                                    <p>We're excited to help you achieve financial success!</p>
+                                    
+                                    <p style="margin-top: 30px;">
+                                        Best regards,<br>
+                                        <strong>Levi Muriuki & The MFALME Team</strong>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </body>
+                    </html>
+                    """
+                    
+                    user_text_content = f"""
+                    ✅ MESSAGE RECEIVED - MFALME BETTERDAYS CAPITAL
+                    
+                    Dear {name},
+                    
+                    Thank you for contacting Mfalme Betterdays Capital!
+                    
+                    📋 SUMMARY:
+                    Package: {package}
+                    Submitted: {timezone.now().strftime('%B %d, %Y at %H:%M')}
+                    Reference: CONTACT-{timezone.now().strftime('%Y%m%d%H%M')}
+                    
+                    🚀 WHAT HAPPENS NEXT?
+                    1. Our team will review your inquiry within 24 hours
+                    2. We'll contact you via WhatsApp/Phone for initial discussion
+                    3. Schedule a consultation call (if applicable)
+                    4. Provide detailed package information
+                    
+                    📞 NEED IMMEDIATE ASSISTANCE?
+                    Phone/WhatsApp: +254 706 286 667
+                    Response Time: Usually within 2-4 hours
+                    
+                    We're excited to help you achieve financial success!
+                    
+                    Best regards,
+                    Levi Muriuki & The MFALME Team
+                    """
+                    
+                    send_email_compatible(
+                        subject=user_subject,
+                        html_content=user_html_content,
+                        text_content=user_text_content,
+                        recipient_list=[email],
+                        from_email=settings.DEFAULT_FROM_EMAIL
+                    )
+                    
+                    user_confirmation_sent = True
+                    print(f"✅ Confirmation email sent to user: {email}")
+                    
+                except Exception as user_email_error:
+                    print(f"⚠️ Failed to send confirmation to user: {str(user_email_error)}")
+            
+            # Return success response
+            response_data = {
+                'success': True,
+                'message': 'Message sent successfully! We will contact you shortly.',
+                'reference': f'CONTACT-{timezone.now().strftime("%Y%m%d%H%M")}',
+                'email_sent': email_sent,
+                'user_notified': user_confirmation_sent
+            }
+            
+            print(f"✅ Contact form processed successfully: {response_data}")
+            
+            return JsonResponse(response_data)
+            
+        except json.JSONDecodeError:
+            print("❌ Invalid JSON data")
+            return JsonResponse({
+                'success': False,
+                'errors': [{'field': 'general', 'message': 'Invalid data format. Please try again.'}]
+            }, status=400)
+            
+        except Exception as e:
+            print(f"❌ Contact form error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            
+            return JsonResponse({
+                'success': False,
+                'errors': [{'field': 'general', 'message': 'Server error occurred. Please try again or contact us directly.'}]
+            }, status=500)
+    
+    else:
+        return JsonResponse({
+            'success': False,
+            'errors': [{'field': 'general', 'message': 'Invalid request method. Please submit the form.'}]
+        }, status=405)        

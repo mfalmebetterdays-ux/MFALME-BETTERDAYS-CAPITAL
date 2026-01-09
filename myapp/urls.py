@@ -78,4 +78,6 @@ urlpatterns = [
     
     # Payment verification (use your existing verify_payment view)
     path('payment/verify/<str:reference>/', views.verify_payment, name='verify_payment'),
+    path('apply-partnership/', views.submit_partnership_application, name='submit_partnership_application'),
+     path('contact/submit/', views.contact_form_submit, name='contact_submit'),
 ]
