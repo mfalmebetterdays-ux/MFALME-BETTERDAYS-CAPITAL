@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}SasaPay Checkout - Mfalme Betterdays{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">SasaPay Checkout</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <img src="{% static 'images/sasapay-logo.png' %}" alt="SasaPay" height="60">
+                        <h5 class="mt-3">{{ item_type|title }}: {{ item.title }}</h5>
+                        <h3 class="text-primary">KES {{ amount_kes|floatformat:2 }}</h3>
+                        <p class="text-muted">(≈ ${{ amount_usd|floatformat:2 }} USD)</p>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Choose your payment method below
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-mobile-alt fa-3x text-success mb-3"></i>
+                                    <h5>M-PESA (STK Push)</h5>
+                                    <p class="small">Pay directly using M-PESA on your phone</p>
+                                    <form id="c2b-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="reference" value="{{ reference }}">
+                                        <div class="form-group">
+                                            <input type="tel" class="form-control" id="phone" 
+                                                   placeholder="2547XXXXXXXX" value="{{ user.phone|default:'' }}" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-success btn-block" id="pay-c2b">
+                                            Pay with M-PESA
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-credit-card fa-3x text-primary mb-3"></i>
+                                    <h5>Web Checkout</h5>
+                                    <p class="small">Pay with Card, SasaPay Wallet, or Airtel</p>
+                                    <button class="btn btn-primary btn-block" id="pay-checkout">
+                                        Continue to Checkout
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="payment-status" class="mt-4" style="display: none;">
+                        <div class="alert" id="status-message"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // C2B (M-PESA) payment
+    $('#c2b-form').submit(function(e) {
+        e.preventDefault();
+        
+        const phone = $('#phone').val().trim();
+        if (!phone) {
+            alert('Please enter your phone number');
+            return;
+        }
+        
+        // Validate phone format
+        if (!phone.match(/^254[0-9]{9}$/)) {
+            alert('Phone must be in format: 254XXXXXXXXX');
+            return;
+        }
+        
+        const $btn = $('#pay-c2b');
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+        
+        $.ajax({
+            url: '{% url "sasapay_process" %}',
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            data: JSON.stringify({
+                reference: '{{ reference }}',
+                phone: phone,
+                payment_method: 'c2b'
+            }),
+            contentType: 'application/json',
+            success: function(response) {
+                if (response.success) {
+                    $('#payment-status').show();
+                    $('#status-message').removeClass('alert-danger').addClass('alert-success')
+                        .html('<i class="fas fa-check-circle"></i> ' + response.message);
+                    
+                    // Start polling for status
+                    checkStatus('{{ reference }}');
+                } else {
+                    $('#payment-status').show();
+                    $('#status-message').removeClass('alert-success').addClass('alert-danger')
+                        .html('<i class="fas fa-exclamation-circle"></i> ' + response.error);
+                    $btn.prop('disabled', false).html('Pay with M-PESA');
+                }
+            },
+            error: function(xhr) {
+                $('#payment-status').show();
+                $('#status-message').removeClass('alert-success').addClass('alert-danger')
+                    .html('<i class="fas fa-exclamation-circle"></i> Payment initiation failed');
+                $btn.prop('disabled', false).html('Pay with M-PESA');
+            }
+        });
+    });
+    
+    // Web checkout
+    $('#pay-checkout').click(function() {
+        const $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Redirecting...');
+        
+        $.ajax({
+            url: '{% url "sasapay_process" %}',
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            data: JSON.stringify({
+                reference: '{{ reference }}',
+                payment_method: 'checkout'
+            }),
+            contentType: 'application/json',
+            success: function(response) {
+                if (response.success && response.checkout_url) {
+                    window.location.href = response.checkout_url;
+                } else {
+                    alert(response.error || 'Failed to initiate checkout');
+                    $btn.prop('disabled', false).html('Continue to Checkout');
+                }
+            },
+            error: function() {
+                alert('Failed to initiate checkout');
+                $btn.prop('disabled', false).html('Continue to Checkout');
+            }
+        });
+    });
+    
+    // Poll for payment status
+    function checkStatus(reference) {
+        const interval = setInterval(function() {
+            $.get('/sasapay/status/' + reference + '/', function(data) {
+                if (data.status === 'completed') {
+                    clearInterval(interval);
+                    window.location.href = data.success_url;
+                } else if (data.status === 'failed') {
+                    clearInterval(interval);
+                    $('#payment-status').show();
+                    $('#status-message').removeClass('alert-success').addClass('alert-danger')
+                        .html('<i class="fas fa-exclamation-circle"></i> ' + data.error);
+                    $('#pay-c2b').prop('disabled', false).html('Pay with M-PESA');
+                }
+            });
+        }, 3000); // Check every 3 seconds
+    }
+});
+</script>
+{% endblock %}

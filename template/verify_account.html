@@ -159,6 +159,12 @@
             border: 1px solid rgba(59, 130, 246, 0.2);
         }
         
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #F59E0B;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        
         /* Code Input */
         .code-inputs {
             display: flex;
@@ -330,6 +336,7 @@
                         <i class="fas 
                             {% if message.tags == 'success' %}fa-check-circle
                             {% elif message.tags == 'error' %}fa-exclamation-circle
+                            {% elif message.tags == 'warning' %}fa-exclamation-triangle
                             {% else %}fa-info-circle{% endif %}">
                         </i>
                         {{ message }}
@@ -337,7 +344,8 @@
                 {% endfor %}
             {% endif %}
             
-            <form method="POST" action="{% url 'verify_account_process' %}" id="verificationForm">
+            <!-- FIXED: Changed from 'verify_email' to 'verify_account' to match urls.py -->
+            <form method="POST" action="{% url 'verify_account' %}" id="verificationForm">
                 {% csrf_token %}
                 
                 {% if user_email %}
@@ -345,15 +353,17 @@
                 {% endif %}
                 
                 <div class="code-inputs" id="codeInputs">
-                    <input type="text" name="code1" class="code-input" maxlength="1" data-index="1" required autocomplete="off">
-                    <input type="text" name="code2" class="code-input" maxlength="1" data-index="2" required autocomplete="off">
-                    <input type="text" name="code3" class="code-input" maxlength="1" data-index="3" required autocomplete="off">
-                    <input type="text" name="code4" class="code-input" maxlength="1" data-index="4" required autocomplete="off">
-                    <input type="text" name="code5" class="code-input" maxlength="1" data-index="5" required autocomplete="off">
-                    <input type="text" name="code6" class="code-input" maxlength="1" data-index="6" required autocomplete="off">
+                    <!-- These are for visual display only - no name attributes -->
+                    <input type="text" class="code-input digit-input" maxlength="1" data-index="1" required autocomplete="off">
+                    <input type="text" class="code-input digit-input" maxlength="1" data-index="2" required autocomplete="off">
+                    <input type="text" class="code-input digit-input" maxlength="1" data-index="3" required autocomplete="off">
+                    <input type="text" class="code-input digit-input" maxlength="1" data-index="4" required autocomplete="off">
+                    <input type="text" class="code-input digit-input" maxlength="1" data-index="5" required autocomplete="off">
+                    <input type="text" class="code-input digit-input" maxlength="1" data-index="6" required autocomplete="off">
                 </div>
                 
-                <input type="hidden" name="verification_code" id="fullCode">
+                <!-- This hidden field will contain the combined 6-digit code with name='code' to match view -->
+                <input type="hidden" name="code" id="fullCode">
                 
                 <button type="submit" class="verify-btn" id="verifyBtn">
                     <i class="fas fa-check-circle"></i>
@@ -365,10 +375,15 @@
                 <p style="color: var(--white-smoke); margin-bottom: 15px; font-size: 0.95rem;">
                     Didn't receive the code?
                 </p>
-                <button class="resend-btn" id="resendBtn" onclick="resendVerificationCode()">
-                    <i class="fas fa-paper-plane"></i>
-                    <span>Resend Code</span>
-                </button>
+                <!-- FIXED: Using form instead of AJAX to avoid JavaScript URL issues -->
+                <form method="POST" action="{% url 'resend_verification' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="email" value="{{ user_email }}">
+                    <button type="submit" class="resend-btn" id="resendBtn">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Resend Code</span>
+                    </button>
+                </form>
                 <span class="timer" id="resendTimer">(30s)</span>
             </div>
             
@@ -386,16 +401,16 @@
     <script>
         // Initialize code input functionality
         document.addEventListener('DOMContentLoaded', function() {
-            const codeInputs = document.querySelectorAll('.code-input');
+            const digitInputs = document.querySelectorAll('.digit-input');
             const fullCodeInput = document.getElementById('fullCode');
             
             // Focus first input
-            if (codeInputs.length > 0) {
-                codeInputs[0].focus();
+            if (digitInputs.length > 0) {
+                digitInputs[0].focus();
             }
             
             // Handle input events
-            codeInputs.forEach((input, index) => {
+            digitInputs.forEach((input, index) => {
                 input.addEventListener('input', function(e) {
                     // Only allow digits
                     if (!/^\d*$/.test(this.value)) {
@@ -407,8 +422,8 @@
                         this.classList.add('filled');
                         
                         // Move to next input
-                        if (index < codeInputs.length - 1) {
-                            codeInputs[index + 1].focus();
+                        if (index < digitInputs.length - 1) {
+                            digitInputs[index + 1].focus();
                         } else {
                             // Auto-submit when all fields are filled
                             setTimeout(() => {
@@ -427,9 +442,9 @@
                     if (e.key === 'Backspace' || e.key === 'Delete') {
                         if (this.value === '' && index > 0) {
                             // Move to previous input
-                            codeInputs[index - 1].focus();
-                            codeInputs[index - 1].value = '';
-                            codeInputs[index - 1].classList.remove('filled');
+                            digitInputs[index - 1].focus();
+                            digitInputs[index - 1].value = '';
+                            digitInputs[index - 1].classList.remove('filled');
                         } else {
                             this.value = '';
                             this.classList.remove('filled');
@@ -440,12 +455,12 @@
                     
                     // Handle arrow keys
                     if (e.key === 'ArrowLeft' && index > 0) {
-                        codeInputs[index - 1].focus();
+                        digitInputs[index - 1].focus();
                         e.preventDefault();
                     }
                     
-                    if (e.key === 'ArrowRight' && index < codeInputs.length - 1) {
-                        codeInputs[index + 1].focus();
+                    if (e.key === 'ArrowRight' && index < digitInputs.length - 1) {
+                        digitInputs[index + 1].focus();
                         e.preventDefault();
                     }
                 });
@@ -457,19 +472,20 @@
                     
                     if (/^\d{6}$/.test(pasteData)) {
                         // Fill all inputs with pasted code
-                        codeInputs.forEach((input, idx) => {
+                        digitInputs.forEach((input, idx) => {
                             if (idx < pasteData.length) {
                                 input.value = pasteData[idx];
                                 input.classList.add('filled');
                             }
                         });
                         
-                        // Move focus to last input
-                        if (codeInputs.length > 0) {
-                            codeInputs[Math.min(pasteData.length - 1, codeInputs.length - 1)].focus();
-                        }
+                        // Update hidden field
+                        fullCodeInput.value = pasteData;
                         
-                        updateFullCode();
+                        // Move focus to last input
+                        if (digitInputs.length > 0) {
+                            digitInputs[Math.min(pasteData.length - 1, digitInputs.length - 1)].focus();
+                        }
                         
                         // Auto-submit
                         setTimeout(() => {
@@ -481,7 +497,7 @@
             
             function updateFullCode() {
                 let fullCode = '';
-                codeInputs.forEach(input => {
+                digitInputs.forEach(input => {
                     fullCode += input.value;
                 });
                 fullCodeInput.value = fullCode;
@@ -508,51 +524,9 @@
                 });
             }
             
-            // Start resend timer
+            // Simple timer for resend button
             startResendTimer();
         });
-        
-        // Resend verification code
-        function resendVerificationCode() {
-            const resendBtn = document.getElementById('resendBtn');
-            const timerElement = document.getElementById('resendTimer');
-            
-            if (!resendBtn || resendBtn.disabled) return;
-            
-            // Disable button
-            resendBtn.disabled = true;
-            const originalText = resendBtn.querySelector('span').textContent;
-            resendBtn.querySelector('span').textContent = 'Sending...';
-            
-            // Send AJAX request
-            fetch('{% url "resend_verification" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({
-                    action: 'resend_verification'
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showMessage('Verification code resent. Check your email.', 'success');
-                    startResendTimer();
-                } else {
-                    showMessage(data.message || 'Failed to resend code.', 'error');
-                    resendBtn.disabled = false;
-                    resendBtn.querySelector('span').textContent = originalText;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showMessage('An error occurred. Please try again.', 'error');
-                resendBtn.disabled = false;
-                resendBtn.querySelector('span').textContent = originalText;
-            });
-        }
         
         // Timer for resend button
         function startResendTimer() {
@@ -589,6 +563,7 @@
             let icon = 'fa-info-circle';
             if (type === 'success') icon = 'fa-check-circle';
             if (type === 'error') icon = 'fa-exclamation-circle';
+            if (type === 'warning') icon = 'fa-exclamation-triangle';
             
             alertDiv.innerHTML = `
                 <i class="fas ${icon}"></i>
@@ -613,22 +588,6 @@
                     }, 300);
                 }
             }, 5000);
-        }
-        
-        // Get CSRF token
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
         }
     </script>
 </body>

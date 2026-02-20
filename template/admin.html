@@ -1,0 +1,4209 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MFALME BETTERDAYS CAPITAL | ADMIN</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link rel="icon" href="{% static 'assets/images/2.png' %}">
+    
+    <style>
+        /* YOUR EXISTING CSS - KEEP IT EXACTLY AS YOU HAD IT */
+        :root {
+            --black: #000000;
+            --white: #FFFFFF;
+            --blue: #0066CC;
+            --green: #10B981;
+            --yellow: #F59E0B;
+            --red: #EF4444;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gray-100);
+            color: var(--gray-900);
+        }
+        
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: var(--black);
+            color: var(--white);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--gray-700);
+        }
+        
+        .sidebar-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--white);
+        }
+        
+        .sidebar-header p {
+            font-size: 12px;
+            color: var(--gray-400);
+            margin-top: 4px;
+        }
+        
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            color: var(--gray-300);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .nav-item i {
+            width: 24px;
+            margin-right: 12px;
+            color: var(--gray-400);
+        }
+        
+        .nav-item:hover {
+            background: var(--gray-800);
+            color: var(--white);
+        }
+        
+        .nav-item:hover i {
+            color: var(--white);
+        }
+        
+        .nav-item.active {
+            background: var(--gray-800);
+            color: var(--white);
+            border-left-color: var(--blue);
+        }
+        
+        .nav-item.active i {
+            color: var(--blue);
+        }
+        
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--gray-700);
+        }
+        
+        .admin-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .admin-avatar {
+            width: 45px;
+            height: 45px;
+            background: var(--blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--white);
+            font-size: 18px;
+        }
+        
+        .admin-details h4 {
+            font-size: 14px;
+            color: var(--white);
+        }
+        
+        .admin-details span {
+            font-size: 12px;
+            color: var(--gray-400);
+        }
+        
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 2px solid var(--red);
+            color: var(--red);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background: var(--red);
+            color: var(--white);
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 30px;
+        }
+        
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: var(--white);
+            padding: 16px 24px;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .page-title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+        
+        .page-title p {
+            font-size: 14px;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+        
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .notification-icon {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .notification-icon i {
+            font-size: 20px;
+            color: var(--gray-600);
+        }
+        
+        .badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--red);
+            color: var(--white);
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        
+        .btn-refresh {
+            background: transparent;
+            border: 2px solid var(--blue);
+            color: var(--blue);
+            padding: 10px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        
+        .btn-refresh:hover {
+            background: var(--blue);
+            color: var(--white);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .stat-header i {
+            font-size: 28px;
+        }
+        
+        .stat-header i.text-blue { color: var(--blue); }
+        .stat-header i.text-green { color: var(--green); }
+        .stat-header i.text-yellow { color: var(--yellow); }
+        .stat-header i.text-red { color: var(--red); }
+        
+        .stat-title {
+            font-size: 14px;
+            color: var(--gray-500);
+            font-weight: 500;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+        
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+        
+        .chart-header span {
+            font-size: 12px;
+            color: var(--gray-500);
+            background: var(--gray-100);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .chart-container {
+            height: 250px;
+            position: relative;
+        }
+        
+        .activity-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .activity-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+        
+        .show-more {
+            background: transparent;
+            border: 2px solid var(--blue);
+            color: var(--blue);
+            padding: 8px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .show-more:hover {
+            background: var(--blue);
+            color: var(--white);
+        }
+        
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .activity-list.expanded {
+            max-height: 600px;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 6px;
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .bg-blue { background: var(--blue); }
+        .bg-green { background: var(--green); }
+        .bg-yellow { background: var(--yellow); }
+        .bg-red { background: var(--red); }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-title {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+        
+        .activity-time {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+        
+        .section-page {
+            display: none;
+        }
+        
+        .section-page.active {
+            display: block;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .section-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+        
+        .btn-add {
+            background: var(--blue);
+            border: none;
+            color: var(--white);
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 6px;
+        }
+        
+        .btn-add:hover {
+            background: var(--gray-800);
+        }
+        
+        .table-container {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px; /* Ensure table doesn't squish on smaller screens */
+        }
+        
+        th {
+            text-align: left;
+            padding: 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-500);
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+            white-space: nowrap;
+        }
+        
+        td {
+            padding: 16px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--gray-200);
+            color: var(--gray-700);
+            vertical-align: middle;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 4px;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        
+        .status-active {
+            background: var(--green);
+            color: white;
+        }
+        
+        .status-pending {
+            background: var(--yellow);
+            color: white;
+        }
+        
+        .status-inactive {
+            background: var(--red);
+            color: white;
+        }
+        
+        /* FIXED: Action buttons styling - NO OVERLAPPING */
+        .action-cell {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            min-width: 180px; /* Give enough space for buttons */
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex: 0 1 auto; /* Don't force buttons to stretch */
+        }
+        
+        .action-btn i {
+            font-size: 12px;
+        }
+        
+        .btn-edit {
+            background: var(--blue);
+            color: white;
+        }
+        
+        .btn-edit:hover {
+            background: #0052a3;
+        }
+        
+        .btn-view {
+            background: var(--green);
+            color: white;
+        }
+        
+        .btn-view:hover {
+            background: #0d9488;
+        }
+        
+        .btn-delete {
+            background: var(--red);
+            color: white;
+        }
+        
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+        
+        .thumbnail-img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--gray-200);
+        }
+        
+        .no-thumbnail {
+            width: 50px;
+            height: 50px;
+            background: var(--gray-200);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-500);
+            font-size: 20px;
+        }
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal {
+            background: var(--white);
+            border-radius: 8px;
+            width: 600px;
+            max-width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray-500);
+        }
+        
+        .modal-body {
+            padding: 25px;
+        }
+        
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-col {
+            flex: 1;
+        }
+        
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            color: var(--gray-900);
+            font-family: 'Inter', sans-serif;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--blue);
+        }
+        
+        .file-upload {
+            background: var(--gray-50);
+            border: 2px dashed var(--gray-300);
+            border-radius: 6px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+        }
+        
+        .file-upload i {
+            font-size: 32px;
+            color: var(--blue);
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary {
+            background: var(--blue);
+            color: var(--white);
+            border: none;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--gray-300);
+            color: var(--gray-700);
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--gray-100);
+        }
+        
+        /* LOADER STYLES */
+        .loader-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .loader {
+            border: 5px solid var(--gray-200);
+            border-top: 5px solid var(--blue);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loader-text {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--green);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            display: none;
+            animation: slideInRight 0.3s ease;
+        }
+        
+        .toast.error {
+            background: var(--red);
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Responsive fixes */
+        @media (max-width: 1200px) {
+            .action-cell {
+                min-width: 150px;
+            }
+            
+            .action-btn {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 80px;
+            }
+            
+            .sidebar-header h2,
+            .sidebar-header p,
+            .nav-item span,
+            .admin-details {
+                display: none;
+            }
+            
+            .nav-item {
+                justify-content: center;
+                padding: 15px;
+            }
+            
+            .nav-item i {
+                margin-right: 0;
+            }
+            
+            .main-content {
+                margin-left: 80px;
+                padding: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-cell {
+                flex-direction: row;
+                min-width: 120px;
+            }
+            
+            .action-btn {
+                padding: 4px 6px;
+                font-size: 10px;
+            }
+            
+            .action-btn i {
+                margin-right: 2px;
+            }
+        }
+        
+        /* Additional fixes for overlapping buttons */
+        .table-container td:last-child {
+            position: sticky;
+            right: 0;
+            background: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+        }
+        
+        /* Ensure action buttons don't wrap weirdly */
+        .action-cell .action-btn {
+            margin: 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- LOADER OVERLAY -->
+    <div class="loader-overlay" id="loaderOverlay">
+        <div class="loader"></div>
+        <div class="loader-text" id="loaderText">Processing...</div>
+    </div>
+    
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast" id="toast">
+        <span id="toastMessage">Operation successful</span>
+    </div>
+    
+    <div class="dashboard">
+        <!-- SIDEBAR - BLACK -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>MBC ADMIN</h2>
+                <p>v2.0</p>
+            </div>
+            
+            <div class="sidebar-nav">
+                <div class="nav-item active" data-section="dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item" data-section="users">
+                    <i class="fas fa-users"></i>
+                    <span>Users</span>
+                </div>
+                <div class="nav-item" data-section="courses">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Courses</span>
+                </div>
+                <div class="nav-item" data-section="videos">
+                    <i class="fas fa-video"></i>
+                    <span>Videos</span>
+                </div>
+                <div class="nav-item" data-section="pdfs">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>PDFs</span>
+                </div>
+                <div class="nav-item" data-section="blogs">
+                    <i class="fas fa-blog"></i>
+                    <span>Blogs</span>
+                </div>
+                <div class="nav-item" data-section="packages">
+                    <i class="fas fa-box"></i>
+                    <span>Packages</span>
+                </div>
+                <div class="nav-item" data-section="orders">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Orders</span>
+                </div>
+                <div class="nav-item" data-section="partnerships">
+                    <i class="fas fa-handshake"></i>
+                    <span>Partnerships</span>
+                </div>
+                <div class="nav-item" data-section="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </div>
+                <div class="nav-item" data-section="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="admin-info">
+                    <div class="admin-avatar">{{ user.first_name|first|default:'A' }}{{ user.last_name|first|default:'D' }}</div>
+                    <div class="admin-details">
+                        <h4>{{ user.get_full_name|default:user.username }}</h4>
+                        <span>Super Admin</span>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> LOGOUT
+                </button>
+            </div>
+        </div>
+        
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- TOP BAR - WHITE -->
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1 id="pageTitle">Dashboard</h1>
+                    <p id="pageSubtitle">Welcome back, {{ user.first_name|default:user.username }}. Here's your overview</p>
+                </div>
+                
+                <div class="top-actions">
+                    <div class="notification-icon">
+                        <i class="far fa-bell"></i>
+                        <span class="badge">8</span>
+                    </div>
+                    <button class="btn-refresh" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> REFRESH
+                    </button>
+                </div>
+            </div>
+            
+            <!-- ========== DASHBOARD SECTION ========== -->
+            <div id="section-dashboard" class="section-page active">
+                <!-- STATS CARDS -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Total Users</span>
+                            <i class="fas fa-users text-blue"></i>
+                        </div>
+                        <div class="stat-number" id="statUsers">0</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Total Revenue</span>
+                            <i class="fas fa-dollar-sign text-green"></i>
+                        </div>
+                        <div class="stat-number" id="statRevenue">KES.0.00</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Active Courses</span>
+                            <i class="fas fa-graduation-cap text-yellow"></i>
+                        </div>
+                        <div class="stat-number" id="statCourses">0</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Videos</span>
+                            <i class="fas fa-video text-red"></i>
+                        </div>
+                        <div class="stat-number" id="statVideos">0</div>
+                    </div>
+                </div>
+                
+                <!-- CHARTS ROW -->
+                <div class="charts-row">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Revenue Generated</h3>
+                            <span>Last 30 days</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Content Distribution</h3>
+                            <span>By percentage</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="distributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- RECENT ACTIVITY -->
+                <div class="activity-card">
+                    <div class="activity-header">
+                        <h3>Recent Activity</h3>
+                        <button class="show-more" id="showMoreActivities" onclick="toggleActivities()">
+                            SHOW MORE <i class="fas fa-arrow-down"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="activity-list" id="activityList">
+                        <!-- Loaded via AJAX - shows only 3 -->
+                    </div>
+                    <div class="activity-list" id="allActivitiesList" style="display: none;">
+                        <!-- Loaded via AJAX - shows all -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ========== USERS SECTION ========== -->
+            <div id="section-users" class="section-page">
+                <div class="section-header">
+                    <h2>User Management</h2>
+                    <button class="btn-add" onclick="openModal('addUser')">
+                        <i class="fas fa-plus"></i> ADD USER
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Tier</th>
+                                <th>Joined</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== COURSES SECTION (ONE PRICE) ========== -->
+            <div id="section-courses" class="section-page">
+                <div class="section-header">
+                    <h2>Course Management</h2>
+                    <button class="btn-add" onclick="openModal('addCourse')">
+                        <i class="fas fa-plus"></i> ADD COURSE
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Image</th>
+                                <th>Course Name</th>
+                                <th>Code</th>
+                                <th>Price</th>
+                                <th>Videos</th>
+                                <th>PDFs</th>
+                                <th>Status</th>
+                                <th class="action-cell-header">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="coursesTableBody">
+                            <!-- Loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== VIDEOS SECTION ========== -->
+            <div id="section-videos" class="section-page">
+                <div class="section-header">
+                    <h2>Video Library</h2>
+                    <button class="btn-add" onclick="openModal('addVideo')">
+                        <i class="fas fa-plus"></i> UPLOAD VIDEO
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Thumbnail</th>
+                                <th>Title</th>
+                                <th>Course</th>
+                                <th>Duration</th>
+                                <th>Module</th>
+                                <th>Uploaded</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="videosTableBody">
+                            <!-- Loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== PDFs SECTION ========== -->
+            <div id="section-pdfs" class="section-page">
+                <div class="section-header">
+                    <h2>PDF Resources</h2>
+                    <button class="btn-add" onclick="openModal('addPDF')">
+                        <i class="fas fa-plus"></i> UPLOAD PDF
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cover</th>
+                                <th>Title</th>
+                                <th>Course</th>
+                                <th>Pages</th>
+                                <th>Size</th>
+                                <th>Uploaded</th>
+                                <th>Downloads</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pdfsTableBody">
+                            <!-- Loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== BLOGS SECTION ========== -->
+            <div id="section-blogs" class="section-page">
+                <div class="section-header">
+                    <h2>Blog Posts</h2>
+                    <button class="btn-add" onclick="openModal('addBlog')">
+                        <i class="fas fa-plus"></i> NEW POST
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Image</th>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Category</th>
+                                <th>Views</th>
+                                <th>Published</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="blogsTableBody">
+                            <!-- Loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== PACKAGES SECTION ========== -->
+            <div id="section-packages" class="section-page">
+                <div class="section-header">
+                    <h2>Trading Packages</h2>
+                    <button class="btn-add" onclick="openModal('addPackage')">
+                        <i class="fas fa-plus"></i> ADD PACKAGE
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Image</th>
+                                <th>Package Name</th>
+                                <th>Price</th>
+                                <th>Type</th>
+                                <th>Sales</th>
+                                <th>Revenue</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="packagesTableBody">
+                            <!-- Loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== ORDERS SECTION ========== -->
+            <div id="section-orders" class="section-page">
+                <div class="section-header">
+                    <h2>Order Management</h2>
+                    <button class="btn-add" onclick="openModal('filterOrders')">
+                        <i class="fas fa-filter"></i> FILTER
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Package</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody">
+                            <!-- Loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== PARTNERSHIPS SECTION ========== -->
+            <div id="section-partnerships" class="section-page">
+                <div class="section-header">
+                    <h2>Partnership Applications</h2>
+                    <button class="btn-add" onclick="openModal('exportPartnerships')">
+                        <i class="fas fa-download"></i> EXPORT
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Company</th>
+                                <th>Contact</th>
+                                <th>Tier</th>
+                                <th>Amount</th>
+                                <th>NDA</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="partnershipsTableBody">
+                            <!-- Loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ========== REPORTS SECTION ========== -->
+            <div id="section-reports" class="section-page">
+                <div class="section-header">
+                    <h2>Reports & Analytics</h2>
+                    <button class="btn-add" onclick="openModal('generateReport')">
+                        <i class="fas fa-chart-line"></i> GENERATE REPORT
+                    </button>
+                </div>
+                
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Monthly Revenue</span>
+                            <i class="fas fa-dollar-sign text-green"></i>
+                        </div>
+                        <div class="stat-number" id="monthlyRevenue">$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">New Users</span>
+                            <i class="fas fa-user-plus text-blue"></i>
+                        </div>
+                        <div class="stat-number" id="newUsers">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Conversion Rate</span>
+                            <i class="fas fa-percent text-yellow"></i>
+                        </div>
+                        <div class="stat-number" id="conversionRate">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-title">Active Students</span>
+                            <i class="fas fa-graduation-cap text-red"></i>
+                        </div>
+                        <div class="stat-number" id="activeStudents">0</div>
+                    </div>
+                </div>
+                
+                <div class="chart-card" style="margin-bottom: 20px;">
+                    <div class="chart-header">
+                        <h3>Revenue Breakdown</h3>
+                        <span>By package type</span>
+                    </div>
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="reportsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ========== SETTINGS SECTION ========== -->
+            <div id="section-settings" class="section-page">
+                <div class="section-header">
+                    <h2>System Settings</h2>
+                    <button class="btn-add" onclick="openModal('saveSettings')">
+                        <i class="fas fa-save"></i> SAVE CHANGES
+                    </button>
+                </div>
+                
+                <div style="background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; padding: 30px;">
+                    <form id="settingsForm">
+                        <div class="form-row">
+                            <div class="form-col">
+                                <label>Site Name</label>
+                                <input type="text" id="site_name" value="Mfalme Betterdays Capital">
+                            </div>
+                            <div class="form-col">
+                                <label>Site Email</label>
+                                <input type="email" id="site_email" value="admin@mfalmebetterdays.com">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-col">
+                                <label>Support Phone</label>
+                                <input type="text" id="support_phone" value="+254706286667">
+                            </div>
+                            <div class="form-col">
+                                <label>Currency</label>
+                                <select id="currency">
+                                    <option value="USD">USD ($)</option>
+                                    <option value="KES">KES (KSh)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Payment Gateway API Key</label>
+                            <input type="text" id="paystack_key" value="pk_live_xxxxxxxxxxxxxx">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Maintenance Mode</label>
+                            <select id="maintenance_mode">
+                                <option value="false">Disabled</option>
+                                <option value="true">Enabled</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MODAL for Add/Edit -->
+        <div class="modal-overlay" id="contentModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Add New Content</h3>
+                    <button class="modal-close" onclick="closeModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Dynamic content loaded via JS -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="closeModal()">CANCEL</button>
+                    <button class="btn-primary" id="modalSaveBtn">SAVE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ========== UTILITY FUNCTIONS ==========
+        const csrftoken = document.querySelector('[name=csrf-token]').getAttribute('content');
+        let allActivities = []; // Store all activities for show more functionality
+        
+        function showLoader(message = 'Processing...') {
+            $('#loaderText').text(message);
+            $('#loaderOverlay').fadeIn(200);
+        }
+        
+        function hideLoader() {
+            $('#loaderOverlay').fadeOut(200);
+        }
+        
+        function showToast(message, isError = false) {
+            $('#toastMessage').text(message);
+            $('#toast').removeClass('error').addClass(isError ? 'error' : '');
+            $('#toast').fadeIn(200).delay(3000).fadeOut(200);
+        }
+        
+        // SIMPLIFIED formatCurrency - NO REGEX MAGIC
+        function formatCurrency(amount) {
+            // Convert to number, default to 0 if invalid
+            let num = 0;
+            try {
+                num = parseFloat(amount);
+                if (isNaN(num)) num = 0;
+            } catch(e) {
+                num = 0;
+            }
+            
+            // Format with 2 decimal places
+            return '$' + num.toFixed(2);
+        }
+        
+        // FIXED getThumbnailHtml - SIMPLE AND CLEAN
+        function getThumbnailHtml(imageUrl, title) {
+            // Check if imageUrl exists and is valid
+            if (imageUrl && imageUrl !== 'null' && imageUrl !== 'undefined' && imageUrl.trim() !== '') {
+                // Just show the image - no onerror handler that hides it
+                return `<img src="${imageUrl}" alt="${title}" class="thumbnail-img" style="display:block;">`;
+            } else {
+                // No image URL, show fallback
+                return `<div class="no-thumbnail"><i class="fas fa-image"></i></div>`;
+            }
+        }
+        
+        // ========== INITIALIZATION ==========
+        $(document).ready(function() {
+            console.log('Admin dashboard initialized');
+            loadDashboardData();
+            loadUsers();
+            loadCourses();
+            loadVideos();
+            loadPDFs();
+            loadBlogs();
+            loadPackages();
+            loadOrders();
+            loadPartnerships();
+            loadReportsData();
+            initCharts();
+            setupNavigation();
+        });
+        
+        // ========== NAVIGATION ==========
+        function setupNavigation() {
+            $('.nav-item').click(function() {
+                const section = $(this).data('section');
+                
+                $('.nav-item').removeClass('active');
+                $(this).addClass('active');
+                
+                $('.section-page').removeClass('active');
+                $(`#section-${section}`).addClass('active');
+                
+                const titles = {
+                    'dashboard': 'Dashboard',
+                    'users': 'User Management',
+                    'courses': 'Course Management',
+                    'videos': 'Video Library',
+                    'pdfs': 'PDF Resources',
+                    'blogs': 'Blog Posts',
+                    'packages': 'Package Management',
+                    'orders': 'Order Management',
+                    'partnerships': 'Partnership Applications',
+                    'reports': 'Reports & Analytics',
+                    'settings': 'System Settings'
+                };
+                
+                $('#pageTitle').text(titles[section] || 'Dashboard');
+                $('#pageSubtitle').text(`Manage your ${titles[section]?.toLowerCase() || 'content'}`);
+                
+                // Refresh data when switching to a section
+                switch(section) {
+                    case 'dashboard':
+                        loadDashboardData();
+                        break;
+                    case 'users':
+                        loadUsers();
+                        break;
+                    case 'courses':
+                        loadCourses();
+                        break;
+                    case 'videos':
+                        loadVideos();
+                        break;
+                    case 'pdfs':
+                        loadPDFs();
+                        break;
+                    case 'blogs':
+                        loadBlogs();
+                        break;
+                    case 'packages':
+                        loadPackages();
+                        break;
+                    case 'orders':
+                        loadOrders();
+                        break;
+                    case 'partnerships':
+                        loadPartnerships();
+                        break;
+                    case 'reports':
+                        loadReportsData();
+                        break;
+                }
+            });
+        }
+        
+        // ========== ACTIVITIES FUNCTIONS ==========
+        function toggleActivities() {
+            const $showMoreBtn = $('#showMoreActivities');
+            const $activityList = $('#activityList');
+            const $allActivitiesList = $('#allActivitiesList');
+            
+            if ($allActivitiesList.is(':visible')) {
+                // Show less
+                $allActivitiesList.hide();
+                $activityList.show();
+                $showMoreBtn.html('SHOW MORE <i class="fas fa-arrow-down"></i>');
+                
+                // Reset to showing only 3
+                displayActivities($activityList, allActivities.slice(0, 3));
+            } else {
+                // Show more
+                $activityList.hide();
+                $allActivitiesList.show();
+                $showMoreBtn.html('SHOW LESS <i class="fas fa-arrow-up"></i>');
+                
+                // Show all activities
+                displayActivities($allActivitiesList, allActivities);
+            }
+        }
+        
+        function displayActivities($container, activities) {
+            let html = '';
+            if (activities && activities.length > 0) {
+                activities.forEach(act => {
+                    let iconClass = 'bg-blue';
+                    if (act.type === 'user') iconClass = 'bg-green';
+                    if (act.type === 'payment') iconClass = 'bg-yellow';
+                    if (act.type === 'course') iconClass = 'bg-blue';
+                    
+                    html += `
+                        <div class="activity-item">
+                            <div class="activity-icon ${iconClass}">
+                                <i class="fas fa-${act.icon || 'bell'}"></i>
+                            </div>
+                            <div class="activity-content">
+                                <div class="activity-title">${act.title || 'Activity'}</div>
+                                <div class="activity-time">${act.time || 'Just now'}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<div class="activity-item">No recent activities</div>';
+            }
+            $container.html(html);
+        }
+        
+        // ========== LOAD DASHBOARD DATA ==========
+        function loadDashboardData() {
+            $.ajax({
+                url: '/admin/api/dashboard-stats/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(data) {
+                    console.log("Dashboard stats received:", data);
+                    
+                    // SAFE EXTRACTION - check each path
+                    let totalUsers = 0;
+                    if (data?.users?.total) totalUsers = data.users.total;
+                    else if (data?.total_users) totalUsers = data.total_users;
+                    else if (data?.users) totalUsers = data.users;
+                    
+                    let totalRevenue = 0;
+                    if (data?.revenue?.total) totalRevenue = data.revenue.total;
+                    else if (data?.total_revenue) totalRevenue = data.total_revenue;
+                    else if (data?.revenue) totalRevenue = data.revenue;
+                    
+                    let totalCourses = 0;
+                    if (data?.content?.courses) totalCourses = data.content.courses;
+                    else if (data?.total_courses) totalCourses = data.total_courses;
+                    else if (data?.courses) totalCourses = data.courses;
+                    
+                    let totalVideos = 0;
+                    if (data?.content?.videos) totalVideos = data.content.videos;
+                    else if (data?.total_videos) totalVideos = data.total_videos;
+                    else if (data?.videos) totalVideos = data.videos;
+                    
+                    $('#statUsers').text(totalUsers);
+                    $('#statRevenue').text(formatCurrency(totalRevenue));
+                    $('#statCourses').text(totalCourses);
+                    $('#statVideos').text(totalVideos);
+                    
+                    // Update revenue chart with real data
+                    updateRevenueChart(data?.revenue_history || []);
+                },
+                error: function(xhr) {
+                    console.error("Error loading dashboard stats:", xhr.responseText);
+                    $('#statUsers').text('0');
+                    $('#statRevenue').text('$0.00');
+                    $('#statCourses').text('0');
+                    $('#statVideos').text('0');
+                    
+                    // Set chart to zero
+                    updateRevenueChart([]);
+                }
+            });
+            
+            loadActivities();
+        }
+        
+        function loadActivities() {
+            $.ajax({
+                url: '/admin/api/activities/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                data: { limit: 50 }, // Get more for show more functionality
+                success: function(data) {
+                    if (data.activities && data.activities.length > 0) {
+                        allActivities = data.activities;
+                        // Show only first 3
+                        displayActivities($('#activityList'), allActivities.slice(0, 3));
+                        // Prepare all for show more
+                        displayActivities($('#allActivitiesList'), allActivities);
+                    } else {
+                        allActivities = [];
+                        $('#activityList').html('<div class="activity-item">No recent activities</div>');
+                        $('#allActivitiesList').html('<div class="activity-item">No recent activities</div>');
+                    }
+                },
+                error: function() {
+                    $('#activityList').html('<div class="activity-item">Error loading activities</div>');
+                    $('#allActivitiesList').html('<div class="activity-item">Error loading activities</div>');
+                }
+            });
+        }
+        
+        // ========== UPDATE REVENUE CHART ==========
+        function updateRevenueChart(historyData) {
+            if (!revenueChart) return;
+            
+            let labels = [];
+            let data = [];
+            
+            if (historyData && historyData.length > 0) {
+                // Use real data
+                labels = historyData.map(item => item.label || item.date);
+                data = historyData.map(item => parseFloat(item.value || item.revenue || 0));
+            } else {
+                // Show zeros
+                labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                data = [0, 0, 0, 0];
+            }
+            
+            revenueChart.data.labels = labels;
+            revenueChart.data.datasets[0].data = data;
+            revenueChart.update();
+        }
+        
+        // ========== LOAD USERS ==========
+        function loadUsers() {
+            $.ajax({
+                url: '/admin/api/users/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(response) {
+                    console.log("Users loaded:", response);
+                    
+                    let html = '';
+                    let users = [];
+                    
+                    if (Array.isArray(response)) {
+                        users = response;
+                    } else if (response && response.users) {
+                        users = response.users;
+                    } else if (response && response.results) {
+                        users = response.results;
+                    }
+                    
+                    if (users.length > 0) {
+                        // Sort by ID in descending order (newest first)
+                        users.sort((a, b) => b.id - a.id);
+                        
+                        users.forEach((user, index) => {
+                            html += `
+                                <tr>
+                                    <td>${users.length - index}</td>
+                                    <td>${user.name || user.username || 'N/A'}</td>
+                                    <td>${user.email || 'N/A'}</td>
+                                    <td>${user.phone || 'N/A'}</td>
+                                    <td><span class="status-badge" style="background:${getTierColor(user.tier)}">${user.tier || user.rank || 'citizen'}</span></td>
+                                    <td>${user.joined || user.date_joined || 'N/A'}</td>
+                                    <td><span class="status-badge status-${user.status || 'pending'}">${user.status || 'pending'}</span></td>
+                                    <td class="action-cell">
+                                        <button class="action-btn btn-edit" onclick="editItem('user', ${user.id})"><i class="fas fa-edit"></i> Edit</button>
+                                        <button class="action-btn btn-view" onclick="viewItem('user', ${user.id})"><i class="fas fa-eye"></i> View</button>
+                                        <button class="action-btn btn-delete" onclick="deleteItem('user', ${user.id})"><i class="fas fa-trash"></i> Delete</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        html = '<tr><td colspan="8" class="text-center">No users found</td></tr>';
+                    }
+                    $('#usersTableBody').html(html);
+                },
+                error: function(xhr) {
+                    console.error("Error loading users:", xhr.responseText);
+                    $('#usersTableBody').html('<tr><td colspan="8" class="text-center text-danger">Error loading users</td></tr>');
+                }
+            });
+        }
+        
+        // ========== LOAD COURSES ==========
+        function loadCourses() {
+            $.ajax({
+                url: '/admin/api/courses/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(courses) {
+                    console.log("Courses loaded:", courses);
+                    
+                    let html = '';
+                    
+                    // Handle both array and object responses
+                    let coursesArray = [];
+                    if (Array.isArray(courses)) {
+                        coursesArray = courses;
+                    } else if (courses && courses.results) {
+                        coursesArray = courses.results;
+                    } else if (courses && courses.courses) {
+                        coursesArray = courses.courses;
+                    }
+                    
+                    if (coursesArray.length > 0) {
+                        // Sort by ID in descending order (newest first)
+                        coursesArray.sort((a, b) => b.id - a.id);
+                        
+                        coursesArray.forEach((course, index) => {
+                            let price = 0;
+                            if (course.price) price = parseFloat(course.price);
+                            else if (course.price_1month) price = parseFloat(course.price_1month);
+                            
+                            let status = course.status || (course.is_active ? 'active' : 'inactive');
+                            let imageUrl = course.thumbnail || course.image;
+                            
+                            html += `
+                                <tr>
+                                    <td>${coursesArray.length - index}</td>
+                                    <td>${getThumbnailHtml(imageUrl, course.title)}</td>
+                                    <td>${course.name || course.title || 'Untitled'}</td>
+                                    <td>CRS-${(course.id || '').toString().padStart(4, '0')}</td>
+                                    <td>${formatCurrency(price)}</td>
+                                    <td>${course.videos || 0}</td>
+                                    <td>${course.pdfs || 0}</td>
+                                    <td><span class="status-badge status-${status}">${status}</span></td>
+                                    <td class="action-cell">
+                                        <button class="action-btn btn-edit" onclick="editItem('course', ${course.id})"><i class="fas fa-edit"></i> Edit</button>
+                                        <button class="action-btn btn-view" onclick="viewItem('course', ${course.id})"><i class="fas fa-eye"></i> View</button>
+                                        <button class="action-btn btn-delete" onclick="deleteItem('course', ${course.id})"><i class="fas fa-trash"></i> Delete</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        html = '<tr><td colspan="9" class="text-center">No courses found. Click "ADD COURSE" to create one.</td></tr>';
+                    }
+                    
+                    $('#coursesTableBody').html(html);
+                },
+                error: function(xhr) {
+                    console.error("Error loading courses:", xhr.responseText);
+                    $('#coursesTableBody').html('<tr><td colspan="9" class="text-center text-danger">Error loading courses</td></tr>');
+                }
+            });
+        }
+        
+        // ========== LOAD VIDEOS ==========
+        function loadVideos() {
+            $.ajax({
+                url: '/admin/api/videos/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(videos) {
+                    console.log("Videos loaded:", videos);
+                    
+                    let html = '';
+                    let videosArray = [];
+                    
+                    if (Array.isArray(videos)) {
+                        videosArray = videos;
+                    } else if (videos && videos.results) {
+                        videosArray = videos.results;
+                    } else if (videos && videos.videos) {
+                        videosArray = videos.videos;
+                    }
+                    
+                    if (videosArray.length > 0) {
+                        // Sort by ID in descending order (newest first)
+                        videosArray.sort((a, b) => b.id - a.id);
+                        
+                        videosArray.forEach((video, index) => {
+                            let imageUrl = video.thumbnail;
+                            html += `
+                                <tr>
+                                    <td>${videosArray.length - index}</td>
+                                    <td>${getThumbnailHtml(imageUrl, video.title)}</td>
+                                    <td>${video.title || 'Untitled'}</td>
+                                    <td>${video.course_name || 'Uncategorized'}</td>
+                                    <td>${video.duration || '00:00'}</td>
+                                    <td>${video.module || 'N/A'}</td>
+                                    <td>${video.uploaded || video.created_at || 'N/A'}</td>
+                                    <td><span class="status-badge status-${video.status === 'published' ? 'active' : 'pending'}">${video.status || 'draft'}</span></td>
+                                    <td class="action-cell">
+                                        <button class="action-btn btn-edit" onclick="editItem('video', ${video.id})"><i class="fas fa-edit"></i> Edit</button>
+                                        <button class="action-btn btn-view" onclick="viewItem('video', ${video.id})"><i class="fas fa-eye"></i> View</button>
+                                        <button class="action-btn btn-delete" onclick="deleteItem('video', ${video.id})"><i class="fas fa-trash"></i> Delete</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        html = '<tr><td colspan="9" class="text-center">No videos found</td></tr>';
+                    }
+                    $('#videosTableBody').html(html);
+                },
+                error: function(xhr) {
+                    console.error("Error loading videos:", xhr.responseText);
+                    $('#videosTableBody').html('<tr><td colspan="9" class="text-center text-danger">Error loading videos</td></tr>');
+                }
+            });
+        }
+        
+        // ========== LOAD PDFs ==========
+        function loadPDFs() {
+    $.ajax({
+        url: '/admin/api/pdfs/',
+        method: 'GET',
+        headers: {'X-CSRFToken': csrftoken},
+        success: function(pdfs) {
+            console.log("PDFs loaded:", pdfs);
+            
+            let html = '';
+            let pdfsArray = [];
+            
+            if (Array.isArray(pdfs)) {
+                pdfsArray = pdfs;
+            } else if (pdfs && pdfs.results) {
+                pdfsArray = pdfs.results;
+            } else if (pdfs && pdfs.pdfs) {
+                pdfsArray = pdfs.pdfs;
+            }
+            
+            if (pdfsArray.length > 0) {
+                // Sort by ID in descending order (newest first)
+                pdfsArray.sort((a, b) => b.id - a.id);
+                
+                pdfsArray.forEach((pdf, index) => {
+                    let imageUrl = pdf.cover_image;
+                    
+                    // Add file status indicator
+                    let fileStatus = '';
+                    if (pdf.has_file) {
+                        fileStatus = '<span style="color: green; font-size: 11px; margin-left: 5px;"><i class="fas fa-check-circle"></i> File OK</span>';
+                    } else if (pdf.pdf_file) {
+                        fileStatus = '<span style="color: orange; font-size: 11px; margin-left: 5px;"><i class="fas fa-exclamation-triangle"></i> File Missing</span>';
+                    } else {
+                        fileStatus = '<span style="color: red; font-size: 11px; margin-left: 5px;"><i class="fas fa-times-circle"></i> No File</span>';
+                    }
+                    
+                    html += `
+                        <tr>
+                            <td>${pdfsArray.length - index}</td>
+                            <td>${getThumbnailHtml(imageUrl, pdf.title)}</td>
+                            <td>${pdf.title || 'Untitled'} ${fileStatus}</td>
+                            <td>${pdf.course_name || 'General'}</td>
+                            <td>${pdf.pages || 0}</td>
+                            <td>${pdf.size || pdf.file_size || 'N/A'}</td>
+                            <td>${pdf.uploaded || pdf.created_at || 'N/A'}</td>
+                            <td>${pdf.downloads || 0}</td>
+                            <td class="action-cell">
+                                <button class="action-btn btn-edit" onclick="editItem('pdf', ${pdf.id})"><i class="fas fa-edit"></i> Edit</button>
+                                <button class="action-btn btn-view" onclick="viewItem('pdf', ${pdf.id})"><i class="fas fa-eye"></i> View</button>
+                                <button class="action-btn btn-delete" onclick="deleteItem('pdf', ${pdf.id})"><i class="fas fa-trash"></i> Delete</button>
+                                ${!pdf.has_file ? 
+                                    `<button class="action-btn" style="background: orange;" onclick="fixPDFFile(${pdf.id})">
+                                        <i class="fas fa-wrench"></i> Fix
+                                    </button>` : ''
+                                }
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                html = '<tr><td colspan="9" class="text-center">No PDFs found</td></tr>';
+            }
+            $('#pdfsTableBody').html(html);
+        },
+        error: function(xhr) {
+            console.error("Error loading PDFs:", xhr.responseText);
+            $('#pdfsTableBody').html('<tr><td colspan="9" class="text-center text-danger">Error loading PDFs</td></tr>');
+        }
+    });
+}
+
+// Add this helper function
+function fixPDFFile(pdfId) {
+    if(confirm('This will create a placeholder file for this PDF. Continue?')) {
+        showLoader('Creating placeholder file...');
+        
+        $.ajax({
+            url: `/admin/api/pdfs/${pdfId}/fix-file/`,
+            method: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            success: function(response) {
+                hideLoader();
+                showToast('PDF file fixed successfully!');
+                loadPDFs();
+            },
+            error: function(xhr) {
+                hideLoader();
+                showToast('Error fixing PDF file', true);
+                console.error(xhr.responseText);
+            }
+        });
+    }
+}
+        
+        // ========== LOAD BLOGS ==========
+        function loadBlogs() {
+            $.ajax({
+                url: '/admin/api/blogs/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(blogs) {
+                    console.log("Blogs loaded:", blogs);
+                    
+                    let html = '';
+                    let blogsArray = [];
+                    
+                    if (Array.isArray(blogs)) {
+                        blogsArray = blogs;
+                    } else if (blogs && blogs.results) {
+                        blogsArray = blogs.results;
+                    } else if (blogs && blogs.blogs) {
+                        blogsArray = blogs.blogs;
+                    }
+                    
+                    if (blogsArray.length > 0) {
+                        // Sort by ID in descending order (newest first)
+                        blogsArray.sort((a, b) => b.id - a.id);
+                        
+                        blogsArray.forEach((blog, index) => {
+                            let imageUrl = blog.featured_image;
+                            html += `
+                                <tr>
+                                    <td>${blogsArray.length - index}</td>
+                                    <td>${getThumbnailHtml(imageUrl, blog.title)}</td>
+                                    <td>${blog.title || 'Untitled'}</td>
+                                    <td>${blog.author || 'Admin'}</td>
+                                    <td>${blog.category || 'General'}</td>
+                                    <td>${blog.views || 0}</td>
+                                    <td>${blog.published || blog.published_at || 'Not published'}</td>
+                                    <td><span class="status-badge status-${blog.status === 'published' ? 'active' : 'pending'}">${blog.status || 'draft'}</span></td>
+                                    <td class="action-cell">
+                                        <button class="action-btn btn-edit" onclick="editItem('blog', ${blog.id})"><i class="fas fa-edit"></i> Edit</button>
+                                        <button class="action-btn btn-view" onclick="viewItem('blog', ${blog.id})"><i class="fas fa-eye"></i> View</button>
+                                        <button class="action-btn btn-delete" onclick="deleteItem('blog', ${blog.id})"><i class="fas fa-trash"></i> Delete</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        html = '<tr><td colspan="9" class="text-center">No blogs found</td></tr>';
+                    }
+                    $('#blogsTableBody').html(html);
+                },
+                error: function(xhr) {
+                    console.error("Error loading blogs:", xhr.responseText);
+                    $('#blogsTableBody').html('<tr><td colspan="9" class="text-center text-danger">Error loading blogs</td></tr>');
+                }
+            });
+        }
+        
+        // ========== LOAD PACKAGES ==========
+        function loadPackages() {
+            $.ajax({
+                url: '/admin/api/packages/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(packages) {
+                    console.log("Packages loaded:", packages);
+                    
+                    let html = '';
+                    let packagesArray = [];
+                    
+                    if (Array.isArray(packages)) {
+                        packagesArray = packages;
+                    } else if (packages && packages.results) {
+                        packagesArray = packages.results;
+                    } else if (packages && packages.packages) {
+                        packagesArray = packages.packages;
+                    }
+                    
+                    if (packagesArray.length > 0) {
+                        // Sort by ID in descending order (newest first)
+                        packagesArray.sort((a, b) => b.id - a.id);
+                        
+                        packagesArray.forEach((pkg, index) => {
+                            let imageUrl = pkg.image;
+                            html += `
+                                <tr>
+                                    <td>${packagesArray.length - index}</td>
+                                    <td>${getThumbnailHtml(imageUrl, pkg.name)}</td>
+                                    <td>${pkg.name || 'Unnamed'}</td>
+                                    <td>${pkg.price || 'N/A'}</td>
+                                    <td>${pkg.type || pkg.package_type || 'N/A'}</td>
+                                    <td>${pkg.sales || 0}</td>
+                                    <td>${pkg.revenue || 'N/A'}</td>
+                                    <td><span class="status-badge status-${pkg.status || 'inactive'}">${pkg.status || 'inactive'}</span></td>
+                                    <td class="action-cell">
+                                        <button class="action-btn btn-edit" onclick="editItem('package', ${pkg.id})"><i class="fas fa-edit"></i> Edit</button>
+                                        <button class="action-btn btn-view" onclick="viewItem('package', ${pkg.id})"><i class="fas fa-eye"></i> View</button>
+                                        <button class="action-btn btn-delete" onclick="deleteItem('package', ${pkg.id})"><i class="fas fa-trash"></i> Delete</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        html = '<tr><td colspan="9" class="text-center">No packages found</td></tr>';
+                    }
+                    $('#packagesTableBody').html(html);
+                },
+                error: function(xhr) {
+                    console.error("Error loading packages:", xhr.responseText);
+                    $('#packagesTableBody').html('<tr><td colspan="9" class="text-center text-danger">Error loading packages</td></tr>');
+                }
+            });
+        }
+        
+        // ========== LOAD ORDERS ==========
+        function loadOrders() {
+            $.ajax({
+                url: '/admin/api/orders/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(orders) {
+                    console.log("Orders loaded:", orders);
+                    
+                    let html = '';
+                    let ordersArray = [];
+                    
+                    if (Array.isArray(orders)) {
+                        ordersArray = orders;
+                    } else if (orders && orders.results) {
+                        ordersArray = orders.results;
+                    } else if (orders && orders.orders) {
+                        ordersArray = orders.orders;
+                    }
+                    
+                    if (ordersArray.length > 0) {
+                        // Sort by ID in descending order (newest first)
+                        ordersArray.sort((a, b) => (b.id || 0) - (a.id || 0));
+                        
+                        ordersArray.forEach((order, index) => {
+                            html += `
+                                <tr>
+                                    <td>${ordersArray.length - index}</td>
+                                    <td>${order.customer || 'Unknown'}</td>
+                                    <td>${order.package || order.item || 'N/A'}</td>
+                                    <td>${order.amount || 'N/A'}</td>
+                                    <td>${order.date || order.created_at || 'N/A'}</td>
+                                    <td>${order.payment || order.payment_method || 'N/A'}</td>
+                                    <td><span class="status-badge status-${order.status === 'completed' ? 'active' : 'pending'}">${order.status || 'pending'}</span></td>
+                                    <td class="action-cell">
+                                        <button class="action-btn btn-view" onclick="viewItem('order', '${order.id || order.reference}')"><i class="fas fa-eye"></i> View</button>
+                                        <button class="action-btn btn-edit" onclick="editItem('order', '${order.id || order.reference}')"><i class="fas fa-edit"></i> Edit</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        html = '<tr><td colspan="8" class="text-center">No orders found</td></tr>';
+                    }
+                    $('#ordersTableBody').html(html);
+                },
+                error: function(xhr) {
+                    console.error("Error loading orders:", xhr.responseText);
+                    $('#ordersTableBody').html('<tr><td colspan="8" class="text-center text-danger">Error loading orders</td></tr>');
+                }
+            });
+        }
+        
+        // ========== LOAD PARTNERSHIPS ==========
+        function loadPartnerships() {
+            $.ajax({
+                url: '/admin/api/partnerships/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(partnerships) {
+                    console.log("Partnerships loaded:", partnerships);
+                    
+                    let html = '';
+                    let partnershipsArray = [];
+                    
+                    if (Array.isArray(partnerships)) {
+                        partnershipsArray = partnerships;
+                    } else if (partnerships && partnerships.results) {
+                        partnershipsArray = partnerships.results;
+                    } else if (partnerships && partnerships.partnerships) {
+                        partnershipsArray = partnerships.partnerships;
+                    }
+                    
+                    if (partnershipsArray.length > 0) {
+                        // Sort by ID in descending order (newest first)
+                        partnershipsArray.sort((a, b) => b.id - a.id);
+                        
+                        partnershipsArray.forEach((p, index) => {
+                            html += `
+                                <tr>
+                                    <td>${partnershipsArray.length - index}</td>
+                                    <td>${p.company || p.contact || 'N/A'}</td>
+                                    <td>${p.contact || p.email || 'N/A'}</td>
+                                    <td>${p.tier || 'N/A'}</td>
+                                    <td>${p.amount || 'N/A'}</td>
+                                    <td><span class="status-badge status-${p.nda === 'Signed' ? 'active' : 'pending'}">${p.nda || 'Pending'}</span></td>
+                                    <td><span class="status-badge status-${p.status === 'approved' ? 'active' : 'pending'}">${p.status || 'pending'}</span></td>
+                                    <td class="action-cell">
+                                        <button class="action-btn btn-view" onclick="viewItem('partnership', ${p.id})"><i class="fas fa-eye"></i> View</button>
+                                        <button class="action-btn btn-edit" onclick="editItem('partnership', ${p.id})"><i class="fas fa-edit"></i> Edit</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        html = '<tr><td colspan="8" class="text-center">No partnerships found</td></tr>';
+                    }
+                    $('#partnershipsTableBody').html(html);
+                },
+                error: function(xhr) {
+                    console.error("Error loading partnerships:", xhr.responseText);
+                    $('#partnershipsTableBody').html('<tr><td colspan="8" class="text-center text-danger">Error loading partnerships</td></tr>');
+                }
+            });
+        }
+        
+        // ========== LOAD REPORTS DATA ==========
+        function loadReportsData() {
+            $.ajax({
+                url: '/admin/api/reports/revenue/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(data) {
+                    console.log("Revenue report loaded:", data);
+                    
+                    let monthlyRevenue = data?.total_30d || 0;
+                    $('#monthlyRevenue').text(formatCurrency(monthlyRevenue));
+                    updateReportsChart(data?.by_package || []);
+                },
+                error: function(xhr) {
+                    console.error("Error loading revenue report:", xhr.responseText);
+                    $('#monthlyRevenue').text('$0.00');
+                }
+            });
+            
+            $.ajax({
+                url: '/admin/api/reports/users/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(data) {
+                    console.log("Users report loaded:", data);
+                    
+                    let newUsers = data?.new_users || data?.active || 0;
+                    let activeStudents = data?.active_students || data?.active || 0;
+                    let total = data?.total || 1;
+                    
+                    $('#newUsers').text(newUsers);
+                    $('#activeStudents').text(activeStudents);
+                    
+                    let conversionRate = total > 0 ? ((newUsers / total) * 100).toFixed(1) : '0';
+                    $('#conversionRate').text(conversionRate + '%');
+                },
+                error: function(xhr) {
+                    console.error("Error loading users report:", xhr.responseText);
+                    $('#newUsers').text('0');
+                    $('#activeStudents').text('0');
+                    $('#conversionRate').text('0%');
+                }
+            });
+        }
+        
+        // Helper function for tier colors
+        function getTierColor(tier) {
+            const colors = {
+                'citizen': '#6B7280',
+                'studyhall': '#0066CC',
+                'society': '#F59E0B',
+                'recruit': '#6B7280',
+                'private': '#6B7280',
+                'sergeant': '#0066CC',
+                'captain': '#F59E0B',
+                'commander': '#10B981',
+                'general': '#EF4444'
+            };
+            return colors[tier?.toLowerCase()] || '#6B7280';
+        }
+        
+        // ========== MODAL FUNCTIONS ==========
+        let currentModalType = '';
+        let currentEditId = null;
+        
+        function openModal(type, id = null) {
+            currentModalType = type;
+            currentEditId = id;
+            const modal = $('#contentModal');
+            const title = $('#modalTitle');
+            const body = $('#modalBody');
+            
+            // Reset save button handler
+            $('#modalSaveBtn').off('click');
+            
+            switch(type) {
+                case 'addUser':
+                    title.text('Add New User');
+                    body.html(getUserForm());
+                    $('#modalSaveBtn').on('click', submitUserForm);
+                    break;
+                    
+                case 'addCourse':
+                    title.text('Add New Course');
+                    body.html(getCourseForm());
+                    $('#modalSaveBtn').on('click', submitCourseForm);
+                    break;
+                    
+                case 'addVideo':
+                    title.text('Upload Video');
+                    body.html(getVideoForm());
+                    $('#modalSaveBtn').on('click', submitVideoForm);
+                    
+                    // Load courses for dropdown
+                    $.ajax({
+                        url: '/admin/api/courses/',
+                        method: 'GET',
+                        headers: {'X-CSRFToken': csrftoken},
+                        success: function(courses) {
+                            let options = '<option value="">Select Course</option>';
+                            let coursesArray = Array.isArray(courses) ? courses : (courses.results || []);
+                            
+                            if (coursesArray.length > 0) {
+                                coursesArray.forEach(c => {
+                                    options += `<option value="${c.id}">${c.name || c.title}</option>`;
+                                });
+                            }
+                            $('#course_id').html(options);
+                        },
+                        error: function() {
+                            $('#course_id').html('<option value="">Error loading courses</option>');
+                        }
+                    });
+                    break;
+                    
+                case 'addPDF':
+                    title.text('Upload PDF');
+                    body.html(getPDFForm());
+                    $('#modalSaveBtn').on('click', submitPDFForm);
+                    
+                    // Load courses for dropdown
+                    $.ajax({
+                        url: '/admin/api/courses/',
+                        method: 'GET',
+                        headers: {'X-CSRFToken': csrftoken},
+                        success: function(courses) {
+                            let options = '<option value="">All Courses</option>';
+                            let coursesArray = Array.isArray(courses) ? courses : (courses.results || []);
+                            
+                            if (coursesArray.length > 0) {
+                                coursesArray.forEach(c => {
+                                    options += `<option value="${c.id}">${c.name || c.title}</option>`;
+                                });
+                            }
+                            $('#course_id').html(options);
+                        },
+                        error: function() {
+                            $('#course_id').html('<option value="">Error loading courses</option>');
+                        }
+                    });
+                    break;
+                    
+                case 'addBlog':
+                    title.text('Create Blog Post');
+                    body.html(getBlogForm());
+                    $('#modalSaveBtn').on('click', submitBlogForm);
+                    break;
+                    
+                case 'addPackage':
+                    title.text('Add Package');
+                    body.html(getPackageForm());
+                    $('#modalSaveBtn').on('click', submitPackageForm);
+                    break;
+                    
+                default:
+                    title.text('Add Content');
+                    body.html('<p>Form goes here</p>');
+                    $('#modalSaveBtn').on('click', function() {
+                        showToast('Function not implemented', true);
+                        closeModal();
+                    });
+            }
+            
+            modal.fadeIn(200);
+        }
+        
+        function closeModal() {
+            $('#contentModal').fadeOut(200);
+            currentModalType = '';
+            currentEditId = null;
+        }
+        
+        // Form templates
+        function getUserForm() {
+            return `
+                <form id="modalForm">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>Username</label>
+                            <input type="text" id="username" class="form-control" placeholder="johndoe" required>
+                        </div>
+                        <div class="form-col">
+                            <label>Password</label>
+                            <input type="password" id="password" class="form-control" placeholder="********" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>First Name</label>
+                            <input type="text" id="first_name" class="form-control" placeholder="John">
+                        </div>
+                        <div class="form-col">
+                            <label>Last Name</label>
+                            <input type="text" id="last_name" class="form-control" placeholder="Doe">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="email" class="form-control" placeholder="john@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="text" id="phone" class="form-control" placeholder="+254700000000">
+                    </div>
+                    <div class="form-group">
+                        <label>User Tier</label>
+                        <select id="tier" class="form-control">
+                            <option value="citizen">Citizen</option>
+                            <option value="studyhall">StudyHall</option>
+                            <option value="society">Society</option>
+                        </select>
+                    </div>
+                </form>
+            `;
+        }
+        
+        function getCourseForm() {
+            return `
+                <form id="modalForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Course Title</label>
+                        <input type="text" id="name" class="form-control" placeholder="e.g., Professional Trading Masterclass" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="description" class="form-control" rows="3" placeholder="Course description..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Price ($)</label>
+                        <input type="number" id="price" class="form-control" placeholder="1999" value="0" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (weeks)</label>
+                        <input type="number" id="duration_weeks" class="form-control" value="4">
+                    </div>
+                    <div class="form-group">
+                        <label>Course Thumbnail</label>
+                        <input type="file" id="thumbnail" accept="image/*" class="form-control">
+                        <small class="text-muted">Upload course cover image (optional)</small>
+                    </div>
+                </form>
+            `;
+        }
+        
+        function getVideoForm() {
+            return `
+                <form id="modalForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Video Title</label>
+                        <input type="text" id="title" class="form-control" placeholder="e.g., Introduction to Market Analysis" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>Course</label>
+                            <select id="course_id" class="form-control">
+                                <option value="">Select Course</option>
+                            </select>
+                        </div>
+                        <div class="form-col">
+                            <label>Module</label>
+                            <input type="text" id="module" class="form-control" placeholder="Module 1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Video File</label>
+                        <input type="file" id="video_file" accept="video/mp4,video/mov,video/avi,video/mkv" class="form-control" required>
+                        <small class="text-muted">Upload MP4, MOV, AVI, or MKV file</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Thumbnail</label>
+                        <input type="file" id="thumbnail" accept="image/*" class="form-control">
+                        <small class="text-muted">Upload video thumbnail</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (minutes)</label>
+                        <input type="number" id="duration" class="form-control" placeholder="45" value="30" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Price ($)</label>
+                        <input type="number" id="price" class="form-control" placeholder="0 for free" value="0" step="0.01">
+                    </div>
+                </form>
+            `;
+        }
+        
+        function getPDFForm() {
+            return `
+                <form id="modalForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>PDF Title</label>
+                        <input type="text" id="title" class="form-control" placeholder="e.g., Trading Workbook" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Course</label>
+                        <select id="course_id" class="form-control">
+                            <option value="">All Courses</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>PDF File</label>
+                        <input type="file" id="pdf_file" accept=".pdf" class="form-control" required>
+                        <small class="text-muted">Upload PDF file only</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Cover Image</label>
+                        <input type="file" id="cover_image" accept="image/*" class="form-control">
+                        <small class="text-muted">Upload PDF cover</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Pages</label>
+                        <input type="number" id="pages" class="form-control" placeholder="48">
+                    </div>
+                    <div class="form-group">
+                        <label>Price ($)</label>
+                        <input type="number" id="price" class="form-control" placeholder="0 for free" value="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Access Level</label>
+                        <select id="access_level" class="form-control">
+                            <option value="free">Free</option>
+                            <option value="citizen">Citizen</option>
+                            <option value="studyhall">Study Hall</option>
+                            <option value="society">Society</option>
+                            <option value="paid">Paid Only</option>
+                        </select>
+                    </div>
+                </form>
+            `;
+        }
+        
+        function getBlogForm() {
+            return `
+                <form id="modalForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Blog Title</label>
+                        <input type="text" id="title" class="form-control" placeholder="e.g., Weekly Market Analysis" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Content</label>
+                        <textarea id="content" class="form-control" rows="5" placeholder="Write your blog post..." required></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>Category</label>
+                            <select id="category" class="form-control">
+                                <option value="market_analysis">Market Analysis</option>
+                                <option value="trading_psychology">Trading Psychology</option>
+                                <option value="options_strategies">Options Strategies</option>
+                                <option value="forex_trading">Forex Trading</option>
+                                <option value="general">General</option>
+                            </select>
+                        </div>
+                        <div class="form-col">
+                            <label>Status</label>
+                            <select id="status" class="form-control">
+                                <option value="published">Published</option>
+                                <option value="draft">Draft</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Featured Image</label>
+                        <input type="file" id="featured_image" accept="image/*" class="form-control">
+                        <small class="text-muted">Upload blog featured image</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Tags (comma separated)</label>
+                        <input type="text" id="tags" class="form-control" placeholder="trading, forex, analysis">
+                    </div>
+                </form>
+            `;
+        }
+        
+        function getPackageForm() {
+            return `
+                <form id="modalForm">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>Package Name</label>
+                            <input type="text" id="name" class="form-control" placeholder="e.g., Market Consultation" required>
+                        </div>
+                        <div class="form-col">
+                            <label>Price ($)</label>
+                            <input type="number" id="price" class="form-control" placeholder="200" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="description" class="form-control" rows="3" placeholder="Package description..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Package Type</label>
+                        <select id="package_type" class="form-control">
+                            <option value="trading">Trading Package</option>
+                            <option value="partnership">Partnership</option>
+                            <option value="course">Course</option>
+                            <option value="mentorship">Mentorship</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Features (one per line)</label>
+                        <textarea id="features" class="form-control" rows="4" placeholder="✓ Feature 1&#10;✓ Feature 2&#10;✓ Feature 3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Package Image</label>
+                        <input type="file" id="image" accept="image/*" class="form-control">
+                    </div>
+                </form>
+            `;
+        }
+        
+        // ========== SUBMIT FUNCTIONS ==========
+        function submitUserForm() {
+            const data = {
+                username: $('#username').val(),
+                password: $('#password').val(),
+                first_name: $('#first_name').val(),
+                last_name: $('#last_name').val(),
+                email: $('#email').val(),
+                phone: $('#phone').val(),
+                tier: $('#tier').val()
+            };
+            
+            console.log("Submitting user:", data);
+            
+            $.ajax({
+                url: '/admin/api/users/',
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                data: JSON.stringify(data),
+                success: function(response) {
+                    console.log("User created:", response);
+                    hideLoader();
+                    showToast('User created successfully!');
+                    closeModal();
+                    loadUsers();
+                    loadDashboardData();
+                    $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                },
+                error: function(xhr) {
+                    console.error("Error creating user:", xhr.responseText);
+                    hideLoader();
+                    let errorMsg = 'Error creating user';
+                    try {
+                        let resp = JSON.parse(xhr.responseText);
+                        errorMsg = resp.error || resp.message || errorMsg;
+                    } catch(e) {}
+                    showToast(errorMsg, true);
+                    $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                }
+            });
+        }
+        
+        function submitCourseForm() {
+            const formData = new FormData();
+            formData.append('name', $('#name').val());
+            formData.append('title', $('#name').val()); // Send both for compatibility
+            formData.append('description', $('#description').val() || '');
+            formData.append('price', $('#price').val() || '0');
+            formData.append('duration_weeks', $('#duration_weeks').val() || '4');
+            
+            const thumbnailFile = $('#thumbnail')[0]?.files[0];
+            if (thumbnailFile) {
+                formData.append('thumbnail', thumbnailFile);
+            }
+            
+            console.log("Submitting course data:", {
+                name: $('#name').val(),
+                price: $('#price').val()
+            });
+            
+            $.ajax({
+                url: '/admin/api/courses/create/',
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    console.log("Course created successfully:", response);
+                    hideLoader();
+                    showToast('Course created successfully!');
+                    closeModal();
+                    
+                    // Reload all data
+                    loadCourses();
+                    loadDashboardData();
+                    
+                    $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                },
+                error: function(xhr) {
+                    console.error("Error creating course:", xhr.responseText);
+                    hideLoader();
+                    let errorMsg = 'Error creating course';
+                    try {
+                        let resp = JSON.parse(xhr.responseText);
+                        errorMsg = resp.error || resp.message || errorMsg;
+                    } catch(e) {}
+                    showToast(errorMsg, true);
+                    $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                }
+            });
+        }
+        
+        // FIXED: Video submission with thumbnail
+        function submitVideoForm() {
+            const videoFile = $('#video_file')[0]?.files[0];
+            if (!videoFile) {
+                hideLoader();
+                showToast('Please select a video file', true);
+                $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                return;
+            }
+            
+            const fileData = new FormData();
+            fileData.append('video_file', videoFile);
+            
+            const thumbnailFile = $('#thumbnail')[0]?.files[0];
+            if (thumbnailFile) {
+                fileData.append('thumbnail', thumbnailFile);
+            }
+            
+            $.ajax({
+                url: '/admin/api/videos/upload/',
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                data: fileData,
+                processData: false,
+                contentType: false,
+                success: function(fileResponse) {
+                    console.log("Video file uploaded:", fileResponse);
+                    
+                    const videoData = {
+                        title: $('#title').val(),
+                        course_id: $('#course_id').val(),
+                        module: $('#module').val(),
+                        duration: $('#duration').val(),
+                        price: $('#price').val(),
+                        video_url: fileResponse.url,
+                        video_path: fileResponse.path,
+                        thumbnail_path: fileResponse.thumbnail_path  // Add thumbnail path
+                    };
+                    
+                    $.ajax({
+                        url: '/admin/api/videos/create/',
+                        method: 'POST',
+                        headers: {'X-CSRFToken': csrftoken},
+                        data: JSON.stringify(videoData),
+                        success: function() {
+                            hideLoader();
+                            showToast('Video uploaded successfully!');
+                            closeModal();
+                            loadVideos();
+                            loadDashboardData();
+                            $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                        },
+                        error: function(xhr) {
+                            console.error("Error creating video record:", xhr.responseText);
+                            hideLoader();
+                            let errorMsg = xhr.responseJSON?.error || 'Error creating video record';
+                            showToast(errorMsg, true);
+                            $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                        }
+                    });
+                },
+                error: function(xhr) {
+                    console.error("Error uploading video file:", xhr.responseText);
+                    hideLoader();
+                    let errorMsg = xhr.responseJSON?.error || 'Error uploading video file';
+                    showToast(errorMsg, true);
+                    $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                }
+            });
+        }
+        
+        // FIXED: PDF submission with cover image
+        function submitPDFForm() {
+    // Get form values
+    const title = $('#title').val().trim();
+    const pdfFile = $('#pdf_file')[0]?.files[0];
+    const courseId = $('#course_id').val();
+    const pages = $('#pages').val();
+    const price = $('#price').val();
+    const accessLevel = $('#access_level').val();
+    
+    // Validate required fields
+    if (!title) {
+        showToast('Please enter a PDF title', true);
+        return;
+    }
+    
+    if (!pdfFile) {
+        showToast('Please select a PDF file', true);
+        return;
+    }
+    
+    // Validate file type
+    if (pdfFile.type !== 'application/pdf') {
+        showToast('Please upload a valid PDF file', true);
+        return;
+    }
+    
+    // Validate file size (50MB max)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (pdfFile.size > maxSize) {
+        showToast('PDF file is too large. Maximum size is 50MB', true);
+        return;
+    }
+    
+    // Disable save button and show loader
+    $('#modalSaveBtn').text('UPLOADING...').prop('disabled', true);
+    showLoader('Uploading PDF file...');
+    
+    // Prepare file upload data
+    const fileData = new FormData();
+    fileData.append('pdf_file', pdfFile);
+    
+    const coverFile = $('#cover_image')[0]?.files[0];
+    if (coverFile) {
+        // Validate cover image type
+        const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!validImageTypes.includes(coverFile.type)) {
+            hideLoader();
+            showToast('Cover image must be JPEG, PNG, GIF, or WebP', true);
+            $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+            return;
+        }
+        fileData.append('cover_image', coverFile);
+    }
+    
+    // Step 1: Upload the PDF file
+    $.ajax({
+        url: '/admin/api/pdfs/upload/',
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken},
+        data: fileData,
+        processData: false,
+        contentType: false,
+        success: function(fileResponse) {
+            console.log("✅ PDF file uploaded successfully:", fileResponse);
+            
+            // Validate upload response
+            if (!fileResponse.path && !fileResponse.url) {
+                hideLoader();
+                showToast('Upload successful but file path missing', true);
+                $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                return;
+            }
+            
+            // Prepare PDF metadata
+            const pdfData = {
+                title: title,
+                description: $('#description').val() || '',
+                course_id: courseId || null,
+                pages: parseInt(pages) || 0,
+                price: parseFloat(price) || 0,
+                access_level: accessLevel || 'free',
+                pdf_path: fileResponse.path,  // Use the stored file path
+                pdf_url: fileResponse.url,     // Store URL for reference
+                cover_image_path: fileResponse.cover_path || null,
+                file_size: fileResponse.size || null,
+                is_active: true
+            };
+            
+            showLoader('Creating PDF record...');
+            
+            // Step 2: Create the PDF record in database
+            $.ajax({
+                url: '/admin/api/pdfs/create/',
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify(pdfData),
+                success: function(response) {
+                    console.log("✅ PDF record created:", response);
+                    hideLoader();
+                    showToast('PDF uploaded successfully!');
+                    closeModal();
+                    
+                    // Refresh the PDF list
+                    loadPDFs();
+                    loadDashboardData();
+                    
+                    // Reset button state
+                    $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                },
+                error: function(xhr) {
+                    console.error("❌ Error creating PDF record:", xhr.responseText);
+                    hideLoader();
+                    
+                    let errorMsg = 'Error creating PDF record';
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        errorMsg = resp.error || resp.message || errorMsg;
+                    } catch(e) {
+                        errorMsg = xhr.responseText || errorMsg;
+                    }
+                    
+                    showToast(errorMsg, true);
+                    $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                    
+                    // Note: The file was uploaded but record creation failed
+                    // You might want to implement cleanup here
+                    console.warn("File was uploaded but database record failed. File path:", fileResponse.path);
+                }
+            });
+        },
+        error: function(xhr) {
+            console.error("❌ Error uploading PDF file:", xhr.responseText);
+            hideLoader();
+            
+            let errorMsg = 'Error uploading PDF file';
+            try {
+                const resp = JSON.parse(xhr.responseText);
+                errorMsg = resp.error || resp.message || errorMsg;
+            } catch(e) {
+                errorMsg = xhr.status === 413 ? 'File too large' : (xhr.responseText || errorMsg);
+            }
+            
+            showToast(errorMsg, true);
+            $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+        }
+    });
+}
+        
+        function submitBlogForm() {
+            const formData = new FormData();
+            formData.append('title', $('#title').val());
+            formData.append('content', $('#content').val());
+            formData.append('category', $('#category').val());
+            formData.append('status', $('#status').val());
+            formData.append('tags', $('#tags').val());
+            
+            const imageFile = $('#featured_image')[0]?.files[0];
+            if (imageFile) {
+                formData.append('featured_image', imageFile);
+            }
+            
+            console.log("Submitting blog post");
+            
+            $.ajax({
+                url: '/admin/api/blogs/create/',
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function() {
+                    hideLoader();
+                    showToast('Blog post created successfully!');
+                    closeModal();
+                    loadBlogs();
+                    loadDashboardData();
+                    $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                },
+                error: function(xhr) {
+                    console.error("Error creating blog post:", xhr.responseText);
+                    hideLoader();
+                    let errorMsg = 'Error creating blog post';
+                    try {
+                        let resp = JSON.parse(xhr.responseText);
+                        errorMsg = resp.error || resp.message || errorMsg;
+                    } catch(e) {}
+                    showToast(errorMsg, true);
+                    $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                }
+            });
+        }
+        
+        function submitPackageForm() {
+            const data = {
+                name: $('#name').val(),
+                description: $('#description').val(),
+                price: $('#price').val(),
+                package_type: $('#package_type').val(),
+                features: $('#features').val().split('\n').filter(f => f.trim())
+            };
+            
+            console.log("Submitting package:", data);
+            
+            $.ajax({
+                url: '/admin/api/packages/create/',
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                data: JSON.stringify(data),
+                success: function() {
+                    hideLoader();
+                    showToast('Package created successfully!');
+                    closeModal();
+                    loadPackages();
+                    loadDashboardData();
+                    $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                },
+                error: function(xhr) {
+                    console.error("Error creating package:", xhr.responseText);
+                    hideLoader();
+                    let errorMsg = 'Error creating package';
+                    try {
+                        let resp = JSON.parse(xhr.responseText);
+                        errorMsg = resp.error || resp.message || errorMsg;
+                    } catch(e) {}
+                    showToast(errorMsg, true);
+                    $('#modalSaveBtn').text('SAVE').prop('disabled', false);
+                }
+            });
+        }
+        
+        // ========== FIXED EDIT ITEM FUNCTION WITH CORRECT URLS ==========
+        function editItem(type, id) {
+            showLoader(`Loading ${type} data...`);
+            
+            // Construct the correct API URL based on type
+            let apiUrl = '';
+            if (type === 'video') {
+                apiUrl = `/admin/api/videos/${id}/`;
+            } else if (type === 'pdf') {
+                apiUrl = `/admin/api/pdfs/${id}/`;
+            } else if (type === 'course') {
+                apiUrl = `/admin/api/courses/${id}/`;
+            } else if (type === 'user') {
+                apiUrl = `/admin/api/users/${id}/`;
+            } else if (type === 'blog') {
+                apiUrl = `/admin/api/blogs/${id}/`;
+            } else if (type === 'package') {
+                apiUrl = `/admin/api/packages/${id}/`;
+            } else if (type === 'partnership') {
+                apiUrl = `/admin/api/partnerships/${id}/`;
+            } else {
+                apiUrl = `/admin/api/${type}s/${id}/`;
+            }
+            
+            console.log(`Fetching from URL: ${apiUrl}`);
+            
+            $.ajax({
+                url: apiUrl,
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(item) {
+                    console.log(`Loaded ${type} for editing:`, item);
+                    hideLoader();
+                    
+                    // Open modal with edit form based on type
+                    switch(type) {
+                        case 'course':
+                            openEditCourseModal(item);
+                            break;
+                        case 'video':
+                            openEditVideoModal(item);
+                            break;
+                        case 'pdf':
+                            openEditPDFModal(item);
+                            break;
+                        case 'user':
+                            openEditUserModal(item);
+                            break;
+                        case 'blog':
+                            openEditBlogModal(item);
+                            break;
+                        case 'package':
+                            openEditPackageModal(item);
+                            break;
+                        default:
+                            showToast(`Edit for ${type} not implemented yet`, true);
+                    }
+                },
+                error: function(xhr) {
+                    console.error(`Error loading ${type}:`, xhr.responseText);
+                    hideLoader();
+                    
+                    // Check if it's a 404 (not found) and try alternative URL
+                    if (xhr.status === 404) {
+                        // Try alternative URL format
+                        let altUrl = '';
+                        if (type === 'video') {
+                            altUrl = `/admin/api/video/${id}/`;
+                        } else if (type === 'pdf') {
+                            altUrl = `/admin/api/pdf/${id}/`;
+                        } else if (type === 'course') {
+                            altUrl = `/admin/api/course/${id}/`;
+                        } else if (type === 'user') {
+                            altUrl = `/admin/api/user/${id}/`;
+                        } else if (type === 'blog') {
+                            altUrl = `/admin/api/blog/${id}/`;
+                        } else if (type === 'package') {
+                            altUrl = `/admin/api/package/${id}/`;
+                        }
+                        
+                        if (altUrl) {
+                            console.log(`Trying alternative URL: ${altUrl}`);
+                            $.ajax({
+                                url: altUrl,
+                                method: 'GET',
+                                headers: {'X-CSRFToken': csrftoken},
+                                success: function(item) {
+                                    console.log(`Loaded ${type} from alternative URL:`, item);
+                                    hideLoader();
+                                    
+                                    // Open modal with edit form based on type
+                                    switch(type) {
+                                        case 'course':
+                                            openEditCourseModal(item);
+                                            break;
+                                        case 'video':
+                                            openEditVideoModal(item);
+                                            break;
+                                        case 'pdf':
+                                            openEditPDFModal(item);
+                                            break;
+                                        case 'user':
+                                            openEditUserModal(item);
+                                            break;
+                                        case 'blog':
+                                            openEditBlogModal(item);
+                                            break;
+                                        case 'package':
+                                            openEditPackageModal(item);
+                                            break;
+                                        default:
+                                            showToast(`Edit for ${type} not implemented yet`, true);
+                                    }
+                                },
+                                error: function(xhr2) {
+                                    console.error(`Error loading ${type} from alternative URL:`, xhr2.responseText);
+                                    hideLoader();
+                                    showToast(`Error loading ${type} for editing`, true);
+                                }
+                            });
+                        } else {
+                            showToast(`Error loading ${type}: Not found`, true);
+                        }
+                    } else {
+                        showToast(`Error loading ${type}: ${xhr.status}`, true);
+                    }
+                }
+            });
+        }
+        
+        // ========== FIXED VIEW ITEM FUNCTION WITH CORRECT URLS ==========
+        function viewItem(type, id) {
+            showLoader(`Loading ${type} details...`);
+            
+            // Construct the correct API URL based on type
+            let apiUrl = '';
+            if (type === 'video') {
+                apiUrl = `/admin/api/videos/${id}/`;
+            } else if (type === 'pdf') {
+                apiUrl = `/admin/api/pdfs/${id}/`;
+            } else if (type === 'course') {
+                apiUrl = `/admin/api/courses/${id}/`;
+            } else if (type === 'user') {
+                apiUrl = `/admin/api/users/${id}/`;
+            } else if (type === 'blog') {
+                apiUrl = `/admin/api/blogs/${id}/`;
+            } else if (type === 'package') {
+                apiUrl = `/admin/api/packages/${id}/`;
+            } else if (type === 'partnership') {
+                apiUrl = `/admin/api/partnerships/${id}/`;
+            } else if (type === 'order') {
+                apiUrl = `/admin/api/orders/${id}/`;
+            } else {
+                apiUrl = `/admin/api/${type}s/${id}/`;
+            }
+            
+            $.ajax({
+                url: apiUrl,
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(item) {
+                    console.log(`Loaded ${type} for viewing:`, item);
+                    hideLoader();
+                    
+                    // Show details in a modal
+                    $('#modalTitle').text(`View ${type}: ${item.title || item.name || item.username || 'Details'}`);
+                    
+                    let html = '<div style="max-height: 500px; overflow-y: auto;">';
+                    
+                    // Format the item data for display
+                    for (let key in item) {
+                        if (typeof item[key] !== 'object' || item[key] === null) {
+                            let value = item[key];
+                            if (value === null || value === undefined) value = 'N/A';
+                            if (typeof value === 'string' && value.length > 100) {
+                                value = value.substring(0, 100) + '...';
+                            }
+                            if (key.toLowerCase().includes('price') || key.toLowerCase().includes('amount') || key.toLowerCase().includes('revenue')) {
+                                value = formatCurrency(value);
+                            }
+                            html += `
+                                <div style="margin-bottom: 10px; padding: 8px; background: #f5f5f5; border-radius: 4px;">
+                                    <strong style="text-transform: capitalize;">${key.replace(/_/g, ' ')}:</strong>
+                                    <span style="float: right; max-width: 60%; word-break: break-word;">${value}</span>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    html += '</div>';
+                    
+                    $('#modalBody').html(html);
+                    $('#modalSaveBtn').hide();
+                    $('#contentModal').fadeIn(200);
+                    
+                    // Show save button when modal closes
+                    setTimeout(() => {
+                        $('#modalSaveBtn').show();
+                    }, 100);
+                },
+                error: function(xhr) {
+                    console.error(`Error loading ${type}:`, xhr.responseText);
+                    hideLoader();
+                    
+                    // Try alternative URL
+                    if (xhr.status === 404) {
+                        let altUrl = '';
+                        if (type === 'video') {
+                            altUrl = `/admin/api/video/${id}/`;
+                        } else if (type === 'pdf') {
+                            altUrl = `/admin/api/pdf/${id}/`;
+                        } else if (type === 'course') {
+                            altUrl = `/admin/api/course/${id}/`;
+                        } else if (type === 'user') {
+                            altUrl = `/admin/api/user/${id}/`;
+                        } else if (type === 'blog') {
+                            altUrl = `/admin/api/blog/${id}/`;
+                        } else if (type === 'package') {
+                            altUrl = `/admin/api/package/${id}/`;
+                        } else if (type === 'order') {
+                            altUrl = `/admin/api/order/${id}/`;
+                        } else if (type === 'partnership') {
+                            altUrl = `/admin/api/partnership/${id}/`;
+                        }
+                        
+                        if (altUrl) {
+                            $.ajax({
+                                url: altUrl,
+                                method: 'GET',
+                                headers: {'X-CSRFToken': csrftoken},
+                                success: function(item) {
+                                    console.log(`Loaded ${type} from alternative URL:`, item);
+                                    hideLoader();
+                                    
+                                    $('#modalTitle').text(`View ${type}: ${item.title || item.name || item.username || 'Details'}`);
+                                    
+                                    let html = '<div style="max-height: 500px; overflow-y: auto;">';
+                                    
+                                    for (let key in item) {
+                                        if (typeof item[key] !== 'object' || item[key] === null) {
+                                            let value = item[key];
+                                            if (value === null || value === undefined) value = 'N/A';
+                                            if (typeof value === 'string' && value.length > 100) {
+                                                value = value.substring(0, 100) + '...';
+                                            }
+                                            if (key.toLowerCase().includes('price') || key.toLowerCase().includes('amount') || key.toLowerCase().includes('revenue')) {
+                                                value = formatCurrency(value);
+                                            }
+                                            html += `
+                                                <div style="margin-bottom: 10px; padding: 8px; background: #f5f5f5; border-radius: 4px;">
+                                                    <strong style="text-transform: capitalize;">${key.replace(/_/g, ' ')}:</strong>
+                                                    <span style="float: right; max-width: 60%; word-break: break-word;">${value}</span>
+                                                </div>
+                                            `;
+                                        }
+                                    }
+                                    
+                                    html += '</div>';
+                                    
+                                    $('#modalBody').html(html);
+                                    $('#modalSaveBtn').hide();
+                                    $('#contentModal').fadeIn(200);
+                                    
+                                    setTimeout(() => {
+                                        $('#modalSaveBtn').show();
+                                    }, 100);
+                                },
+                                error: function(xhr2) {
+                                    console.error(`Error loading ${type} from alternative URL:`, xhr2.responseText);
+                                    hideLoader();
+                                    showToast(`Error loading ${type}: Not found`, true);
+                                }
+                            });
+                        } else {
+                            showToast(`Error loading ${type}: Not found`, true);
+                        }
+                    } else {
+                        showToast(`Error loading ${type}: ${xhr.status}`, true);
+                    }
+                }
+            });
+        }
+        
+        // ========== DELETE ITEM ==========
+        function deleteItem(type, id) {
+            if(confirm(`Are you sure you want to delete this ${type}?`)) {
+                showLoader('Deleting...');
+                
+                $.ajax({
+                    url: `/admin/api/${type}/${id}/delete/`,
+                    method: 'POST',
+                    headers: {'X-CSRFToken': csrftoken},
+                    success: function(response) {
+                        console.log(`${type} deleted:`, response);
+                        hideLoader();
+                        showToast(`${type} deleted successfully`);
+                        
+                        // Refresh appropriate data
+                        switch(type) {
+                            case 'course':
+                                loadCourses();
+                                break;
+                            case 'video':
+                                loadVideos();
+                                break;
+                            case 'pdf':
+                                loadPDFs();
+                                break;
+                            case 'user':
+                                loadUsers();
+                                break;
+                            case 'blog':
+                                loadBlogs();
+                                break;
+                            case 'package':
+                                loadPackages();
+                                break;
+                            default:
+                                refreshData();
+                        }
+                        loadDashboardData();
+                    },
+                    error: function(xhr) {
+                        console.error(`Error deleting ${type}:`, xhr.responseText);
+                        hideLoader();
+                        let errorMsg = xhr.responseJSON?.error || `Error deleting ${type}`;
+                        showToast(errorMsg, true);
+                    }
+                });
+            }
+        }
+        
+        // Edit modal functions
+        function openEditCourseModal(course) {
+            currentModalType = 'editCourse';
+            currentEditId = course.id;
+            $('#modalTitle').text('Edit Course');
+            
+            let html = `
+                <form id="modalForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Course Title</label>
+                        <input type="text" id="name" class="form-control" value="${course.title || course.name || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="description" class="form-control" rows="3">${course.description || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Price ($)</label>
+                        <input type="number" id="price" class="form-control" value="${course.price || 0}" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (weeks)</label>
+                        <input type="number" id="duration_weeks" class="form-control" value="${course.duration_weeks || 4}">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="is_active" class="form-control">
+                            <option value="true" ${course.is_active ? 'selected' : ''}>Active</option>
+                            <option value="false" ${!course.is_active ? 'selected' : ''}>Inactive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Course Thumbnail</label>
+                        <input type="file" id="thumbnail" accept="image/*" class="form-control">
+                        <small class="text-muted">Leave empty to keep current image</small>
+                    </div>
+                    <input type="hidden" id="course_id" value="${course.id}">
+                </form>
+            `;
+            
+            $('#modalBody').html(html);
+            
+            $('#modalSaveBtn').off('click').on('click', function() {
+                updateCourse(course.id);
+            });
+            
+            $('#contentModal').fadeIn(200);
+        }
+        
+        function openEditVideoModal(video) {
+            currentModalType = 'editVideo';
+            currentEditId = video.id;
+            $('#modalTitle').text('Edit Video');
+            
+            // Load courses for dropdown
+            $.ajax({
+                url: '/admin/api/courses/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(courses) {
+                    let options = '<option value="">Select Course</option>';
+                    let coursesArray = Array.isArray(courses) ? courses : (courses.results || []);
+                    
+                    if (coursesArray.length > 0) {
+                        coursesArray.forEach(c => {
+                            let selected = (c.id == video.course_id) ? 'selected' : '';
+                            options += `<option value="${c.id}" ${selected}>${c.name || c.title}</option>`;
+                        });
+                    }
+                    
+                    let html = `
+                        <form id="modalForm" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label>Video Title</label>
+                                <input type="text" id="title" class="form-control" value="${video.title || ''}" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-col">
+                                    <label>Course</label>
+                                    <select id="course_id" class="form-control">
+                                        ${options}
+                                    </select>
+                                </div>
+                                <div class="form-col">
+                                    <label>Module</label>
+                                    <input type="text" id="module" class="form-control" value="${video.module || ''}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Video File (leave empty to keep current)</label>
+                                <input type="file" id="video_file" accept="video/mp4,video/mov,video/avi,video/mkv" class="form-control">
+                                <small class="text-muted">Upload new video file (optional)</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Thumbnail (leave empty to keep current)</label>
+                                <input type="file" id="thumbnail" accept="image/*" class="form-control">
+                                <small class="text-muted">Upload new thumbnail (optional)</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Duration (minutes)</label>
+                                <input type="number" id="duration" class="form-control" value="${video.duration || 30}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Price ($)</label>
+                                <input type="number" id="price" class="form-control" value="${video.price || 0}" step="0.01">
+                            </div>
+                            <input type="hidden" id="video_id" value="${video.id}">
+                        </form>
+                    `;
+                    
+                    $('#modalBody').html(html);
+                    
+                    $('#modalSaveBtn').off('click').on('click', function() {
+                        updateVideo(video.id);
+                    });
+                },
+                error: function() {
+                    showToast('Error loading courses', true);
+                }
+            });
+            
+            $('#contentModal').fadeIn(200);
+        }
+        
+        function openEditPDFModal(pdf) {
+            currentModalType = 'editPDF';
+            currentEditId = pdf.id;
+            $('#modalTitle').text('Edit PDF');
+            
+            // Load courses for dropdown
+            $.ajax({
+                url: '/admin/api/courses/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(courses) {
+                    let options = '<option value="">All Courses</option>';
+                    let coursesArray = Array.isArray(courses) ? courses : (courses.results || []);
+                    
+                    if (coursesArray.length > 0) {
+                        coursesArray.forEach(c => {
+                            let selected = (c.id == pdf.course_id) ? 'selected' : '';
+                            options += `<option value="${c.id}" ${selected}>${c.name || c.title}</option>`;
+                        });
+                    }
+                    
+                    let html = `
+                        <form id="modalForm" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label>PDF Title</label>
+                                <input type="text" id="title" class="form-control" value="${pdf.title || ''}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Course</label>
+                                <select id="course_id" class="form-control">
+                                    ${options}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>PDF File (leave empty to keep current)</label>
+                                <input type="file" id="pdf_file" accept=".pdf" class="form-control">
+                                <small class="text-muted">Upload new PDF file (optional)</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Cover Image (leave empty to keep current)</label>
+                                <input type="file" id="cover_image" accept="image/*" class="form-control">
+                                <small class="text-muted">Upload new cover (optional)</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Pages</label>
+                                <input type="number" id="pages" class="form-control" value="${pdf.pages || 0}">
+                            </div>
+                            <div class="form-group">
+                                <label>Price ($)</label>
+                                <input type="number" id="price" class="form-control" value="${pdf.price || 0}" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>Access Level</label>
+                                <select id="access_level" class="form-control">
+                                    <option value="free" ${pdf.access_level === 'free' ? 'selected' : ''}>Free</option>
+                                    <option value="citizen" ${pdf.access_level === 'citizen' ? 'selected' : ''}>Citizen</option>
+                                    <option value="studyhall" ${pdf.access_level === 'studyhall' ? 'selected' : ''}>Study Hall</option>
+                                    <option value="society" ${pdf.access_level === 'society' ? 'selected' : ''}>Society</option>
+                                    <option value="paid" ${pdf.access_level === 'paid' ? 'selected' : ''}>Paid Only</option>
+                                </select>
+                            </div>
+                            <input type="hidden" id="pdf_id" value="${pdf.id}">
+                        </form>
+                    `;
+                    
+                    $('#modalBody').html(html);
+                    
+                    $('#modalSaveBtn').off('click').on('click', function() {
+                        updatePDF(pdf.id);
+                    });
+                },
+                error: function() {
+                    showToast('Error loading courses', true);
+                }
+            });
+            
+            $('#contentModal').fadeIn(200);
+        }
+        
+        function openEditUserModal(user) {
+            currentModalType = 'editUser';
+            currentEditId = user.id;
+            $('#modalTitle').text('Edit User');
+            
+            let html = `
+                <form id="modalForm">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>Username</label>
+                            <input type="text" id="username" class="form-control" value="${user.username || ''}" required>
+                        </div>
+                        <div class="form-col">
+                            <label>Password (leave empty to keep current)</label>
+                            <input type="password" id="password" class="form-control" placeholder="********">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>First Name</label>
+                            <input type="text" id="first_name" class="form-control" value="${user.first_name || ''}">
+                        </div>
+                        <div class="form-col">
+                            <label>Last Name</label>
+                            <input type="text" id="last_name" class="form-control" value="${user.last_name || ''}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="email" class="form-control" value="${user.email || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="text" id="phone" class="form-control" value="${user.phone || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>User Tier</label>
+                        <select id="tier" class="form-control">
+                            <option value="citizen" ${user.tier === 'citizen' ? 'selected' : ''}>Citizen</option>
+                            <option value="studyhall" ${user.tier === 'studyhall' ? 'selected' : ''}>StudyHall</option>
+                            <option value="society" ${user.tier === 'society' ? 'selected' : ''}>Society</option>
+                        </select>
+                    </div>
+                    <input type="hidden" id="user_id" value="${user.id}">
+                </form>
+            `;
+            
+            $('#modalBody').html(html);
+            
+            $('#modalSaveBtn').off('click').on('click', function() {
+                updateUser(user.id);
+            });
+            
+            $('#contentModal').fadeIn(200);
+        }
+        
+        function openEditBlogModal(blog) {
+            currentModalType = 'editBlog';
+            currentEditId = blog.id;
+            $('#modalTitle').text('Edit Blog Post');
+            
+            let html = `
+                <form id="modalForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Blog Title</label>
+                        <input type="text" id="title" class="form-control" value="${blog.title || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Content</label>
+                        <textarea id="content" class="form-control" rows="5" required>${blog.content || ''}</textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>Category</label>
+                            <select id="category" class="form-control">
+                                <option value="market_analysis" ${blog.category === 'market_analysis' ? 'selected' : ''}>Market Analysis</option>
+                                <option value="trading_psychology" ${blog.category === 'trading_psychology' ? 'selected' : ''}>Trading Psychology</option>
+                                <option value="options_strategies" ${blog.category === 'options_strategies' ? 'selected' : ''}>Options Strategies</option>
+                                <option value="forex_trading" ${blog.category === 'forex_trading' ? 'selected' : ''}>Forex Trading</option>
+                                <option value="general" ${blog.category === 'general' ? 'selected' : ''}>General</option>
+                            </select>
+                        </div>
+                        <div class="form-col">
+                            <label>Status</label>
+                            <select id="status" class="form-control">
+                                <option value="published" ${blog.status === 'published' ? 'selected' : ''}>Published</option>
+                                <option value="draft" ${blog.status === 'draft' ? 'selected' : ''}>Draft</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Featured Image (leave empty to keep current)</label>
+                        <input type="file" id="featured_image" accept="image/*" class="form-control">
+                        <small class="text-muted">Upload new featured image (optional)</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Tags (comma separated)</label>
+                        <input type="text" id="tags" class="form-control" value="${blog.tags || ''}" placeholder="trading, forex, analysis">
+                    </div>
+                    <input type="hidden" id="blog_id" value="${blog.id}">
+                </form>
+            `;
+            
+            $('#modalBody').html(html);
+            
+            $('#modalSaveBtn').off('click').on('click', function() {
+                updateBlog(blog.id);
+            });
+            
+            $('#contentModal').fadeIn(200);
+        }
+        
+        function openEditPackageModal(pkg) {
+            currentModalType = 'editPackage';
+            currentEditId = pkg.id;
+            $('#modalTitle').text('Edit Package');
+            
+            let html = `
+                <form id="modalForm">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <label>Package Name</label>
+                            <input type="text" id="name" class="form-control" value="${pkg.name || ''}" required>
+                        </div>
+                        <div class="form-col">
+                            <label>Price ($)</label>
+                            <input type="number" id="price" class="form-control" value="${pkg.price || 0}" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="description" class="form-control" rows="3" required>${pkg.description || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Package Type</label>
+                        <select id="package_type" class="form-control">
+                            <option value="trading" ${pkg.package_type === 'trading' ? 'selected' : ''}>Trading Package</option>
+                            <option value="partnership" ${pkg.package_type === 'partnership' ? 'selected' : ''}>Partnership</option>
+                            <option value="course" ${pkg.package_type === 'course' ? 'selected' : ''}>Course</option>
+                            <option value="mentorship" ${pkg.package_type === 'mentorship' ? 'selected' : ''}>Mentorship</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Features (one per line)</label>
+                        <textarea id="features" class="form-control" rows="4" required>${Array.isArray(pkg.features) ? pkg.features.join('\n') : (pkg.features || '')}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Package Image (leave empty to keep current)</label>
+                        <input type="file" id="image" accept="image/*" class="form-control">
+                    </div>
+                    <input type="hidden" id="package_id" value="${pkg.id}">
+                </form>
+            `;
+            
+            $('#modalBody').html(html);
+            
+            $('#modalSaveBtn').off('click').on('click', function() {
+                updatePackage(pkg.id);
+            });
+            
+            $('#contentModal').fadeIn(200);
+        }
+        
+        // Update functions
+        function updateCourse(courseId) {
+            showLoader('Updating course...');
+            
+            const formData = new FormData();
+            formData.append('title', $('#name').val());
+            formData.append('name', $('#name').val());
+            formData.append('description', $('#description').val() || '');
+            formData.append('price', $('#price').val() || '0');
+            formData.append('duration_weeks', $('#duration_weeks').val() || '4');
+            formData.append('is_active', $('#is_active').val() === 'true');
+            
+            const thumbnailFile = $('#thumbnail')[0]?.files[0];
+            if (thumbnailFile) {
+                formData.append('thumbnail', thumbnailFile);
+            }
+            
+            $.ajax({
+                url: `/admin/api/courses/${courseId}/update/`,
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    console.log("Course updated:", response);
+                    hideLoader();
+                    showToast('Course updated successfully!');
+                    closeModal();
+                    loadCourses();
+                    loadDashboardData();
+                },
+                error: function(xhr) {
+                    console.error("Error updating course:", xhr.responseText);
+                    hideLoader();
+                    let errorMsg = 'Error updating course';
+                    try {
+                        let resp = JSON.parse(xhr.responseText);
+                        errorMsg = resp.error || resp.message || errorMsg;
+                    } catch(e) {}
+                    showToast(errorMsg, true);
+                }
+            });
+        }
+        
+        function updateVideo(videoId) {
+            showLoader('Updating video...');
+            
+            const videoFile = $('#video_file')[0]?.files[0];
+            
+            // If there's a new video file, upload it first
+            if (videoFile) {
+                const fileData = new FormData();
+                fileData.append('video_file', videoFile);
+                
+                const thumbnailFile = $('#thumbnail')[0]?.files[0];
+                if (thumbnailFile) {
+                    fileData.append('thumbnail', thumbnailFile);
+                }
+                
+                $.ajax({
+                    url: '/admin/api/videos/upload/',
+                    method: 'POST',
+                    headers: {'X-CSRFToken': csrftoken},
+                    data: fileData,
+                    processData: false,
+                    contentType: false,
+                    success: function(fileResponse) {
+                        console.log("Video file uploaded:", fileResponse);
+                        
+                        const videoData = {
+                            title: $('#title').val(),
+                            course_id: $('#course_id').val(),
+                            module: $('#module').val(),
+                            duration: $('#duration').val(),
+                            price: $('#price').val(),
+                            video_url: fileResponse.url,
+                            video_path: fileResponse.path,
+                            thumbnail_path: fileResponse.thumbnail_path
+                        };
+                        
+                        $.ajax({
+                            url: `/admin/api/videos/${videoId}/update/`,
+                            method: 'POST',
+                            headers: {'X-CSRFToken': csrftoken},
+                            data: JSON.stringify(videoData),
+                            success: function() {
+                                hideLoader();
+                                showToast('Video updated successfully!');
+                                closeModal();
+                                loadVideos();
+                                loadDashboardData();
+                            },
+                            error: function(xhr) {
+                                console.error("Error updating video:", xhr.responseText);
+                                hideLoader();
+                                let errorMsg = xhr.responseJSON?.error || 'Error updating video';
+                                showToast(errorMsg, true);
+                            }
+                        });
+                    },
+                    error: function(xhr) {
+                        console.error("Error uploading video file:", xhr.responseText);
+                        hideLoader();
+                        let errorMsg = xhr.responseJSON?.error || 'Error uploading video file';
+                        showToast(errorMsg, true);
+                    }
+                });
+            } else {
+                // Just update metadata without new file
+                const videoData = {
+                    title: $('#title').val(),
+                    course_id: $('#course_id').val(),
+                    module: $('#module').val(),
+                    duration: $('#duration').val(),
+                    price: $('#price').val()
+                };
+                
+                $.ajax({
+                    url: `/admin/api/videos/${videoId}/update/`,
+                    method: 'POST',
+                    headers: {'X-CSRFToken': csrftoken},
+                    data: JSON.stringify(videoData),
+                    success: function() {
+                        hideLoader();
+                        showToast('Video updated successfully!');
+                        closeModal();
+                        loadVideos();
+                        loadDashboardData();
+                    },
+                    error: function(xhr) {
+                        console.error("Error updating video:", xhr.responseText);
+                        hideLoader();
+                        let errorMsg = xhr.responseJSON?.error || 'Error updating video';
+                        showToast(errorMsg, true);
+                    }
+                });
+            }
+        }
+        
+        function updatePDF(pdfId) {
+            showLoader('Updating PDF...');
+            
+            const pdfFile = $('#pdf_file')[0]?.files[0];
+            
+            // If there's a new PDF file, upload it first
+            if (pdfFile) {
+                const fileData = new FormData();
+                fileData.append('pdf_file', pdfFile);
+                
+                const coverFile = $('#cover_image')[0]?.files[0];
+                if (coverFile) {
+                    fileData.append('cover_image', coverFile);
+                }
+                
+                $.ajax({
+                    url: '/admin/api/pdfs/upload/',
+                    method: 'POST',
+                    headers: {'X-CSRFToken': csrftoken},
+                    data: fileData,
+                    processData: false,
+                    contentType: false,
+                    success: function(fileResponse) {
+                        console.log("PDF file uploaded:", fileResponse);
+                        
+                        const pdfData = {
+                            title: $('#title').val(),
+                            course_id: $('#course_id').val(),
+                            pages: $('#pages').val(),
+                            price: $('#price').val(),
+                            is_free: $('#price').val() == 0,
+                            access_level: $('#access_level').val(),
+                            pdf_url: fileResponse.url,
+                            pdf_path: fileResponse.path,
+                            cover_image_path: fileResponse.cover_path
+                        };
+                        
+                        $.ajax({
+                            url: `/admin/api/pdfs/${pdfId}/update/`,
+                            method: 'POST',
+                            headers: {'X-CSRFToken': csrftoken},
+                            data: JSON.stringify(pdfData),
+                            success: function() {
+                                hideLoader();
+                                showToast('PDF updated successfully!');
+                                closeModal();
+                                loadPDFs();
+                                loadDashboardData();
+                            },
+                            error: function(xhr) {
+                                console.error("Error updating PDF:", xhr.responseText);
+                                hideLoader();
+                                let errorMsg = xhr.responseJSON?.error || 'Error updating PDF';
+                                showToast(errorMsg, true);
+                            }
+                        });
+                    },
+                    error: function(xhr) {
+                        console.error("Error uploading PDF file:", xhr.responseText);
+                        hideLoader();
+                        let errorMsg = xhr.responseJSON?.error || 'Error uploading PDF file';
+                        showToast(errorMsg, true);
+                    }
+                });
+            } else {
+                // Just update metadata without new file
+                const pdfData = {
+                    title: $('#title').val(),
+                    course_id: $('#course_id').val(),
+                    pages: $('#pages').val(),
+                    price: $('#price').val(),
+                    is_free: $('#price').val() == 0,
+                    access_level: $('#access_level').val()
+                };
+                
+                $.ajax({
+                    url: `/admin/api/pdfs/${pdfId}/update/`,
+                    method: 'POST',
+                    headers: {'X-CSRFToken': csrftoken},
+                    data: JSON.stringify(pdfData),
+                    success: function() {
+                        hideLoader();
+                        showToast('PDF updated successfully!');
+                        closeModal();
+                        loadPDFs();
+                        loadDashboardData();
+                    },
+                    error: function(xhr) {
+                        console.error("Error updating PDF:", xhr.responseText);
+                        hideLoader();
+                        let errorMsg = xhr.responseJSON?.error || 'Error updating PDF';
+                        showToast(errorMsg, true);
+                    }
+                });
+            }
+        }
+        
+        function updateUser(userId) {
+            showLoader('Updating user...');
+            
+            const data = {
+                username: $('#username').val(),
+                first_name: $('#first_name').val(),
+                last_name: $('#last_name').val(),
+                email: $('#email').val(),
+                phone: $('#phone').val(),
+                tier: $('#tier').val()
+            };
+            
+            // Only include password if provided
+            const password = $('#password').val();
+            if (password) {
+                data.password = password;
+            }
+            
+            $.ajax({
+                url: `/admin/api/users/${userId}/update/`,
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                data: JSON.stringify(data),
+                success: function() {
+                    hideLoader();
+                    showToast('User updated successfully!');
+                    closeModal();
+                    loadUsers();
+                    loadDashboardData();
+                },
+                error: function(xhr) {
+                    console.error("Error updating user:", xhr.responseText);
+                    hideLoader();
+                    let errorMsg = 'Error updating user';
+                    try {
+                        let resp = JSON.parse(xhr.responseText);
+                        errorMsg = resp.error || resp.message || errorMsg;
+                    } catch(e) {}
+                    showToast(errorMsg, true);
+                }
+            });
+        }
+        
+        function updateBlog(blogId) {
+            showLoader('Updating blog...');
+            
+            const formData = new FormData();
+            formData.append('title', $('#title').val());
+            formData.append('content', $('#content').val());
+            formData.append('category', $('#category').val());
+            formData.append('status', $('#status').val());
+            formData.append('tags', $('#tags').val());
+            
+            const imageFile = $('#featured_image')[0]?.files[0];
+            if (imageFile) {
+                formData.append('featured_image', imageFile);
+            }
+            
+            $.ajax({
+                url: `/admin/api/blogs/${blogId}/update/`,
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function() {
+                    hideLoader();
+                    showToast('Blog updated successfully!');
+                    closeModal();
+                    loadBlogs();
+                    loadDashboardData();
+                },
+                error: function(xhr) {
+                    console.error("Error updating blog:", xhr.responseText);
+                    hideLoader();
+                    let errorMsg = 'Error updating blog';
+                    try {
+                        let resp = JSON.parse(xhr.responseText);
+                        errorMsg = resp.error || resp.message || errorMsg;
+                    } catch(e) {}
+                    showToast(errorMsg, true);
+                }
+            });
+        }
+        
+        function updatePackage(packageId) {
+            showLoader('Updating package...');
+            
+            const data = {
+                name: $('#name').val(),
+                description: $('#description').val(),
+                price: $('#price').val(),
+                package_type: $('#package_type').val(),
+                features: $('#features').val().split('\n').filter(f => f.trim())
+            };
+            
+            $.ajax({
+                url: `/admin/api/packages/${packageId}/update/`,
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                data: JSON.stringify(data),
+                success: function() {
+                    hideLoader();
+                    showToast('Package updated successfully!');
+                    closeModal();
+                    loadPackages();
+                    loadDashboardData();
+                },
+                error: function(xhr) {
+                    console.error("Error updating package:", xhr.responseText);
+                    hideLoader();
+                    let errorMsg = 'Error updating package';
+                    try {
+                        let resp = JSON.parse(xhr.responseText);
+                        errorMsg = resp.error || resp.message || errorMsg;
+                    } catch(e) {}
+                    showToast(errorMsg, true);
+                }
+            });
+        }
+        
+        // ========== CHARTS INITIALIZATION ==========
+        let revenueChart, distributionChart, reportsChart;
+        
+        function initCharts() {
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            revenueChart = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: [0, 0, 0, 0],
+                        borderColor: '#0066CC',
+                        backgroundColor: 'rgba(0, 102, 204, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+            
+            const distCtx = document.getElementById('distributionChart').getContext('2d');
+            distributionChart = new Chart(distCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Users', 'Videos', 'Courses', 'Blogs', 'PDFs'],
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: ['#0066CC', '#F59E0B', '#10B981', '#EF4444', '#6B7280'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    cutout: '60%'
+                }
+            });
+            
+            const reportsCtx = document.getElementById('reportsChart');
+            if(reportsCtx) {
+                reportsChart = new Chart(reportsCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Revenue',
+                            data: [],
+                            backgroundColor: '#0066CC'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+            
+            // Update with real data if available
+            loadDistributionData();
+        }
+        
+        function loadDistributionData() {
+            $.ajax({
+                url: '/admin/api/dashboard-stats/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(data) {
+                    if (distributionChart) {
+                        let videos = data?.content?.videos || 0;
+                        let courses = data?.content?.courses || 0;
+                        let users = data?.users?.total || 0;
+                        let blogs = data?.content?.blogs || 0;
+                        let pdfs = data?.content?.pdfs || 0;
+                        
+                        distributionChart.data.datasets[0].data = [users, videos, courses, blogs, pdfs];
+                        distributionChart.update();
+                    }
+                }
+            });
+        }
+        
+        function updateReportsChart(packageData) {
+            if (reportsChart && packageData && packageData.length > 0) {
+                const labels = packageData.map(item => item.name || item.package_type);
+                const data = packageData.map(item => parseFloat(item.total) || 0);
+                
+                reportsChart.data.labels = labels;
+                reportsChart.data.datasets[0].data = data;
+                reportsChart.update();
+            } else if (reportsChart) {
+                reportsChart.data.labels = [];
+                reportsChart.data.datasets[0].data = [];
+                reportsChart.update();
+            }
+        }
+        
+        // ========== REFRESH DATA ==========
+        function refreshData() {
+            showLoader('Refreshing...');
+            
+            loadDashboardData();
+            loadUsers();
+            loadCourses();
+            loadVideos();
+            loadPDFs();
+            loadBlogs();
+            loadPackages();
+            loadOrders();
+            loadPartnerships();
+            loadReportsData();
+            loadDistributionData();
+            
+            setTimeout(hideLoader, 500);
+        }
+        
+        // ========== LOGOUT ==========
+        function logout() {
+            if(confirm('Are you sure you want to logout?')) {
+                window.location.href = '/admin/logout/';
+            }
+        }
+        
+        function showAllActivities() {
+            $('.nav-item[data-section="reports"]').click();
+        }
+        
+        // Close modal when clicking outside
+        $(window).click(function(e) {
+            if ($(e.target).hasClass('modal-overlay')) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,4 +1,3 @@
-# models.py
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
@@ -9,7 +8,7 @@ import uuid
 import random
 from django.utils.timezone import now
 from decimal import Decimal
-
+from django.conf import settings
 
 # ==================== CUSTOM USER MANAGER ====================
 
@@ -39,8 +38,63 @@ class MfalmeUserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
         
         return self.create_user(email, password, **extra_fields)
+    
+# Add these methods to the MfalmeUsers class
 
-## ==================== MAIN USER MODEL ====================
+def has_pdf_access(self, pdf_id):
+    """Check if user has access to a PDF"""
+    try:
+        pdf = PDF.objects.get(id=pdf_id)
+        
+        # Free PDFs are accessible to everyone
+        if pdf.is_free:
+            return True
+        
+        # Check direct purchase
+        if UserPDFAccess.objects.filter(user=self, pdf=pdf).exists():
+            return True
+        
+        # Check course access if PDF belongs to a course
+        if pdf.course:
+            return UserCourse.objects.filter(
+                user=self, 
+                course=pdf.course,
+                is_active=True,
+                access_expires_at__gt=timezone.now()
+            ).exists()
+        
+        return False
+    except PDF.DoesNotExist:
+        return False
+
+def has_video_access(self, video_id):
+    """Check if user has access to a video"""
+    try:
+        video = TrainingVideo.objects.get(id=video_id)
+        
+        # Free videos are accessible to everyone
+        if video.price == 0:
+            return True
+        
+        # Check direct purchase
+        if UserVideoAccess.objects.filter(user=self, video=video).exists():
+            return True
+        
+        # Check course access if video belongs to a course
+        if video.course:
+            return UserCourse.objects.filter(
+                user=self, 
+                course=video.course,
+                is_active=True,
+                access_expires_at__gt=timezone.now()
+            ).exists()
+        
+        return False
+    except TrainingVideo.DoesNotExist:
+        return False    
+
+
+# ==================== MAIN USER MODEL ====================
 
 class MfalmeUsers(AbstractBaseUser, PermissionsMixin):
     """Enhanced custom user model"""
@@ -172,6 +226,7 @@ class MfalmeUsers(AbstractBaseUser, PermissionsMixin):
     
     def __str__(self):
         return f'{self.soldier_id} - {self.email}'
+    
     def save(self, *args, **kwargs):
         # Generate SOLDIER ID if not exists
         if not self.soldier_id:
@@ -245,11 +300,11 @@ class MfalmeUsers(AbstractBaseUser, PermissionsMixin):
         """Return the short name for the user"""
         return self.username
 
+
 # ==================== VERIFICATION CODE MODEL ====================
 
 class VerificationCode(models.Model):
     """Enhanced verification code model"""
-    
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='verification_codes')
     code = models.CharField(max_length=6)
     code_type = models.CharField(max_length=20, default='email_verification', choices=[
@@ -263,21 +318,15 @@ class VerificationCode(models.Model):
     expires_at = models.DateTimeField()
     is_used = models.BooleanField(default=False)
     used_at = models.DateTimeField(null=True, blank=True)
-    
-    # Security tracking
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     device_info = models.TextField(blank=True)
     user_agent = models.TextField(blank=True)
     location = models.CharField(max_length=200, blank=True)
-    
-    # For transaction verification
     transaction_ref = models.CharField(max_length=100, blank=True, null=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Verification Code'
-        verbose_name_plural = 'Verification Codes'
         indexes = [
             models.Index(fields=['user', 'is_used', 'expires_at']),
             models.Index(fields=['code', 'created_at']),
@@ -287,38 +336,26 @@ class VerificationCode(models.Model):
         return f'{self.user.soldier_id} - {self.code_type} - {self.code}'
     
     def save(self, *args, **kwargs):
-        # Auto-set expiry (30 minutes from creation)
         if not self.pk and not self.expires_at:
             self.expires_at = timezone.now() + timedelta(minutes=30)
         super().save(*args, **kwargs)
     
     def is_expired(self):
-        """Check if the code has expired"""
         return timezone.now() > self.expires_at
     
     def is_valid(self):
-        """Check if code is valid (not used and not expired)"""
         return not self.is_used and not self.is_expired()
     
     def mark_as_used(self):
-        """Mark code as used"""
         self.is_used = True
         self.used_at = timezone.now()
         self.save()
-    
-    @property
-    def time_remaining(self):
-        """Get time remaining in minutes"""
-        if self.is_expired():
-            return 0
-        remaining = self.expires_at - timezone.now()
-        return int(remaining.total_seconds() / 60)
+
 
 # ==================== PAYMENT MODELS ====================
 
 class PaymentTransaction(models.Model):
-    """Track all payment transactions with Paystack integration"""
-    
+    """Track all payment transactions"""
     TRANSACTION_STATUS = [
         ('initiated', 'Initiated'),
         ('pending', 'Pending'),
@@ -326,7 +363,6 @@ class PaymentTransaction(models.Model):
         ('failed', 'Failed'),
         ('refunded', 'Refunded'),
         ('cancelled', 'Cancelled'),
-        ('reversed', 'Reversed'),
     ]
     
     PAYMENT_TYPES = [
@@ -338,6 +374,7 @@ class PaymentTransaction(models.Model):
         ('subscription', 'Subscription'),
         ('deposit', 'Account Deposit'),
         ('withdrawal', 'Withdrawal'),
+        ('course_purchase', 'Course Purchase'),
         ('other', 'Other'),
     ]
     
@@ -349,6 +386,12 @@ class PaymentTransaction(models.Model):
         ('bank_transfer', 'Bank Transfer'),
         ('equity_bank', 'Equity Bank'),
         ('manual', 'Manual Payment'),
+        ('paystack', 'Paystack'),
+        ('sasapay', 'SasaPay'),
+        ('pesapal', 'Pesapal'),
+        ('mpesa', 'M-PESA'),
+        ('bank', 'Bank Transfer'),
+        ('card', 'Card'),
     ]
     
     CURRENCIES = [
@@ -358,7 +401,6 @@ class PaymentTransaction(models.Model):
         ('GBP', 'British Pound'),
     ]
     
-    # User and basic info
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='payment_transactions')
     reference = models.CharField(max_length=100, unique=True, db_index=True)
     external_reference = models.CharField(max_length=100, blank=True, null=True, db_index=True)
@@ -367,41 +409,42 @@ class PaymentTransaction(models.Model):
     status = models.CharField(max_length=20, choices=TRANSACTION_STATUS, default='initiated')
     payment_type = models.CharField(max_length=30, choices=PAYMENT_TYPES)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='paystack')
+    pesapal_tracking_id = models.CharField(max_length=100, blank=True, null=True)
+    pesapal_payment_method = models.CharField(max_length=50, blank=True, null=True)
+    pesapal_raw_response = models.JSONField(null=True, blank=True)
+    # SasaPay specific fields
+    sasapay_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    sasapay_checkout_id = models.CharField(max_length=100, blank=True, null=True)
+    sasapay_payment_method = models.CharField(max_length=50, blank=True, null=True)  # 'mpesa', 'card', etc.
+    sasapay_raw_response = models.JSONField(blank=True, null=True)
+    sasapay_status = models.CharField(max_length=20, blank=True, null=True)
     
-    # Package/Service specific
+    # Course-specific fields
+    course = models.ForeignKey('Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='purchases')
+    
     package_type = models.CharField(max_length=50, blank=True, null=True)
     package_name = models.CharField(max_length=200, blank=True, null=True)
-    
-    # Education specific
     program_type = models.CharField(max_length=50, blank=True, null=True)
     program_name = models.CharField(max_length=200, blank=True, null=True)
     duration = models.CharField(max_length=20, blank=True, null=True)
-    
-    # Partnership specific
     partnership_tier = models.CharField(max_length=50, blank=True, null=True)
     partnership_name = models.CharField(max_length=200, blank=True, null=True)
     
-    # Payment details
     description = models.TextField(blank=True, null=True)
     service_details = models.JSONField(default=dict, blank=True)
-    
-    # Paystack integration
     paystack_data = models.JSONField(default=dict, blank=True)
     paystack_status = models.CharField(max_length=50, blank=True, null=True)
     paystack_message = models.TextField(blank=True, null=True)
     authorization_url = models.URLField(max_length=500, blank=True, null=True)
     access_code = models.CharField(max_length=100, blank=True, null=True)
     
-    # Customer info
     customer_email = models.EmailField(blank=True, null=True)
     customer_phone = models.CharField(max_length=20, blank=True, null=True)
     customer_name = models.CharField(max_length=200, blank=True, null=True)
     
-    # Fee and net amount
     transaction_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     net_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     initiated_at = models.DateTimeField(null=True, blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)
@@ -409,137 +452,39 @@ class PaymentTransaction(models.Model):
     failed_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    # Metadata
     metadata = models.JSONField(default=dict, blank=True)
     notes = models.TextField(blank=True)
     
-    # Verification
     is_verified = models.BooleanField(default=False)
     verified_by = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True, related_name='verified_transactions')
     verified_at = models.DateTimeField(null=True, blank=True)
     
-    # Audit trail
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Payment Transaction'
-        verbose_name_plural = 'Payment Transactions'
         indexes = [
             models.Index(fields=['status', 'created_at']),
             models.Index(fields=['user', 'status']),
             models.Index(fields=['payment_type', 'created_at']),
             models.Index(fields=['reference']),
+            models.Index(fields=['course', 'status']),
         ]
     
     def __str__(self):
-        return f"{self.reference} - {self.user.username} - ${self.amount} ({self.get_status_display()})"
+        return f"{self.reference} - {self.user.username if self.user else 'No User'} - ${self.amount}"
     
     def save(self, *args, **kwargs):
-        # Generate reference if not exists
         if not self.reference:
             self.reference = f"TXN{timezone.now().strftime('%Y%m%d')}{uuid.uuid4().hex[:8].upper()}"
-        
-        # Set customer info from user if not provided
-        if not self.customer_email and self.user:
-            self.customer_email = self.user.email
-        if not self.customer_phone and self.user:
-            self.customer_phone = self.user.phone
-        if not self.customer_name and self.user:
-            self.customer_name = self.user.get_full_name()
-        
-        # Calculate net amount
-        self.net_amount = self.amount - self.transaction_fee
-        
-        # Set timestamps based on status
-        if self.status == 'initiated' and not self.initiated_at:
-            self.initiated_at = timezone.now()
-        elif self.status == 'completed' and not self.completed_at:
-            self.completed_at = timezone.now()
-        elif self.status == 'failed' and not self.failed_at:
-            self.failed_at = timezone.now()
-        
         super().save(*args, **kwargs)
-    
-    def is_successful(self):
-        """Check if transaction was successful"""
-        return self.status == 'completed'
-    
-    def get_payment_details(self):
-        """Get human-readable payment details"""
-        details = {
-            'reference': self.reference,
-            'amount': f"{self.currency} {self.amount:,.2f}",
-            'net_amount': f"{self.currency} {self.net_amount:,.2f}",
-            'status': self.get_status_display(),
-            'payment_method': self.get_payment_method_display(),
-            'date': self.created_at.strftime('%B %d, %Y %H:%M'),
-            'type': self.get_payment_type_display(),
-        }
-        
-        # Add specific details
-        if self.package_name:
-            details['service'] = f"Package: {self.package_name}"
-        elif self.program_name:
-            details['service'] = f"Education: {self.program_name}"
-        elif self.partnership_name:
-            details['service'] = f"Partnership: {self.partnership_name}"
-        elif self.description:
-            details['service'] = self.description[:100]
-        
-        return details
-    
-    def verify_payment(self, verified_by=None):
-        """Verify a manual payment"""
-        self.is_verified = True
-        self.verified_by = verified_by
-        self.verified_at = timezone.now()
-        self.status = 'completed'
-        self.save()
-        
-        # Trigger payment completion actions
-        self._on_payment_completed()
-    
-    def _on_payment_completed(self):
-        """Actions to perform when payment is completed"""
-        # Update user account balance
-        if self.payment_type in ['deposit', 'market_consultation', 'lifetime_mentorship', 
-                                'leveraging_package', 'education_program', 'partnership']:
-            self.user.account_balance += self.amount
-            self.user.total_deposits += self.amount
-            self.user.save()
-    
-    def refund(self, refund_amount=None, refund_reason=""):
-        """Process refund for this transaction"""
-        if self.status != 'completed':
-            raise ValueError("Only completed transactions can be refunded")
-        
-        if not refund_amount:
-            refund_amount = self.amount
-        
-        # Create refund transaction
-        refund_txn = PaymentTransaction.objects.create(
-            user=self.user,
-            amount=refund_amount,
-            currency=self.currency,
-            status='completed',
-            payment_type='refund',
-            description=f"Refund for {self.reference}: {refund_reason}",
-            metadata={'original_transaction': self.reference, 'refund_reason': refund_reason}
-        )
-        
-        # Update original transaction
-        self.status = 'refunded'
-        self.save()
-        
-        return refund_txn
+
 
 # ==================== SUBSCRIPTION MODEL ====================
 
 class Subscription(models.Model):
     """For recurring payments/subscriptions"""
-    
     SUBSCRIPTION_STATUS = [
         ('active', 'Active'),
         ('inactive', 'Inactive'),
@@ -556,7 +501,6 @@ class Subscription(models.Model):
         ('lifetime', 'Lifetime'),
     ]
     
-    # User and plan info
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='subscriptions')
     plan_name = models.CharField(max_length=100)
     plan_type = models.CharField(max_length=20, choices=SUBSCRIPTION_PLANS)
@@ -564,7 +508,6 @@ class Subscription(models.Model):
     currency = models.CharField(max_length=3, default='USD')
     status = models.CharField(max_length=20, choices=SUBSCRIPTION_STATUS, default='active')
     
-    # Service details
     service_type = models.CharField(max_length=50, choices=[
         ('education', 'Education Program'),
         ('signals', 'Trading Signals'),
@@ -574,105 +517,44 @@ class Subscription(models.Model):
     ])
     service_details = models.JSONField(default=dict, blank=True)
     
-    # Paystack subscription
     paystack_subscription_code = models.CharField(max_length=100, blank=True, null=True, unique=True)
     paystack_customer_code = models.CharField(max_length=100, blank=True, null=True)
     
-    # Dates
     start_date = models.DateTimeField()
     next_payment_date = models.DateTimeField()
     end_date = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
     
-    # Payment tracking
     last_payment = models.ForeignKey(PaymentTransaction, on_delete=models.SET_NULL, null=True, blank=True, related_name='subscription_payments')
     total_payments = models.IntegerField(default=0)
     total_amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     
-    # Metadata
     metadata = models.JSONField(default=dict, blank=True)
     notes = models.TextField(blank=True)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Subscription'
-        verbose_name_plural = 'Subscriptions'
         indexes = [
             models.Index(fields=['user', 'status']),
             models.Index(fields=['status', 'next_payment_date']),
         ]
     
     def __str__(self):
-        return f"{self.user.username} - {self.plan_name} ({self.get_status_display()})"
+        return f"{self.user.username} - {self.plan_name}"
     
     def save(self, *args, **kwargs):
-        # Set start date if not provided
         if not self.start_date:
             self.start_date = timezone.now()
-        
-        # Set next payment date based on plan type
-        if not self.next_payment_date:
-            if self.plan_type == 'monthly':
-                self.next_payment_date = self.start_date + timedelta(days=30)
-            elif self.plan_type == 'quarterly':
-                self.next_payment_date = self.start_date + timedelta(days=90)
-            elif self.plan_type == 'semi_annual':
-                self.next_payment_date = self.start_date + timedelta(days=180)
-            elif self.plan_type == 'annual':
-                self.next_payment_date = self.start_date + timedelta(days=365)
-            elif self.plan_type == 'lifetime':
-                self.next_payment_date = None
-        
         super().save(*args, **kwargs)
-    
-    def is_active(self):
-        """Check if subscription is active"""
-        if self.status != 'active':
-            return False
-        if self.end_date and timezone.now() > self.end_date:
-            return False
-        if self.next_payment_date and timezone.now() > self.next_payment_date:
-            # Check if it's grace period (7 days)
-            if timezone.now() > self.next_payment_date + timedelta(days=7):
-                return False
-        return True
-    
-    def cancel(self, cancellation_reason=""):
-        """Cancel the subscription"""
-        self.status = 'cancelled'
-        self.cancelled_at = timezone.now()
-        self.metadata['cancellation_reason'] = cancellation_reason
-        self.save()
-    
-    def renew(self, payment_transaction=None):
-        """Renew the subscription"""
-        if payment_transaction:
-            self.last_payment = payment_transaction
-            self.total_payments += 1
-            self.total_amount_paid += payment_transaction.amount
-        
-        # Update next payment date
-        if self.plan_type == 'monthly':
-            self.next_payment_date = self.next_payment_date + timedelta(days=30)
-        elif self.plan_type == 'quarterly':
-            self.next_payment_date = self.next_payment_date + timedelta(days=90)
-        elif self.plan_type == 'semi_annual':
-            self.next_payment_date = self.next_payment_date + timedelta(days=180)
-        elif self.plan_type == 'annual':
-            self.next_payment_date = self.next_payment_date + timedelta(days=365)
-        
-        self.status = 'active'
-        self.save()
 
-# ==================== TRADING PACKAGES ====================
+
+# ==================== PACKAGE MODEL ====================
 
 class Package(models.Model):
     """Trading packages"""
-    
     PACKAGE_TYPES = [
         ('market_consultation', 'Market Consultation'),
         ('lifetime_mentorship', 'Lifetime Mentorship'),
@@ -688,20 +570,16 @@ class Package(models.Model):
     full_description = models.TextField()
     price = models.DecimalField(max_digits=12, decimal_places=2)
     
-    # Pricing options
     original_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     discount_percentage = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     
-    # Images
     image = models.ImageField(upload_to='packages/', blank=True, null=True)
     thumbnail = models.ImageField(upload_to='packages/thumbnails/', blank=True, null=True)
     
-    # Features
-    features = models.JSONField(default=list, help_text="List of features in JSON format")
-    benefits = models.JSONField(default=list, help_text="List of benefits in JSON format")
+    features = models.JSONField(default=list)
+    benefits = models.JSONField(default=list)
     
-    # Duration
-    duration_days = models.IntegerField(default=30, help_text="Package duration in days")
+    duration_days = models.IntegerField(default=30)
     is_recurring = models.BooleanField(default=False)
     recurrence_interval = models.CharField(max_length=20, blank=True, choices=[
         ('monthly', 'Monthly'),
@@ -709,17 +587,14 @@ class Package(models.Model):
         ('annual', 'Annual'),
     ])
     
-    # Status
     is_featured = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_popular = models.BooleanField(default=False)
     order = models.IntegerField(default=0)
     
-    # Payment
     payment_url = models.CharField(max_length=200, blank=True)
-    payment_options = models.JSONField(default=list, help_text="Available payment options")
+    payment_options = models.JSONField(default=list)
     
-    # Access requirements
     minimum_investment = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     required_experience = models.CharField(max_length=50, blank=True, choices=[
         ('beginner', 'Beginner'),
@@ -728,18 +603,14 @@ class Package(models.Model):
         ('any', 'Any Level'),
     ])
     
-    # Statistics
     total_sales = models.IntegerField(default=0)
     total_revenue = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['order', '-created_at']
-        verbose_name = 'Trading Package'
-        verbose_name_plural = 'Trading Packages'
         indexes = [
             models.Index(fields=['package_type', 'is_active']),
             models.Index(fields=['is_featured', 'is_active']),
@@ -751,43 +622,12 @@ class Package(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
-        
-        # Generate payment URL if not provided
-        if not self.payment_url:
-            self.payment_url = f"/payment/package/{self.slug}/"
-        
-        # Calculate discounted price
-        if self.original_price and self.discount_percentage > 0:
-            discount_amount = (self.original_price * Decimal(self.discount_percentage / 100))
-            self.price = self.original_price - discount_amount
-        
         super().save(*args, **kwargs)
-    
-    @property
-    def discounted_price(self):
-        """Get the discounted price"""
-        if self.original_price and self.discount_percentage > 0:
-            discount_amount = (self.original_price * Decimal(self.discount_percentage / 100))
-            return self.original_price - discount_amount
-        return self.price
-    
-    def get_features_list(self):
-        """Get features as list"""
-        if isinstance(self.features, list):
-            return self.features
-        return []
-    
-    def increment_sales(self, amount):
-        """Increment sales counter"""
-        self.total_sales += 1
-        self.total_revenue += amount
-        self.save()
 
-# ==================== EDUCATION PROGRAMS ====================
 
+# ==================== EDUCATION PROGRAM MODEL ====================
 class EducationProgram(models.Model):
     """Education programs"""
-    
     PROGRAM_TYPES = [
         ('IPLT', 'IPLT - Introduction to Professional Level Trading'),
         ('PTM', 'PTM - Professional Trading Masterclass'),
@@ -802,60 +642,41 @@ class EducationProgram(models.Model):
     short_description = models.CharField(max_length=200)
     full_description = models.TextField()
     
-    # Curriculum
-    curriculum = models.JSONField(default=list, help_text="List of modules/topics in JSON format")
-    features = models.JSONField(default=list, help_text="List of features in JSON format")
-    requirements = models.JSONField(default=list, help_text="List of requirements in JSON format")
+    curriculum = models.JSONField(default=list)
+    features = models.JSONField(default=list)
+    requirements = models.JSONField(default=list)
     
-    # Pricing
     price_1_month = models.DecimalField(max_digits=10, decimal_places=2)
     price_12_months = models.DecimalField(max_digits=10, decimal_places=2)
     original_price_1_month = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    original_price_12_months = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    original_price_12_months = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # FIXED: removed underscore
     
-    # Duration and stats
-    total_hours = models.IntegerField(default=40, help_text="Total program hours")
-    total_lessons = models.IntegerField(default=20, help_text="Total number of lessons")
-    total_modules = models.IntegerField(default=5, help_text="Total number of modules")
+    total_hours = models.IntegerField(default=40)
+    total_lessons = models.IntegerField(default=20)
+    total_modules = models.IntegerField(default=5)
     
-    # Status
     is_popular = models.BooleanField(default=False)
     is_new = models.BooleanField(default=False)
     is_featured = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     order = models.IntegerField(default=0)
     
-    # Icons and badges
     icon_class = models.CharField(max_length=100, default="fas fa-play-circle")
     badge_text = models.CharField(max_length=50, blank=True)
-    badge_color = models.CharField(max_length=50, default="primary", choices=[
-        ('primary', 'Primary'),
-        ('secondary', 'Secondary'),
-        ('success', 'Success'),
-        ('danger', 'Danger'),
-        ('warning', 'Warning'),
-        ('info', 'Info'),
-        ('light', 'Light'),
-        ('dark', 'Dark'),
-    ])
+    badge_color = models.CharField(max_length=50, default="primary")
     
-    # Media
     thumbnail = models.ImageField(upload_to='education/thumbnails/', blank=True, null=True)
-    promo_video = models.URLField(blank=True, null=True, help_text="YouTube/Vimeo URL")
+    promo_video = models.URLField(blank=True, null=True)
     
-    # Enrollment
     enrolled_count = models.IntegerField(default=0)
     completion_rate = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     launch_date = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         ordering = ['order', '-created_at']
-        verbose_name = 'Education Program'
-        verbose_name_plural = 'Education Programs'
         indexes = [
             models.Index(fields=['program_type', 'is_active']),
             models.Index(fields=['is_popular', 'is_active']),
@@ -867,34 +688,12 @@ class EducationProgram(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(f"{self.program_type}-{self.name}")
-        
-        # Set launch date if new and not set
-        if self.is_new and not self.launch_date:
-            self.launch_date = timezone.now()
-        
         super().save(*args, **kwargs)
-    
-    def get_price(self, duration='1_month'):
-        """Get price based on duration"""
-        if duration == '12_months':
-            return self.price_12_months
-        return self.price_1_month
-    
-    def get_discount_percentage(self, duration='1_month'):
-        """Get discount percentage"""
-        if duration == '1_month' and self.original_price_1_month:
-            discount = ((self.original_price_1_month - self.price_1_month) / self.original_price_1_month) * 100
-            return round(discount, 1)
-        elif duration == '12_months' and self.original_price_12_months:
-            discount = ((self.original_price_12_months - self.price_12_months) / self.original_price_12_months) * 100
-            return round(discount, 1)
-        return 0
 
 # ==================== USER EDUCATION ENROLLMENT ====================
 
 class UserEducationEnrollment(models.Model):
     """Track user enrollment in education programs"""
-    
     ENROLLMENT_TYPES = [
         ('1_month', '1 Month Access'),
         ('12_months', '12 Months Access'),
@@ -911,38 +710,30 @@ class UserEducationEnrollment(models.Model):
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='education_enrollments')
     program = models.ForeignKey(EducationProgram, on_delete=models.CASCADE, related_name='enrollments')
     
-    # Enrollment details
     enrollment_type = models.CharField(max_length=20, choices=ENROLLMENT_TYPES)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
     payment_transaction = models.ForeignKey(PaymentTransaction, on_delete=models.SET_NULL, null=True, blank=True)
     
-    # Access period
     enrolled_at = models.DateTimeField(auto_now_add=True)
     access_starts = models.DateTimeField(default=timezone.now)
     access_expires = models.DateTimeField()
     
-    # Progress tracking
     progress_percentage = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     completed_modules = models.JSONField(default=list, blank=True)
     last_accessed = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     
-    # Status
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     is_active = models.BooleanField(default=True)
     
-    # Certificates
     certificate_issued = models.BooleanField(default=False)
     certificate_issued_at = models.DateTimeField(null=True, blank=True)
     certificate_number = models.CharField(max_length=50, blank=True, null=True)
     
-    # Metadata
     notes = models.TextField(blank=True)
     
     class Meta:
         ordering = ['-enrolled_at']
-        verbose_name = 'Education Enrollment'
-        verbose_name_plural = 'Education Enrollments'
         unique_together = ['user', 'program']
         indexes = [
             models.Index(fields=['user', 'status']),
@@ -950,57 +741,13 @@ class UserEducationEnrollment(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.user.username} - {self.program.program_type} ({self.get_enrollment_type_display()})"
-    
-    def save(self, *args, **kwargs):
-        # Check if access has expired
-        if self.access_expires and timezone.now() > self.access_expires and self.status == 'active':
-            self.status = 'expired'
-            self.is_active = False
-        
-        # Check if completed
-        if self.progress_percentage >= 100 and not self.completed_at:
-            self.completed_at = timezone.now()
-            self.status = 'completed'
-        
-        super().save(*args, **kwargs)
-    
-    def update_progress(self, module_name):
-        """Update progress when a module is completed"""
-        if module_name not in self.completed_modules:
-            self.completed_modules.append(module_name)
-            self.progress_percentage = (len(self.completed_modules) / len(self.program.curriculum)) * 100
-            self.last_accessed = timezone.now()
-            self.save()
-    
-    @property
-    def days_remaining(self):
-        """Get days remaining for access"""
-        if not self.access_expires:
-            return None
-        remaining = self.access_expires - timezone.now()
-        return max(0, remaining.days)
-    
-    @property
-    def is_expired(self):
-        """Check if enrollment has expired"""
-        return self.status == 'expired' or (self.access_expires and timezone.now() > self.access_expires)
-    
-    def issue_certificate(self):
-        """Issue completion certificate"""
-        if self.progress_percentage >= 100 and not self.certificate_issued:
-            self.certificate_issued = True
-            self.certificate_issued_at = timezone.now()
-            self.certificate_number = f"CERT-{self.program.program_type}-{uuid.uuid4().hex[:8].upper()}"
-            self.save()
-            return True
-        return False
+        return f"{self.user.username} - {self.program.program_type}"
 
-# ==================== PARTNERSHIP PROGRAMS ====================
+
+# ==================== PARTNERSHIP PROGRAM MODEL ====================
 
 class PartnershipProgram(models.Model):
     """Partnership programs"""
-    
     TIER_CHOICES = [
         ('bronze', 'Bronze'),
         ('silver', 'Silver'),
@@ -1014,71 +761,40 @@ class PartnershipProgram(models.Model):
     price = models.DecimalField(max_digits=12, decimal_places=2)
     short_description = models.CharField(max_length=200)
     
-    # Details
-    features = models.JSONField(default=list, help_text="List of features in JSON format")
-    benefits = models.JSONField(default=list, help_text="List of benefits in JSON format")
-    requirements = models.JSONField(default=list, help_text="List of requirements in JSON format")
+    features = models.JSONField(default=list)
+    benefits = models.JSONField(default=list)
+    requirements = models.JSONField(default=list)
     
-    # Styling
     icon_class = models.CharField(max_length=100, default="fas fa-medal")
-    color_class = models.CharField(max_length=50, default="bronze", choices=[
-        ('bronze', 'Bronze'),
-        ('silver', 'Silver'),
-        ('gold', 'Gold'),
-        ('platinum', 'Platinum'),
-        ('premium', 'Premium'),
-    ])
+    color_class = models.CharField(max_length=50, default="bronze")
     
-    # Investment details
     minimum_investment = models.DecimalField(max_digits=12, decimal_places=2)
     expected_returns = models.CharField(max_length=100, blank=True)
-    risk_level = models.CharField(max_length=50, default='Medium', choices=[
-        ('Low', 'Low Risk'),
-        ('Medium', 'Medium Risk'),
-        ('High', 'High Risk'),
-        ('Very High', 'Very High Risk'),
-    ])
+    risk_level = models.CharField(max_length=50, default='Medium')
     
-    # Status
     is_active = models.BooleanField(default=True)
     order = models.IntegerField(default=0)
     
-    # Statistics
     total_partners = models.IntegerField(default=0)
     total_investment = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['order']
-        verbose_name = 'Partnership Program'
-        verbose_name_plural = 'Partnership Programs'
         indexes = [
             models.Index(fields=['tier', 'is_active']),
-            models.Index(fields=['price']),
         ]
     
     def __str__(self):
         return f"{self.get_tier_display()} - {self.name}"
-    
-    def get_investment_range(self):
-        """Get investment range based on tier"""
-        ranges = {
-            'bronze': '$250K',
-            'silver': '$500K',
-            'gold': '$1M',
-            'platinum': '$5M',
-            'premium': '$10M+',
-        }
-        return ranges.get(self.tier, f"${self.minimum_investment:,.0f}K")
+
 
 # ==================== USER PARTNERSHIP ====================
 
 class UserPartnership(models.Model):
     """Track user partnership enrollments"""
-    
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('active', 'Active'),
@@ -1090,41 +806,32 @@ class UserPartnership(models.Model):
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='partnerships')
     program = models.ForeignKey(PartnershipProgram, on_delete=models.CASCADE, related_name='partners')
     
-    # Investment details
     investment_amount = models.DecimalField(max_digits=12, decimal_places=2)
     start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(null=True, blank=True)
-    duration_months = models.IntegerField(default=12, help_text="Partnership duration in months")
+    duration_months = models.IntegerField(default=12)
     
-    # Returns
     expected_returns = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     actual_returns = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     profit_share_percentage = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     
-    # Status
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     is_active = models.BooleanField(default=True)
     
-    # Payment
     payment_transaction = models.ForeignKey(PaymentTransaction, on_delete=models.SET_NULL, null=True, blank=True)
     
-    # Management
     assigned_manager = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True, related_name='managed_partnerships')
     manager_notes = models.TextField(blank=True)
     
-    # Contract
     contract_number = models.CharField(max_length=50, unique=True, blank=True)
     contract_signed = models.BooleanField(default=False)
     contract_signed_at = models.DateTimeField(null=True, blank=True)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'User Partnership'
-        verbose_name_plural = 'User Partnerships'
         unique_together = ['user', 'program']
         indexes = [
             models.Index(fields=['user', 'status']),
@@ -1135,49 +842,163 @@ class UserPartnership(models.Model):
         return f"{self.user.username} - {self.program.get_tier_display()} Partnership"
     
     def save(self, *args, **kwargs):
-        # Generate contract number
         if not self.contract_number:
             self.contract_number = f"CONTRACT-{self.program.tier.upper()}-{uuid.uuid4().hex[:8].upper()}"
-        
-        # Calculate end date if not set
-        if not self.end_date and self.start_date:
-            self.end_date = self.start_date + timedelta(days=self.duration_months * 30)
-        
-        # Calculate expected returns
-        if not self.expected_returns and self.program.expected_returns:
-            # Simple calculation - you can implement more complex logic
-            self.expected_returns = self.investment_amount * Decimal('1.2')  # 20% returns
-        
         super().save(*args, **kwargs)
+
+
+# ==================== WATCHLIST MODEL ====================
+
+class Watchlist(models.Model):
+    """User's saved items for later purchase"""
+    CONTENT_TYPES = [
+        ('video', 'Video'),
+        ('pdf', 'PDF'),
+        ('course', 'Course'),
+        ('package', 'Package'),
+    ]
     
-    def calculate_profit_share(self, total_profit):
-        """Calculate profit share for user"""
-        user_share = total_profit * Decimal(self.profit_share_percentage / 100)
-        self.actual_returns += user_share
-        self.save()
-        return user_share
+    user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='watchlist')
+    content_type = models.CharField(max_length=20, choices=CONTENT_TYPES)
+    content_id = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
     
-    @property
-    def months_remaining(self):
-        """Get months remaining in partnership"""
-        if not self.end_date:
-            return self.duration_months
-        remaining = self.end_date - timezone.now()
-        return max(0, remaining.days // 30)
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['user', 'content_type', 'content_id']
+        indexes = [
+            models.Index(fields=['user', 'content_type']),
+        ]
     
-    def terminate(self, termination_reason=""):
-        """Terminate partnership"""
-        self.status = 'terminated'
-        self.is_active = False
-        self.end_date = timezone.now()
-        self.manager_notes += f"\nTerminated on {timezone.now().strftime('%Y-%m-%d')}: {termination_reason}"
-        self.save()
+    def __str__(self):
+        return f"{self.user.username} - {self.content_type}:{self.content_id}"
+    
+    def get_content(self):
+        """Get the actual content object"""
+        if self.content_type == 'video':
+            return TrainingVideo.objects.filter(id=self.content_id).first()
+        elif self.content_type == 'pdf':
+            return PDF.objects.filter(id=self.content_id).first()
+        elif self.content_type == 'course':
+            return Course.objects.filter(id=self.content_id).first()
+        elif self.content_type == 'package':
+            return Package.objects.filter(id=self.content_id).first()
+        return None
+
+
+# ==================== INSTITUTE APPLICATION MODEL ====================
+
+class InstituteApplication(models.Model):
+    """Applications for Institute account status"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('info_needed', 'More Info Needed'),
+    ]
+    
+    EXPERIENCE_CHOICES = [
+        ('1-3', '1-3 years'),
+        ('3-5', '3-5 years'),
+        ('5-10', '5-10 years'),
+        ('10+', '10+ years'),
+    ]
+    
+    user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='institute_applications')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Application details
+    investment_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    trading_experience = models.CharField(max_length=10, choices=EXPERIENCE_CHOICES)
+    
+    # Documents
+    proof_of_funds = models.FileField(upload_to='institute/proof_of_funds/')
+    trading_history = models.FileField(upload_to='institute/trading_history/', blank=True, null=True)
+    
+    # Additional info
+    notes = models.TextField(blank=True, help_text="Additional information from applicant")
+    
+    # Metadata
+    applied_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        MfalmeUsers, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='reviewed_applications'
+    )
+    admin_notes = models.TextField(blank=True, help_text="Admin notes about this application")
+    
+    # Communication
+    notified = models.BooleanField(default=False, help_text="Has the user been notified of decision?")
+    
+    class Meta:
+        ordering = ['-applied_at']
+        indexes = [
+            models.Index(fields=['status', 'applied_at']),
+            models.Index(fields=['user', 'status']),
+        ]
+    
+    def __str__(self):
+        return f"Institute Application - {self.user.email} - {self.status}"
+    
+    def get_status_display(self):
+        return dict(self.STATUS_CHOICES).get(self.status, self.status)
+
+
+# ==================== COMMUNITY JOIN REQUEST MODEL ====================
+
+class CommunityJoinRequest(models.Model):
+    """Requests to join community tiers that require approval"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='community_requests')
+    community = models.ForeignKey('CommunityTier', on_delete=models.CASCADE, related_name='join_requests')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Check if user met requirements at time of request
+    met_requirements = models.BooleanField(default=False)
+    investment_at_request = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    courses_completed = models.JSONField(default=list, blank=True)
+    
+    # Admin actions
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        MfalmeUsers, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='reviewed_community_requests'
+    )
+    admin_notes = models.TextField(blank=True)
+    
+    # Communication
+    notified = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['user', 'community']  # One pending request per community per user
+        indexes = [
+            models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['user', 'status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.community.name} - {self.status}"
+
 
 # ==================== TESTIMONIAL MODEL ====================
 
 class Testimonial(models.Model):
     """Customer testimonials"""
-    
     PROGRAM_CHOICES = [
         ('PTM', 'PTM Series'),
         ('PFTM', 'PFTM Series'),
@@ -1194,39 +1015,30 @@ class Testimonial(models.Model):
     company = models.CharField(max_length=200, blank=True)
     content = models.TextField()
     
-    # Media
     image = models.ImageField(upload_to='testimonials/', blank=True, null=True)
     video_url = models.URLField(blank=True, null=True)
     
-    # Rating
     rating = models.IntegerField(default=5, choices=[(i, i) for i in range(1, 6)])
     
-    # Program association
     program = models.CharField(max_length=50, blank=True, choices=PROGRAM_CHOICES)
     program_name = models.CharField(max_length=200, blank=True)
     
-    # Location
     country = models.CharField(max_length=100, blank=True)
     city = models.CharField(max_length=100, blank=True)
     
-    # Status
     is_featured = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     order = models.IntegerField(default=0)
     
-    # Verification
     verified_by = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True)
     verified_at = models.DateTimeField(null=True, blank=True)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['order', '-is_featured', '-created_at']
-        verbose_name = 'Testimonial'
-        verbose_name_plural = 'Testimonials'
         indexes = [
             models.Index(fields=['program', 'is_active']),
             models.Index(fields=['is_featured', 'is_active']),
@@ -1234,19 +1046,12 @@ class Testimonial(models.Model):
     
     def __str__(self):
         return f"Testimonial by {self.name}"
-    
-    def verify(self, verified_by):
-        """Verify testimonial"""
-        self.is_verified = True
-        self.verified_by = verified_by
-        self.verified_at = timezone.now()
-        self.save()
+
 
 # ==================== FAQ MODEL ====================
 
 class FAQ(models.Model):
     """Frequently Asked Questions"""
-    
     CATEGORY_CHOICES = [
         ('webinars', 'Webinars & Seminars'),
         ('education', 'Education & Programs'),
@@ -1262,24 +1067,19 @@ class FAQ(models.Model):
     answer = models.TextField()
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='general')
     
-    # Status
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
     order = models.IntegerField(default=0)
     
-    # Statistics
     views_count = models.IntegerField(default=0)
     helpful_count = models.IntegerField(default=0)
     not_helpful_count = models.IntegerField(default=0)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['order', 'category']
-        verbose_name = 'FAQ'
-        verbose_name_plural = 'FAQs'
         indexes = [
             models.Index(fields=['category', 'is_active']),
             models.Index(fields=['is_featured', 'is_active']),
@@ -1287,25 +1087,12 @@ class FAQ(models.Model):
     
     def __str__(self):
         return self.question
-    
-    def increment_views(self):
-        """Increment view count"""
-        self.views_count += 1
-        self.save(update_fields=['views_count'])
-    
-    def mark_helpful(self, helpful=True):
-        """Mark FAQ as helpful or not helpful"""
-        if helpful:
-            self.helpful_count += 1
-        else:
-            self.not_helpful_count += 1
-        self.save()
+
 
 # ==================== COMMUNITY TIER MODEL ====================
 
 class CommunityTier(models.Model):
     """Community tiers"""
-    
     TIER_CHOICES = [
         ('citizens', 'Citizens@MBC'),
         ('studyhall', 'StudyHall@MBC'),
@@ -1316,66 +1103,64 @@ class CommunityTier(models.Model):
     tier = models.CharField(max_length=50, choices=TIER_CHOICES, unique=True)
     description = models.TextField()
     
-    # Features and benefits
-    features = models.JSONField(default=list, help_text="List of features in JSON format")
-    benefits = models.JSONField(default=list, help_text="List of benefits in JSON format")
-    access_level = models.CharField(max_length=50, default='Public', choices=[
-        ('Public', 'Public Access'),
-        ('Alumni', 'Alumni Only'),
-        ('Premium', 'Premium Members'),
-        ('Exclusive', 'Exclusive Members'),
-    ])
+    features = models.JSONField(default=list)
+    benefits = models.JSONField(default=list)
+    access_level = models.CharField(max_length=50, default='Public')
     
-    # Styling
     icon_class = models.CharField(max_length=100, default="fas fa-users")
     badge_text = models.CharField(max_length=100, default="Public Discord Server")
-    color_scheme = models.CharField(max_length=50, default='blue', choices=[
-        ('blue', 'Blue'),
-        ('purple', 'Purple'),
-        ('gold', 'Gold'),
-        ('green', 'Green'),
-        ('red', 'Red'),
-    ])
+    color_scheme = models.CharField(max_length=50, default='blue')
     
-    # Access
     button_text = models.CharField(max_length=100, default="Join")
     button_url = models.CharField(max_length=200, blank=True)
     discord_invite = models.URLField(blank=True, null=True)
     telegram_link = models.URLField(blank=True, null=True)
     
-    # Requirements
-    requirements = models.JSONField(default=list, help_text="List of requirements in JSON format")
+    requirements = models.JSONField(default=list)
     minimum_investment = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    required_courses = models.JSONField(default=list, blank=True, help_text="List of course IDs required")
     
-    # Status
     is_active = models.BooleanField(default=True)
     order = models.IntegerField(default=0)
     
-    # Statistics
     member_count = models.IntegerField(default=0)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['order']
-        verbose_name = 'Community Tier'
-        verbose_name_plural = 'Community Tiers'
     
     def __str__(self):
         return self.name
     
-    def add_member(self):
-        """Add member to community"""
-        self.member_count += 1
-        self.save()
+    def check_user_eligibility(self, user):
+        """Check if user meets requirements for this tier"""
+        if self.tier == 'citizens':
+            return True, []
+        
+        missing = []
+        
+        # Check investment
+        if self.minimum_investment and user.total_deposits < self.minimum_investment:
+            missing.append(f"Minimum investment of ${self.minimum_investment} required")
+        
+        # Check required courses
+        if self.required_courses:
+            completed_courses = UserCourse.objects.filter(
+                user=user,
+                course_id__in=self.required_courses
+            ).count()
+            if completed_courses < len(self.required_courses):
+                missing.append("Complete required courses")
+        
+        return len(missing) == 0, missing
+
 
 # ==================== USER COMMUNITY MEMBERSHIP ====================
 
 class UserCommunityMembership(models.Model):
     """Track user membership in community tiers"""
-    
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('active', 'Active'),
@@ -1386,28 +1171,21 @@ class UserCommunityMembership(models.Model):
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='community_memberships')
     community = models.ForeignKey(CommunityTier, on_delete=models.CASCADE, related_name='members')
     
-    # Membership details
     joined_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     is_active = models.BooleanField(default=True)
     
-    # Access info
     discord_username = models.CharField(max_length=100, blank=True)
     telegram_username = models.CharField(max_length=100, blank=True)
     access_granted = models.BooleanField(default=False)
     access_granted_at = models.DateTimeField(null=True, blank=True)
     
-    # Payment
     payment_transaction = models.ForeignKey(PaymentTransaction, on_delete=models.SET_NULL, null=True, blank=True)
-    
-    # Notes
     admin_notes = models.TextField(blank=True)
     
     class Meta:
         ordering = ['-joined_at']
-        verbose_name = 'Community Membership'
-        verbose_name_plural = 'Community Memberships'
         unique_together = ['user', 'community']
         indexes = [
             models.Index(fields=['user', 'status']),
@@ -1416,26 +1194,12 @@ class UserCommunityMembership(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.community.name}"
-    
-    @property
-    def days_remaining(self):
-        """Get days remaining in membership"""
-        if not self.expires_at:
-            return None
-        remaining = self.expires_at - timezone.now()
-        return max(0, remaining.days)
-    
-    def grant_access(self):
-        """Grant access to community"""
-        self.access_granted = True
-        self.access_granted_at = timezone.now()
-        self.save()
+
 
 # ==================== BROKERAGE MODEL ====================
 
 class Brokerage(models.Model):
     """Brokerage companies"""
-    
     REGION_CHOICES = [
         ('uk_europe_canada', 'UK, Europe & Canada'),
         ('usa_canada', 'USA and Canada'),
@@ -1448,55 +1212,41 @@ class Brokerage(models.Model):
     region = models.CharField(max_length=50, choices=REGION_CHOICES)
     website = models.URLField(blank=True, null=True)
     
-    # Media
     logo = models.ImageField(upload_to='brokerages/')
     featured_image = models.ImageField(upload_to='brokerages/featured/', blank=True, null=True)
     
-    # Details
     description = models.TextField(blank=True)
-    features = models.JSONField(default=list, help_text="List of features in JSON format")
-    supported_markets = models.JSONField(default=list, help_text="List of supported markets")
-    account_types = models.JSONField(default=list, help_text="List of account types")
+    features = models.JSONField(default=list)
+    supported_markets = models.JSONField(default=list)
+    account_types = models.JSONField(default=list)
     
-    # Ratings
     trust_score = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(10)])
     regulation_score = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(10)])
     platform_score = models.FloatField(default=0, validators=[MinValueValidator(0), MaxValueValidator(10)])
     
-    # Status
     is_recommended = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     order = models.IntegerField(default=0)
     
-    # Statistics
     referral_count = models.IntegerField(default=0)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['region', 'order']
-        verbose_name = 'Brokerage'
-        verbose_name_plural = 'Brokerages'
         indexes = [
             models.Index(fields=['region', 'is_active']),
-            models.Index(fields=['is_recommended', 'is_active']),
         ]
     
     def __str__(self):
         return f"{self.name} - {self.get_region_display()}"
-    
-    @property
-    def overall_score(self):
-        """Calculate overall score"""
-        return round((self.trust_score + self.regulation_score + self.platform_score) / 3, 1)
+
 
 # ==================== CONTACT SUBMISSION ====================
 
 class ContactSubmission(models.Model):
     """Contact form submissions"""
-    
     STATUS_CHOICES = [
         ('new', 'New'),
         ('read', 'Read'),
@@ -1509,66 +1259,38 @@ class ContactSubmission(models.Model):
     phone = models.CharField(max_length=20)
     email = models.EmailField(blank=True, null=True)
     
-    # Inquiry details
     package = models.CharField(max_length=100, blank=True)
     program = models.CharField(max_length=100, blank=True)
     subject = models.CharField(max_length=200, blank=True)
     message = models.TextField()
     
-    # Status
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
-    priority = models.CharField(max_length=20, default='normal', choices=[
-        ('low', 'Low'),
-        ('normal', 'Normal'),
-        ('high', 'High'),
-        ('urgent', 'Urgent'),
-    ])
+    priority = models.CharField(max_length=20, default='normal')
     
-    # Technical info
     ip_address = models.GenericIPAddressField(blank=True, null=True)
     user_agent = models.TextField(blank=True)
     
-    # Follow-up
     assigned_to = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_contacts')
     replied_at = models.DateTimeField(null=True, blank=True)
     reply_notes = models.TextField(blank=True)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Contact Submission'
-        verbose_name_plural = 'Contact Submissions'
         indexes = [
             models.Index(fields=['status', 'created_at']),
-            models.Index(fields=['priority', 'created_at']),
         ]
     
     def __str__(self):
-        return f"{self.name} - {self.package} - {self.created_at.strftime('%Y-%m-%d')}"
-    
-    def mark_as_read(self, read_by=None):
-        """Mark submission as read"""
-        self.status = 'read'
-        if read_by:
-            self.assigned_to = read_by
-        self.save()
-    
-    def reply(self, reply_notes, replied_by):
-        """Add reply to submission"""
-        self.status = 'replied'
-        self.replied_at = timezone.now()
-        self.reply_notes = reply_notes
-        self.assigned_to = replied_by
-        self.save()
+        return f"{self.name} - {self.created_at.strftime('%Y-%m-%d')}"
+
 
 # ==================== SITE CONTENT ====================
 
 class SiteContent(models.Model):
     """Dynamic content sections"""
-    
     SECTION_CHOICES = [
         ('about', 'About Section'),
         ('hero', 'Hero Section'),
@@ -1593,123 +1315,84 @@ class SiteContent(models.Model):
     subtitle = models.CharField(max_length=300, blank=True)
     content = models.TextField()
     
-    # Media
     image = models.ImageField(upload_to='site_content/', blank=True, null=True)
     video_url = models.URLField(blank=True, null=True)
     
-    # SEO
     meta_title = models.CharField(max_length=200, blank=True)
     meta_description = models.TextField(blank=True)
     meta_keywords = models.TextField(blank=True)
     
-    # Status
     is_active = models.BooleanField(default=True)
     is_editable = models.BooleanField(default=True)
     
-    # Versioning
     version = models.IntegerField(default=1)
     created_by = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_content')
     updated_by = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_content')
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['section']
-        verbose_name = 'Site Content'
-        verbose_name_plural = 'Site Contents'
         indexes = [
             models.Index(fields=['section', 'is_active']),
         ]
     
     def __str__(self):
         return self.get_section_display()
-    
-    def create_version(self, user):
-        """Create new version of content"""
-        SiteContentVersion.objects.create(
-            content=self,
-            title=self.title,
-            subtitle=self.subtitle,
-            content_text=self.content,
-            updated_by=user,
-            version=self.version
-        )
-        self.version += 1
-        self.save()
+
 
 # ==================== SITE CONTENT VERSION ====================
 
 class SiteContentVersion(models.Model):
     """Version history for site content"""
-    
     content = models.ForeignKey(SiteContent, on_delete=models.CASCADE, related_name='versions')
     title = models.CharField(max_length=200)
     subtitle = models.CharField(max_length=300, blank=True)
     content_text = models.TextField()
-    
     version = models.IntegerField()
     updated_by = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Content Version'
-        verbose_name_plural = 'Content Versions'
         unique_together = ['content', 'version']
     
     def __str__(self):
         return f"{self.content.section} - v{self.version}"
 
+
 # ==================== STATISTIC MODEL ====================
 
 class Statistic(models.Model):
     """Statistics for homepage"""
-    
     title = models.CharField(max_length=100)
     value = models.CharField(max_length=50)
-    suffix = models.CharField(max_length=20, blank=True, help_text="e.g., +, %, years")
+    suffix = models.CharField(max_length=20, blank=True)
     description = models.CharField(max_length=200, blank=True)
     
-    # Styling
     icon_class = models.CharField(max_length=100, default="fas fa-chart-line")
-    color = models.CharField(max_length=50, default='primary', choices=[
-        ('primary', 'Primary'),
-        ('secondary', 'Secondary'),
-        ('success', 'Success'),
-        ('danger', 'Danger'),
-        ('warning', 'Warning'),
-        ('info', 'Info'),
-        ('light', 'Light'),
-        ('dark', 'Dark'),
-        ('gold', 'Gold'),
-    ])
+    color = models.CharField(max_length=50, default='primary')
     
-    # Animation
-    animation_delay = models.IntegerField(default=0, help_text="Animation delay in milliseconds")
+    animation_delay = models.IntegerField(default=0)
     
-    # Status
     is_active = models.BooleanField(default=True)
     order = models.IntegerField(default=0)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['order']
-        verbose_name = 'Statistic'
-        verbose_name_plural = 'Statistics'
     
     def __str__(self):
         return f"{self.title}: {self.value}{self.suffix}"
+
 
 # ==================== NOTIFICATION MODEL ====================
 
 class Notification(models.Model):
     """System notifications"""
-    
     NOTIFICATION_TYPES = [
         ('INFO', 'Information'),
         ('WARNING', 'Warning'),
@@ -1728,59 +1411,34 @@ class Notification(models.Model):
     message = models.TextField()
     notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES)
     
-    # Status
     is_read = models.BooleanField(default=False)
     is_important = models.BooleanField(default=False)
     is_system = models.BooleanField(default=False)
     
-    # Actions
     action_text = models.CharField(max_length=100, blank=True)
     action_url = models.URLField(blank=True)
     
-    # Metadata
     metadata = models.JSONField(default=dict, blank=True)
     related_object_type = models.CharField(max_length=50, blank=True)
     related_object_id = models.CharField(max_length=100, blank=True)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     read_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Notification'
-        verbose_name_plural = 'Notifications'
         indexes = [
             models.Index(fields=['user', 'is_read']),
-            models.Index(fields=['created_at']),
         ]
     
     def __str__(self):
         return f"{self.user.username} - {self.title}"
-    
-    def mark_as_read(self):
-        """Mark notification as read"""
-        self.is_read = True
-        self.read_at = timezone.now()
-        self.save()
-    
-    @classmethod
-    def send_notification(cls, user, title, message, notification_type='INFO', **kwargs):
-        """Create and send notification"""
-        notification = cls.objects.create(
-            user=user,
-            title=title,
-            message=message,
-            notification_type=notification_type,
-            **kwargs
-        )
-        return notification
+
 
 # ==================== ACTIVITY LOG ====================
 
 class ActivityLog(models.Model):
     """System activity logging"""
-    
     ACTION_CHOICES = [
         ('LOGIN', 'User Login'),
         ('LOGOUT', 'User Logout'),
@@ -1795,43 +1453,39 @@ class ActivityLog(models.Model):
         ('COURSE_COMPLETED', 'Course Completed'),
         ('MENTORING_BOOKED', 'Mentoring Booked'),
         ('COMMUNITY_JOINED', 'Community Joined'),
+        ('COMMUNITY_REQUEST', 'Community Request'),
         ('SUPPORT_TICKET_CREATED', 'Support Ticket Created'),
         ('SUPPORT_TICKET_UPDATED', 'Support Ticket Updated'),
         ('SETTINGS_UPDATE', 'Settings Updated'),
+        ('WATCHLIST_ADD', 'Added to Watchlist'),
+        ('WATCHLIST_REMOVE', 'Removed from Watchlist'),
+        ('INSTITUTE_APPLY', 'Institute Application'),
         ('ADMIN_ACTION', 'Admin Action'),
         ('SECURITY_EVENT', 'Security Event'),
+        ('COURSE_ACCESS_EXPIRED', 'Course Access Expired'),
+        ('PDF_VIEWED', 'PDF Viewed'),  # Add this
+        ('VIDEO_WATCHED', 'Video Watched'),
     ]
     
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='activity_logs')
     action = models.CharField(max_length=50, choices=ACTION_CHOICES)
     description = models.TextField()
     
-    # Technical info
     ip_address = models.GenericIPAddressField(blank=True, null=True)
     user_agent = models.TextField(blank=True)
     device_info = models.CharField(max_length=200, blank=True)
     location = models.CharField(max_length=200, blank=True)
     
-    # Related objects
     related_object_type = models.CharField(max_length=50, blank=True)
     related_object_id = models.CharField(max_length=100, blank=True)
     
-    # Metadata
     metadata = models.JSONField(default=dict, blank=True)
-    severity = models.CharField(max_length=20, default='info', choices=[
-        ('info', 'Info'),
-        ('warning', 'Warning'),
-        ('error', 'Error'),
-        ('critical', 'Critical'),
-    ])
+    severity = models.CharField(max_length=20, default='info')
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Activity Log'
-        verbose_name_plural = 'Activity Logs'
         indexes = [
             models.Index(fields=['user', 'created_at']),
             models.Index(fields=['action', 'created_at']),
@@ -1839,22 +1493,12 @@ class ActivityLog(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.action} - {self.created_at}"
-    
-    @classmethod
-    def log_activity(cls, user, action, description, **kwargs):
-        """Create activity log entry"""
-        return cls.objects.create(
-            user=user,
-            action=action,
-            description=description,
-            **kwargs
-        )
+
 
 # ==================== SYSTEM SETTINGS ====================
 
 class SystemSettings(models.Model):
     """System-wide settings"""
-    
     SETTING_CATEGORIES = [
         ('general', 'General Settings'),
         ('payment', 'Payment Settings'),
@@ -1884,23 +1528,19 @@ class SystemSettings(models.Model):
     category = models.CharField(max_length=50, choices=SETTING_CATEGORIES, default='general')
     
     description = models.TextField(blank=True)
-    is_public = models.BooleanField(default=False, help_text="Can be accessed via API")
+    is_public = models.BooleanField(default=False)
     is_editable = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
     
-    # Versioning
     version = models.IntegerField(default=1)
     created_by = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_settings')
     updated_by = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_settings')
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['category', 'key']
-        verbose_name = 'System Setting'
-        verbose_name_plural = 'System Settings'
         indexes = [
             models.Index(fields=['category', 'is_active']),
             models.Index(fields=['key']),
@@ -1908,67 +1548,12 @@ class SystemSettings(models.Model):
     
     def __str__(self):
         return self.key
-    
-    def get_value(self):
-        """Get typed value based on setting type"""
-        if self.setting_type == 'boolean':
-            return self.value.lower() in ('true', '1', 'yes')
-        elif self.setting_type == 'number':
-            try:
-                return float(self.value) if '.' in self.value else int(self.value)
-            except ValueError:
-                return 0
-        elif self.setting_type in ('json', 'array', 'object'):
-            try:
-                import json
-                return json.loads(self.value)
-            except:
-                return {}
-        else:
-            return self.value
-    
-    def set_value(self, value):
-        """Set typed value"""
-        import json
-        if self.setting_type == 'boolean':
-            self.value = 'true' if value else 'false'
-        elif self.setting_type == 'number':
-            self.value = str(value)
-        elif self.setting_type in ('json', 'array', 'object'):
-            self.value = json.dumps(value)
-        else:
-            self.value = str(value)
-    
-    @classmethod
-    def get_setting(cls, key, default=None):
-        """Get setting value by key"""
-        try:
-            setting = cls.objects.get(key=key, is_active=True)
-            return setting.get_value()
-        except cls.DoesNotExist:
-            return default
-    
-    @classmethod
-    def set_setting(cls, key, value, setting_type='string', category='general', **kwargs):
-        """Set setting value"""
-        setting, created = cls.objects.get_or_create(
-            key=key,
-            defaults={
-                'value': '',
-                'setting_type': setting_type,
-                'category': category,
-                **kwargs
-            }
-        )
-        setting.set_value(value)
-        setting.save()
-        return setting
+
 
 # ==================== SUPPORT TICKET ====================
 
 class SupportTicket(models.Model):
     """Customer support tickets"""
-    
     PRIORITY_CHOICES = [
         ('low', 'Low'),
         ('medium', 'Medium'),
@@ -1991,49 +1576,41 @@ class SupportTicket(models.Model):
         ('billing', 'Billing/Payment'),
         ('account', 'Account Issues'),
         ('education', 'Education Programs'),
-        ('mentoring', 'Mentoring'),
+        ('packages', 'Packages'),
         ('community', 'Community Access'),
         ('partnership', 'Partnership'),
+        ('institute', 'Institute'),
         ('other', 'Other'),
     ]
     
-    # Basic info
     ticket_number = models.CharField(max_length=20, unique=True, blank=True)
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='support_tickets')
     
-    # Ticket details
     subject = models.CharField(max_length=200)
     message = models.TextField()
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='general')
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
     
-    # Assignment
     assigned_to = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tickets')
     department = models.CharField(max_length=100, blank=True)
     
-    # Resolution
     resolution = models.TextField(blank=True)
     resolved_by = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_tickets')
     resolved_at = models.DateTimeField(null=True, blank=True)
     
-    # Ratings
-    satisfaction_rating = models.IntegerField(null=True, blank=True, choices=[(i, i) for i in range(1, 6)])
+    satisfaction_rating = models.IntegerField(null=True, blank=True)
     rating_comment = models.TextField(blank=True)
     
-    # Statistics
     reply_count = models.IntegerField(default=0)
     last_reply_at = models.DateTimeField(null=True, blank=True)
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     closed_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Support Ticket'
-        verbose_name_plural = 'Support Tickets'
         indexes = [
             models.Index(fields=['ticket_number']),
             models.Index(fields=['status', 'priority']),
@@ -2048,53 +1625,40 @@ class SupportTicket(models.Model):
             self.ticket_number = f"TICKET{timezone.now().strftime('%Y%m%d')}{uuid.uuid4().hex[:6].upper()}"
         super().save(*args, **kwargs)
 
+
 # ==================== TICKET REPLY ====================
 
 class TicketReply(models.Model):
     """Replies to support tickets"""
-    
     ticket = models.ForeignKey(SupportTicket, on_delete=models.CASCADE, related_name='replies')
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='ticket_replies')
     
     message = models.TextField()
-    is_internal = models.BooleanField(default=False, help_text="Internal note (not visible to user)")
+    is_internal = models.BooleanField(default=False)
     
-    # Attachments
-    attachments = models.JSONField(default=list, blank=True, help_text="List of attachment URLs")
+    attachments = models.JSONField(default=list, blank=True)
     
-    # Read receipts
     is_read = models.BooleanField(default=False)
     read_at = models.DateTimeField(null=True, blank=True)
     read_by = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True, related_name='read_replies')
     
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['created_at']
-        verbose_name = 'Ticket Reply'
-        verbose_name_plural = 'Ticket Replies'
     
     def __str__(self):
         return f"Reply to {self.ticket.ticket_number} by {self.user.username}"
-    
-    def mark_as_read(self, read_by):
-        """Mark reply as read"""
-        self.is_read = True
-        self.read_at = timezone.now()
-        self.read_by = read_by
-        self.save()
+
 
 # ==================== SESSION MANAGEMENT ====================
 
 class UserSession(models.Model):
     """Track user sessions for security"""
-    
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='sessions')
     session_key = models.CharField(max_length=100, unique=True, db_index=True)
     
-    # Device info
     ip_address = models.GenericIPAddressField()
     user_agent = models.TextField()
     device_type = models.CharField(max_length=50, choices=[
@@ -2106,20 +1670,16 @@ class UserSession(models.Model):
     os = models.CharField(max_length=100, blank=True)
     device_name = models.CharField(max_length=200, blank=True)
     
-    # Location
     country = models.CharField(max_length=100, blank=True)
     city = models.CharField(max_length=100, blank=True)
     timezone = models.CharField(max_length=50, blank=True)
     
-    # Status
     is_active = models.BooleanField(default=True)
     is_current = models.BooleanField(default=False)
     
-    # Security
     is_suspicious = models.BooleanField(default=False)
     suspicious_reason = models.TextField(blank=True)
     
-    # Timestamps
     login_at = models.DateTimeField(default=now)
     last_activity = models.DateTimeField(auto_now=True)
     logout_at = models.DateTimeField(null=True, blank=True)
@@ -2127,27 +1687,14 @@ class UserSession(models.Model):
     
     class Meta:
         ordering = ['-login_at']
-        verbose_name = 'User Session'
-        verbose_name_plural = 'User Sessions'
         indexes = [
             models.Index(fields=['user', 'is_active']),
             models.Index(fields=['ip_address', 'login_at']),
         ]
     
     def __str__(self):
-        return f"{self.user.username} - {self.device_type} - {self.login_at.strftime('%Y-%m-%d %H:%M')}"
-    
-    def terminate(self):
-        """Terminate session"""
-        self.is_active = False
-        self.logout_at = timezone.now()
-        self.save()
-    
-    @property
-    def duration(self):
-        """Get session duration"""
-        end_time = self.logout_at or timezone.now()
-        return end_time - self.login_at
+        return f"{self.user.username} - {self.device_type} - {self.login_at}"
+
 
 # ==================== HERO SLIDER ====================
 
@@ -2167,6 +1714,7 @@ class HeroSlider(models.Model):
     def __str__(self):
         return self.title
 
+
 # ==================== ABOUT SECTION ====================
 
 class AboutSection(models.Model):
@@ -2184,6 +1732,7 @@ class AboutSection(models.Model):
     def __str__(self):
         return self.title
 
+
 # ==================== PAYMENT METHOD ====================
 
 class PaymentMethod(models.Model):
@@ -2196,6 +1745,7 @@ class PaymentMethod(models.Model):
     def __str__(self):
         return self.name
 
+
 # ==================== CONTACT INFO ====================
 
 class ContactInfo(models.Model):
@@ -2207,6 +1757,7 @@ class ContactInfo(models.Model):
     
     def __str__(self):
         return "Contact Information"
+
 
 # ==================== LOGO ====================
 
@@ -2221,13 +1772,39 @@ class Logo(models.Model):
         return self.name
 
 # ==================== TRAINING VIDEO ====================
-
 class TrainingVideo(models.Model):
-    """Training videos managed by admin"""
+    """Training videos managed by admin - DISABLE DOWNLOADS BY DEFAULT"""
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    video_url = models.URLField(help_text="URL to video (Vimeo, YouTube, etc.)")
-    thumbnail = models.ImageField(upload_to='video_thumbnails/', blank=True, null=True)
+    
+    # Option 1: Upload video file directly
+    video_file = models.FileField(
+        upload_to='videos/', 
+        blank=True, 
+        null=True,
+        help_text="Upload video file (MP4, WebM, etc.)"
+    )
+    
+    # Option 2: External URL (YouTube, Vimeo, etc.)
+    video_url = models.URLField(
+        blank=True, 
+        null=True,
+        help_text="URL to video (Vimeo, YouTube, etc.) - leave empty if uploading file"
+    )
+    
+    # Option 3: Embed code for custom players
+    embed_code = models.TextField(
+        blank=True, 
+        null=True,
+        help_text="Custom embed code for video player"
+    )
+    
+    # Thumbnail
+    thumbnail = models.ImageField(
+        upload_to='video_thumbnails/', 
+        blank=True, 
+        null=True
+    )
     
     category = models.CharField(max_length=20, choices=[
         ('PTM', 'PTM Series'),
@@ -2236,11 +1813,21 @@ class TrainingVideo(models.Model):
         ('Webinars', 'Webinars'),
     ], default='PTM')
     
+    # Link video to a course (ForeignKey)
+    course = models.ForeignKey(
+        'Course', 
+        on_delete=models.CASCADE, 
+        related_name='videos', 
+        null=True, 
+        blank=True, 
+        help_text="Select which course this video belongs to"
+    )
+    
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     duration = models.IntegerField(default=30, help_text="Duration in minutes")
     
-    # Security settings
-    allow_download = models.BooleanField(default=False)
+    # IMPORTANT: DISABLE DOWNLOADS BY DEFAULT
+    allow_download = models.BooleanField(default=False, help_text="Allow users to download this video")
     disable_screenshots = models.BooleanField(default=True)
     
     order = models.IntegerField(default=0)
@@ -2248,14 +1835,107 @@ class TrainingVideo(models.Model):
     
     view_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['order', '-created_at']
-        verbose_name = 'Training Video'
-        verbose_name_plural = 'Training Videos'
+        indexes = [
+            models.Index(fields=['course', 'is_active']),
+            models.Index(fields=['category']),
+        ]
     
     def __str__(self):
         return self.title
+    
+    @property
+    def video_file_url(self):
+        """Get video file URL safely"""
+        if self.video_file and hasattr(self.video_file, 'url'):
+            try:
+                if self.video_file.storage.exists(self.video_file.name):
+                    return self.video_file.url
+            except Exception as e:
+                print(f"Error accessing video file: {e}")
+        return None
+    
+    @property
+    def has_valid_file(self):
+        """Check if video file exists"""
+        if self.video_file and hasattr(self.video_file, 'storage'):
+            try:
+                return self.video_file.storage.exists(self.video_file.name)
+            except:
+                return False
+        return False
+    
+    @property
+    def video_type(self):
+        """Determine video type for template"""
+        if self.video_file and self.has_valid_file:
+            return 'file'
+        elif self.video_url:
+            if 'youtube.com' in self.video_url or 'youtu.be' in self.video_url:
+                return 'youtube'
+            elif 'vimeo.com' in self.video_url:
+                return 'vimeo'
+            else:
+                return 'url'
+        elif self.embed_code:
+            return 'embed'
+        return None
+    
+    @property
+    def youtube_id(self):
+        """Extract YouTube video ID from URL"""
+        if not self.video_url:
+            return None
+        if 'youtube.com/watch?v=' in self.video_url:
+            return self.video_url.split('watch?v=')[-1].split('&')[0]
+        elif 'youtu.be/' in self.video_url:
+            return self.video_url.split('youtu.be/')[-1].split('?')[0]
+        return None
+    
+    @property
+    def vimeo_id(self):
+        """Extract Vimeo video ID from URL"""
+        if not self.video_url or 'vimeo.com' not in self.video_url:
+            return None
+        return self.video_url.split('vimeo.com/')[-1].split('?')[0]
+    
+    @property
+    def embed_url(self):
+        """Get embed URL for YouTube/Vimeo"""
+        if self.video_type == 'youtube':
+            vid = self.youtube_id
+            return f"https://www.youtube.com/embed/{vid}" if vid else None
+        elif self.video_type == 'vimeo':
+            vid = self.vimeo_id
+            return f"https://player.vimeo.com/video/{vid}" if vid else None
+        return None
+    
+    @property
+    def thumbnail_url(self):
+        """Get thumbnail URL"""
+        if self.thumbnail and hasattr(self.thumbnail, 'url'):
+            try:
+                if self.thumbnail.storage.exists(self.thumbnail.name):
+                    return self.thumbnail.url
+            except:
+                pass
+        # Fallback to YouTube thumbnail if available
+        elif self.video_type == 'youtube' and self.youtube_id:
+            return f"https://img.youtube.com/vi/{self.youtube_id}/0.jpg"
+        return None
+    
+    def clean(self):
+        """Validate that at least one video source is provided"""
+        from django.core.exceptions import ValidationError
+        if not self.video_file and not self.video_url and not self.embed_code:
+            raise ValidationError("You must provide either a video file, URL, or embed code.")
+    
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
 # ==================== USER VIDEO ACCESS ====================
 
@@ -2264,56 +1944,524 @@ class UserVideoAccess(models.Model):
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE)
     video = models.ForeignKey(TrainingVideo, on_delete=models.CASCADE)
     unlocked_at = models.DateTimeField(auto_now_add=True)
-    payment = models.ForeignKey('PaymentTransaction', on_delete=models.SET_NULL, null=True, blank=True)
+    payment = models.ForeignKey(PaymentTransaction, on_delete=models.SET_NULL, null=True, blank=True)
     
     class Meta:
         unique_together = ['user', 'video']
-        verbose_name = 'User Video Access'
-        verbose_name_plural = 'User Video Accesses'
+        indexes = [
+            models.Index(fields=['user', 'video']),
+        ]
     
     def __str__(self):
         return f"{self.user.username} - {self.video.title}"
 
+
+# ==================== USER PDF ACCESS ====================
+
+class UserPDFAccess(models.Model):
+    """Track which PDFs users have unlocked - TRACK VIEWS NOT DOWNLOADS"""
+    user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE)
+    pdf = models.ForeignKey('PDF', on_delete=models.CASCADE)
+    unlocked_at = models.DateTimeField(auto_now_add=True)
+    payment = models.ForeignKey(PaymentTransaction, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Change from download tracking to view tracking
+    viewed = models.BooleanField(default=False)
+    view_count = models.IntegerField(default=0)
+    last_viewed = models.DateTimeField(null=True, blank=True)
+    
+    # Keep these for backward compatibility but mark as deprecated
+    downloaded = models.BooleanField(default=False, editable=False)
+    download_count = models.IntegerField(default=0, editable=False)
+    last_downloaded = models.DateTimeField(null=True, blank=True, editable=False)
+    
+    class Meta:
+        unique_together = ['user', 'pdf']
+        indexes = [
+            models.Index(fields=['user', 'pdf']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.pdf.title}"
+    
+    def mark_viewed(self):
+        """Mark PDF as viewed and increment count"""
+        self.viewed = True
+        self.view_count += 1
+        self.last_viewed = timezone.now()
+        self.save(update_fields=['viewed', 'view_count', 'last_viewed'])
+
+
 # ==================== COURSE ====================
 
 class Course(models.Model):
-    """Courses managed by admin"""
+    """Courses managed by admin - ONE PRICE"""
     title = models.CharField(max_length=200)
-    description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.TextField(blank=True)
     
-    materials = models.JSONField(default=list, help_text="List of materials/lessons")
+    # ONE PRICE - This is all you need
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Keep these for backward compatibility but don't use them
+    price_1_month = models.DecimalField(max_digits=10, decimal_places=2, default=0, editable=False)
+    price_12_months = models.DecimalField(max_digits=10, decimal_places=2, default=0, editable=False)
+    
+    materials = models.JSONField(default=list, blank=True)
     duration_weeks = models.IntegerField(default=4)
+    
+    # ADD THIS for course thumbnails
+    thumbnail = models.ImageField(upload_to='course_thumbnails/', blank=True, null=True)
     
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        verbose_name = 'Course'
-        verbose_name_plural = 'Courses'
+        indexes = [
+            models.Index(fields=['is_active', 'created_at']),
+        ]
     
     def __str__(self):
         return self.title
+    
+    def video_count(self):
+        return self.videos.count()
+    
+    def pdf_count(self):
+        return self.pdf_resources.count()
+    
+    def save(self, *args, **kwargs):
+        # Keep price_1_month in sync with price for backward compatibility
+        self.price_1_month = self.price
+        super().save(*args, **kwargs)
+
 
 # ==================== USER COURSE ====================
-
 class UserCourse(models.Model):
-    """Track user course enrollment and progress"""
+    """Track user course enrollment and progress - WITH EXPIRATION"""
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     enrolled_at = models.DateTimeField(auto_now_add=True)
-    payment = models.ForeignKey('PaymentTransaction', on_delete=models.SET_NULL, null=True, blank=True)
+    payment = models.ForeignKey(PaymentTransaction, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Track which pricing option they purchased
+    purchase_type = models.CharField(max_length=20, choices=[
+        ('1_month', '1 Month Access'),
+        ('12_months', '12 Months Access'),
+    ], default='1_month')
+    
+    # EXPIRATION FIELD
+    access_expires_at = models.DateTimeField(null=True, blank=True)
     
     progress = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     completed_lessons = models.JSONField(default=list, blank=True)
     
+    # Add is_active field for quick filtering
+    is_active = models.BooleanField(default=True)
+    
     class Meta:
         unique_together = ['user', 'course']
-        verbose_name = 'User Course'
-        verbose_name_plural = 'User Courses'
+        indexes = [
+            models.Index(fields=['user', 'course']),
+            models.Index(fields=['access_expires_at']),
+            models.Index(fields=['is_active', 'access_expires_at']),
+        ]
     
     def __str__(self):
         return f"{self.user.username} - {self.course.title}"
+    
+    def save(self, *args, **kwargs):
+        # PRODUCTION: Set expiration to 1 year from now if not set
+        if not self.access_expires_at:
+            # 1 YEAR ACCESS (365 days) for all purchases
+            self.access_expires_at = timezone.now() + timedelta(days=365)
+            
+            # Note: We're giving 1 year regardless of purchase_type
+            # If you want different durations, uncomment below:
+            # if self.purchase_type == '1_month':
+            #     self.access_expires_at = timezone.now() + timedelta(days=365)  # 1 year
+            # elif self.purchase_type == '12_months':
+            #     self.access_expires_at = timezone.now() + timedelta(days=365 * 12)  # 12 years? That's too long
+        
+        # Auto-update is_active based on expiration
+        if self.access_expires_at and timezone.now() > self.access_expires_at:
+            self.is_active = False
+        
+        # Auto-update progress if completed_lessons changed but progress wasn't updated
+        if self.pk:  # Only for existing records
+            try:
+                original = UserCourse.objects.get(pk=self.pk)
+                if original.completed_lessons != self.completed_lessons:
+                    self.update_progress()
+            except UserCourse.DoesNotExist:
+                pass
+        
+        super().save(*args, **kwargs)
+    
+    def is_access_expired(self):
+        """Check if access has expired"""
+        if not self.access_expires_at:
+            return False
+        return timezone.now() > self.access_expires_at
+    
+    def time_until_expiry(self):
+        """Get time until access expires (human readable)"""
+        if not self.access_expires_at:
+            return None
+        delta = self.access_expires_at - timezone.now()
+        if delta.total_seconds() < 0:
+            return "Expired"
+        
+        days = delta.days
+        hours = delta.seconds // 3600
+        minutes = (delta.seconds % 3600) // 60
+        
+        if days > 0:
+            return f"{days} day{'s' if days != 1 else ''}"
+        elif hours > 0:
+            return f"{hours} hour{'s' if hours != 1 else ''}"
+        elif minutes > 0:
+            return f"{minutes} minute{'s' if minutes != 1 else ''}"
+        else:
+            return "Less than a minute"
+    
+    def days_until_expiry(self):
+        """Get days until access expires"""
+        if not self.access_expires_at:
+            return None
+        delta = self.access_expires_at - timezone.now()
+        return max(0, delta.days)
+    
+    def get_video_access(self):
+        """Grant access to all videos in this course"""
+        videos = self.course.videos.filter(is_active=True)
+        for video in videos:
+            UserVideoAccess.objects.get_or_create(
+                user=self.user,
+                video=video,
+                defaults={'payment': self.payment}
+            )
+    
+    def get_pdf_access(self):
+        """Grant access to all PDFs in this course"""
+        pdfs = self.course.pdf_resources.filter(is_active=True)
+        for pdf in pdfs:
+            UserPDFAccess.objects.get_or_create(
+                user=self.user,
+                pdf=pdf,
+                defaults={'payment': self.payment}
+            )
+    
+    def mark_lesson_complete(self, lesson_type, lesson_id):
+        """Mark a lesson as complete and update progress"""
+        lesson_key = f"{lesson_type}_{lesson_id}"
+        
+        # Initialize if empty
+        if not self.completed_lessons:
+            self.completed_lessons = []
+        
+        # Don't add if already completed
+        if lesson_key in self.completed_lessons:
+            return False
+        
+        # Add to completed list
+        self.completed_lessons.append(lesson_key)
+        
+        # Recalculate progress
+        self.update_progress()
+        
+        # Save changes
+        self.save(update_fields=['completed_lessons', 'progress'])
+        
+        # Check if course is now complete
+        if self.progress == 100:
+            self.on_course_complete()
+        
+        return True
+    
+    def update_progress(self):
+        """Calculate progress percentage based on completed lessons"""
+        # Get total lessons in course
+        total_videos = self.course.videos.count()
+        total_pdfs = self.course.pdf_resources.count()
+        total_lessons = total_videos + total_pdfs
+        
+        if total_lessons == 0:
+            self.progress = 0
+            return
+        
+        completed_count = len(self.completed_lessons) if self.completed_lessons else 0
+        self.progress = int((completed_count / total_lessons) * 100)
+    
+    def get_completed_count(self):
+        """Get number of completed lessons"""
+        return len(self.completed_lessons) if self.completed_lessons else 0
+    
+    def get_total_lessons(self):
+        """Get total number of lessons in course"""
+        return self.course.videos.count() + self.course.pdf_resources.count()
+    
+    def is_lesson_completed(self, lesson_type, lesson_id):
+        """Check if a specific lesson is completed"""
+        lesson_key = f"{lesson_type}_{lesson_id}"
+        return self.completed_lessons and lesson_key in self.completed_lessons
+    
+    def get_next_lesson(self):
+        """Get the next incomplete lesson"""
+        from .models import TrainingVideo, PDF
+        
+        # Get all lessons ordered
+        videos = list(TrainingVideo.objects.filter(course=self.course).order_by('order'))
+        pdfs = list(PDF.objects.filter(course=self.course).order_by('order'))
+        
+        # Combine and sort by order
+        all_lessons = []
+        for v in videos:
+            all_lessons.append({'type': 'video', 'id': v.id, 'title': v.title, 'order': v.order})
+        for p in pdfs:
+            all_lessons.append({'type': 'pdf', 'id': p.id, 'title': p.title, 'order': p.order})
+        
+        all_lessons.sort(key=lambda x: x['order'])
+        
+        # If no completed lessons, return first lesson
+        if not self.completed_lessons:
+            return all_lessons[0] if all_lessons else None
+        
+        # Find first incomplete lesson
+        for lesson in all_lessons:
+            lesson_key = f"{lesson['type']}_{lesson['id']}"
+            if lesson_key not in self.completed_lessons:
+                return lesson
+        
+        return None  # All completed
+    
+    def get_lesson_statuses(self):
+        """Get status of all lessons (completed/incomplete)"""
+        from .models import TrainingVideo, PDF
+        
+        videos = TrainingVideo.objects.filter(course=self.course).order_by('order')
+        pdfs = PDF.objects.filter(course=self.course).order_by('order')
+        
+        statuses = []
+        
+        for video in videos:
+            statuses.append({
+                'type': 'video',
+                'id': video.id,
+                'title': video.title,
+                'completed': self.is_lesson_completed('video', video.id),
+                'order': video.order,
+                'url': f"/watch/{video.id}/"
+            })
+        
+        for pdf in pdfs:
+            statuses.append({
+                'type': 'pdf',
+                'id': pdf.id,
+                'title': pdf.title,
+                'completed': self.is_lesson_completed('pdf', pdf.id),
+                'order': pdf.order,
+                'url': f"/pdf/{pdf.id}/view/"
+            })
+        
+        statuses.sort(key=lambda x: x['order'])
+        return statuses
+    
+    def get_progress_percentage_display(self):
+        """Get progress percentage with nice formatting"""
+        return f"{self.progress}%"
+    
+    def get_remaining_lessons(self):
+        """Get count of remaining lessons"""
+        total = self.get_total_lessons()
+        completed = self.get_completed_count()
+        return total - completed
+    
+    def on_course_complete(self):
+        """Called when course reaches 100% completion"""
+        from .models import Notification
+        
+        # Create achievement notification
+        Notification.objects.create(
+            user=self.user,
+            title='Course Completed! 🎉',
+            message=f'Congratulations! You have completed {self.course.title}',
+            notification_type='SUCCESS',
+            related_object_type='course',
+            related_object_id=self.course.id
+        )
+        
+        # Log activity
+        ActivityLog.objects.create(
+            user=self.user,
+            action='COURSE_COMPLETED',
+            description=f'Completed course: {self.course.title}'
+        )
+    
+    def reset_progress(self):
+        """Reset all progress (admin only)"""
+        self.completed_lessons = []
+        self.progress = 0
+        self.save(update_fields=['completed_lessons', 'progress'])
+
+    
+    def get_video_access(self):
+        """Grant access to all videos in this course"""
+        videos = self.course.videos.filter(is_active=True)
+        for video in videos:
+            UserVideoAccess.objects.get_or_create(
+                user=self.user,
+                video=video,
+                defaults={'payment': self.payment}
+            )
+    
+    def get_pdf_access(self):
+        """Grant access to all PDFs in this course"""
+        pdfs = self.course.pdf_resources.filter(is_active=True)
+        for pdf in pdfs:
+            UserPDFAccess.objects.get_or_create(
+                user=self.user,
+                pdf=pdf,
+                defaults={'payment': self.payment}
+            )
+    
+    def is_access_expired(self):
+        """Check if access has expired"""
+        if not self.access_expires_at:
+            return False
+        return timezone.now() > self.access_expires_at
+    
+    def time_until_expiry(self):
+        """Get time until access expires (for testing)"""
+        if not self.access_expires_at:
+            return None
+        delta = self.access_expires_at - timezone.now()
+        if delta.total_seconds() < 0:
+            return "Expired"
+        
+        minutes = int(delta.total_seconds() / 60)
+        seconds = int(delta.total_seconds() % 60)
+        
+        if minutes > 0:
+            return f"{minutes}m {seconds}s"
+        else:
+            return f"{seconds}s"
+    
+    def days_until_expiry(self):
+        """Get days until access expires"""
+        if not self.access_expires_at:
+            return None
+        delta = self.access_expires_at - timezone.now()
+        return max(0, delta.days)
+    
+    def mark_lesson_complete(self, lesson_type, lesson_id):
+        """Mark a lesson as complete and update progress"""
+        lesson_key = f"{lesson_type}_{lesson_id}"
+        
+        # Initialize if empty
+        if not self.completed_lessons:
+            self.completed_lessons = []
+        
+        # Don't add if already completed
+        if lesson_key in self.completed_lessons:
+            return False
+        
+        # Add to completed list
+        self.completed_lessons.append(lesson_key)
+        
+        # Recalculate progress
+        self.update_progress()
+        
+        # Save changes
+        self.save(update_fields=['completed_lessons', 'progress'])
+        
+        # Check if course is now complete
+        if self.progress == 100:
+            self.on_course_complete()
+        
+        return True
+    
+    def update_progress(self):
+        """Calculate progress percentage based on completed lessons"""
+        # Get total lessons in course
+        total_videos = self.course.videos.count()
+        total_pdfs = self.course.pdf_resources.count()
+        total_lessons = total_videos + total_pdfs
+        
+        if total_lessons == 0:
+            self.progress = 0
+            return
+        
+        completed_count = len(self.completed_lessons) if self.completed_lessons else 0
+        self.progress = int((completed_count / total_lessons) * 100)
+    
+    def get_completed_count(self):
+        """Get number of completed lessons"""
+        return len(self.completed_lessons) if self.completed_lessons else 0
+    
+    def get_total_lessons(self):
+        """Get total number of lessons in course"""
+        return self.course.videos.count() + self.course.pdf_resources.count()
+    
+    def is_lesson_completed(self, lesson_type, lesson_id):
+        """Check if a specific lesson is completed"""
+        lesson_key = f"{lesson_type}_{lesson_id}"
+        return self.completed_lessons and lesson_key in self.completed_lessons
+    
+    def get_next_lesson(self):
+        """Get the next incomplete lesson"""
+        from .models import TrainingVideo, PDF
+        
+        # Get all lessons ordered
+        videos = list(TrainingVideo.objects.filter(course=self.course).order_by('order'))
+        pdfs = list(PDF.objects.filter(course=self.course).order_by('order'))
+        
+        # Combine and sort by order
+        all_lessons = []
+        for v in videos:
+            all_lessons.append({'type': 'video', 'id': v.id, 'title': v.title, 'order': v.order})
+        for p in pdfs:
+            all_lessons.append({'type': 'pdf', 'id': p.id, 'title': p.title, 'order': p.order})
+        
+        all_lessons.sort(key=lambda x: x['order'])
+        
+        # If no completed lessons, return first lesson
+        if not self.completed_lessons:
+            return all_lessons[0] if all_lessons else None
+        
+        # Find first incomplete lesson
+        for lesson in all_lessons:
+            lesson_key = f"{lesson['type']}_{lesson['id']}"
+            if lesson_key not in self.completed_lessons:
+                return lesson
+        
+        return None  # All completed
+    
+    def on_course_complete(self):
+        """Called when course reaches 100% completion"""
+        from .models import Notification
+        
+        # Create achievement notification
+        Notification.objects.create(
+            user=self.user,
+            title='Course Completed! 🎉',
+            message=f'Congratulations! You have completed {self.course.title}',
+            notification_type='SUCCESS',
+            related_object_type='course',
+            related_object_id=self.course.id
+        )
+        
+        # Check if certificate is available
+        if self.course.has_certificate:
+            # You could auto-generate certificate here
+            pass
+        
+        # Log activity
+        ActivityLog.objects.create(
+            user=self.user,
+            action='COURSE_COMPLETED',
+            description=f'Completed course: {self.course.title}'
+        )
+
 
 # ==================== MENTORSHIP PROGRAM ====================
 
@@ -2332,12 +2480,9 @@ class MentorshipProgram(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
-    class Meta:
-        verbose_name = 'Mentorship Program'
-        verbose_name_plural = 'Mentorship Programs'
-    
     def __str__(self):
         return f"{self.mentor_name} - {self.title}"
+
 
 # ==================== USER ACTIVITY ====================
 
@@ -2356,10 +2501,9 @@ class UserActivity(models.Model):
     action = models.CharField(max_length=50, choices=ACTION_CHOICES)
     description = models.CharField(max_length=255)
     
-    # Related objects
     video = models.ForeignKey(TrainingVideo, on_delete=models.SET_NULL, null=True, blank=True)
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True)
-    payment = models.ForeignKey('PaymentTransaction', on_delete=models.SET_NULL, null=True, blank=True)
+    payment = models.ForeignKey(PaymentTransaction, on_delete=models.SET_NULL, null=True, blank=True)
     
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
@@ -2368,8 +2512,329 @@ class UserActivity(models.Model):
     
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'User Activity'
-        verbose_name_plural = 'User Activities'
     
     def __str__(self):
         return f"{self.user.username} - {self.action}"
+
+
+# ==================== BLOG MODEL ====================
+
+class Blog(models.Model):
+    """Blog posts for the website"""
+    CATEGORY_CHOICES = [
+        ('market_analysis', 'Market Analysis'),
+        ('trading_psychology', 'Trading Psychology'),
+        ('options_strategies', 'Options Strategies'),
+        ('forex_trading', 'Forex Trading'),
+        ('company_news', 'Company News'),
+        ('education', 'Education'),
+        ('general', 'General'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('published', 'Published'),
+        ('archived', 'Archived'),
+    ]
+    
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, unique=True, blank=True)
+    author = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True)
+    content = models.TextField()
+    excerpt = models.TextField(max_length=500, blank=True)
+    
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='general')
+    tags = models.CharField(max_length=500, blank=True)
+    
+    featured_image = models.ImageField(upload_to='blog/', blank=True, null=True)
+    thumbnail = models.ImageField(upload_to='blog/thumbnails/', blank=True, null=True)
+    
+    views = models.IntegerField(default=0)
+    likes = models.IntegerField(default=0)
+    shares = models.IntegerField(default=0)
+    read_time = models.IntegerField(default=5)
+    
+    meta_title = models.CharField(max_length=200, blank=True)
+    meta_description = models.TextField(max_length=300, blank=True)
+    meta_keywords = models.CharField(max_length=300, blank=True)
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    is_featured = models.BooleanField(default=False)
+    is_popular = models.BooleanField(default=False)
+    allow_comments = models.BooleanField(default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['category', 'status']),
+            models.Index(fields=['slug']),
+        ]
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+            original_slug = self.slug
+            counter = 1
+            while Blog.objects.filter(slug=self.slug).exists():
+                self.slug = f"{original_slug}-{counter}"
+                counter += 1
+        
+        if self.status == 'published' and not self.published_at:
+            self.published_at = timezone.now()
+        
+        super().save(*args, **kwargs)
+    
+    def increment_views(self):
+        self.views += 1
+        self.save(update_fields=['views'])
+
+
+# ==================== PDF MODEL ====================
+
+class PDF(models.Model):
+    """PDF resources for VIEWING (not downloading)"""
+    CATEGORY_CHOICES = [
+        ('course_material', 'Course Material'),
+        ('ebook', 'E-Book'),
+        ('worksheet', 'Worksheet'),
+        ('cheat_sheet', 'Cheat Sheet'),
+        ('report', 'Market Report'),
+        ('guide', 'Trading Guide'),
+        ('other', 'Other'),
+    ]
+    
+    ACCESS_LEVEL_CHOICES = [
+        ('free', 'Free Access'),
+        ('citizen', 'Citizen Tier'),
+        ('studyhall', 'Study Hall Tier'),
+        ('society', 'Society Tier'),
+        ('paid', 'Paid Only'),
+    ]
+    
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, unique=True, blank=True)
+    description = models.TextField(blank=True)
+    
+    pdf_file = models.FileField(upload_to='pdfs/')
+    cover_image = models.ImageField(upload_to='pdfs/covers/', blank=True, null=True)
+    
+    pages = models.IntegerField(default=0)
+    file_size = models.CharField(max_length=20, blank=True)
+    duration = models.CharField(max_length=50, blank=True)
+    
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
+    tags = models.CharField(max_length=500, blank=True)
+    
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True, related_name='pdf_resources')
+    
+    access_level = models.CharField(max_length=20, choices=ACCESS_LEVEL_CHOICES, default='free')
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    is_free = models.BooleanField(default=True)
+    
+    # Track VIEWS instead of downloads
+    views = models.IntegerField(default=0)
+    unique_viewers = models.IntegerField(default=0)
+    
+    # Keep downloads for backward compatibility but mark as deprecated
+    downloads = models.IntegerField(default=0, editable=False)
+    
+    is_active = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
+    is_new = models.BooleanField(default=False)
+    order = models.IntegerField(default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['order', '-created_at']
+        indexes = [
+            models.Index(fields=['is_active', 'created_at']),
+            models.Index(fields=['access_level', 'is_active']),
+            models.Index(fields=['course', 'is_active']),
+        ]
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+            original_slug = self.slug
+            counter = 1
+            while PDF.objects.filter(slug=self.slug).exists():
+                self.slug = f"{original_slug}-{counter}"
+                counter += 1
+        
+        if self.pdf_file and not self.file_size:
+            size = self.pdf_file.size
+            if size < 1024:
+                self.file_size = f"{size} B"
+            elif size < 1024 * 1024:
+                self.file_size = f"{size / 1024:.1f} KB"
+            else:
+                self.file_size = f"{size / (1024 * 1024):.1f} MB"
+        
+        self.is_free = (self.price == 0)
+        
+        if not self.published_at:
+            self.published_at = timezone.now()
+        
+        super().save(*args, **kwargs)
+    
+    def increment_views(self):
+        """Increment view count when PDF is viewed"""
+        self.views += 1
+        self.save(update_fields=['views'])
+    
+    def increment_unique_viewers(self):
+        """Increment unique viewers count"""
+        self.unique_viewers += 1
+        self.save(update_fields=['unique_viewers'])
+
+
+# ==================== SIGNALS ====================
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=MfalmeUsers)
+def create_activity_log_for_new_user(sender, instance, created, **kwargs):
+    """Create activity log when a new user is created"""
+    if created:
+        ActivityLog.objects.create(
+            user=instance,
+            action='REGISTER',
+            description=f'New user registered: {instance.username}',
+            metadata={'email': instance.email}
+        )
+
+
+@receiver(post_save, sender=UserCourse)
+def grant_course_access(sender, instance, created, **kwargs):
+    """When a user enrolls in a course, grant access to all videos and PDFs"""
+    if created:
+        instance.get_video_access()
+        instance.get_pdf_access()
+        
+        # Create notification
+        Notification.objects.create(
+            user=instance.user,
+            title='Course Enrolled',
+            message=f'You have successfully enrolled in {instance.course.title}. All course materials are now accessible.',
+            notification_type='SUCCESS',
+            related_object_type='course',
+            related_object_id=instance.course.id
+        )
+
+
+@receiver(post_save, sender=Watchlist)
+def log_watchlist_add(sender, instance, created, **kwargs):
+    """Log when user adds item to watchlist"""
+    if created:
+        content = instance.get_content()
+        if content:
+            title = getattr(content, 'title', str(content))
+            ActivityLog.objects.create(
+                user=instance.user,
+                action='WATCHLIST_ADD',
+                description=f'Added to watchlist: {title}',
+                metadata={
+                    'content_type': instance.content_type,
+                    'content_id': instance.content_id
+                }
+            )
+
+
+@receiver(post_save, sender=InstituteApplication)
+def notify_admin_institute_application(sender, instance, created, **kwargs):
+    """Notify admin when new institute application is submitted"""
+    if created:
+        # Create admin notification (you'll need to decide how to notify admins)
+        # This could be an email or an in-app notification for admin users
+        pass
+
+
+@receiver(post_save, sender=CommunityJoinRequest)
+def notify_admin_community_request(sender, instance, created, **kwargs):
+    """Notify admin when new community join request is submitted"""
+    if created:
+        # Create admin notification
+        pass
+
+
+# ==================== ADMIN COMPATIBILITY ALIASES ====================
+
+# Create aliases for models your views expect
+Video = TrainingVideo
+Activity = ActivityLog
+Blog = Blog
+PDF = PDF
+Package = Package
+Order = None  # Order model doesn't exist yet
+Partnership = None  # Partnership model doesn't exist yet
+Course = Course
+SupportTicket = SupportTicket
+TicketReply = TicketReply
+UserVideoAccess = UserVideoAccess
+UserPDFAccess = UserPDFAccess
+UserCourseAccess = UserCourse
+
+
+# ==================== EXPORT ALL MODELS ====================
+
+__all__ = [
+    'MfalmeUsers',
+    'VerificationCode',
+    'PaymentTransaction',
+    'Subscription',
+    'Package',
+    'EducationProgram',
+    'UserEducationEnrollment',
+    'PartnershipProgram',
+    'UserPartnership',
+    'Watchlist',
+    'InstituteApplication',
+    'CommunityJoinRequest',
+    'Testimonial',
+    'FAQ',
+    'CommunityTier',
+    'UserCommunityMembership',
+    'Brokerage',
+    'ContactSubmission',
+    'SiteContent',
+    'SiteContentVersion',
+    'Statistic',
+    'Notification',
+    'ActivityLog',
+    'SystemSettings',
+    'SupportTicket',
+    'TicketReply',
+    'UserSession',
+    'HeroSlider',
+    'AboutSection',
+    'PaymentMethod',
+    'ContactInfo',
+    'Logo',
+    'TrainingVideo',
+    'UserVideoAccess',
+    'UserPDFAccess',
+    'Course',
+    'UserCourse',
+    'MentorshipProgram',
+    'UserActivity',
+    'Blog',
+    'PDF',
+    # Aliases
+    'Video',
+    'Activity',
+]

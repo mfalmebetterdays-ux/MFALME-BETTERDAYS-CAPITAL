@@ -2,525 +2,180 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>New User Registration - MFALME BETTERDAYS CAPITAL</title>
-    <style>
-        :root {
-            /* Refined Color Palette */
-            --gold-primary: #D4AF37;
-            --gold-secondary: #FFD700;
-            --gold-light: #FFF8E1;
-            --dark-bg: #0A1520;
-            --dark-card: #1A2432;
-            --dark-border: #2A3442;
-            --alert-red: #DC3545;
-            --success-green: #28A745;
-            --text-primary: #FFFFFF;
-            --text-secondary: #B0B7C3;
-            
-            /* Typography */
-            --font-primary: 'Segoe UI', 'Inter', -apple-system, sans-serif;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: var(--font-primary);
-            background-color: #f5f7fa;
-            margin: 0;
-            padding: 20px;
-            color: var(--text-primary);
-            line-height: 1.5;
-        }
-        
-        .email-wrapper {
-            max-width: 700px;
-            margin: 0 auto;
-            background: var(--dark-bg);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-        
-        /* Header - Clean & Professional */
-        .email-header {
-            background: linear-gradient(135deg, var(--dark-card) 0%, var(--dark-bg) 100%);
-            padding: 40px 30px;
-            text-align: center;
-            border-bottom: 3px solid var(--gold-primary);
-        }
-        
-        .company-logo {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--gold-primary);
-            margin-bottom: 15px;
-            letter-spacing: 1px;
-        }
-        
-        .notification-badge {
-            display: inline-block;
-            background: var(--alert-red);
-            color: white;
-            padding: 8px 24px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 20px;
-        }
-        
-        .email-title {
-            font-size: 24px;
-            font-weight: 600;
-            margin: 15px 0 10px;
-            color: var(--text-primary);
-        }
-        
-        .email-subtitle {
-            color: var(--text-secondary);
-            font-size: 14px;
-            font-weight: 400;
-        }
-        
-        /* Main Content */
-        .email-content {
-            padding: 40px 30px;
-        }
-        
-        /* Summary Section */
-        .summary-section {
-            background: var(--dark-card);
-            border-radius: 10px;
-            padding: 25px;
-            margin-bottom: 30px;
-            border-left: 4px solid var(--gold-primary);
-        }
-        
-        .summary-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-top: 20px;
-        }
-        
-        .summary-item {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .summary-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-        
-        .summary-value {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        
-        /* User Information */
-        .section-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 30px 0 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--dark-border);
-        }
-        
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .info-card {
-            background: var(--dark-card);
-            border-radius: 8px;
-            padding: 20px;
-            border: 1px solid var(--dark-border);
-        }
-        
-        .info-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .info-value {
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text-primary);
-            word-break: break-word;
-        }
-        
-        /* Status Badge */
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(40, 167, 69, 0.1);
-            color: var(--success-green);
-            padding: 6px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            border: 1px solid rgba(40, 167, 69, 0.3);
-        }
-        
-        /* Action Cards */
-        .action-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin: 30px 0;
-        }
-        
-        .action-card {
-            background: var(--dark-card);
-            border-radius: 8px;
-            padding: 25px 20px;
-            text-align: center;
-            border: 1px solid var(--dark-border);
-            transition: all 0.2s ease;
-            cursor: pointer;
-            text-decoration: none;
-            color: var(--text-primary);
-        }
-        
-        .action-card:hover {
-            transform: translateY(-2px);
-            border-color: var(--gold-primary);
-            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.1);
-        }
-        
-        .action-icon {
-            font-size: 24px;
-            margin-bottom: 15px;
-            color: var(--gold-primary);
-        }
-        
-        .action-title {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        
-        .action-desc {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        
-        /* Task List */
-        .task-list {
-            background: var(--dark-card);
-            border-radius: 8px;
-            padding: 25px;
-            margin: 30px 0;
-            border: 1px solid var(--dark-border);
-        }
-        
-        .task-item {
-            display: flex;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid var(--dark-border);
-        }
-        
-        .task-item:last-child {
-            border-bottom: none;
-        }
-        
-        .task-checkbox {
-            width: 20px;
-            height: 20px;
-            border: 2px solid var(--dark-border);
-            border-radius: 4px;
-            margin-right: 15px;
-            flex-shrink: 0;
-        }
-        
-        .task-content {
-            flex: 1;
-        }
-        
-        .task-title {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-        }
-        
-        .task-detail {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        
-        /* Stats */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin: 30px 0;
-        }
-        
-        .stat-card {
-            background: var(--dark-card);
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            border: 1px solid var(--dark-border);
-        }
-        
-        .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--gold-primary);
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        /* Footer */
-        .email-footer {
-            background: var(--dark-card);
-            padding: 30px;
-            border-top: 1px solid var(--dark-border);
-        }
-        
-        .footer-info {
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 12px;
-            line-height: 1.6;
-        }
-        
-        .footer-alert {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(220, 53, 69, 0.1);
-            border-radius: 6px;
-            border: 1px solid rgba(220, 53, 69, 0.3);
-            color: var(--alert-red);
-            font-size: 12px;
-            font-weight: 500;
-            text-align: center;
-        }
-        
-        /* Responsive */
-        @media (max-width: 640px) {
-            .email-wrapper {
-                border-radius: 0;
-            }
-            
-            .email-header,
-            .email-content {
-                padding: 25px 20px;
-            }
-            
-            .summary-grid,
-            .info-grid,
-            .action-cards,
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .email-title {
-                font-size: 20px;
-            }
-        }
-    </style>
+    <title>New Registration - Mfalme Betterdays Capital</title>
 </head>
-<body>
-    <div class="email-wrapper">
-        <!-- Header -->
-        <div class="email-header">
-            <div class="company-logo">MFALME BETTERDAYS CAPITAL</div>
-            <div class="notification-badge">NEW REGISTRATION</div>
-            <h1 class="email-title">New Member Registration</h1>
-            <p class="email-subtitle">A new user has joined the platform</p>
-        </div>
-        
-        <!-- Main Content -->
-        <div class="email-content">
-            <!-- Summary Section -->
-            <div class="summary-section">
-                <div class="summary-title">Registration Summary</div>
-                <div class="summary-value">User <strong>{{ username }}</strong> has successfully registered and verified their account.</div>
-                
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <div class="summary-label">User ID</div>
-                        <div class="summary-value">#{{ soldier_id }}</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Registration Time</div>
-                        <div class="summary-value">{{ registration_time }}</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Today's Registrations</div>
-                        <div class="summary-value">{{ today_registrations }}</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Weekly Growth</div>
-                        <div class="summary-value">{{ week_growth }}%</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- User Information -->
-            <h2 class="section-title">User Details</h2>
-            <div class="info-grid">
-                <div class="info-card">
-                    <div class="info-label">Full Name</div>
-                    <div class="info-value">{{ username }}</div>
-                </div>
-                <div class="info-card">
-                    <div class="info-label">Email Address</div>
-                    <div class="info-value">{{ email }}</div>
-                </div>
-                <div class="info-card">
-                    <div class="info-label">Phone Number</div>
-                    <div class="info-value">{{ phone }}</div>
-                </div>
-                <div class="info-card">
-                    <div class="info-label">Registration IP</div>
-                    <div class="info-value">{{ ip_address }}</div>
-                </div>
-                <div class="info-card">
-                    <div class="info-label">Status</div>
-                    <div class="status-badge">✓ Verified & Active</div>
-                </div>
-            </div>
-            
-            <!-- Quick Actions -->
-            <h2 class="section-title">Quick Actions</h2>
-            <div class="action-cards">
-                <a href="{{ admin_user_url }}" class="action-card">
-                    <div class="action-icon">👤</div>
-                    <div class="action-title">View Profile</div>
-                    <div class="action-desc">Full user details</div>
-                </a>
-                
-                <a href="{{ send_welcome_url }}" class="action-card">
-                    <div class="action-icon">📧</div>
-                    <div class="action-title">Send Welcome</div>
-                    <div class="action-desc">Resend welcome email</div>
-                </a>
-                
-                <a href="{{ assign_mentor_url }}" class="action-card">
-                    <div class="action-icon">🎓</div>
-                    <div class="action-title">Assign Mentor</div>
-                    <div class="action-desc">Assign {{ recommended_mentor }}</div>
-                </a>
-                
-                <a href="{{ admin_dashboard_url }}" class="action-card">
-                    <div class="action-icon">📊</div>
-                    <div class="action-title">Dashboard</div>
-                    <div class="action-desc">Go to admin panel</div>
-                </a>
-            </div>
-            
-            <!-- Onboarding Tasks -->
-            <h2 class="section-title">Onboarding Checklist</h2>
-            <div class="task-list">
-                <div class="task-item">
-                    <div class="task-checkbox"></div>
-                    <div class="task-content">
-                        <div class="task-title">Verify email confirmation</div>
-                        <div class="task-detail">Check if user confirmed email address</div>
-                    </div>
-                </div>
-                <div class="task-item">
-                    <div class="task-checkbox"></div>
-                    <div class="task-content">
-                        <div class="task-title">Send welcome package</div>
-                        <div class="task-detail">Credentials and login instructions</div>
-                    </div>
-                </div>
-                <div class="task-item">
-                    <div class="task-checkbox"></div>
-                    <div class="task-content">
-                        <div class="task-title">Assign mentor</div>
-                        <div class="task-detail">Recommended: {{ recommended_mentor }}</div>
-                    </div>
-                </div>
-                <div class="task-item">
-                    <div class="task-checkbox"></div>
-                    <div class="task-content">
-                        <div class="task-title">Add to communication channels</div>
-                        <div class="task-detail">Telegram groups and channels</div>
-                    </div>
-                </div>
-                <div class="task-item">
-                    <div class="task-checkbox"></div>
-                    <div class="task-content">
-                        <div class="task-title">Schedule onboarding call</div>
-                        <div class="task-detail">Within 24 hours of registration</div>
-                    </div>
-                </div>
-                <div class="task-item">
-                    <div class="task-checkbox"></div>
-                    <div class="task-content">
-                        <div class="task-title">Activate trading package</div>
-                        <div class="task-detail">Package: {{ recommended_package }}</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Platform Stats -->
-            <h2 class="section-title">Platform Statistics</h2>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value">{{ total_users }}</div>
-                    <div class="stat-label">Total Users</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ today_registrations }}</div>
-                    <div class="stat-label">Today</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{ week_growth }}%</div>
-                    <div class="stat-label">Weekly Growth</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Footer -->
-        <div class="email-footer">
-            <div class="footer-info">
-                <p><strong>MFALME BETTERDAYS CAPITAL • Admin Notification</strong></p>
-                <p>This is an automated notification from the registration system.</p>
-                <p>Generated: {{ notification_time }} • ID: #{{ notification_id }}</p>
-            </div>
-            <div class="footer-alert">
-                ⚡ Please complete onboarding within 24 hours for optimal user experience
-            </div>
-        </div>
-    </div>
+<body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f5f5f5;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f5f5;">
+        <tr>
+            <td align="center" style="padding:30px 20px;">
+                <!-- Main Container -->
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#0A1520; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding:40px 40px 20px 40px; text-align:center; border-bottom:1px solid rgba(255,215,0,0.2);">
+                            <h1 style="font-size:20px; font-weight:400; color:#FFD700; margin:0 0 10px 0;">New registration</h1>
+                            <p style="color:#B0B7C3; font-size:14px; margin:0;">A user has joined the platform</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding:30px 40px;">
+                            
+                            <!-- Summary -->
+                            <p style="color:#FFFFFF; font-size:16px; margin:0 0 20px 0;">
+                                User <strong style="color:#FFD700;">{{ username }}</strong> has registered and verified their account.
+                            </p>
+                            
+                            <!-- User Details Grid -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0E1A29; border-radius:6px; margin:25px 0;">
+                                <tr>
+                                    <td style="padding:25px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td width="50%" style="padding:8px 8px 8px 0;">
+                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">User ID</p>
+                                                    <p style="color:#FFFFFF; font-size:15px; margin:0;">#{{ soldier_id }}</p>
+                                                </td>
+                                                <td width="50%" style="padding:8px 0 8px 8px;">
+                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">Registered</p>
+                                                    <p style="color:#FFFFFF; font-size:15px; margin:0;">{{ registration_time }}</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td width="50%" style="padding:8px 8px 8px 0;">
+                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">Name</p>
+                                                    <p style="color:#FFFFFF; font-size:15px; margin:0;">{{ username }}</p>
+                                                </td>
+                                                <td width="50%" style="padding:8px 0 8px 8px;">
+                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">Email</p>
+                                                    <p style="color:#FFFFFF; font-size:15px; margin:0;">{{ email }}</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td width="50%" style="padding:8px 8px 8px 0;">
+                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">Phone</p>
+                                                    <p style="color:#FFFFFF; font-size:15px; margin:0;">{{ phone }}</p>
+                                                </td>
+                                                <td width="50%" style="padding:8px 0 8px 8px;">
+                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">IP Address</p>
+                                                    <p style="color:#FFFFFF; font-size:15px; margin:0;">{{ ip_address }}</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" style="padding:8px 0 0 0;">
+                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">Status</p>
+                                                    <p style="color:#28A745; font-size:14px; margin:0;">Verified & active</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Quick Stats -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:25px 0;">
+                                <tr>
+                                    <td width="33%" style="padding:5px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0E1A29; border-radius:6px;">
+                                            <tr><td style="padding:15px; text-align:center;">
+                                                <p style="color:#FFD700; font-size:22px; margin:0 0 5px 0;">{{ total_users }}</p>
+                                                <p style="color:#5E6F8D; font-size:11px; margin:0;">Total users</p>
+                                            </td></tr>
+                                        </table>
+                                    </td>
+                                    <td width="33%" style="padding:5px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0E1A29; border-radius:6px;">
+                                            <tr><td style="padding:15px; text-align:center;">
+                                                <p style="color:#FFD700; font-size:22px; margin:0 0 5px 0;">{{ today_registrations }}</p>
+                                                <p style="color:#5E6F8D; font-size:11px; margin:0;">Today</p>
+                                            </td></tr>
+                                        </table>
+                                    </td>
+                                    <td width="33%" style="padding:5px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0E1A29; border-radius:6px;">
+                                            <tr><td style="padding:15px; text-align:center;">
+                                                <p style="color:#FFD700; font-size:22px; margin:0 0 5px 0;">{{ week_growth }}%</p>
+                                                <p style="color:#5E6F8D; font-size:11px; margin:0;">Growth</p>
+                                            </td></tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Admin Actions - Simple List -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:25px 0;">
+                                <tr>
+                                    <td style="padding:0 0 10px 0;">
+                                        <p style="color:#FFFFFF; font-size:16px; margin:0;">Admin actions</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:6px 0;">
+                                        <table cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td width="20" style="color:#FFD700;">—</td>
+                                                <td style="color:#B0B7C3; font-size:14px;"><a href="{{ admin_user_url }}" style="color:#B0B7C3; text-decoration:none;">View user profile</a></td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:6px 0;">
+                                        <table cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td width="20" style="color:#FFD700;">—</td>
+                                                <td style="color:#B0B7C3; font-size:14px;"><a href="{{ send_welcome_url }}" style="color:#B0B7C3; text-decoration:none;">Send welcome email</a></td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:6px 0;">
+                                        <table cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td width="20" style="color:#FFD700;">—</td>
+                                                <td style="color:#B0B7C3; font-size:14px;"><a href="{{ admin_dashboard_url }}" style="color:#B0B7C3; text-decoration:none;">Go to admin panel</a></td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Onboarding Checklist -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:25px 0; background-color:#0E1A29; border-radius:6px;">
+                                <tr>
+                                    <td style="padding:20px;">
+                                        <p style="color:#FFFFFF; margin:0 0 15px 0; font-size:14px;">Onboarding checklist</p>
+                                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tr><td style="padding:4px 0; color:#B0B7C3; font-size:13px;">✓ Verify email confirmation</td></tr>
+                                            <tr><td style="padding:4px 0; color:#B0B7C3; font-size:13px;">✓ Send welcome package</td></tr>
+                                            <tr><td style="padding:4px 0; color:#B0B7C3; font-size:13px;">✓ Assign mentor ({{ recommended_mentor }})</td></tr>
+                                            <tr><td style="padding:4px 0; color:#B0B7C3; font-size:13px;">✓ Add to communication channels</td></tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color:#08111A; padding:30px; text-align:center;">
+                            <p style="color:#5E6F8D; font-size:12px; margin:0;">
+                                <strong style="color:#5E6F8D;">Mfalme Betterdays Capital</strong><br><br>
+                                Admin notification • {{ notification_time }} • ID: #{{ notification_id }}
+                            </p>
+                            <p style="color:#3A4556; font-size:11px; margin:20px 0 0 0;">
+                                Please complete onboarding within 24 hours
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

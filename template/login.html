@@ -469,6 +469,184 @@
             color: #10B981;
             border: 1px solid rgba(16, 185, 129, 0.2);
         }
+
+        .form-message.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #F59E0B;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .form-message.info {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3B82F6;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-container {
+            background: var(--navy-light);
+            border-radius: 20px;
+            border: 3px solid var(--gold-primary);
+            width: 100%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 25px 30px;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), transparent);
+            border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .modal-header h3 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--white);
+            margin: 0;
+        }
+
+        .modal-header h3 i {
+            color: var(--gold-primary);
+            margin-right: 10px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--gold-primary);
+            font-size: 2rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 215, 0, 0.1);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 30px;
+            overflow-y: auto;
+            max-height: calc(80vh - 100px);
+        }
+
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: var(--gold-primary);
+            border-radius: 10px;
+        }
+
+        .modal-section {
+            margin-bottom: 30px;
+        }
+
+        .modal-section h4 {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-section h4 i {
+            font-size: 1rem;
+        }
+
+        .modal-section p {
+            color: var(--white-smoke);
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+
+        .modal-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .modal-list li {
+            color: var(--white-smoke);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.95rem;
+        }
+
+        .modal-list li i {
+            color: var(--gold-primary);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid rgba(255, 215, 0, 0.1);
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-modal-close {
+            background: var(--gold-gradient);
+            color: var(--navy-dark);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-modal-close:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+        }
         
         /* Responsive */
         @media (max-width: 992px) {
@@ -509,6 +687,18 @@
             .social-login {
                 flex-direction: column;
             }
+
+            .modal-container {
+                max-width: 95%;
+            }
+
+            .modal-header {
+                padding: 20px;
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
         }
     </style>
 </head>
@@ -519,7 +709,7 @@
             <div class="col-lg-6">
                 <div class="auth-left">
                     <div class="brand-logo">
-                        <img src="{% static 'assets/images/logo11-removebg-preview.png' %}" alt="Mfalme Betterdays Capital">
+                        <img src="{% static 'assets/images/Logoz.png' %}" alt="Mfalme Betterdays Capital">
                         <h1>MFALME BETTERDAYS CAPITAL</h1>
                         <p>Elite Trading & Investment Platform</p>
                     </div>
@@ -584,10 +774,19 @@
                             <p>Enter your credentials to access your account</p>
                         </div>
                         
-                        {% if message %}
-                        <div class="form-message error">
-                            <i class="fas fa-exclamation-circle"></i> {{ message }}
-                        </div>
+                        <!-- FIXED: Messages display -->
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="form-message {{ message.tags }}" style="display: block;">
+                                    <i class="fas 
+                                        {% if message.tags == 'error' %}fa-exclamation-circle
+                                        {% elif message.tags == 'success' %}fa-check-circle
+                                        {% elif message.tags == 'warning' %}fa-exclamation-triangle
+                                        {% else %}fa-info-circle{% endif %}">
+                                    </i> 
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
                         {% endif %}
                         
                         <div class="form-group">
@@ -614,7 +813,7 @@
                                 <input type="checkbox" id="rememberMe" name="remember">
                                 <label for="rememberMe">Remember me</label>
                             </div>
-                            <a href="#" class="forgot-password">Forgot Password?</a>
+                            <a href="{% url 'forgot_password' %}" class="forgot-password">Forgot Password?</a>
                         </div>
                         
                         <button type="submit" class="submit-btn" id="loginSubmit">
@@ -623,27 +822,21 @@
                             <div class="loading-spinner"></div>
                         </button>
                         
-                        <div class="form-divider">
-                            <span>Or continue with</span>
-                        </div>
-                        
-                        <div class="social-login">
-                            <button type="button" class="social-btn">
-                                <i class="fab fa-google"></i> Google
-                            </button>
-                            <button type="button" class="social-btn">
-                                <i class="fab fa-apple"></i> Apple
-                            </button>
-                        </div>
-                        
                         <div class="form-footer">
                             <p>Don't have an account? <a href="#" class="switch-form" data-form="signup">Sign up now</a></p>
                         </div>
                     </form>
                     
-                    <!-- Signup Form -->
+                    <!-- Signup Form - FIXED VERSION -->
                     <form method="POST" action="{% url 'create_account' %}" class="auth-form" id="signupForm">
                         {% csrf_token %}
+                        
+                        <!-- Hidden fields for required data that view expects -->
+                        <input type="hidden" name="first_name" id="hiddenFirstName" value="">
+                        <input type="hidden" name="last_name" id="hiddenLastName" value="">
+                        <input type="hidden" name="country" id="hiddenCountry" value="Kenya">
+                        <input type="hidden" name="trading_experience" id="hiddenExperience" value="Beginner">
+                        
                         <div class="form-header">
                             <h2>Join the Elite</h2>
                             <p>Create your account to start your trading journey</p>
@@ -690,7 +883,8 @@
                                 <i class="fas fa-lock"></i> Confirm Password
                             </label>
                             <div class="password-wrapper">
-                                <input type="password" id="signupPasswordConfirm" name="password1" class="form-input" placeholder="Confirm your password" required>
+                                <!-- FIXED: Changed from 'password1' to 'confirm_password' -->
+                                <input type="password" id="signupPasswordConfirm" name="confirm_password" class="form-input" placeholder="Confirm your password" required>
                                 <button type="button" class="toggle-password" data-target="signupPasswordConfirm">
                                     <i class="far fa-eye"></i>
                                 </button>
@@ -699,9 +893,10 @@
                         
                         <div class="form-group">
                             <div class="form-check">
-                                <input type="checkbox" id="termsAgreement" name="terms" class="form-check-input" required>
+                                <!-- FIXED: Changed from 'terms' to 'terms_accepted' -->
+                                <input type="checkbox" id="termsAgreement" name="terms_accepted" class="form-check-input" required>
                                 <label for="termsAgreement" class="form-label" style="font-weight: normal; color: var(--white-smoke);">
-                                    I agree to the <a href="#" style="color: var(--gold-primary);">Terms of Service</a> and <a href="#" style="color: var(--gold-primary);">Privacy Policy</a>
+                                    I agree to the <a href="#" onclick="openModal('terms'); return false;" style="color: var(--gold-primary);">Terms of Service</a> and <a href="#" onclick="openModal('privacy'); return false;" style="color: var(--gold-primary);">Privacy Policy</a>
                                 </label>
                             </div>
                         </div>
@@ -721,9 +916,204 @@
         </div>
     </div>
 
+    <!-- Terms of Service Modal -->
+    <div class="modal-overlay" id="termsModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-gavel"></i> Terms of Service</h3>
+                <button class="modal-close" onclick="closeModal('terms')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h4><i class="fas fa-crown gold-text"></i> 1. Elite Trader Status</h4>
+                    <p>By registering with Mfalme Betterdays Capital, you acknowledge that you are joining an elite community of traders. We require our members to embody resilience, fortitude, and an abundance mindset. There is no room for fragility or excuses in the pursuit of financial mastery.</p>
+                </div>
+
+                <div class="modal-section">
+                    <h4><i class="fas fa-shield-alt gold-text"></i> 2. Risk Acknowledgement</h4>
+                    <p>Trading forex, commodities, indices, and other financial instruments involves substantial risk of loss. You acknowledge that:</p>
+                    <ul class="modal-list">
+                        <li><i class="fas fa-check-circle"></i> Past performance does not guarantee future results</li>
+                        <li><i class="fas fa-check-circle"></i> You can lose some or all of your invested capital</li>
+                        <li><i class="fas fa-check-circle"></i> You are solely responsible for your trading decisions</li>
+                        <li><i class="fas fa-check-circle"></i> Mfalme Betterdays Capital provides education and mentorship, not guaranteed returns</li>
+                    </ul>
+                </div>
+
+                <div class="modal-section">
+                    <h4><i class="fas fa-lock gold-text"></i> 3. Account Requirements</h4>
+                    <p>To maintain an active account with Mfalme Betterdays Capital:</p>
+                    <ul class="modal-list">
+                        <li><i class="fas fa-check-circle"></i> Minimum age of 18 years or legal majority in your jurisdiction</li>
+                        <li><i class="fas fa-check-circle"></i> Valid government-issued ID for verification</li>
+                        <li><i class="fas fa-check-circle"></i> Proof of address (utility bill or bank statement)</li>
+                        <li><i class="fas fa-check-circle"></i> Minimum deposit requirements based on selected package</li>
+                        <li><i class="fas fa-check-circle"></i> Completion of required educational modules for advanced accounts</li>
+                    </ul>
+                </div>
+
+                <div class="modal-section">
+                    <h4><i class="fas fa-handshake gold-text"></i> 4. Community Standards</h4>
+                    <p>As a member of the Mfalme Betterdays Capital community, you agree to:</p>
+                    <ul class="modal-list">
+                        <li><i class="fas fa-check-circle"></i> Treat all members with respect and professionalism</li>
+                        <li><i class="fas fa-check-circle"></i> No spamming, harassment, or inappropriate behavior</li>
+                        <li><i class="fas fa-check-circle"></i> No sharing of proprietary trading strategies without authorization</li>
+                        <li><i class="fas fa-check-circle"></i> Real names only - no anonymity in our community</li>
+                        <li><i class="fas fa-check-circle"></i> Report any suspicious activity to administrators immediately</li>
+                    </ul>
+                </div>
+
+                <div class="modal-section">
+                    <h4><i class="fas fa-ban gold-text"></i> 5. Prohibited Activities</h4>
+                    <ul class="modal-list">
+                        <li><i class="fas fa-times-circle" style="color: #ef4444;"></i> Market manipulation or fraudulent trading practices</li>
+                        <li><i class="fas fa-times-circle" style="color: #ef4444;"></i> Money laundering or illegal financial activities</li>
+                        <li><i class="fas fa-times-circle" style="color: #ef4444;"></i> Unauthorized access to other users' accounts</li>
+                        <li><i class="fas fa-times-circle" style="color: #ef4444;"></i> Automated trading bots without explicit permission</li>
+                        <li><i class="fas fa-times-circle" style="color: #ef4444;"></i> Misrepresentation of trading results or credentials</li>
+                    </ul>
+                </div>
+
+                <div class="modal-section">
+                    <h4><i class="fas fa-clock gold-text"></i> 6. Account Termination</h4>
+                    <p>Mfalme Betterdays Capital reserves the right to suspend or terminate accounts that violate these terms, with or without notice. Violations may result in forfeiture of fees paid and permanent ban from our platform.</p>
+                </div>
+
+                <div class="modal-section">
+                    <h4><i class="fas fa-balance-scale gold-text"></i> 7. Governing Law</h4>
+                    <p>These Terms shall be governed by and construed in accordance with the laws of the Republic of Kenya. Any disputes arising under these Terms shall be resolved in the courts of Nairobi, Kenya.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-close" onclick="closeModal('terms')">I Understand</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div class="modal-overlay" id="privacyModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-shield-alt"></i> Privacy Policy</h3>
+                <button class="modal-close" onclick="closeModal('privacy')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h4><i class="fas fa-database gold-text"></i> 1. Information We Collect</h4>
+                    <ul class="modal-list">
+                        <li><i class="fas fa-check-circle"></i> Personal identification information (name, email, phone number)</li>
+                        <li><i class="fas fa-check-circle"></i> Government-issued ID for verification purposes</li>
+                        <li><i class="fas fa-check-circle"></i> Financial information for transaction processing</li>
+                        <li><i class="fas fa-check-circle"></i> Trading history and performance data</li>
+                        <li><i class="fas fa-check-circle"></i> IP addresses and device information for security</li>
+                        <li><i class="fas fa-check-circle"></i> Communication records with our team</li>
+                    </ul>
+                </div>
+
+                <div class="modal-section">
+                    <h4><i class="fas fa-lock gold-text"></i> 2. How We Protect Your Information</h4>
+                    <ul class="modal-list">
+                        <li><i class="fas fa-check-circle"></i> 256-bit SSL encryption for all data transmission</li>
+                        <li><i class="fas fa-check-circle"></i> Two-factor authentication for account access</li>
+                        <li><i class="fas fa-check-circle"></i> Regular security audits and penetration testing</li>
+                        <li><i class="fas fa-check-circle"></i> Strict access controls on a need-to-know basis</li>
+                        <li><i class="fas fa-check-circle"></i> Secure data centers with 24/7 monitoring</li>
+                    </ul>
+                </div>
+
+                <div class="modal-section">
+                    <h4><i class="fas fa-share-alt gold-text"></i> 3. Information Sharing</h4>
+                    <p>We do not sell your personal information to third parties. We may share information with:</p>
+                    <ul class="modal-list">
+                        <li><i class="fas fa-check-circle"></i> Partner brokerages (only with your explicit consent)</li>
+                        <li><i class="fas fa-check-circle"></i> Regulatory authorities as required by law</li>
+                        <li><i class="fas fa-check-circle"></i> Payment processors for transaction completion</li>
+                        <li><i class="fas fa-check-circle"></i> Legal advisors in case of disputes</li>
+                    </ul>
+                </div>
+
+                <div class="modal-section">
+                    <h4><i class="fas fa-cookie-bite gold-text"></i> 4. Cookies and Tracking</h4>
+                    <p>We use cookies to enhance your experience on our platform. These include:</p>
+                    <ul class="modal-list">
+                        <li><i class="fas fa-check-circle"></i> Session cookies for maintaining login state</li>
+                        <li><i class="fas fa-check-circle"></i> Analytics cookies to improve our services</li>
+                        <li><i class="fas fa-check-circle"></i> Preference cookies to remember your settings</li>
+                    </ul>
+                </div>
+
+                <div class="modal-section">
+                    <h4><i class="fas fa-user-secret gold-text"></i> 5. Your Rights</h4>
+                    <ul class="modal-list">
+                        <li><i class="fas fa-check-circle"></i> Right to access your personal data</li>
+                        <li><i class="fas fa-check-circle"></i> Right to correct inaccurate information</li>
+                        <li><i class="fas fa-check-circle"></i> Right to request deletion of your data</li>
+                        <li><i class="fas fa-check-circle"></i> Right to opt-out of marketing communications</li>
+                        <li><i class="fas fa-check-circle"></i> Right to data portability</li>
+                    </ul>
+                </div>
+
+                <div class="modal-section">
+                    <h4><i class="fas fa-clock gold-text"></i> 6. Data Retention</h4>
+                    <p>We retain your information for as long as your account is active and for a period of 5 years thereafter to comply with legal and regulatory requirements. Trading records are maintained for 7 years as required by financial regulations.</p>
+                </div>
+
+                <div class="modal-section">
+                    <h4><i class="fas fa-envelope gold-text"></i> 7. Contact Information</h4>
+                    <p>For privacy-related inquiries, please contact our Data Protection Officer:</p>
+                    <ul class="modal-list">
+                        <li><i class="fas fa-envelope"></i> Email: privacy@mfalmebetterdays.com</li>
+                        <li><i class="fas fa-phone"></i> Phone: +254 706 286 667</li>
+                        <li><i class="fas fa-map-marker-alt"></i> Address: Nairobi, Kenya</li>
+                    </ul>
+                </div>
+
+                <div class="modal-section">
+                    <h4><i class="fas fa-calendar-alt gold-text"></i> 8. Policy Updates</h4>
+                    <p>This privacy policy was last updated on February 15, 2026. We will notify users of material changes via email or platform notification. Continued use of our services constitutes acceptance of the updated policy.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-close" onclick="closeModal('privacy')">I Understand</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Modal Functions
+        function openModal(type) {
+            document.getElementById(type + 'Modal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(type) {
+            document.getElementById(type + 'Modal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal-overlay')) {
+                e.target.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay').forEach(modal => {
+                    if (modal.style.display === 'flex') {
+                        modal.style.display = 'none';
+                        document.body.style.overflow = '';
+                    }
+                });
+            }
+        });
+        
         // DOM Ready
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize form system
@@ -867,10 +1257,11 @@
         }
         
         function initEventListeners() {
-            // Signup form submission
+            // Signup form submission - FIXED: Added hidden field population
             const signupForm = document.getElementById('signupForm');
             if (signupForm) {
                 signupForm.addEventListener('submit', function(e) {
+                    const username = document.getElementById('signupUsername').value;
                     const password = document.getElementById('signupPassword')?.value || '';
                     const confirmPassword = document.getElementById('signupPasswordConfirm')?.value || '';
                     const errorElement = document.getElementById('signupError');
@@ -917,6 +1308,11 @@
                         return;
                     }
                     
+                    // Split username into first and last name for hidden fields
+                    const nameParts = username.split(' ');
+                    document.getElementById('hiddenFirstName').value = nameParts[0] || username;
+                    document.getElementById('hiddenLastName').value = nameParts.slice(1).join(' ') || '';
+                    
                     // Show loading state
                     const submitBtn = document.getElementById('signupSubmit');
                     if (submitBtn) {
@@ -951,25 +1347,6 @@
                 btn.addEventListener('click', function() {
                     alert('Social login integration will be implemented soon!');
                 });
-            });
-            
-            // Forgot password link
-            const forgotPassword = document.querySelector('.forgot-password');
-            if (forgotPassword) {
-                forgotPassword.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    alert('Password reset functionality will be implemented soon!');
-                });
-            }
-            
-            // Terms and Privacy links
-            document.querySelectorAll('a[href="#"]').forEach(link => {
-                if (link.textContent.includes('Terms') || link.textContent.includes('Privacy')) {
-                    link.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        alert('Terms and Privacy pages will be implemented soon!');
-                    });
-                }
             });
             
             // Auto-hide messages after 5 seconds
@@ -1029,6 +1406,22 @@
                 showForm('login');
             }
         });
+        
+        // Get CSRF token function for AJAX requests
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
     </script>
 </body>
 </html>

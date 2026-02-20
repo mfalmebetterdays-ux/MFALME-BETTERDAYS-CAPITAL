@@ -1,0 +1,188 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Our Services | Mfalme Betterdays Capital{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+
+
+<!-- Packages Section (extracted from main file) -->
+<section class="packages-section" id="packages">
+  <div class="container">
+    <div class="section-header">
+      <h2>Trading <span class="gold-gradient-text">Packages</span></h2>
+      <p>Select your lifeline to a new horizon of success and financial stability</p>
+    </div>
+    <div class="row">
+      <div class="col-lg-4 col-md-6 mb-4">
+        <div class="package-card">
+          <div class="package-image">
+            <img src="https://cdn-cepel.nitrocdn.com/FqBfcdNhqDJoxRwVGRJOJRhlDHajdoyl/assets/images/optimized/rev-46588b5/i0.wp.com/npfinancials.com.au/wp-content/uploads/4d8110b5b805ba28e1e8afc774e7bb38.traders-foundation-course.webp" alt="Lifetime Signals">
+          </div>
+          <div class="package-body">
+            <h3>Market Consultation</h3>
+            <p>Our Market Consultation provides professional market analysis and strategic guidance across indices, currencies, and commodities, helping traders understand market trends, manage risk, and make confident, informed decisions.</p>
+            <div class="package-footer">
+              <div class="price">$200</div>
+              <a href="{% url 'initiate_package_payment' 'market_consultation' 200 %}" class="btn-package">Pay</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6 mb-4">
+        <div class="package-card">
+          <div class="package-image">
+            <img src="{% static 'assets/images/trend1.jpg' %}" alt="Lifetime Mentorship">
+          </div>
+          <div class="package-body">
+            <h3>Lifetime Mentorship</h3>
+            <p>Enroll in our exclusive forex mentorship program, incorporating Mfalme Betterdays' El-quago strategy. Experience personalized Zoom sessions three times a week, supplemented with extensive research materials.</p>
+            <div class="package-footer">
+              <div class="price">$5,000</div>
+              <a href="{% url 'initiate_package_payment' 'lifetime_mentorship' 5000 %}" class="btn-package">Pay </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6 mb-4">
+        <div class="package-card">
+          <div class="package-image">
+            <img src="{% static 'assets/images/trend3.webp' %}" alt="Leveraging Package">
+          </div>
+          <div class="package-body">
+            <h3>Leveraging Package</h3>
+            <p>Embark on a thrilling journey with our leveraging package, requiring a minimum $100,000 deposit. Utilizing defined standard deviation, we leverage amounts for high-stakes trading.</p>
+            <div class="package-footer">
+              <div class="price">$100,000</div>
+              <a href="{% url 'initiate_package_payment' 'leveraging_package' 100000 %}" class="btn-package">Pay </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+/* Packages Section Styles */
+.packages-section {
+  padding: 50px 0 100px;
+  background: var(--deep-navy);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.section-header h2 {
+  font-size: 2.8rem;
+  font-weight: 900;
+  margin-bottom: 20px;
+}
+
+.section-header p {
+  color: var(--gold-bright);
+  font-size: 1.1rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.package-card {
+  background: var(--navy-medium);
+  border-radius: 15px;
+  overflow: hidden;
+  height: 100%;
+  transition: all 0.3s ease;
+  border: 2px solid rgba(255, 215, 0, 0.1);
+  box-shadow: var(--shadow-dark);
+}
+
+.package-card:hover {
+  transform: translateY(-10px);
+  border-color: var(--gold-primary);
+  box-shadow: var(--shadow-gold-intense);
+}
+
+.package-image {
+  height: 250px;
+  overflow: hidden;
+}
+
+.package-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.package-card:hover .package-image img {
+  transform: scale(1.1);
+}
+
+.package-body {
+  padding: 30px;
+}
+
+.package-body h3 {
+  font-size: 1.6rem;
+  margin-bottom: 15px;
+  color: var(--white);
+}
+
+.package-body p {
+  color: var(--light-gray);
+  margin-bottom: 25px;
+  line-height: 1.7;
+}
+
+.package-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.price {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--gold-primary);
+}
+
+.btn-package {
+  background: var(--gold-gradient);
+  color: var(--navy-dark);
+  font-weight: 700;
+  padding: 10px 30px;
+  border-radius: 6px;
+  border: none;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.btn-package:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(255, 215, 0, 0.3);
+}
+
+@media (max-width: 767px) {
+  .package-footer {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .section-header h2 {
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .section-header h2 {
+    font-size: 1.8rem;
+  }
+}
+</style>
+{% endblock %}

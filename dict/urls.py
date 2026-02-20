@@ -1,15 +1,10 @@
-# dict/urls.py
-from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from myapp import views
 
 urlpatterns = [
-    # Admin panel
-    path('admin/', admin.site.urls),
-    
-    # Include all app URLs
+    # NO DJANGO ADMIN HERE - JUST YOUR APP
     path('', include('myapp.urls')),
     
     # Error handlers

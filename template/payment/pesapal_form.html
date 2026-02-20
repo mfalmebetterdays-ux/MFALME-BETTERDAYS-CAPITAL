@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pay with Pesapal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Pay with Pesapal</h4>
+                </div>
+                <div class="card-body">
+                    <form id="pesapalForm" method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Amount (USD)</label>
+                            <input type="number" name="amount" class="form-control" required step="0.01" id="amountUSD">
+                            <small class="text-muted">Will be converted to KES (1 USD = 129 KES)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Amount (KES)</label>
+                            <input type="text" class="form-control" id="amountKES" readonly>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">First Name</label>
+                            <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" name="phone" class="form-control" value="{{ user.phone }}" required placeholder="2547XXXXXXXX">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            Proceed to Pesapal
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="pesapalModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Pesapal Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <iframe id="pesapalIframe" style="width:100%; height:500px; border:none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('amountUSD').addEventListener('input', function() {
+    let usd = parseFloat(this.value) || 0;
+    let kes = usd * 129;
+    document.getElementById('amountKES').value = kes.toFixed(2) + ' KES';
+});
+
+document.getElementById('pesapalForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    let formData = new FormData(this);
+    
+    fetch('{% url "pesapal_initiate_payment" %}?type={{ package_type }}&id={{ package_id }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('pesapalIframe').src = data.iframe_url;
+            new bootstrap.Modal(document.getElementById('pesapalModal')).show();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
+    });
+});
+</script>
+{% endblock %}

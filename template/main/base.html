@@ -1,0 +1,548 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Mfalme Betterdays Capital - Elite Forex Trading & Investment Solutions">
+  <meta name="author" content="Mfalme Betterdays Capital">
+  
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Swiper CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" />
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="{% static 'assets/images/2.png' %}">
+  
+  <title>{% block title %}MFALME BETTERDAYS CAPITAL{% endblock %}</title>
+
+  <!-- Custom CSS -->
+  <style>
+    :root {
+      /* GOLDEN THEME - Premium Gold Dominance */
+      --gold-primary: #FFD700;
+      --gold-bright: #FFEC8B;
+      --gold-light: #FFF8DC;
+      --gold-dark: #DAA520;
+      --gold-darker: #B8860B;
+      --gold-gradient: linear-gradient(135deg, #FFD700 0%, #FFC125 30%, #DAA520 100%);
+      --gold-gradient-light: linear-gradient(135deg, #FFEC8B 0%, #FFD700 50%, #FFC125 100%);
+      
+      /* Dark Backgrounds */
+      --deep-navy: #0A1520;
+      --navy-dark: #08111A;
+      --navy-medium: #0E1A29;
+      --navy-light: #142338;
+      
+      /* Accent Colors */
+      --white: #FFFFFF;
+      --white-smoke: #F5F5F5;
+      --platinum: #E5E4E2;
+      --light-gray: #CCCCCC;
+      
+      /* Shadows & Effects */
+      --shadow-gold: 0 10px 40px rgba(255, 215, 0, 0.25);
+      --shadow-gold-intense: 0 15px 50px rgba(255, 215, 0, 0.4);
+      --shadow-dark: 0 20px 60px rgba(0, 0, 0, 0.5);
+      --glow-gold: 0 0 20px rgba(255, 215, 0, 0.5);
+      
+      /* Font */
+      --font-inter: 'Inter', sans-serif;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      font-family: var(--font-inter);
+      background-color: var(--navy-dark);
+      color: var(--white);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-inter);
+      font-weight: 800;
+      color: var(--white);
+    }
+    
+    .gold-text {
+      color: var(--gold-primary) !important;
+    }
+    
+    .gold-gradient-text {
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    a {
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    
+    /* ===== PRELOADER ===== */
+    #preloader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--navy-dark);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .loader {
+      width: 80px;
+      height: 80px;
+      border: 4px solid rgba(255, 215, 0, 0.3);
+      border-top: 4px solid var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* ===== TOP BAR ===== */
+    .top-bar {
+      background: var(--deep-navy);
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    }
+    
+    .top-bar .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .contact-info {
+      display: flex;
+      gap: 30px;
+    }
+    
+    .contact-info span {
+      color: var(--gold-bright);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .contact-info i {
+      color: var(--gold-primary);
+    }
+    
+    .social-icons {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .social-icons a {
+      color: var(--gold-bright);
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+    }
+    
+    .social-icons a:hover {
+      color: var(--gold-primary);
+      transform: translateY(-3px);
+    }
+    
+    /* ===== NAVBAR ===== */
+    .navbar {
+      background: rgba(10, 21, 32, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 20px 0;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+    }
+    
+    .navbar-brand img {
+      height: 50px;
+    }
+    
+    .nav-link {
+      color: var(--white-smoke) !important;
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 10px 20px !important;
+      margin: 0 5px;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-link:hover, 
+    .nav-link.active {
+      color: var(--gold-primary) !important;
+      background: rgba(255, 215, 0, 0.1);
+    }
+    
+    .cart-badge {
+      background: var(--gold-gradient);
+      color: var(--navy-dark);
+      font-weight: 700;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 50%;
+      position: absolute;
+      top: -5px;
+      right: -8px;
+    }
+    
+    .navbar-toggler {
+      border: 1px solid var(--gold-primary);
+      color: var(--gold-primary);
+    }
+    
+    .navbar-toggler:focus {
+      box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.25);
+    }
+    
+    /* Page Header */
+    .page-header {
+      padding: 60px 0 30px;
+      text-align: center;
+      background: var(--navy-medium);
+    }
+    
+    .page-header h1 {
+      font-size: 3rem;
+      font-weight: 900;
+      margin-bottom: 15px;
+    }
+    
+    .page-header p {
+      color: var(--gold-bright);
+      font-size: 1.1rem;
+    }
+    
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 991px) {
+      .top-bar .container {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+      
+      .contact-info {
+        justify-content: center;
+      }
+    }
+    
+    /* ===== FOOTER ===== */
+    footer {
+      background: var(--deep-navy);
+      padding: 80px 0 30px;
+      border-top: 3px solid var(--gold-primary);
+    }
+    
+    .footer-column h4 {
+      font-size: 1.3rem;
+      margin-bottom: 25px;
+      color: var(--white);
+      position: relative;
+      padding-bottom: 15px;
+    }
+    
+    .footer-column h4:after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 3px;
+      background: var(--gold-gradient);
+    }
+    
+    .footer-column p {
+      color: var(--light-gray);
+      margin-bottom: 25px;
+    }
+    
+    .footer-links {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .footer-links li {
+      margin-bottom: 10px;
+    }
+    
+    .footer-links a {
+      color: var(--light-gray);
+    }
+    
+    .footer-links a:hover {
+      color: var(--gold-primary);
+      padding-left: 5px;
+    }
+    
+    .footer-contact p {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .footer-contact i {
+      color: var(--gold-primary);
+      min-width: 20px;
+    }
+    
+    .footer-social {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    .footer-social a {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 215, 0, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold-primary);
+      border: 1px solid rgba(255, 215, 0, 0.2);
+    }
+    
+    .footer-social a:hover {
+      background: var(--gold-primary);
+      color: var(--navy-dark);
+      transform: translateY(-3px);
+    }
+    
+    .copyright {
+      text-align: center;
+      padding-top: 30px;
+      margin-top: 50px;
+      border-top: 1px solid rgba(255, 215, 0, 0.1);
+      color: var(--light-gray);
+      font-size: 0.9rem;
+    }
+    
+    .btn-gold {
+      display: inline-block;
+      padding: 15px 35px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: var(--gold-gradient);
+      color: var(--navy-dark);
+      border: none;
+      box-shadow: var(--shadow-gold);
+    }
+    
+    .btn-gold:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 30px rgba(255, 215, 0, 0.3);
+      color: var(--navy-dark);
+    }
+    
+    .btn-outline-gold {
+      display: inline-block;
+      padding: 15px 35px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: transparent;
+      color: var(--gold-primary);
+      border: 2px solid var(--gold-primary);
+    }
+    
+    .btn-outline-gold:hover {
+      background: var(--gold-primary);
+      color: var(--navy-dark);
+      transform: translateY(-3px);
+    }
+  </style>
+  
+  {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+  <!-- Preloader -->
+  <div id="preloader">
+    <div class="loader"></div>
+  </div>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="container">
+      <div class="contact-info">
+        <span><i class="fas fa-clock"></i> Mon-Fri 09:00-17:00</span>
+        <span><i class="fas fa-phone"></i> +254706286667</span>
+      </div>
+      <div class="social-icons">
+        <a href="https://www.facebook.com/BetterdaysEMPIRE?mibextid=LQQJ4d"><i class="fab fa-facebook-f"></i></a>
+        <a href="https://www.tiktok.com/@mfalme_betterdays?_t=8kjRNhFcDDC&_r=1"><i class="fab fa-tiktok"></i></a>
+        <a href="https://www.instagram.com/mfalme_betterdays_capital?igsh=MXhua2lqcG85NXZhNg%3D%3D&utm_source=qr"><i class="fab fa-instagram"></i></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'index' %}">
+        <img src="{% static 'assets/images/Logoz.png' %}" alt="Mfalme Betterdays Capital">
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarMain">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" href="{% url 'about' %}">About</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'services' %}active{% endif %}" href="{% url 'services' %}">Services</a>
+          </li>
+          
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'education' %}active{% endif %}" href="{% url 'education' %}">Education</a>
+          </li>
+          
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'accounts' %}active{% endif %}" href="{% url 'accounts' %}">Accounts</a>
+          </li>
+          
+          
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'payment' %}active{% endif %}" href="{% url 'payment' %}">Payment</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" href="{% url 'contact' %}">Contact</a>
+          </li>
+          
+          
+          
+          {% if not user_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'login_page' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
+          </li>
+          {% else %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Page Content -->
+  {% block content %}{% endblock %}
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-4 col-md-6 mb-5">
+          <div class="footer-column">
+            <h4>Mfalme Betterdays Capital</h4>
+            <p>We require clients to embody resilience and fortitude; at MFALME BETTERDAYS CAPITAL, there's no room for fragility or excuses.</p>
+            <div class="footer-social">
+              <a href="https://www.facebook.com/BetterdaysEMPIRE?mibextid=LQQJ4d"><i class="fab fa-facebook-f"></i></a>
+              <a href="https://www.tiktok.com/@mfalme_betterdays?_t=8kjRNhFcDDC&_r=1"><i class="fab fa-tiktok"></i></a>
+              <a href="https://www.instagram.com/mfalme_betterdays_capital?igsh=MXhua2lqcG85NXZhNg%3D%3D&utm_source=qr"><i class="fab fa-instagram"></i></a>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-6 mb-5">
+          <div class="footer-column">
+            <h4>Quick Links</h4>
+            <ul class="footer-links">
+              <li><a href="{% url 'about' %}">About Us</a></li>
+              <li><a href="{% url 'services' %}">Services</a></li>
+              <li><a href="{% url 'contact' %}">Contact Us</a></li>
+              <li><a href="{% url 'payment' %}">Payment</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-6 mb-5">
+          <div class="footer-column">
+            <h4>Programs</h4>
+            <ul class="footer-links">
+              <li><a href="{% url 'education' %}">Education</a></li>
+              
+            </ul>
+          </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-5">
+          <div class="footer-column">
+            <h4>Contact Us</h4>
+            <div class="footer-contact">
+              <p><i class="fas fa-phone"></i> +254706286667</p>
+              <p><i class="fas fa-envelope"></i> mfalmebetterdays@gmail.com</p>
+              <p><i class="fas fa-map-marker-alt"></i> Nairobi, Kenya</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="copyright">
+        <p>Copyright &copy; 2026 Mfalme Betterdays Capital. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+  
+  <script>
+    // Preloader
+    window.addEventListener('load', function() {
+      const preloader = document.getElementById('preloader');
+      setTimeout(() => {
+        preloader.style.opacity = '0';
+        setTimeout(() => {
+          preloader.style.display = 'none';
+        }, 500);
+      }, 1000);
+    });
+  </script>
+  
+  {% block extra_js %}{% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,509 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Institute Trader Accounts | Mfalme Betterdays Capital{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+
+
+<!-- Accounts Section (extracted from main file) -->
+<section class="accounts-section" id="accounts">
+  <div class="container">
+    <div class="section-header">
+      <h2>Institute <span class="gold-gradient-text">Trader Accounts</span></h2>
+      <p>MFALME BETTERDAYS CAPITAL contracts Brokerage companies globally to house Institute Traders as a separate entity</p>
+    </div>
+    
+    <div class="accounts-benefits">
+      <div class="row g-4">
+        <div class="col-lg-4 col-md-6">
+          <div class="benefit-card">
+            <div class="benefit-icon">
+              <i class="fas fa-shield-alt"></i>
+            </div>
+            <h4>Separate Entity</h4>
+            <p>Housed as internal separate entity from other Retail Brokerage Accounts</p>
+          </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6">
+          <div class="benefit-card">
+            <div class="benefit-icon">
+              <i class="fas fa-percentage"></i>
+            </div>
+            <h4>Zero Percent IB</h4>
+            <p>Zero Percent Introducing Broker Agreements available</p>
+          </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6">
+          <div class="benefit-card">
+            <div class="benefit-icon">
+              <i class="fas fa-globe"></i>
+            </div>
+            <h4>Global Brokers</h4>
+            <p>Accounts with leading international brokerages worldwide</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Brokerage Logos -->
+    <div class="brokerage-logos">
+      <h4 class="text-center mb-4">Institute traders hold accounts with the following international brokerages</h4>
+      <div class="brokerage-grid">
+        <div class="brokerage-region">
+          <h5>UK, Europe & Canada</h5>
+          <div class="broker-logos">
+            <div class="broker-logo">
+              <img src="{% static 'assets/images/4.png' %}" alt="TradeStation">
+            </div>
+            <div class="broker-logo">
+              <img src="{% static 'assets/images/3.png' %}" alt="Mitto Markets">
+            </div>
+          </div>
+        </div>
+        
+        <div class="brokerage-region">
+          <h5>USA and Canada</h5>
+          <div class="broker-logos">
+            <div class="broker-logo">
+              <img src="{% static 'assets/images/4.png' %}" alt="TradeStation">
+            </div>
+            <div class="broker-logo">
+              <img src="{% static 'assets/images/3.png' %}" alt="Mitto Markets">
+            </div>
+          </div>
+        </div>
+        
+        <div class="brokerage-region">
+          <h5>Singapore & Hong Kong</h5>
+          <div class="broker-logos">
+            <div class="broker-logo">
+              <img src="{% static 'assets/images/4.png' %}" alt="Mitto Markets">
+            </div>
+            <div class="broker-logo">
+              <img src="{% static 'assets/images/3.png' %}" alt="TradeStation">
+            </div>
+          </div>
+        </div>
+        
+        <div class="brokerage-region">
+          <h5>Australia, New Zealand & Rest of World</h5>
+          <div class="broker-logos">
+            <div class="broker-logo">
+              <img src="{% static 'assets/images/4.png' %}" alt="Broker">
+            </div>
+            <div class="broker-logo">
+              <img src="{% static 'assets/images/2.png' %}" alt="Mitto Markets">
+            </div>
+            <div class="broker-logo">
+              <img src="{% static 'assets/images/3.png' %}" alt="TradeStation">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Account Requirements -->
+    <div class="account-requirements">
+      <div class="requirements-card">
+        <div class="requirements-header">
+          <h3>Account Application Requirements</h3>
+          <p>Become an Institute Trader</p>
+        </div>
+        <div class="requirements-body">
+          <div class="requirement-item">
+            <i class="fas fa-graduation-cap gold-text"></i>
+            <div>
+              <h5>Education Completion</h5>
+              <p>Complete PTM, POTM, or PFTM Video Series Exam(s)</p>
+            </div>
+          </div>
+          
+          <div class="requirement-item">
+            <i class="fas fa-money-bill-wave gold-text"></i>
+            <div>
+              <h5>Minimum Deposit</h5>
+              <p>$250,000 USD minimum • Average deposit $50,000</p>
+            </div>
+          </div>
+          
+          <div class="requirement-item">
+            <i class="fas fa-check-circle gold-text"></i>
+            <div>
+              <h5>Existing TradeStation Accounts</h5>
+              <p>Transfer admin rights to ITPM without closing account</p>
+            </div>
+          </div>
+        </div>
+        <div class="requirements-footer">
+          <a href="{% url 'login_page' %}" class="btn-gold">Apply for Institute Account</a>
+          <p class="small-text">Response within 3 business days</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Copy the styles from your main file for the accounts section -->
+<style>
+/* ===== ACCOUNTS SECTION STYLES ===== */
+.accounts-section {
+  padding: 50px 0 100px;
+  background: var(--navy-medium);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.section-header h2 {
+  font-size: 2.8rem;
+  font-weight: 900;
+  margin-bottom: 20px;
+}
+
+.section-header p {
+  color: var(--gold-bright);
+  font-size: 1.1rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.accounts-benefits {
+  margin-bottom: 60px;
+}
+
+.benefit-card {
+  background: var(--navy-light);
+  border-radius: 15px;
+  padding: 30px;
+  text-align: center;
+  height: 100%;
+  border: 2px solid rgba(255, 215, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.benefit-card:hover {
+  border-color: var(--gold-primary);
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-gold);
+}
+
+.benefit-icon {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 20px;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--gold-primary);
+}
+
+.benefit-icon i {
+  font-size: 1.8rem;
+  color: var(--gold-primary);
+}
+
+.benefit-card h4 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+  color: var(--white);
+}
+
+.benefit-card p {
+  color: var(--white-smoke);
+  font-size: 0.95rem;
+  margin-bottom: 0;
+}
+
+.brokerage-logos {
+  background: var(--navy-light);
+  border-radius: 15px;
+  padding: 40px;
+  margin-bottom: 60px;
+  border: 2px solid rgba(255, 215, 0, 0.1);
+}
+
+.brokerage-logos h4 {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 40px;
+  color: var(--white);
+}
+
+.brokerage-grid {
+  display: grid;
+  gap: 40px;
+}
+
+.brokerage-region h5 {
+  color: var(--gold-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.broker-logos {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+.broker-logo {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 200px;
+  border: 2px solid var(--gold-primary);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.broker-logo img {
+  max-width: 160px;
+  max-height: 70px;
+  width: auto;
+  height: auto;
+  transition: all 0.3s ease;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+  position: relative;
+  z-index: 2;
+}
+
+.broker-logo:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 25px rgba(255, 215, 0, 0.25);
+  border-color: var(--gold-dark);
+}
+
+.broker-logo:hover img {
+  transform: scale(1.08);
+  filter: brightness(1.2) contrast(1.2);
+}
+
+.broker-logo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+  transition: 0.5s;
+  z-index: 1;
+}
+
+.broker-logo:hover::before {
+  left: 100%;
+}
+
+.account-requirements {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.requirements-card {
+  background: var(--navy-light);
+  border-radius: 15px;
+  border: 2px solid rgba(255, 215, 0, 0.1);
+  overflow: hidden;
+}
+
+.requirements-header {
+  padding: 30px;
+  background: rgba(255, 215, 0, 0.05);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+  text-align: center;
+}
+
+.requirements-header h3 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: var(--white);
+}
+
+.requirements-header p {
+  color: var(--gold-bright);
+  margin-bottom: 0;
+}
+
+.requirements-body {
+  padding: 30px;
+}
+
+.requirement-item {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 25px;
+  align-items: flex-start;
+}
+
+.requirement-item:last-child {
+  margin-bottom: 0;
+}
+
+.requirement-item i {
+  font-size: 1.5rem;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.requirement-item h5 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 5px;
+}
+
+.requirement-item p {
+  color: var(--white-smoke);
+  font-size: 0.95rem;
+  margin-bottom: 0;
+}
+
+.requirements-footer {
+  padding: 25px 30px;
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
+  text-align: center;
+}
+
+.btn-gold {
+  display: inline-block;
+  padding: 15px 35px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: var(--gold-gradient);
+  color: var(--navy-dark);
+  border: none;
+  box-shadow: var(--shadow-gold);
+  text-decoration: none;
+}
+
+.btn-gold:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(255, 215, 0, 0.3);
+  color: var(--navy-dark);
+}
+
+.small-text {
+  color: var(--gold-bright);
+  font-size: 0.85rem;
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .broker-logo {
+    min-width: 180px;
+    padding: 20px;
+  }
+  
+  .broker-logo img {
+    max-width: 140px;
+    max-height: 60px;
+  }
+}
+
+@media (max-width: 768px) {
+  .accounts-section {
+    padding: 30px 0 80px;
+  }
+  
+  .brokerage-logos {
+    padding: 30px 20px;
+  }
+  
+  .broker-logo {
+    min-width: 150px;
+    padding: 15px;
+  }
+  
+  .broker-logo img {
+    max-width: 120px;
+    max-height: 50px;
+  }
+}
+
+@media (max-width: 576px) {
+  .broker-logos {
+    gap: 20px;
+  }
+  
+  .broker-logo {
+    min-width: 130px;
+    padding: 12px;
+  }
+  
+  .broker-logo img {
+    max-width: 100px;
+    max-height: 40px;
+  }
+  
+  .brokerage-region h5 {
+    font-size: 1rem;
+  }
+  
+  .brokerage-logos h4 {
+    font-size: 1.3rem;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const brokerLogos = document.querySelectorAll('.broker-logo img');
+  brokerLogos.forEach(img => {
+    img.style.opacity = '1';
+    img.style.visibility = 'visible';
+    img.style.display = 'block';
+    img.style.filter = 'none';
+    
+    img.onerror = function() {
+      console.log('Image failed to load:', this.src);
+      const altText = this.getAttribute('alt') || 'Broker';
+      const placeholderColors = {
+        'TradeStation': ['002053', 'FFFFFF'],
+        'Mitto Markets': ['FF6A00', '000000'],
+        'Broker': ['666666', 'FFFFFF']
+      };
+      
+      let bgColor = '666666';
+      let textColor = 'FFFFFF';
+      
+      for (const [key, colors] of Object.entries(placeholderColors)) {
+        if (altText.includes(key)) {
+          bgColor = colors[0];
+          textColor = colors[1];
+          break;
+        }
+      }
+      
+      this.src = `https://via.placeholder.com/180x80/${bgColor}/${textColor}?text=${encodeURIComponent(altText)}`;
+    };
+  });
+});
+</script>
+{% endblock %}

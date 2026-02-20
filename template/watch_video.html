@@ -1,0 +1,295 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ video.title }} - Mfalme Betterdays Capital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0F172A;
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .video-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #FBBF24;
+            color: #0F172A;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .back-btn:hover {
+            background: #F59E0B;
+            transform: translateY(-1px);
+        }
+        .video-wrapper {
+            background: #1E2937;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .video-player {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            position: relative;
+        }
+        .video-player video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+        .video-player iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .video-error {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1a1a1a;
+            color: #ef4444;
+            text-align: center;
+            padding: 20px;
+        }
+        .video-error i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #ef4444;
+        }
+        .video-info {
+            padding: 24px;
+            border-top: 1px solid #334155;
+        }
+        .video-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #FBBF24;
+        }
+        .video-meta {
+            color: #94A3B8;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .video-meta i {
+            margin-right: 4px;
+        }
+        .video-description {
+            color: #E2E8F0;
+            line-height: 1.6;
+            padding: 16px;
+            background: #0F172A;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        .related-videos {
+            margin-top: 30px;
+        }
+        .related-title {
+            font-size: 1.2rem;
+            color: #FBBF24;
+            margin-bottom: 15px;
+        }
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .related-item {
+            background: #1E2937;
+            border-radius: 10px;
+            padding: 12px;
+            border: 1px solid #334155;
+            transition: all 0.2s;
+        }
+        .related-item:hover {
+            border-color: #FBBF24;
+            transform: translateY(-2px);
+        }
+        .related-item a {
+            color: white;
+            text-decoration: none;
+            display: block;
+        }
+        .related-item h4 {
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        .related-item span {
+            font-size: 0.7rem;
+            color: #94A3B8;
+        }
+        .debug-info {
+            margin-top: 20px;
+            padding: 12px;
+            background: #1E2937;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #94A3B8;
+            border: 1px solid #334155;
+            display: none;
+        }
+        @media (max-width: 640px) {
+            .nav-bar {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            .video-meta {
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <div class="nav-bar">
+            <a href="/dashboard/" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</a>
+            {% if video.course %}
+            <a href="/course/{{ video.course.id }}/" class="back-btn"><i class="fas fa-graduation-cap"></i> Back to Course</a>
+            {% endif %}
+        </div>
+        
+        <div class="video-wrapper">
+            <div class="video-player">
+                {# Uploaded video file #}
+                {% if video.video_file and video.has_valid_file %}
+                    <video controls autoplay playsinline poster="{% if video.thumbnail_url %}{{ video.thumbnail_url }}{% endif %}">
+                        <source src="{{ video.video_file.url }}" type="video/mp4">
+                        <source src="{{ video.video_file.url }}" type="video/webm">
+                        <source src="{{ video.video_file.url }}" type="video/ogg">
+                        Your browser does not support the video tag.
+                    </video>
+                
+                {# YouTube embed #}
+                {% elif video.video_type == 'youtube' and video.embed_url %}
+                    <iframe src="{{ video.embed_url }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                
+                {# Vimeo embed #}
+                {% elif video.video_type == 'vimeo' and video.embed_url %}
+                    <iframe src="{{ video.embed_url }}" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+                
+                {# Direct video URL #}
+                {% elif video.video_url %}
+                    <video controls playsinline>
+                        <source src="{{ video.video_url }}" type="video/mp4">
+                    </video>
+                
+                {# Custom embed code #}
+                {% elif video.embed_code %}
+                    {{ video.embed_code|safe }}
+                
+                {# No video source #}
+                {% else %}
+                <div class="video-error">
+                    <div>
+                        <i class="fas fa-exclamation-circle"></i>
+                        <h3>Video Unavailable</h3>
+                        <p style="color: #94A3B8; margin-top: 8px;">The video file could not be found or is still processing.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="video-info">
+                <h1 class="video-title">{{ video.title }}</h1>
+                <div class="video-meta">
+                    <span><i class="far fa-clock"></i> {{ video.duration|default:"—" }} min</span>
+                    <span><i class="far fa-eye"></i> {{ video.view_count|default:"0" }} views</span>
+                    {% if video.created_at %}
+                    <span><i class="far fa-calendar"></i> {{ video.created_at|date:"M d, Y" }}</span>
+                    {% endif %}
+                </div>
+                {% if video.description %}
+                <div class="video-description">
+                    {{ video.description|linebreaks }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if related_videos %}
+        <div class="related-videos">
+            <h3 class="related-title">More from this course</h3>
+            <div class="related-grid">
+                {% for related in related_videos %}
+                <div class="related-item">
+                    <a href="/watch/{{ related.id }}/">
+                        <h4>{{ related.title|truncatechars:40 }}</h4>
+                        <span><i class="far fa-clock"></i> {{ related.duration|default:"30" }} min</span>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Debug info - remove in production -->
+        <div class="debug-info" style="display: none;">
+            <h4 style="color: #FBBF24; margin-bottom: 8px;">Debug Info</h4>
+            <p>Video ID: {{ video.id }}</p>
+            <p>Video Type: {{ video.video_type }}</p>
+            <p>Has video_file: {{ video.video_file|yesno:"Yes,No" }}</p>
+            {% if video.video_file %}
+            <p>Video URL: {{ video.video_file.url }}</p>
+            <p>File exists: {{ video.has_valid_file|yesno:"Yes,No" }}</p>
+            {% endif %}
+            <p>Has video_url: {{ video.video_url|yesno:"Yes,No" }}</p>
+            {% if video.video_url %}
+            <p>Video URL: {{ video.video_url }}</p>
+            {% endif %}
+            <p>YouTube ID: {{ video.youtube_id|default:"None" }}</p>
+            <p>Vimeo ID: {{ video.vimeo_id|default:"None" }}</p>
+            <p>Embed URL: {{ video.embed_url|default:"None" }}</p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-retry if video fails to load
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.querySelector('video');
+            if (video) {
+                video.addEventListener('error', function(e) {
+                    console.error('Video error:', e);
+                    // Try to reload with a different approach
+                    setTimeout(() => {
+                        video.load();
+                    }, 2000);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
