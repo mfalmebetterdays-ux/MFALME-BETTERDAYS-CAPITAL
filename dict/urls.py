@@ -1,9 +1,23 @@
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
 from myapp import views
 
+# Health check function
+def health_check(request):
+    """
+    Simple health check endpoint for Railway.
+    Returns 200 OK if the app is running.
+    """
+    return HttpResponse("OK", status=200)
+
 urlpatterns = [
+    # HEALTH CHECK - MUST BE FIRST for Railway health checks
+    path('', health_check, name='health_check'),
+    path('health/', health_check, name='health'),
+    path('healthcheck/', health_check, name='healthcheck'),
+    
     # NO DJANGO ADMIN HERE - JUST YOUR APP
     path('', include('myapp.urls')),
     

@@ -7,30 +7,34 @@ import os
 import sys
 from pathlib import Path
 import dj_database_url
-from datetime import timedelta
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ===== SECURITY SETTINGS =====
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this-in-production')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    print("❌ CRITICAL: SECRET_KEY environment variable not set!")
+    SECRET_KEY = 'django-insecure-change-this-in-production'  # Fallback only
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
+# ===== SENSITIVE DATA - MUST BE ENVIRONMENT VARIABLES =====
+# Email Configuration - MOVED TO ENVIRONMENT VARIABLES
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'mfalmebetterdays@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')  # MUST be set in Railway
+if not EMAIL_HOST_PASSWORD and not DEBUG:
+    print("❌ CRITICAL: EMAIL_HOST_PASSWORD environment variable not set!")
 
-
-
-
-
-# ==================== SASAPAY CONFIGURATION ====================
+# ===== SASA PAY CONFIGURATION =====
 SASAPAY_CONFIG = {
-    'CLIENT_ID': 'I4w49w1vftEVXTkMLwHQLr0DxdeXQYh34tYVFi5A',  # Your sandbox client ID
-    'CLIENT_SECRET': 'AfnotJReSgwaICxM6meV9IPbciQyOzuRLPLFyOmjzRzdXGZcptp5rrurstk8FAi5G8hcXP33tPiikjwEOR3CSrLlkeJs3b8G3feUq8QHKf0sJtiiS65BL6QCPe6AxC1X',  # Your sandbox secret
-    'ENVIRONMENT': 'live',  # 'sandbox' or 'production'
-    'CALLBACK_URL': 'https://mfalme-betterdays-capital-production.up.railway.app/sasapay/callback/',
-    'IPN_URL': 'https://mfalme-betterdays-capital-production.up.railway.app/sasapay/ipn/',
+    'CLIENT_ID': os.environ.get('SASAPAY_CLIENT_ID', 'I4w49w1vftEVXTkMLwHQLr0DxdeXQYh34tYVFi5A'),
+    'CLIENT_SECRET': os.environ.get('SASAPAY_CLIENT_SECRET', 'AfnotJReSgwaICxM6meV9IPbciQyOzuRLPLFyOmjzRzdXGZcptp5rrurstk8FAi5G8hcXP33tPiikjwEOR3CSrLlkeJs3b8G3feUq8QHKf0sJtiiS65BL6QCPe6AxC1X'),
+    'ENVIRONMENT': os.environ.get('SASAPAY_ENVIRONMENT', 'live'),  # 'sandbox' or 'production'
+    'CALLBACK_URL': os.environ.get('SASAPAY_CALLBACK_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/sasapay/callback/'),
+    'IPN_URL': os.environ.get('SASAPAY_IPN_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/sasapay/ipn/'),
 }
 
 # SasaPay API Endpoints
@@ -41,10 +45,9 @@ else:
     SASAPAY_API_URL = 'https://api.sasapay.com/api/v1'
     SASAPAY_CHECKOUT_URL = 'https://checkout.sasapay.com'
 
+USD_TO_KES_RATE = int(os.environ.get('USD_TO_KES_RATE', 129))
 
-USD_TO_KES_RATE = 129  
-
-# Hosts/Origins
+# ===== HOSTS/ORIGINS =====
 ALLOWED_HOSTS = [
     'mfalmebetterdayscapital.com',
     'www.mfalmebetterdayscapital.com',
@@ -55,9 +58,13 @@ ALLOWED_HOSTS = [
     '[::1]',
 ]
 
-# Add your custom domain when ready
-if os.environ.get('RAILWAY_PUBLIC_DOMAIN'):
-    ALLOWED_HOSTS.append(os.environ.get('RAILWAY_PUBLIC_DOMAIN'))
+# Add Railway public domain if available
+railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+if railway_domain:
+    ALLOWED_HOSTS.append(railway_domain)
+    # Also add without https:// if present
+    if railway_domain.startswith('https://'):
+        ALLOWED_HOSTS.append(railway_domain.replace('https://', ''))
 
 CSRF_TRUSTED_ORIGINS = [
     'https://*.railway.app',
@@ -66,7 +73,13 @@ CSRF_TRUSTED_ORIGINS = [
     'https://www.mfalmebetterdayscapital.com',
 ]
 
-# Security settings for production - FIXED: Only apply when NOT in development runserver
+# Add current domain to CSRF trusted origins
+if railway_domain:
+    if not railway_domain.startswith('https://'):
+        railway_domain = f'https://{railway_domain}'
+    CSRF_TRUSTED_ORIGINS.append(railway_domain)
+
+# Security settings for production
 if not DEBUG and 'runserver' not in sys.argv:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
@@ -144,7 +157,6 @@ if DATABASE_URL:
             default=DATABASE_URL,
             conn_max_age=600,
             ssl_require=True,
-            engine='django.db.backends.postgresql'
         )
     }
     
@@ -152,6 +164,7 @@ if DATABASE_URL:
     DATABASES['default']['CONN_MAX_AGE'] = 60
     DATABASES['default']['OPTIONS'] = {
         'connect_timeout': 10,
+        'sslmode': 'require',  # Explicit SSL mode
     }
     print("✅ PostgreSQL database configured via DATABASE_URL")
 else:
@@ -167,6 +180,7 @@ else:
 # Database pool settings for production
 if DATABASE_URL and not DEBUG:
     DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
+    DATABASES['default']['CONN_HEALTH_CHECKS'] = True
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -196,11 +210,11 @@ USE_TZ = True
 # ===== STATIC FILES CONFIGURATION =====
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
-]
+] if os.path.exists(os.path.join(BASE_DIR, 'static')) else []
 
 # WhiteNoise settings
 WHITENOISE_MAX_AGE = 31536000  # 1 year cache
@@ -221,19 +235,13 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
-EMAIL_HOST_USER = 'mfalmebetterdays@gmail.com'
-EMAIL_HOST_PASSWORD = 'bccpooxkwxdassxh'
-DEFAULT_FROM_EMAIL = 'MFALME BETTERDAYS CAPITAL <mfalmebetterdays@gmail.com>'
-SERVER_EMAIL = 'MFALME BETTERDAYS CAPITAL <mfalmebetterdays@gmail.com>'
-ADMIN_EMAILS = ['mfalmebetterdays@gmail.com']
+DEFAULT_FROM_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
+SERVER_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
+ADMIN_EMAILS = [EMAIL_HOST_USER]
 
 # Email timeouts
 EMAIL_TIMEOUT = 30
 EMAIL_CONNECTION_TIMEOUT = 30
-
-# ===== PAYSTACK INTEGRATION =====
-PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY', 'sk_live_fc4f550a27a942bc0f6ce014c57b1834c4b6195d')
-PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', 'pk_live_197cf61799bc7493f737268952280f5da78cc7a4')
 
 # ===== SESSION CONFIGURATION =====
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
@@ -298,11 +306,6 @@ LOGGING = {
             'filename': os.path.join(BASE_DIR, 'logs/django.log'),
             'formatter': 'verbose',
         },
-        'mail_admins': {
-            'level': 'ERROR',
-            'class': 'django.utils.log.AdminEmailHandler',
-            'include_html': True,
-        },
     },
     'loggers': {
         'django': {
@@ -311,7 +314,7 @@ LOGGING = {
             'propagate': True,
         },
         'django.request': {
-            'handlers': ['console', 'file', 'mail_admins'],
+            'handlers': ['console', 'file'],
             'level': 'ERROR',
             'propagate': False,
         },
@@ -322,13 +325,13 @@ LOGGING = {
         },
         'myapp': {
             'handlers': ['console', 'file'],
-            'level': 'DEBUG',  # Changed to DEBUG to see all our print statements
+            'level': 'DEBUG' if DEBUG else 'INFO',
             'propagate': True,
         },
     },
     'root': {
         'handlers': ['console', 'file'],
-        'level': 'INFO',
+        'level': 'DEBUG' if DEBUG else 'INFO',
     },
 }
 
@@ -339,9 +342,9 @@ os.makedirs(log_dir, exist_ok=True)
 # ===== CUSTOM SETTINGS =====
 # Site settings
 SITE_NAME = "MFALME BETTERDAYS CAPITAL"
-SITE_URL = "https://mfalmebetterdayscapital.com"
-SUPPORT_PHONE = "+254 706 286 667"
-SUPPORT_EMAIL = "support@mfalmebetterdayscapital.com"
+SITE_URL = os.environ.get('SITE_URL', 'https://mfalmebetterdayscapital.com')
+SUPPORT_PHONE = os.environ.get('SUPPORT_PHONE', '+254 706 286 667')
+SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'support@mfalmebetterdayscapital.com')
 
 # Application-specific settings
 MAX_FILE_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
@@ -356,6 +359,9 @@ DEFAULT_EXCHANGE_RATE = 160.0
 VERIFICATION_CODE_EXPIRY_MINUTES = 30
 VERIFICATION_CODE_LENGTH = 6
 MAX_VERIFICATION_ATTEMPTS = 5
+
+# ===== HEALTH CHECK CONFIGURATION =====
+HEALTH_CHECK_PATHS = ['/', '/health/', '/healthcheck/']
 
 # ===== STARTUP CHECKS =====
 def startup_checks():
@@ -377,34 +383,31 @@ def startup_checks():
     startup_messages.append(f"🔒 HTTPS Redirects: {'ENABLED' if https_mode else 'DISABLED'}")
     
     # Database
-    db_engine = DATABASES['default']['ENGINE'].split('.')[-1]
-    startup_messages.append(f"🗄️  Database: {db_engine}")
+    if DATABASE_URL:
+        db_engine = 'PostgreSQL'
+        startup_messages.append(f"🗄️  Database: {db_engine} (configured)")
+    else:
+        startup_messages.append("🗄️  Database: SQLite (development)")
     
     # Email
-    startup_messages.append(f"📧 Email: {EMAIL_HOST_USER}")
-    startup_messages.append(f"📧 SMTP: {EMAIL_HOST}:{EMAIL_PORT}")
-    startup_messages.append(f"📧 TLS: {EMAIL_USE_TLS}")
-    
-    # Paystack
-    if PAYSTACK_SECRET_KEY and PAYSTACK_PUBLIC_KEY:
-        startup_messages.append("💳 Paystack: ✅ Configured")
+    if EMAIL_HOST_PASSWORD:
+        startup_messages.append(f"📧 Email: ✅ Configured ({EMAIL_HOST_USER})")
     else:
-        startup_messages.append("💳 Paystack: ⚠️ Keys missing")
+        startup_messages.append(f"📧 Email: ⚠️ Password missing - emails will fail")
+    
+    # SasaPay
+    sasapay_status = "✅ Configured" if SASAPAY_CONFIG['CLIENT_ID'] and SASAPAY_CONFIG['CLIENT_SECRET'] else "⚠️ Keys missing"
+    startup_messages.append(f"💳 SasaPay: {sasapay_status} ({SASAPAY_CONFIG['ENVIRONMENT']})")
     
     # Static files
     static_exists = os.path.exists(os.path.join(BASE_DIR, 'static'))
-    startup_messages.append(f"📁 Static Files: {'✅ Found' if static_exists else '❌ Missing'}")
+    startup_messages.append(f"📁 Static Files: {'✅ Found' if static_exists else 'ℹ️ Not used'}")
     
     # Custom User Model
     startup_messages.append(f"👤 Custom User Model: {AUTH_USER_MODEL}")
     
     # Session Settings
     startup_messages.append(f"🍪 Session Engine: {SESSION_ENGINE}")
-    startup_messages.append(f"🍪 Session Save Every Request: {SESSION_SAVE_EVERY_REQUEST}")
-    
-    # Login URLs
-    startup_messages.append(f"🔐 Login URL: {LOGIN_URL}")
-    startup_messages.append(f"🔐 Login Redirect: {LOGIN_REDIRECT_URL}")
     
     startup_messages.append("=" * 60)
     
@@ -412,13 +415,9 @@ def startup_checks():
     for msg in startup_messages:
         print(msg)
 
-# Run startup checks
-if 'runserver' in sys.argv or 'gunicorn' in sys.argv:
-    startup_checks()
-
 # ===== DEPLOYMENT SPECIFIC SETTINGS =====
 # Railway-specific optimizations
-if 'RAILWAY_ENVIRONMENT' in os.environ:
+if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY_SERVICE_ID'):
     # Ensure static files are collected
     WHITENOISE_ROOT = STATIC_ROOT
     
@@ -429,17 +428,8 @@ if 'RAILWAY_ENVIRONMENT' in os.environ:
     if DATABASE_URL:
         DATABASES['default']['CONN_MAX_AGE'] = 180
         DATABASES['default']['CONN_HEALTH_CHECKS'] = True
-
-# Skip startup database checks for gunicorn
-if 'gunicorn' in sys.argv:
-    import django.db.utils
-    try:
-        from django.db import connection
-        connection.ensure_connection()
-        print("✅ Database connection verified")
-    except django.db.utils.OperationalError as e:
-        print(f"⚠️ Database connection failed: {e}")
-        # Don't crash - allow app to start and retry later
+        
+    print("🚂 Railway environment detected - optimizations applied")
 
 # ===== DEVELOPMENT SETTINGS =====
 if DEBUG:
@@ -464,14 +454,24 @@ if DEBUG:
 # ===== FINAL VALIDATION =====
 # Validate critical settings
 if not SECRET_KEY or SECRET_KEY == 'django-insecure-change-this-in-production':
-    print("⚠️ WARNING: Using default/insecure SECRET_KEY in production!")
+    print("⚠️ CRITICAL WARNING: Using default/insecure SECRET_KEY in production!")
 
-if DEBUG and 'railway' in ''.join(ALLOWED_HOSTS).lower():
+if not EMAIL_HOST_PASSWORD and not DEBUG:
+    print("⚠️ CRITICAL WARNING: EMAIL_HOST_PASSWORD not set - email features will fail!")
+
+if not SASAPAY_CONFIG['CLIENT_ID'] or not SASAPAY_CONFIG['CLIENT_SECRET']:
+    print("⚠️ WARNING: SasaPay credentials not fully configured!")
+
+if DEBUG and 'railway' in str(ALLOWED_HOSTS).lower():
     print("⚠️ WARNING: DEBUG=True in production-like environment!")
 
 # Ensure critical directories exist
-for directory in ['static', 'media', 'logs']:
+for directory in ['staticfiles', 'media', 'logs']:
     dir_path = os.path.join(BASE_DIR, directory)
     os.makedirs(dir_path, exist_ok=True)
+
+# Run startup checks if this is a web process
+if 'gunicorn' in sys.argv or 'runserver' in sys.argv:
+    startup_checks()
 
 print("✅ Settings loaded successfully!")
