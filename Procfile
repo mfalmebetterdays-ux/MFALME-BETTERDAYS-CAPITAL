@@ -1,3 +1,1 @@
-# Procfile
-release: python manage.py migrate --no-input
-web: python manage.py collectstatic --no-input && gunicorn dict.wsgi --bind 0.0.0.0:${PORT:-8080} --workers=2 --timeout=120 --log-level=debug --access-logfile=- --error-logfile=-
+web: gunicorn dict.wsgi --bind 0.0.0.0:${PORT:-8080} --workers=2 --timeout=120 --log-level=debug --access-logfile=- --error-logfile=-

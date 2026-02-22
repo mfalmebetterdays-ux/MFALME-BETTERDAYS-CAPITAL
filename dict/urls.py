@@ -4,7 +4,7 @@ from django.conf.urls.static import static
 from django.http import HttpResponse
 from myapp import views
 
-# Health check function
+# Health check function - defined here for reliability
 def health_check(request):
     """
     Simple health check endpoint for Railway.
@@ -14,10 +14,8 @@ def health_check(request):
 
 urlpatterns = [
     # HEALTH CHECK - MUST BE FIRST for Railway health checks
-    path('health/', views.health_check),
-    path('', health_check, name='health_check'),
-    path('health/', health_check, name='health'),
-    path('healthcheck/', health_check, name='healthcheck'),
+    path('health/', health_check, name='health_check'),
+    path('', health_check, name='root_health'),  # Optional: root health check
     
     # NO DJANGO ADMIN HERE - JUST YOUR APP
     path('', include('myapp.urls')),
