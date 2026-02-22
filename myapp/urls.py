@@ -17,7 +17,7 @@ from .views import (
 
 urlpatterns = [
     # ==================== PUBLIC SITE PAGES ====================
-    path('', views.root_health, name='root_health'), 
+    
     path('', views.index, name='index'),
     path('about/', views.about, name='about'),
     path('services/', views.services, name='services'),

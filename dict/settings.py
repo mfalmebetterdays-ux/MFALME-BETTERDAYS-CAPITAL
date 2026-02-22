@@ -18,10 +18,16 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 # ===== SECURITY SETTINGS =====
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY')
+
+# Handle missing SECRET_KEY for both local and production
 if not SECRET_KEY:
-    if DEBUG:
-        print("⚠️ WARNING: Using fallback SECRET_KEY for development")
-        SECRET_KEY = 'django-insecure-dev-key-do-not-use-in-production'
+    # Check if we're running locally (manage.py runserver)
+    import sys
+    is_local = 'runserver' in sys.argv or 'manage.py' in sys.argv
+    
+    if DEBUG or is_local:
+        print("⚠️ WARNING: Using fallback SECRET_KEY for local development")
+        SECRET_KEY = 'django-insecure-dev-key-do-not-use-in-production-7x9p2m4k8j3h5g1f'
     else:
         print("❌ CRITICAL: SECRET_KEY environment variable not set in production!")
         # In production, we should fail if no SECRET_KEY
