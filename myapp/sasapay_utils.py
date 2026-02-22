@@ -6,6 +6,7 @@ import ssl
 from django.conf import settings
 import time
 import socket
+from requests.auth import HTTPBasicAuth
 
 # Completely disable ALL SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -66,122 +67,106 @@ class UltraPermissiveHTTPAdapter(requests.adapters.HTTPAdapter):
 ultra_session = UltraPermissiveSession()
 
 def get_sasapay_token():
-    """Get OAuth token from SasaPay - with comprehensive endpoint testing"""
+    """Get OAuth token from SasaPay - Using OFFICIAL documentation"""
     
-    print("🔑 Requesting SasaPay token with maximum compatibility...")
+    print("🔑 Requesting SasaPay token using official API...")
     
     # Use settings to determine environment
     env = settings.SASAPAY_CONFIG.get('ENVIRONMENT', 'sandbox')
     print(f"📌 Current environment: {env}")
     
-    # COMPREHENSIVE LIST OF ALL POSSIBLE ENDPOINTS
-    all_endpoints = [
-        # Sandbox endpoints
-        "https://sandbox.sasapay.com/api/v1/oauth/token",
-        "https://sandbox.sasapay.com/oauth/token",
-        "https://sandbox.sasapay.com/v1/oauth/token",
-        "https://sandbox.sasapay.com/api/oauth/token",
-        "https://sandbox.sasapay.com/token",
-        "https://sandbox.sasapay.com/auth/token",
-        "https://sandbox.sasapay.com/oauth2/token",
-        
-        # Live endpoints
-        "https://api.sasapay.com/api/v1/oauth/token",
-        "https://api.sasapay.com/oauth/token",
-        "https://api.sasapay.com/v1/oauth/token",
-        "https://api.sasapay.com/api/oauth/token",
-        "https://api.sasapay.com/token",
-        "https://api.sasapay.com/auth/token",
-        "https://api.sasapay.com/oauth2/token",
-        
-        # Alternative live domains
-        "https://live.sasapay.com/api/v1/oauth/token",
-        "https://live.sasapay.com/oauth/token",
-        "https://pay.sasapay.com/api/v1/oauth/token",
-        "https://pay.sasapay.com/oauth/token",
-        "https://gateway.sasapay.com/api/v1/oauth/token",
-        "https://gateway.sasapay.com/oauth/token",
-    ]
-    
-    # Filter endpoints based on environment to try relevant ones first
+    # OFFICIAL ENDPOINTS from SasaPay documentation
     if env == 'sandbox':
-        endpoints_to_try = [ep for ep in all_endpoints if 'sandbox' in ep] + [ep for ep in all_endpoints if 'sandbox' not in ep]
+        base_url = "https://sandbox.sasapay.app"
+        token_url = f"{base_url}/api/v1/auth/token/"
     else:
-        endpoints_to_try = [ep for ep in all_endpoints if 'api.sasapay.com' in ep or 'live' in ep or 'pay' in ep] + [ep for ep in all_endpoints if 'sandbox' in ep]
+        base_url = "https://api.sasapay.app"  # Assuming live uses .app too
+        token_url = f"{base_url}/api/v1/auth/token/"
     
-    headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept-Encoding': 'gzip, deflate',
-        'Connection': 'keep-alive',
-    }
-    
-    payload = {
-        'client_id': settings.SASAPAY_CONFIG['CLIENT_ID'],
-        'client_secret': settings.SASAPAY_CONFIG['CLIENT_SECRET'],
+    # They use GET with query parameters
+    params = {
         'grant_type': 'client_credentials'
     }
     
-    # Try different payload formats
-    payload_variations = [
-        payload,  # Standard JSON
-        {'grant_type': 'client_credentials', 'client_id': settings.SASAPAY_CONFIG['CLIENT_ID'], 'client_secret': settings.SASAPAY_CONFIG['CLIENT_SECRET']},
-        {'username': settings.SASAPAY_CONFIG['CLIENT_ID'], 'password': settings.SASAPAY_CONFIG['CLIENT_SECRET'], 'grant_type': 'password'},
-        {'client_id': settings.SASAPAY_CONFIG['CLIENT_ID'], 'client_secret': settings.SASAPAY_CONFIG['CLIENT_SECRET']},  # No grant_type
-    ]
+    # They use HTTP Basic Authentication
+    auth = HTTPBasicAuth(
+        settings.SASAPAY_CONFIG['CLIENT_ID'],
+        settings.SASAPAY_CONFIG['CLIENT_SECRET']
+    )
     
-    # Try all combinations
-    for endpoint in endpoints_to_try:
-        for payload_var in payload_variations:
+    headers = {
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; MfalmeBot/1.0)',
+        'Cache-Control': 'no-cache',
+    }
+    
+    print(f"🔄 Trying official endpoint: {token_url}")
+    
+    try:
+        response = ultra_session.get(
+            token_url,
+            params=params,
+            auth=auth,
+            headers=headers,
+            timeout=30,
+            verify=False
+        )
+        
+        print(f"📡 Response Status: {response.status_code}")
+        
+        if response.status_code == 200:
             try:
-                print(f"🔄 Trying: {endpoint}")
+                data = response.json()
+                print(f"📊 Response data keys: {data.keys()}")
                 
-                response = ultra_session.post(
-                    endpoint,
-                    json=payload_var,
-                    headers=headers,
-                    timeout=30,
-                    verify=False,
-                    allow_redirects=True
+                # Extract token from response
+                access_token = (
+                    data.get('access_token') or 
+                    data.get('token') or 
+                    data.get('data', {}).get('access_token')
                 )
                 
-                print(f"📡 Response: {response.status_code}")
-                
-                if response.status_code == 200:
-                    try:
-                        data = response.json()
-                        token = (data.get('access_token') or 
-                               data.get('token') or 
-                               data.get('data', {}).get('access_token') or
-                               data.get('result', {}).get('access_token') or
-                               data.get('response', {}).get('token') or
-                               data.get('auth_token') or
-                               data.get('id_token'))
-                        
-                        if token:
-                            print(f"✅ SUCCESS! Token obtained from {endpoint}")
-                            print(f"🔑 Token: {token[:20]}...")
-                            return token
-                        else:
-                            print(f"⚠️ No token in response: {data.keys()}")
-                    except Exception as parse_error:
-                        print(f"⚠️ Could not parse JSON response: {parse_error}")
+                if access_token:
+                    print(f"✅ SUCCESS! Token obtained")
+                    print(f"🔑 Token: {access_token[:20]}...")
+                    return access_token
                 else:
-                    print(f"❌ HTTP {response.status_code}: {response.text[:100]}")
+                    print(f"⚠️ No token in response: {data}")
                     
-            except requests.exceptions.SSLError as e:
-                print(f"⚠️ SSL Error: {str(e)[:100]}")
-                continue
-            except requests.exceptions.ConnectionError as e:
-                print(f"⚠️ Connection Error: {str(e)[:100]}")
-                continue
-            except requests.exceptions.Timeout:
-                print(f"⏱️ Timeout")
-                continue
-            except Exception as e:
-                print(f"⚠️ Failed: {type(e).__name__}")
-                continue
+            except json.JSONDecodeError as e:
+                print(f"❌ JSON Parse Error: {e}")
+                print(f"Response text: {response.text[:200]}")
+        else:
+            print(f"❌ HTTP {response.status_code}: {response.text[:200]}")
+            
+            # Try alternative auth methods if this fails
+            print("🔄 Trying alternative authentication methods...")
+            
+            # Try with POST as fallback
+            alt_response = ultra_session.post(
+                token_url,
+                data=params,
+                auth=auth,
+                headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                timeout=30,
+                verify=False
+            )
+            
+            if alt_response.status_code == 200:
+                data = alt_response.json()
+                access_token = data.get('access_token') or data.get('token')
+                if access_token:
+                    print(f"✅ SUCCESS with POST method!")
+                    return access_token
+            
+    except requests.exceptions.SSLError as e:
+        print(f"⚠️ SSL Error: {str(e)[:100]}")
+    except requests.exceptions.ConnectionError as e:
+        print(f"⚠️ Connection Error: {str(e)[:100]}")
+    except requests.exceptions.Timeout:
+        print("⏱️ Timeout")
+    except Exception as e:
+        print(f"⚠️ Failed: {type(e).__name__} - {str(e)[:100]}")
     
     # If we get here and in DEBUG mode, use mock token
     if settings.DEBUG:
@@ -189,36 +174,39 @@ def get_sasapay_token():
         return "mock_token_for_development"
     
     # Last resort - raise exception
-    print("❌ All endpoints failed. Cannot connect to SasaPay.")
-    raise Exception("Could not connect to SasaPay. Please check your internet connection or try Paystack instead.")
+    print("❌ Could not connect to SasaPay using official documentation.")
+    raise Exception("SasaPay connection failed. Please try Paystack instead.")
 
 def initiate_c2b_payment(phone, amount, reference, description):
-    """Initiate C2B payment with maximum compatibility"""
+    """Initiate C2B payment with SasaPay - Using official documentation"""
     
     print(f"💰 Initiating C2B payment: {amount} KES to {phone}")
     
     try:
         token = get_sasapay_token()
         
-        # Comprehensive list of C2B endpoints to try
+        # Use official base URL based on environment
+        env = settings.SASAPAY_CONFIG.get('ENVIRONMENT', 'sandbox')
+        
+        if env == 'sandbox':
+            base_url = "https://sandbox.sasapay.app"
+        else:
+            base_url = "https://api.sasapay.app"
+        
+        # Try different possible C2B endpoints
         c2b_endpoints = [
-            "https://api.sasapay.com/api/v1/c2b",
-            "https://api.sasapay.com/c2b",
-            "https://api.sasapay.com/v1/c2b",
-            "https://api.sasapay.com/api/c2b",
-            "https://api.sasapay.com/payment/c2b",
-            "https://api.sasapay.com/stkpush",
-            "https://live.sasapay.com/api/v1/c2b",
-            "https://pay.sasapay.com/api/v1/c2b",
-            "https://gateway.sasapay.com/api/v1/c2b",
-            # Fallback to sandbox if live fails
-            "https://sandbox.sasapay.com/api/v1/c2b",
-            "https://sandbox.sasapay.com/c2b",
+            f"{base_url}/api/v1/c2b",
+            f"{base_url}/v1/c2b",
+            f"{base_url}/c2b",
+            f"{base_url}/api/v1/stkpush",
+            f"{base_url}/stkpush",
         ]
         
-        # Format phone number
+        # Format phone number properly
         phone = str(phone).strip()
         phone = ''.join(filter(str.isdigit, phone))
+        
+        # Convert to 254 format
         if phone.startswith('0'):
             phone = '254' + phone[1:]
         elif phone.startswith('7') and len(phone) == 9:
@@ -227,14 +215,12 @@ def initiate_c2b_payment(phone, amount, reference, description):
             phone = '254' + phone
         elif phone.startswith('+254'):
             phone = phone[1:]
-            
-        # Ensure correct length
-        if len(phone) > 12:
-            phone = phone[:12]
-        elif len(phone) < 12:
+        
+        # Validate length
+        if len(phone) != 12:
             return {
                 'success': False,
-                'error': f'Invalid phone number: {phone}. Must be 12 digits (254XXXXXXXXX)'
+                'error': f'Invalid phone number. Use 254XXXXXXXXX format'
             }
         
         print(f"📞 Formatted phone: {phone}")
@@ -245,7 +231,7 @@ def initiate_c2b_payment(phone, amount, reference, description):
             'Accept': 'application/json',
         }
         
-        # Try different payload formats
+        # Try different payload formats based on common API patterns
         payloads = [
             {
                 'phone_number': phone,
@@ -257,30 +243,23 @@ def initiate_c2b_payment(phone, amount, reference, description):
             {
                 'phone': phone,
                 'amount': int(amount),
-                'reference': reference,
-                'description': description[:50],
+                'account_reference': reference,
+                'transaction_desc': description[:50],
                 'callback_url': settings.SASAPAY_CONFIG.get('CALLBACK_URL'),
             },
             {
                 'msisdn': phone,
-                'amount': int(amount),
-                'account': reference,
-                'description': description[:50],
-                'callback_url': settings.SASAPAY_CONFIG.get('CALLBACK_URL'),
-            },
-            {
-                'phoneNumber': phone,
                 'Amount': int(amount),
                 'TransactionReference': reference,
                 'Description': description[:50],
                 'callbackUrl': settings.SASAPAY_CONFIG.get('CALLBACK_URL'),
-            },
+            }
         ]
         
         for endpoint in c2b_endpoints:
             for payload in payloads:
                 try:
-                    print(f"📦 Trying endpoint: {endpoint}")
+                    print(f"📦 Trying: {endpoint}")
                     
                     response = ultra_session.post(
                         endpoint,
@@ -297,6 +276,7 @@ def initiate_c2b_payment(phone, amount, reference, description):
                             data = response.json()
                             print(f"📊 Response data: {data}")
                             
+                            # Extract transaction ID from various possible response formats
                             transaction_id = (
                                 data.get('transaction_id') or
                                 data.get('data', {}).get('transaction_id') or
@@ -314,7 +294,12 @@ def initiate_c2b_payment(phone, amount, reference, description):
                                 data.get('session_id')
                             )
                             
-                            message = data.get('message') or data.get('description') or data.get('ResponseDescription') or 'STK Push sent'
+                            message = (
+                                data.get('message') or 
+                                data.get('description') or 
+                                data.get('ResponseDescription') or 
+                                'STK Push sent. Check your phone.'
+                            )
                             
                             return {
                                 'success': True,
@@ -322,6 +307,7 @@ def initiate_c2b_payment(phone, amount, reference, description):
                                 'checkout_id': checkout_id,
                                 'message': message
                             }
+                            
                         except Exception as parse_error:
                             print(f"⚠️ Parse error: {parse_error}")
                             return {
@@ -329,9 +315,16 @@ def initiate_c2b_payment(phone, amount, reference, description):
                                 'transaction_id': reference,
                                 'message': 'Payment initiated successfully'
                             }
-                            
+                    
+                    elif response.status_code == 401:
+                        print("❌ Authentication failed - token may be invalid")
+                        # Token might be expired, try to get new one
+                        token = get_sasapay_token()
+                        headers['Authorization'] = f'Bearer {token}'
+                        continue
+                        
                 except Exception as e:
-                    print(f"⚠️ Endpoint failed: {type(e).__name__} - {str(e)[:100]}")
+                    print(f"⚠️ Endpoint failed: {type(e).__name__}")
                     continue
         
         # If we get here, all endpoints failed
@@ -344,35 +337,32 @@ def initiate_c2b_payment(phone, amount, reference, description):
         print(f"❌ Unexpected error: {str(e)}")
         return {
             'success': False,
-            'error': str(e)
+            'error': f'Payment failed: {str(e)[:100]}'
         }
 
 def initiate_checkout(amount, reference, description, email, phone=None):
-    """Initiate checkout with maximum compatibility"""
+    """Initiate checkout with SasaPay - Using official documentation"""
     
     print(f"💳 Initiating checkout: {amount} KES")
     
     try:
         token = get_sasapay_token()
         
-        # Comprehensive list of checkout endpoints
-        checkout_endpoints = [
-            "https://api.sasapay.com/api/v1/checkout",
-            "https://api.sasapay.com/checkout",
-            "https://api.sasapay.com/v1/checkout",
-            "https://api.sasapay.com/api/checkout",
-            "https://live.sasapay.com/api/v1/checkout",
-            "https://pay.sasapay.com/api/v1/checkout",
-            "https://gateway.sasapay.com/api/v1/checkout",
-            "https://sandbox.sasapay.com/api/v1/checkout",
-            "https://sandbox.sasapay.com/checkout",
-        ]
+        # Use official base URL
+        env = settings.SASAPAY_CONFIG.get('ENVIRONMENT', 'sandbox')
         
-        checkout_bases = [
-            "https://checkout.sasapay.com",
-            "https://live.sasapay.com/checkout",
-            "https://pay.sasapay.com/checkout",
-            "https://sandbox.sasapay.com/checkout",
+        if env == 'sandbox':
+            base_url = "https://sandbox.sasapay.app"
+            checkout_base = "https://sandbox.sasapay.app/checkout"
+        else:
+            base_url = "https://api.sasapay.app"
+            checkout_base = "https://checkout.sasapay.app"
+        
+        # Try different checkout endpoints
+        checkout_endpoints = [
+            f"{base_url}/api/v1/checkout",
+            f"{base_url}/v1/checkout",
+            f"{base_url}/checkout",
         ]
         
         headers = {
@@ -381,11 +371,8 @@ def initiate_checkout(amount, reference, description, email, phone=None):
             'Accept': 'application/json',
         }
         
-        # Try different payload formats
-        payloads = []
-        
         # Base payload
-        base_payload = {
+        payload = {
             'amount': int(amount),
             'reference': reference,
             'description': description[:50],
@@ -394,92 +381,79 @@ def initiate_checkout(amount, reference, description, email, phone=None):
             'redirect_url': settings.SASAPAY_CONFIG.get('CALLBACK_URL'),
             'currency': 'KES'
         }
-        payloads.append(base_payload)
         
-        # With phone
+        # Add phone if provided
         if phone:
             phone = ''.join(filter(str.isdigit, phone))
             if phone.startswith('0'):
                 phone = '254' + phone[1:]
             elif not phone.startswith('254'):
                 phone = '254' + phone
-            
-            phone_payload = base_payload.copy()
-            phone_payload['phone_number'] = phone
-            payloads.append(phone_payload)
-            
-            phone_payload2 = base_payload.copy()
-            phone_payload2['phone'] = phone
-            payloads.append(phone_payload2)
+            payload['phone_number'] = phone
         
         for endpoint in checkout_endpoints:
-            for payload in payloads:
-                try:
-                    print(f"📦 Trying checkout endpoint: {endpoint}")
+            try:
+                print(f"📦 Trying checkout: {endpoint}")
+                
+                response = ultra_session.post(
+                    endpoint,
+                    json=payload,
+                    headers=headers,
+                    timeout=30,
+                    verify=False
+                )
+                
+                if response.status_code in [200, 201]:
+                    data = response.json()
+                    print(f"✅ Checkout response: {data}")
                     
-                    response = ultra_session.post(
-                        endpoint,
-                        json=payload,
-                        headers=headers,
-                        timeout=30,
-                        verify=False
+                    checkout_id = (
+                        data.get('checkout_id') or 
+                        data.get('data', {}).get('checkout_id') or
+                        data.get('id') or
+                        data.get('session_id') or
+                        data.get('CheckoutRequestID')
                     )
                     
-                    if response.status_code in [200, 201]:
-                        data = response.json()
-                        print(f"✅ Checkout response: {data}")
-                        
-                        checkout_id = (
-                            data.get('checkout_id') or 
-                            data.get('data', {}).get('checkout_id') or
-                            data.get('id') or
-                            data.get('session_id') or
-                            data.get('CheckoutRequestID')
-                        )
-                        
-                        # Try different checkout URL formats
-                        checkout_url = None
-                        if checkout_id:
-                            for base in checkout_bases:
-                                potential_url = f"{base}/{checkout_id}"
-                                checkout_url = potential_url
-                                break
-                        
-                        if not checkout_url:
-                            checkout_url = data.get('redirect_url') or data.get('checkout_url')
-                        
-                        return {
-                            'success': True,
-                            'checkout_id': checkout_id,
-                            'checkout_url': checkout_url,
-                            'message': data.get('message', 'Checkout initiated')
-                        }
-                except Exception as e:
-                    print(f"⚠️ Checkout endpoint failed: {str(e)[:100]}")
-                    continue
+                    checkout_url = data.get('redirect_url') or data.get('checkout_url')
+                    if not checkout_url and checkout_id:
+                        checkout_url = f"{checkout_base}/{checkout_id}"
+                    
+                    return {
+                        'success': True,
+                        'checkout_id': checkout_id,
+                        'checkout_url': checkout_url,
+                        'message': data.get('message', 'Checkout initiated')
+                    }
+                    
+            except Exception as e:
+                print(f"⚠️ Checkout endpoint failed: {type(e).__name__}")
+                continue
         
-        return {'success': False, 'error': 'All checkout endpoints failed'}
+        return {'success': False, 'error': 'Checkout failed - please use Paystack'}
         
     except Exception as e:
         return {'success': False, 'error': str(e)}
 
 def query_payment_status(transaction_id):
-    """Query payment status - try multiple endpoints"""
+    """Query payment status from SasaPay"""
     
     try:
         token = get_sasapay_token()
         
-        # Comprehensive list of status endpoints
+        env = settings.SASAPAY_CONFIG.get('ENVIRONMENT', 'sandbox')
+        
+        if env == 'sandbox':
+            base_url = "https://sandbox.sasapay.app"
+        else:
+            base_url = "https://api.sasapay.app"
+        
+        # Try different status endpoints
         status_endpoints = [
-            f"https://api.sasapay.com/api/v1/transaction/{transaction_id}",
-            f"https://api.sasapay.com/transaction/{transaction_id}",
-            f"https://api.sasapay.com/v1/transaction/{transaction_id}",
-            f"https://api.sasapay.com/api/v1/payment/{transaction_id}",
-            f"https://api.sasapay.com/payment/{transaction_id}",
-            f"https://live.sasapay.com/api/v1/transaction/{transaction_id}",
-            f"https://pay.sasapay.com/api/v1/transaction/{transaction_id}",
-            f"https://sandbox.sasapay.com/api/v1/transaction/{transaction_id}",
-            f"https://sandbox.sasapay.com/transaction/{transaction_id}",
+            f"{base_url}/api/v1/transaction/{transaction_id}",
+            f"{base_url}/v1/transaction/{transaction_id}",
+            f"{base_url}/transaction/{transaction_id}",
+            f"{base_url}/api/v1/payment/{transaction_id}",
         ]
         
         headers = {
@@ -498,10 +472,13 @@ def query_payment_status(transaction_id):
                 
                 if response.status_code == 200:
                     data = response.json()
-                    status = (data.get('status') or 
-                             data.get('data', {}).get('status') or 
-                             data.get('transaction_status') or 
-                             'PENDING').upper()
+                    status = (
+                        data.get('status') or 
+                        data.get('data', {}).get('status') or 
+                        data.get('transaction_status') or 
+                        'PENDING'
+                    ).upper()
+                    
                     return {
                         'status': status,
                         'message': data.get('message', ''),

@@ -68,20 +68,29 @@ SASAPAY_CONFIG = {
     'IPN_URL': os.environ.get('SASAPAY_IPN_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/sasapay/ipn/'),
 }
 
-# SasaPay API Endpoints - Using correct endpoints
+# SasaPay API Endpoints - Using OFFICIAL endpoints from documentation
 if SASAPAY_ENVIRONMENT == 'sandbox':
-    SASAPAY_API_URL = 'https://sandbox.sasapay.com/api/v1'
-    SASAPAY_CHECKOUT_URL = 'https://sandbox.sasapay.com/checkout'
-    SASAPAY_AUTH_URL = 'https://sandbox.sasapay.com/api/v1/oauth/token'
-    print("🔧 SasaPay: Using SANDBOX environment")
+    # Sandbox uses .app domain as per documentation
+    SASAPAY_BASE_URL = 'https://sandbox.sasapay.app'
+    SASAPAY_API_URL = f'{SASAPAY_BASE_URL}/api/v1'
+    SASAPAY_AUTH_URL = f'{SASAPAY_BASE_URL}/api/v1/auth/token/'
+    SASAPAY_CHECKOUT_URL = f'{SASAPAY_BASE_URL}/checkout'
+    print("🔧 SasaPay: Using SANDBOX environment (.app domain)")
 else:
-    SASAPAY_API_URL = 'https://api.sasapay.com/api/v1'
-    SASAPAY_CHECKOUT_URL = 'https://checkout.sasapay.com'
-    SASAPAY_AUTH_URL = 'https://api.sasapay.com/api/v1/oauth/token'
-    print("💰 SasaPay: Using LIVE environment")
+    # Live - assuming similar pattern, but verify with SasaPay
+    SASAPAY_BASE_URL = 'https://api.sasapay.app'  # Confirm this with SasaPay
+    SASAPAY_API_URL = f'{SASAPAY_BASE_URL}/api/v1'
+    SASAPAY_AUTH_URL = f'{SASAPAY_BASE_URL}/api/v1/auth/token/'
+    SASAPAY_CHECKOUT_URL = 'https://checkout.sasapay.app'  # Confirm this
+    print("💰 SasaPay: Using LIVE environment (.app domain)")
 
+# Optional: Add these to your config for use in utils
+SASAPAY_CONFIG['BASE_URL'] = SASAPAY_BASE_URL
+SASAPAY_CONFIG['API_URL'] = SASAPAY_API_URL
+SASAPAY_CONFIG['AUTH_URL'] = SASAPAY_AUTH_URL
+
+# Also update the USD to KES rate if needed
 USD_TO_KES_RATE = int(os.environ.get('USD_TO_KES_RATE', 129))
-
 # ===== PAYSTACK CONFIGURATION =====
 PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', '')
 PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY', '')
