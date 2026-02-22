@@ -11,15 +11,27 @@ import dj_database_url
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# ===== DEBUG SETTING - MUST BE DEFINED FIRST =====
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+
 # ===== SECURITY SETTINGS =====
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
-    print("❌ CRITICAL: SECRET_KEY environment variable not set!")
-    SECRET_KEY = 'django-insecure-change-this-in-production'  # Fallback only
+    if DEBUG:
+        print("⚠️ WARNING: Using fallback SECRET_KEY for development")
+        SECRET_KEY = 'django-insecure-dev-key-do-not-use-in-production'
+    else:
+        print("❌ CRITICAL: SECRET_KEY environment variable not set in production!")
+        # In production, we should fail if no SECRET_KEY
+        raise ValueError("SECRET_KEY must be set in production environment")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+# Print mode
+if DEBUG:
+    print("🔧 Running in DEBUG mode")
+else:
+    print("🚀 Running in PRODUCTION mode")
 
 # ===== SENSITIVE DATA - MUST BE ENVIRONMENT VARIABLES =====
 # Email Configuration - MOVED TO ENVIRONMENT VARIABLES
@@ -169,22 +181,10 @@ DATABASES = {
     }
 }
 
-# Alternative using dj-database-url (uncomment if you prefer)
-# DATABASES = {
-#     'default': dj_database_url.config(
-#         default=DATABASE_URL,
-#         conn_max_age=600,
-#         ssl_require=True,
-#     )
-# }
-
 print("✅ PostgreSQL database configured with direct connection")
 print(f"📊 Database Host: interchange.proxy.rlwy.net:44077")
 print(f"📊 Database Name: railway")
 print(f"📊 Database User: postgres")
-
-# ===== SIMPLE HEALTH CHECK VIEW =====
-# This will be added to urls.py separately
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -465,7 +465,10 @@ if DEBUG:
 # ===== FINAL VALIDATION =====
 # Validate critical settings
 if not SECRET_KEY or SECRET_KEY == 'django-insecure-change-this-in-production':
-    print("⚠️ CRITICAL WARNING: Using default/insecure SECRET_KEY in production!")
+    if DEBUG:
+        print("⚠️ WARNING: Using fallback SECRET_KEY in development")
+    else:
+        print("⚠️ CRITICAL WARNING: Using default/insecure SECRET_KEY in production!")
 
 if not EMAIL_HOST_PASSWORD and not DEBUG:
     print("⚠️ CRITICAL WARNING: EMAIL_HOST_PASSWORD not set - email features will fail!")
