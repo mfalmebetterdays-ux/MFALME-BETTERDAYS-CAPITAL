@@ -52,8 +52,13 @@ if not EMAIL_HOST_PASSWORD and not DEBUG:
     print("❌ CRITICAL: EMAIL_HOST_PASSWORD environment variable not set!")
 
 # ===== SASA PAY CONFIGURATION =====
-# For testing, use sandbox. For production, change to 'live'
-SASAPAY_ENVIRONMENT = os.environ.get('SASAPAY_ENVIRONMENT', 'sandbox')  # Default to sandbox for testing
+# Determine environment - default to 'live' in production, 'sandbox' in debug
+if DEBUG:
+    DEFAULT_SASAPAY_ENV = 'sandbox'
+else:
+    DEFAULT_SASAPAY_ENV = 'live'
+
+SASAPAY_ENVIRONMENT = os.environ.get('SASAPAY_ENVIRONMENT', DEFAULT_SASAPAY_ENV)
 
 SASAPAY_CONFIG = {
     'CLIENT_ID': os.environ.get('SASAPAY_CLIENT_ID', 'I4w49w1vftEVXTkMLwHQLr0DxdeXQYh34tYVFi5A'),
@@ -68,10 +73,12 @@ if SASAPAY_ENVIRONMENT == 'sandbox':
     SASAPAY_API_URL = 'https://sandbox.sasapay.com/api/v1'
     SASAPAY_CHECKOUT_URL = 'https://sandbox.sasapay.com/checkout'
     SASAPAY_AUTH_URL = 'https://sandbox.sasapay.com/api/v1/oauth/token'
+    print("🔧 SasaPay: Using SANDBOX environment")
 else:
     SASAPAY_API_URL = 'https://api.sasapay.com/api/v1'
     SASAPAY_CHECKOUT_URL = 'https://checkout.sasapay.com'
     SASAPAY_AUTH_URL = 'https://api.sasapay.com/api/v1/oauth/token'
+    print("💰 SasaPay: Using LIVE environment")
 
 USD_TO_KES_RATE = int(os.environ.get('USD_TO_KES_RATE', 129))
 
