@@ -1,1 +1,3 @@
-web: python manage.py migrate --skip-checks --no-input && python manage.py collectstatic --no-input && gunicorn dict.wsgi --bind 0.0.0.0:${PORT:-8080} --workers=2 --timeout=120 --log-level=info --access-logfile=- --error-logfile=- --capture-output
+# Procfile
+release: python manage.py migrate --no-input
+web: python manage.py collectstatic --no-input && gunicorn dict.wsgi --bind 0.0.0.0:${PORT:-8080} --workers=2 --timeout=120 --log-level=debug --access-logfile=- --error-logfile=-

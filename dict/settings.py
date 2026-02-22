@@ -147,40 +147,44 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'dict.wsgi.application'
 
-# ===== DATABASE CONFIGURATION =====
-DATABASE_URL = os.environ.get('DATABASE_URL')
+# ===== DATABASE CONFIGURATION - POSTGRESQL DIRECT CONNECTION =====
+# Your Railway PostgreSQL database URL
+DATABASE_URL = "postgresql://postgres:vdIJsXSjLElaiHOABtJKrlnXLPgNFlDD@interchange.proxy.rlwy.net:44077/railway"
 
-if DATABASE_URL:
-    # Railway PostgreSQL configuration
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True,
-        )
+# Configure database with proper SSL settings
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'railway',
+        'USER': 'postgres',
+        'PASSWORD': 'vdIJsXSjLElaiHOABtJKrlnXLPgNFlDD',
+        'HOST': 'interchange.proxy.rlwy.net',
+        'PORT': '44077',
+        'OPTIONS': {
+            'sslmode': 'require',  # Railway requires SSL
+            'connect_timeout': 10,
+        },
+        'CONN_MAX_AGE': 60,  # Keep connections alive
+        'CONN_HEALTH_CHECKS': True,  # Check connection health
     }
-    
-    # PostgreSQL optimization for Railway
-    DATABASES['default']['CONN_MAX_AGE'] = 60
-    DATABASES['default']['OPTIONS'] = {
-        'connect_timeout': 10,
-        'sslmode': 'require',  # Explicit SSL mode
-    }
-    print("✅ PostgreSQL database configured via DATABASE_URL")
-else:
-    # Local development SQLite
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-    print("⚠️ Using SQLite for local development")
+}
 
-# Database pool settings for production
-if DATABASE_URL and not DEBUG:
-    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
-    DATABASES['default']['CONN_HEALTH_CHECKS'] = True
+# Alternative using dj-database-url (uncomment if you prefer)
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default=DATABASE_URL,
+#         conn_max_age=600,
+#         ssl_require=True,
+#     )
+# }
+
+print("✅ PostgreSQL database configured with direct connection")
+print(f"📊 Database Host: interchange.proxy.rlwy.net:44077")
+print(f"📊 Database Name: railway")
+print(f"📊 Database User: postgres")
+
+# ===== SIMPLE HEALTH CHECK VIEW =====
+# This will be added to urls.py separately
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -383,11 +387,19 @@ def startup_checks():
     startup_messages.append(f"🔒 HTTPS Redirects: {'ENABLED' if https_mode else 'DISABLED'}")
     
     # Database
-    if DATABASE_URL:
-        db_engine = 'PostgreSQL'
-        startup_messages.append(f"🗄️  Database: {db_engine} (configured)")
-    else:
-        startup_messages.append("🗄️  Database: SQLite (development)")
+    startup_messages.append(f"🗄️  Database: PostgreSQL (configured directly)")
+    startup_messages.append(f"   Host: interchange.proxy.rlwy.net:44077")
+    startup_messages.append(f"   Database: railway")
+    startup_messages.append(f"   User: postgres")
+    
+    # Test database connection
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        startup_messages.append("   ✅ Connection test: SUCCESS")
+    except Exception as e:
+        startup_messages.append(f"   ❌ Connection test: FAILED - {e}")
     
     # Email
     if EMAIL_HOST_PASSWORD:
@@ -425,9 +437,8 @@ if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY_SERVICE_ID')
     FILE_UPLOAD_TEMP_DIR = '/tmp'
     
     # Database connection pooling for Railway
-    if DATABASE_URL:
-        DATABASES['default']['CONN_MAX_AGE'] = 180
-        DATABASES['default']['CONN_HEALTH_CHECKS'] = True
+    DATABASES['default']['CONN_MAX_AGE'] = 180
+    DATABASES['default']['CONN_HEALTH_CHECKS'] = True
         
     print("🚂 Railway environment detected - optimizations applied")
 

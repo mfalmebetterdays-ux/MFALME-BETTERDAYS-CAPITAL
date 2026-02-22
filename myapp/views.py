@@ -14,6 +14,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives, send_mail
 from django.template import Library
+from django.db import connection
 import logging
 import json
 import random
@@ -4314,6 +4315,16 @@ def sasapay_status(request, reference):
 
 
 # ==================== ERROR HANDLERS ====================
+
+def health_check(request):
+    """Simple health check that verifies database connection"""
+    try:
+        # Test database connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        return HttpResponse("OK - Database connected", content_type="text/plain", status=200)
+    except Exception as e:
+        return HttpResponse(f"ERROR - Database: {str(e)}", content_type="text/plain", status=500)
 
 def custom_404(request, exception):
     return render(request, '404.html', status=404)
