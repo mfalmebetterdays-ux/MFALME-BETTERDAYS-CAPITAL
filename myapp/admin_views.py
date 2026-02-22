@@ -83,7 +83,7 @@ def get_admin_user(request):
                 email_verified=True,
                 elite_rank='General'
             )
-            print(f"✅ Created new admin user: {admin_user.email}")
+            print(f"âœ… Created new admin user: {admin_user.email}")
     
     return admin_user
 
@@ -158,9 +158,9 @@ def admin_login_view(request):
             request.session['admin_login_time'] = str(timezone.now())
             request.session.save()
             
-            print(f"✅ Admin {username} logged in successfully via hardcoded credentials")
-            print(f"✅ Session ID: {request.session.session_key}")
-            print(f"✅ Session data: {dict(request.session.items())}")
+            print(f"âœ… Admin {username} logged in successfully via hardcoded credentials")
+            print(f"âœ… Session ID: {request.session.session_key}")
+            print(f"âœ… Session data: {dict(request.session.items())}")
             
             if is_ajax:
                 return JsonResponse({
@@ -185,7 +185,7 @@ def admin_logout_view(request):
     """Admin logout - clear custom session"""
     if is_admin_authenticated(request):
         username = request.session.get('admin_username')
-        print(f"✅ Admin {username} logged out")
+        print(f"âœ… Admin {username} logged out")
         request.session.flush()  # Clear the session completely
         messages.success(request, 'Logged out successfully')
     return redirect('admin_login')
@@ -203,11 +203,11 @@ def admin_dashboard_view(request):
     
     # Check custom authentication
     if not is_admin_authenticated(request):
-        print("❌ Not authenticated via custom method", file=sys.stderr)
+        print("âŒ Not authenticated via custom method", file=sys.stderr)
         return redirect('admin_login')
     
     admin_username = request.session.get('admin_username')
-    print(f"✅ Admin {admin_username} authenticated via custom session", file=sys.stderr)
+    print(f"âœ… Admin {admin_username} authenticated via custom session", file=sys.stderr)
     print("="*50 + "\n", file=sys.stderr)
     
     # Get statistics
@@ -918,7 +918,7 @@ def admin_api_course_create(request):
                 print(f"Thumbnail saved with name: {thumbnail.name}")
             
             course.save()
-            print(f"✅ Course saved with ID: {course.id}")
+            print(f"âœ… Course saved with ID: {course.id}")
             
             # Check if thumbnail was saved
             if course.thumbnail:
@@ -956,7 +956,7 @@ def admin_api_course_create(request):
             return JsonResponse({'error': 'Expected multipart/form-data'}, status=400)
             
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"âŒ Error: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
@@ -982,25 +982,25 @@ def debug_courses_api(request):
             if hasattr(course, 'thumbnail') and course.thumbnail:
                 try:
                     thumbnail_url = course.thumbnail.url
-                    output += f"<p>thumbnail: {thumbnail_url} ✅</p>"
+                    output += f"<p>thumbnail: {thumbnail_url} âœ…</p>"
                 except Exception as e:
-                    output += f"<p>thumbnail URL error: {str(e)} ❌</p>"
+                    output += f"<p>thumbnail URL error: {str(e)} âŒ</p>"
             else:
                 output += f"<p>thumbnail: None</p>"
             
             # Test video_count
             try:
                 v_count = course.video_count()
-                output += f"<p>video_count(): {v_count} ✅</p>"
+                output += f"<p>video_count(): {v_count} âœ…</p>"
             except Exception as e:
-                output += f"<p>video_count() ERROR: {str(e)} ❌</p>"
+                output += f"<p>video_count() ERROR: {str(e)} âŒ</p>"
             
             # Test pdf_count
             try:
                 p_count = course.pdf_count()
-                output += f"<p>pdf_count(): {p_count} ✅</p>"
+                output += f"<p>pdf_count(): {p_count} âœ…</p>"
             except Exception as e:
-                output += f"<p>pdf_count() ERROR: {str(e)} ❌</p>"
+                output += f"<p>pdf_count() ERROR: {str(e)} âŒ</p>"
             
             output += "<hr>"
         
@@ -1026,18 +1026,18 @@ def admin_api_course_update(request, course_id):
     try:
         # Handle multipart/form-data (for file uploads)
         if request.content_type and 'multipart/form-data' in request.content_type:
-            print(f"🔹 Handling multipart form data update for course {course_id}")
+            print(f"ðŸ”¹ Handling multipart form data update for course {course_id}")
             
             # Update fields from POST data
             if 'title' in request.POST:
                 new_title = request.POST.get('title')
                 if new_title and new_title != course.title:
-                    changes.append(f'title: {course.title} → {new_title}')
+                    changes.append(f'title: {course.title} â†’ {new_title}')
                     course.title = new_title
             elif 'name' in request.POST:
                 new_title = request.POST.get('name')
                 if new_title and new_title != course.title:
-                    changes.append(f'title: {course.title} → {new_title}')
+                    changes.append(f'title: {course.title} â†’ {new_title}')
                     course.title = new_title
             
             if 'description' in request.POST:
@@ -1047,7 +1047,7 @@ def admin_api_course_update(request, course_id):
                 old_price = float(course.price)
                 new_price = float(request.POST.get('price', 0))
                 if old_price != new_price:
-                    changes.append(f'price: ${old_price} → ${new_price}')
+                    changes.append(f'price: ${old_price} â†’ ${new_price}')
                 course.price = Decimal(str(request.POST.get('price', 0)))
             
             if 'duration_weeks' in request.POST:
@@ -1058,7 +1058,7 @@ def admin_api_course_update(request, course_id):
                 old_status = 'active' if course.is_active else 'inactive'
                 new_status = 'active' if is_active else 'inactive'
                 if old_status != new_status:
-                    changes.append(f'status: {old_status} → {new_status}')
+                    changes.append(f'status: {old_status} â†’ {new_status}')
                 course.is_active = is_active
             
             # Handle thumbnail upload if present
@@ -1068,7 +1068,7 @@ def admin_api_course_update(request, course_id):
                 thumbnail.name = sanitize_filename(thumbnail.name)
                 course.thumbnail = thumbnail
                 changes.append('thumbnail: updated')
-                print(f"✅ Thumbnail uploaded: {thumbnail.name}")
+                print(f"âœ… Thumbnail uploaded: {thumbnail.name}")
             
             course.save()
             
@@ -1076,11 +1076,11 @@ def admin_api_course_update(request, course_id):
             # Handle JSON data
             try:
                 data = json.loads(request.body)
-                print(f"🔹 Handling JSON update for course {course_id}: {data}")
+                print(f"ðŸ”¹ Handling JSON update for course {course_id}: {data}")
                 
                 # Update fields if provided
                 if 'title' in data and data['title'] != course.title:
-                    changes.append(f'title: {course.title} → {data["title"]}')
+                    changes.append(f'title: {course.title} â†’ {data["title"]}')
                     course.title = data['title']
                 
                 if 'description' in data:
@@ -1090,7 +1090,7 @@ def admin_api_course_update(request, course_id):
                     old_price = float(course.price)
                     new_price = float(data['price'])
                     if old_price != new_price:
-                        changes.append(f'price: ${old_price} → ${new_price}')
+                        changes.append(f'price: ${old_price} â†’ ${new_price}')
                     course.price = Decimal(str(data['price']))
                 
                 if 'duration_weeks' in data:
@@ -1100,7 +1100,7 @@ def admin_api_course_update(request, course_id):
                     old_status = 'active' if course.is_active else 'inactive'
                     new_status = 'active' if data['is_active'] else 'inactive'
                     if old_status != new_status:
-                        changes.append(f'status: {old_status} → {new_status}')
+                        changes.append(f'status: {old_status} â†’ {new_status}')
                     course.is_active = data['is_active']
                 
                 if 'materials' in data:
@@ -1124,9 +1124,9 @@ def admin_api_course_update(request, course_id):
                     'admin_username': request.session.get('admin_username')
                 }
             )
-            print(f"✅ Course updated with changes: {changes}")
+            print(f"âœ… Course updated with changes: {changes}")
         else:
-            print("ℹ️ No changes detected")
+            print("â„¹ï¸ No changes detected")
         
         # Get thumbnail URL
         thumbnail_url = None
@@ -1150,7 +1150,7 @@ def admin_api_course_update(request, course_id):
         })
         
     except Exception as e:
-        print(f"❌ Error updating course: {e}")
+        print(f"âŒ Error updating course: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
@@ -1442,13 +1442,13 @@ def admin_api_video_update(request, video_id):
     try:
         # Handle multipart/form-data (for file uploads)
         if request.content_type and 'multipart/form-data' in request.content_type:
-            print(f"🔹 Handling multipart form data update for video {video_id}")
+            print(f"ðŸ”¹ Handling multipart form data update for video {video_id}")
             
             # Update fields from POST data
             if 'title' in request.POST:
                 new_title = request.POST.get('title')
                 if new_title != video.title:
-                    changes.append(f'title: {video.title} → {new_title}')
+                    changes.append(f'title: {video.title} â†’ {new_title}')
                     video.title = new_title
             
             if 'description' in request.POST:
@@ -1457,20 +1457,20 @@ def admin_api_video_update(request, video_id):
             if 'category' in request.POST:
                 new_category = request.POST.get('category')
                 if new_category != video.category:
-                    changes.append(f'category: {video.category} → {new_category}')
+                    changes.append(f'category: {video.category} â†’ {new_category}')
                     video.category = new_category
             
             if 'duration' in request.POST:
                 new_duration = int(request.POST.get('duration', video.duration))
                 if new_duration != video.duration:
-                    changes.append(f'duration: {video.duration} → {new_duration}')
+                    changes.append(f'duration: {video.duration} â†’ {new_duration}')
                     video.duration = new_duration
             
             if 'price' in request.POST:
                 old_price = float(video.price)
                 new_price = float(request.POST.get('price', old_price))
                 if old_price != new_price:
-                    changes.append(f'price: ${old_price} → ${new_price}')
+                    changes.append(f'price: ${old_price} â†’ ${new_price}')
                 video.price = Decimal(str(new_price))
             
             if 'video_url' in request.POST:
@@ -1479,7 +1479,7 @@ def admin_api_video_update(request, video_id):
             if 'order' in request.POST:
                 new_order = int(request.POST.get('order', video.order))
                 if new_order != video.order:
-                    changes.append(f'order: {video.order} → {new_order}')
+                    changes.append(f'order: {video.order} â†’ {new_order}')
                     video.order = new_order
             
             if 'is_active' in request.POST:
@@ -1487,7 +1487,7 @@ def admin_api_video_update(request, video_id):
                 old_status = 'active' if video.is_active else 'inactive'
                 new_status = 'active' if is_active else 'inactive'
                 if old_status != new_status:
-                    changes.append(f'status: {old_status} → {new_status}')
+                    changes.append(f'status: {old_status} â†’ {new_status}')
                 video.is_active = is_active
             
             if 'allow_download' in request.POST:
@@ -1506,12 +1506,12 @@ def admin_api_video_update(request, video_id):
                     try:
                         new_course = Course.objects.get(id=course_id)
                         video.course = new_course
-                        changes.append(f'course: {old_course} → {new_course.title}')
+                        changes.append(f'course: {old_course} â†’ {new_course.title}')
                     except Course.DoesNotExist:
                         pass
                 else:
                     video.course = None
-                    changes.append(f'course: {old_course} → None')
+                    changes.append(f'course: {old_course} â†’ None')
             
             # Handle thumbnail upload if present
             if 'thumbnail' in request.FILES:
@@ -1519,7 +1519,7 @@ def admin_api_video_update(request, video_id):
                 thumbnail.name = sanitize_filename(thumbnail.name)
                 video.thumbnail = thumbnail
                 changes.append('thumbnail: updated')
-                print(f"✅ Thumbnail uploaded: {thumbnail.name}")
+                print(f"âœ… Thumbnail uploaded: {thumbnail.name}")
             
             video.save()
             
@@ -1527,43 +1527,43 @@ def admin_api_video_update(request, video_id):
             # Handle JSON data
             try:
                 data = json.loads(request.body)
-                print(f"🔹 Handling JSON update for video {video_id}")
+                print(f"ðŸ”¹ Handling JSON update for video {video_id}")
                 
                 changes_list = []
                 
                 if 'title' in data and data['title'] != video.title:
-                    changes_list.append(f'title: {video.title} → {data["title"]}')
+                    changes_list.append(f'title: {video.title} â†’ {data["title"]}')
                     video.title = data['title']
                 
                 if 'description' in data:
                     video.description = data['description']
                 
                 if 'category' in data and data['category'] != video.category:
-                    changes_list.append(f'category: {video.category} → {data["category"]}')
+                    changes_list.append(f'category: {video.category} â†’ {data["category"]}')
                     video.category = data['category']
                 
                 if 'duration' in data and int(data['duration']) != video.duration:
-                    changes_list.append(f'duration: {video.duration} → {data["duration"]}')
+                    changes_list.append(f'duration: {video.duration} â†’ {data["duration"]}')
                     video.duration = int(data['duration'])
                 
                 if 'price' in data:
                     old_price = float(video.price)
                     new_price = float(data['price'])
                     if old_price != new_price:
-                        changes_list.append(f'price: ${old_price} → ${new_price}')
+                        changes_list.append(f'price: ${old_price} â†’ ${new_price}')
                     video.price = Decimal(str(data['price']))
                 
                 if 'video_url' in data:
                     video.video_url = data['video_url']
                 
                 if 'order' in data and int(data['order']) != video.order:
-                    changes_list.append(f'order: {video.order} → {data["order"]}')
+                    changes_list.append(f'order: {video.order} â†’ {data["order"]}')
                     video.order = int(data['order'])
                 
                 if 'is_active' in data and data['is_active'] != video.is_active:
                     old_status = 'active' if video.is_active else 'inactive'
                     new_status = 'active' if data['is_active'] else 'inactive'
-                    changes_list.append(f'status: {old_status} → {new_status}')
+                    changes_list.append(f'status: {old_status} â†’ {new_status}')
                     video.is_active = data['is_active']
                 
                 if 'allow_download' in data:
@@ -1579,12 +1579,12 @@ def admin_api_video_update(request, video_id):
                         try:
                             new_course = Course.objects.get(id=data['course_id'])
                             video.course = new_course
-                            changes_list.append(f'course: {old_course} → {new_course.title}')
+                            changes_list.append(f'course: {old_course} â†’ {new_course.title}')
                         except Course.DoesNotExist:
                             pass
                     else:
                         video.course = None
-                        changes_list.append(f'course: {old_course} → None')
+                        changes_list.append(f'course: {old_course} â†’ None')
                 
                 video.save()
                 changes.extend(changes_list)
@@ -1605,7 +1605,7 @@ def admin_api_video_update(request, video_id):
                     'changes': changes
                 }
             )
-            print(f"✅ Video updated with changes: {changes}")
+            print(f"âœ… Video updated with changes: {changes}")
         
         # Get thumbnail URL
         thumbnail_url = None
@@ -1627,7 +1627,7 @@ def admin_api_video_update(request, video_id):
         })
         
     except Exception as e:
-        print(f"❌ Error updating video: {e}")
+        print(f"âŒ Error updating video: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
@@ -1707,9 +1707,9 @@ def admin_api_video_upload(request):
             # Save thumbnail file
             thumbnail_path = default_storage.save(thumb_filename, thumbnail_file)
             thumbnail_url = default_storage.url(thumbnail_path)
-            print(f"✅ Thumbnail uploaded: {thumbnail_url}")
+            print(f"âœ… Thumbnail uploaded: {thumbnail_url}")
         else:
-            print(f"⚠️ Invalid thumbnail type: {thumbnail_file.content_type}")
+            print(f"âš ï¸ Invalid thumbnail type: {thumbnail_file.content_type}")
     
     # Log activity
     admin_user = get_admin_user(request)
@@ -1864,7 +1864,7 @@ def admin_api_pdf_create(request):
     
     try:
         data = json.loads(request.body)
-        print(f"📝 Creating PDF with data: {data}")
+        print(f"ðŸ“ Creating PDF with data: {data}")
     except json.JSONDecodeError as e:
         return JsonResponse({'error': f'Invalid JSON: {str(e)}'}, status=400)
     
@@ -1897,12 +1897,12 @@ def admin_api_pdf_create(request):
         # This assigns the saved file to the FileField
         if data.get('pdf_path'):
             pdf.pdf_file.name = data.get('pdf_path')
-            print(f"📁 Setting PDF file to: {pdf.pdf_file.name}")
+            print(f"ðŸ“ Setting PDF file to: {pdf.pdf_file.name}")
             
             # Verify the file exists
             try:
                 if pdf.pdf_file.storage.exists(pdf.pdf_file.name):
-                    print(f"✅ PDF file exists in storage")
+                    print(f"âœ… PDF file exists in storage")
                     
                     # Set file size if not provided
                     if not data.get('file_size') and not pdf.file_size:
@@ -1914,27 +1914,27 @@ def admin_api_pdf_create(request):
                                 pdf.file_size = f"{file_size / 1024:.1f} KB"
                             else:
                                 pdf.file_size = f"{file_size / (1024 * 1024):.1f} MB"
-                            print(f"📊 Set file size: {pdf.file_size}")
+                            print(f"ðŸ“Š Set file size: {pdf.file_size}")
                         except Exception as e:
-                            print(f"⚠️ Could not get file size: {e}")
+                            print(f"âš ï¸ Could not get file size: {e}")
                 else:
-                    print(f"⚠️ PDF file does not exist in storage: {pdf.pdf_file.name}")
+                    print(f"âš ï¸ PDF file does not exist in storage: {pdf.pdf_file.name}")
             except Exception as e:
-                print(f"⚠️ Error checking file existence: {e}")
+                print(f"âš ï¸ Error checking file existence: {e}")
         else:
             return JsonResponse({'error': 'PDF path is required'}, status=400)
         
         # Set cover image if provided
         if data.get('cover_image_path'):
             pdf.cover_image.name = data.get('cover_image_path')
-            print(f"🖼️ Setting cover image to: {pdf.cover_image.name}")
+            print(f"ðŸ–¼ï¸ Setting cover image to: {pdf.cover_image.name}")
             
             # Verify cover image exists
             try:
                 if pdf.cover_image.storage.exists(pdf.cover_image.name):
-                    print(f"✅ Cover image exists in storage")
+                    print(f"âœ… Cover image exists in storage")
             except Exception as e:
-                print(f"⚠️ Error checking cover image: {e}")
+                print(f"âš ï¸ Error checking cover image: {e}")
         
         # Set file size from data if provided
         if data.get('file_size_display'):
@@ -1945,13 +1945,13 @@ def admin_api_pdf_create(request):
         if course_id:
             try:
                 pdf.course = Course.objects.get(id=course_id)
-                print(f"📚 Linked to course: {pdf.course.title}")
+                print(f"ðŸ“š Linked to course: {pdf.course.title}")
             except Course.DoesNotExist:
-                print(f"⚠️ Course {course_id} not found")
+                print(f"âš ï¸ Course {course_id} not found")
         
         # Save the PDF record
         pdf.save()
-        print(f"✅ PDF created with ID: {pdf.id}")
+        print(f"âœ… PDF created with ID: {pdf.id}")
         
         # Log activity
         admin_user = get_admin_user(request)
@@ -1975,7 +1975,7 @@ def admin_api_pdf_create(request):
         })
         
     except Exception as e:
-        print(f"❌ Error creating PDF: {e}")
+        print(f"âŒ Error creating PDF: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
@@ -1995,12 +1995,12 @@ def admin_api_pdf_update(request, pdf_id):
     try:
         # Handle multipart/form-data (for file uploads)
         if request.content_type and 'multipart/form-data' in request.content_type:
-            print(f"🔹 Handling multipart form data update for PDF {pdf_id}")
+            print(f"ðŸ”¹ Handling multipart form data update for PDF {pdf_id}")
             
             if 'title' in request.POST:
                 new_title = request.POST.get('title')
                 if new_title != pdf.title:
-                    changes.append(f'title: {pdf.title} → {new_title}')
+                    changes.append(f'title: {pdf.title} â†’ {new_title}')
                     pdf.title = new_title
             
             if 'description' in request.POST:
@@ -2009,27 +2009,27 @@ def admin_api_pdf_update(request, pdf_id):
             if 'category' in request.POST:
                 new_category = request.POST.get('category')
                 if new_category != pdf.category:
-                    changes.append(f'category: {pdf.category} → {new_category}')
+                    changes.append(f'category: {pdf.category} â†’ {new_category}')
                     pdf.category = new_category
             
             if 'pages' in request.POST:
                 new_pages = int(request.POST.get('pages', pdf.pages))
                 if new_pages != pdf.pages:
-                    changes.append(f'pages: {pdf.pages} → {new_pages}')
+                    changes.append(f'pages: {pdf.pages} â†’ {new_pages}')
                     pdf.pages = new_pages
             
             if 'price' in request.POST:
                 old_price = float(pdf.price)
                 new_price = float(request.POST.get('price', old_price))
                 if old_price != new_price:
-                    changes.append(f'price: ${old_price} → ${new_price}')
+                    changes.append(f'price: ${old_price} â†’ ${new_price}')
                 pdf.price = Decimal(str(new_price))
                 pdf.is_free = (pdf.price == 0)
             
             if 'access_level' in request.POST:
                 new_level = request.POST.get('access_level')
                 if new_level != pdf.access_level:
-                    changes.append(f'access_level: {pdf.access_level} → {new_level}')
+                    changes.append(f'access_level: {pdf.access_level} â†’ {new_level}')
                     pdf.access_level = new_level
             
             if 'tags' in request.POST:
@@ -2040,7 +2040,7 @@ def admin_api_pdf_update(request, pdf_id):
                 old_status = 'active' if pdf.is_active else 'inactive'
                 new_status = 'active' if is_active else 'inactive'
                 if old_status != new_status:
-                    changes.append(f'status: {old_status} → {new_status}')
+                    changes.append(f'status: {old_status} â†’ {new_status}')
                 pdf.is_active = is_active
             
             if 'is_featured' in request.POST:
@@ -2048,13 +2048,13 @@ def admin_api_pdf_update(request, pdf_id):
                 old_featured = 'featured' if pdf.is_featured else 'not featured'
                 new_featured = 'featured' if is_featured else 'not featured'
                 if old_featured != new_featured:
-                    changes.append(f'featured: {old_featured} → {new_featured}')
+                    changes.append(f'featured: {old_featured} â†’ {new_featured}')
                 pdf.is_featured = is_featured
             
             if 'order' in request.POST:
                 new_order = int(request.POST.get('order', pdf.order))
                 if new_order != pdf.order:
-                    changes.append(f'order: {pdf.order} → {new_order}')
+                    changes.append(f'order: {pdf.order} â†’ {new_order}')
                     pdf.order = new_order
             
             # Handle cover image upload if present
@@ -2072,12 +2072,12 @@ def admin_api_pdf_update(request, pdf_id):
                     try:
                         new_course = Course.objects.get(id=course_id)
                         pdf.course = new_course
-                        changes.append(f'course: {old_course} → {new_course.title}')
+                        changes.append(f'course: {old_course} â†’ {new_course.title}')
                     except Course.DoesNotExist:
                         pass
                 else:
                     pdf.course = None
-                    changes.append(f'course: {old_course} → None')
+                    changes.append(f'course: {old_course} â†’ None')
             
             pdf.save()
             
@@ -2085,33 +2085,33 @@ def admin_api_pdf_update(request, pdf_id):
             # Handle JSON data
             try:
                 data = json.loads(request.body)
-                print(f"🔹 Handling JSON update for PDF {pdf_id}")
+                print(f"ðŸ”¹ Handling JSON update for PDF {pdf_id}")
                 
                 if 'title' in data and data['title'] != pdf.title:
-                    changes.append(f'title: {pdf.title} → {data["title"]}')
+                    changes.append(f'title: {pdf.title} â†’ {data["title"]}')
                     pdf.title = data['title']
                 
                 if 'description' in data:
                     pdf.description = data['description']
                 
                 if 'category' in data and data['category'] != pdf.category:
-                    changes.append(f'category: {pdf.category} → {data["category"]}')
+                    changes.append(f'category: {pdf.category} â†’ {data["category"]}')
                     pdf.category = data['category']
                 
                 if 'pages' in data and int(data['pages']) != pdf.pages:
-                    changes.append(f'pages: {pdf.pages} → {data["pages"]}')
+                    changes.append(f'pages: {pdf.pages} â†’ {data["pages"]}')
                     pdf.pages = int(data['pages'])
                 
                 if 'price' in data:
                     old_price = float(pdf.price)
                     new_price = float(data['price'])
                     if old_price != new_price:
-                        changes.append(f'price: ${old_price} → ${new_price}')
+                        changes.append(f'price: ${old_price} â†’ ${new_price}')
                     pdf.price = Decimal(str(data['price']))
                     pdf.is_free = (pdf.price == 0)
                 
                 if 'access_level' in data and data['access_level'] != pdf.access_level:
-                    changes.append(f'access_level: {pdf.access_level} → {data["access_level"]}')
+                    changes.append(f'access_level: {pdf.access_level} â†’ {data["access_level"]}')
                     pdf.access_level = data['access_level']
                 
                 if 'tags' in data:
@@ -2120,17 +2120,17 @@ def admin_api_pdf_update(request, pdf_id):
                 if 'is_active' in data and data['is_active'] != pdf.is_active:
                     old_status = 'active' if pdf.is_active else 'inactive'
                     new_status = 'active' if data['is_active'] else 'inactive'
-                    changes.append(f'status: {old_status} → {new_status}')
+                    changes.append(f'status: {old_status} â†’ {new_status}')
                     pdf.is_active = data['is_active']
                 
                 if 'is_featured' in data and data['is_featured'] != pdf.is_featured:
                     old_featured = 'featured' if pdf.is_featured else 'not featured'
                     new_featured = 'featured' if data['is_featured'] else 'not featured'
-                    changes.append(f'featured: {old_featured} → {new_featured}')
+                    changes.append(f'featured: {old_featured} â†’ {new_featured}')
                     pdf.is_featured = data['is_featured']
                 
                 if 'order' in data and int(data['order']) != pdf.order:
-                    changes.append(f'order: {pdf.order} → {data["order"]}')
+                    changes.append(f'order: {pdf.order} â†’ {data["order"]}')
                     pdf.order = int(data['order'])
                 
                 # Update course
@@ -2140,12 +2140,12 @@ def admin_api_pdf_update(request, pdf_id):
                         try:
                             new_course = Course.objects.get(id=data['course_id'])
                             pdf.course = new_course
-                            changes.append(f'course: {old_course} → {new_course.title}')
+                            changes.append(f'course: {old_course} â†’ {new_course.title}')
                         except Course.DoesNotExist:
                             pass
                     else:
                         pdf.course = None
-                        changes.append(f'course: {old_course} → None')
+                        changes.append(f'course: {old_course} â†’ None')
                 
                 pdf.save()
                 
@@ -2165,7 +2165,7 @@ def admin_api_pdf_update(request, pdf_id):
                     'changes': changes
                 }
             )
-            print(f"✅ PDF updated with changes: {changes}")
+            print(f"âœ… PDF updated with changes: {changes}")
         
         # Get cover image URL
         cover_url = None
@@ -2187,7 +2187,7 @@ def admin_api_pdf_update(request, pdf_id):
         })
         
     except Exception as e:
-        print(f"❌ Error updating PDF: {e}")
+        print(f"âŒ Error updating PDF: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
@@ -2274,13 +2274,13 @@ def admin_api_pdf_upload(request):
         full_path = os.path.join(settings.MEDIA_ROOT, pdf_path)
         if os.path.exists(full_path):
             saved_size = os.path.getsize(full_path)
-            print(f"✅ PDF saved successfully: {full_path}")
-            print(f"📁 File size: {saved_size} bytes ({file_size_display})")
+            print(f"âœ… PDF saved successfully: {full_path}")
+            print(f"ðŸ“ File size: {saved_size} bytes ({file_size_display})")
         else:
-            print(f"⚠️ PDF file not found after save: {full_path}")
+            print(f"âš ï¸ PDF file not found after save: {full_path}")
             # Try to check if storage exists method works
             if default_storage.exists(pdf_path):
-                print(f"✅ File exists in storage: {pdf_path}")
+                print(f"âœ… File exists in storage: {pdf_path}")
             else:
                 return JsonResponse({'error': 'File was not saved properly'}, status=500)
         
@@ -2326,9 +2326,9 @@ def admin_api_pdf_upload(request):
                 else:
                     cover_size_display = f"{cover_file.size / (1024 * 1024):.1f} MB"
                 
-                print(f"✅ Cover image uploaded: {cover_url} ({cover_size_display})")
+                print(f"âœ… Cover image uploaded: {cover_url} ({cover_size_display})")
             else:
-                print(f"⚠️ Invalid cover image type: {cover_file.content_type}")
+                print(f"âš ï¸ Invalid cover image type: {cover_file.content_type}")
                 return JsonResponse({
                     'warning': 'Cover image skipped - invalid file type (use JPEG, PNG, GIF, or WebP)',
                     'path': pdf_path,
@@ -2366,7 +2366,7 @@ def admin_api_pdf_upload(request):
         })
         
     except Exception as e:
-        print(f"❌ Error uploading PDF: {str(e)}")
+        print(f"âŒ Error uploading PDF: {str(e)}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': f'Upload failed: {str(e)}'}, status=500)
@@ -2416,7 +2416,7 @@ Please upload the actual PDF file through the admin interface.
         pdf.file_size = f"{len(placeholder_content)} bytes"
         pdf.save()
         
-        print(f"✅ Created placeholder file for PDF {pdf_id}: {file_path}")
+        print(f"âœ… Created placeholder file for PDF {pdf_id}: {file_path}")
         
         # Log activity
         admin_user = get_admin_user(request)
@@ -2440,7 +2440,7 @@ Please upload the actual PDF file through the admin interface.
     except PDF.DoesNotExist:
         return JsonResponse({'error': 'PDF not found'}, status=404)
     except Exception as e:
-        print(f"❌ Error fixing PDF: {str(e)}")
+        print(f"âŒ Error fixing PDF: {str(e)}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
@@ -2582,12 +2582,12 @@ def admin_api_package_update(request, package_id):
     try:
         # Handle multipart/form-data (for file uploads)
         if request.content_type and 'multipart/form-data' in request.content_type:
-            print(f"🔹 Handling multipart form data update for package {package_id}")
+            print(f"ðŸ”¹ Handling multipart form data update for package {package_id}")
             
             if 'name' in request.POST:
                 new_name = request.POST.get('name')
                 if new_name != package.name:
-                    changes.append(f'name: {package.name} → {new_name}')
+                    changes.append(f'name: {package.name} â†’ {new_name}')
                     package.name = new_name
             
             if 'short_description' in request.POST:
@@ -2600,7 +2600,7 @@ def admin_api_package_update(request, package_id):
                 old_price = float(package.price)
                 new_price = float(request.POST.get('price', old_price))
                 if old_price != new_price:
-                    changes.append(f'price: ${old_price} → ${new_price}')
+                    changes.append(f'price: ${old_price} â†’ ${new_price}')
                     # Update discount percentage if original_price exists
                     if package.original_price and package.original_price > 0:
                         package.discount_percentage = int(((package.original_price - Decimal(str(new_price))) / package.original_price) * 100)
@@ -2609,7 +2609,7 @@ def admin_api_package_update(request, package_id):
             if 'duration_days' in request.POST:
                 new_duration = int(request.POST.get('duration_days', package.duration_days))
                 if new_duration != package.duration_days:
-                    changes.append(f'duration: {package.duration_days} → {new_duration}')
+                    changes.append(f'duration: {package.duration_days} â†’ {new_duration}')
                     package.duration_days = new_duration
             
             if 'is_recurring' in request.POST:
@@ -2617,7 +2617,7 @@ def admin_api_package_update(request, package_id):
                 old_recurring = 'recurring' if package.is_recurring else 'one-time'
                 new_recurring = 'recurring' if is_recurring else 'one-time'
                 if old_recurring != new_recurring:
-                    changes.append(f'billing: {old_recurring} → {new_recurring}')
+                    changes.append(f'billing: {old_recurring} â†’ {new_recurring}')
                 package.is_recurring = is_recurring
             
             if 'is_featured' in request.POST:
@@ -2625,7 +2625,7 @@ def admin_api_package_update(request, package_id):
                 old_featured = 'featured' if package.is_featured else 'not featured'
                 new_featured = 'featured' if is_featured else 'not featured'
                 if old_featured != new_featured:
-                    changes.append(f'featured: {old_featured} → {new_featured}')
+                    changes.append(f'featured: {old_featured} â†’ {new_featured}')
                 package.is_featured = is_featured
             
             if 'is_popular' in request.POST:
@@ -2633,7 +2633,7 @@ def admin_api_package_update(request, package_id):
                 old_popular = 'popular' if package.is_popular else 'not popular'
                 new_popular = 'popular' if is_popular else 'not popular'
                 if old_popular != new_popular:
-                    changes.append(f'popular: {old_popular} → {new_popular}')
+                    changes.append(f'popular: {old_popular} â†’ {new_popular}')
                 package.is_popular = is_popular
             
             if 'is_active' in request.POST:
@@ -2641,13 +2641,13 @@ def admin_api_package_update(request, package_id):
                 old_status = 'active' if package.is_active else 'inactive'
                 new_status = 'active' if is_active else 'inactive'
                 if old_status != new_status:
-                    changes.append(f'status: {old_status} → {new_status}')
+                    changes.append(f'status: {old_status} â†’ {new_status}')
                 package.is_active = is_active
             
             if 'order' in request.POST:
                 new_order = int(request.POST.get('order', package.order))
                 if new_order != package.order:
-                    changes.append(f'order: {package.order} → {new_order}')
+                    changes.append(f'order: {package.order} â†’ {new_order}')
                     package.order = new_order
             
             if 'features' in request.POST:
@@ -2679,10 +2679,10 @@ def admin_api_package_update(request, package_id):
             # Handle JSON data
             try:
                 data = json.loads(request.body)
-                print(f"🔹 Handling JSON update for package {package_id}")
+                print(f"ðŸ”¹ Handling JSON update for package {package_id}")
                 
                 if 'name' in data and data['name'] != package.name:
-                    changes.append(f'name: {package.name} → {data["name"]}')
+                    changes.append(f'name: {package.name} â†’ {data["name"]}')
                     package.name = data['name']
                 
                 if 'short_description' in data:
@@ -2695,7 +2695,7 @@ def admin_api_package_update(request, package_id):
                     old_price = float(package.price)
                     new_price = float(data['price'])
                     if old_price != new_price:
-                        changes.append(f'price: ${old_price} → ${new_price}')
+                        changes.append(f'price: ${old_price} â†’ ${new_price}')
                         # Update discount percentage if original_price exists
                         if package.original_price and package.original_price > 0:
                             package.discount_percentage = int(((package.original_price - Decimal(str(new_price))) / package.original_price) * 100)
@@ -2707,35 +2707,35 @@ def admin_api_package_update(request, package_id):
                         package.discount_percentage = int(((package.original_price - package.price) / package.original_price) * 100)
                 
                 if 'duration_days' in data and int(data['duration_days']) != package.duration_days:
-                    changes.append(f'duration: {package.duration_days} → {data["duration_days"]}')
+                    changes.append(f'duration: {package.duration_days} â†’ {data["duration_days"]}')
                     package.duration_days = int(data['duration_days'])
                 
                 if 'is_recurring' in data and data['is_recurring'] != package.is_recurring:
                     old_recurring = 'recurring' if package.is_recurring else 'one-time'
                     new_recurring = 'recurring' if data['is_recurring'] else 'one-time'
-                    changes.append(f'billing: {old_recurring} → {new_recurring}')
+                    changes.append(f'billing: {old_recurring} â†’ {new_recurring}')
                     package.is_recurring = data['is_recurring']
                 
                 if 'is_featured' in data and data['is_featured'] != package.is_featured:
                     old_featured = 'featured' if package.is_featured else 'not featured'
                     new_featured = 'featured' if data['is_featured'] else 'not featured'
-                    changes.append(f'featured: {old_featured} → {new_featured}')
+                    changes.append(f'featured: {old_featured} â†’ {new_featured}')
                     package.is_featured = data['is_featured']
                 
                 if 'is_popular' in data and data['is_popular'] != package.is_popular:
                     old_popular = 'popular' if package.is_popular else 'not popular'
                     new_popular = 'popular' if data['is_popular'] else 'not popular'
-                    changes.append(f'popular: {old_popular} → {new_popular}')
+                    changes.append(f'popular: {old_popular} â†’ {new_popular}')
                     package.is_popular = data['is_popular']
                 
                 if 'is_active' in data and data['is_active'] != package.is_active:
                     old_status = 'active' if package.is_active else 'inactive'
                     new_status = 'active' if data['is_active'] else 'inactive'
-                    changes.append(f'status: {old_status} → {new_status}')
+                    changes.append(f'status: {old_status} â†’ {new_status}')
                     package.is_active = data['is_active']
                 
                 if 'order' in data and int(data['order']) != package.order:
-                    changes.append(f'order: {package.order} → {data["order"]}')
+                    changes.append(f'order: {package.order} â†’ {data["order"]}')
                     package.order = int(data['order'])
                 
                 if 'features' in data:
@@ -2764,7 +2764,7 @@ def admin_api_package_update(request, package_id):
                     'changes': changes
                 }
             )
-            print(f"✅ Package updated with changes: {changes}")
+            print(f"âœ… Package updated with changes: {changes}")
         
         # Get image URL
         image_url = None
@@ -2787,7 +2787,7 @@ def admin_api_package_update(request, package_id):
         })
         
     except Exception as e:
-        print(f"❌ Error updating package: {e}")
+        print(f"âŒ Error updating package: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
@@ -2886,7 +2886,7 @@ def admin_api_update_partnership_status(request, partnership_id):
     ActivityLog.objects.create(
         user=admin_user,
         action='ADMIN_ACTION',
-        description=f'Updated partnership status for {partnership.user.username}: {old_status} → {partnership.status}',
+        description=f'Updated partnership status for {partnership.user.username}: {old_status} â†’ {partnership.status}',
         metadata={
             'admin_username': request.session.get('admin_username'),
             'partnership_id': partnership.id
@@ -3190,12 +3190,12 @@ def admin_api_blog_update(request, blog_id):
     try:
         # Handle multipart/form-data (for file uploads)
         if request.content_type and 'multipart/form-data' in request.content_type:
-            print(f"🔹 Handling multipart form data update for blog {blog_id}")
+            print(f"ðŸ”¹ Handling multipart form data update for blog {blog_id}")
             
             if 'title' in request.POST:
                 new_title = request.POST.get('title')
                 if new_title != blog.title:
-                    changes.append(f'title: {blog.title} → {new_title}')
+                    changes.append(f'title: {blog.title} â†’ {new_title}')
                     blog.title = new_title
             
             if 'content' in request.POST:
@@ -3207,7 +3207,7 @@ def admin_api_blog_update(request, blog_id):
             if 'category' in request.POST:
                 new_category = request.POST.get('category')
                 if new_category != blog.category:
-                    changes.append(f'category: {blog.category} → {new_category}')
+                    changes.append(f'category: {blog.category} â†’ {new_category}')
                     blog.category = new_category
             
             if 'tags' in request.POST:
@@ -3216,7 +3216,7 @@ def admin_api_blog_update(request, blog_id):
             if 'status' in request.POST:
                 new_status = request.POST.get('status')
                 if new_status != blog.status:
-                    changes.append(f'status: {blog.status} → {new_status}')
+                    changes.append(f'status: {blog.status} â†’ {new_status}')
                     blog.status = new_status
                     if blog.status == 'published' and not blog.published_at:
                         blog.published_at = timezone.now()
@@ -3226,7 +3226,7 @@ def admin_api_blog_update(request, blog_id):
                 old_featured = 'featured' if blog.is_featured else 'not featured'
                 new_featured = 'featured' if is_featured else 'not featured'
                 if old_featured != new_featured:
-                    changes.append(f'featured: {old_featured} → {new_featured}')
+                    changes.append(f'featured: {old_featured} â†’ {new_featured}')
                 blog.is_featured = is_featured
             
             # Handle featured image upload if present
@@ -3242,10 +3242,10 @@ def admin_api_blog_update(request, blog_id):
             # Handle JSON data
             try:
                 data = json.loads(request.body)
-                print(f"🔹 Handling JSON update for blog {blog_id}")
+                print(f"ðŸ”¹ Handling JSON update for blog {blog_id}")
                 
                 if 'title' in data and data['title'] != blog.title:
-                    changes.append(f'title: {blog.title} → {data["title"]}')
+                    changes.append(f'title: {blog.title} â†’ {data["title"]}')
                     blog.title = data['title']
                 
                 if 'content' in data:
@@ -3255,14 +3255,14 @@ def admin_api_blog_update(request, blog_id):
                     blog.excerpt = data['excerpt']
                 
                 if 'category' in data and data['category'] != blog.category:
-                    changes.append(f'category: {blog.category} → {data["category"]}')
+                    changes.append(f'category: {blog.category} â†’ {data["category"]}')
                     blog.category = data['category']
                 
                 if 'tags' in data:
                     blog.tags = data['tags']
                 
                 if 'status' in data and data['status'] != blog.status:
-                    changes.append(f'status: {blog.status} → {data["status"]}')
+                    changes.append(f'status: {blog.status} â†’ {data["status"]}')
                     blog.status = data['status']
                     if blog.status == 'published' and not blog.published_at:
                         blog.published_at = timezone.now()
@@ -3270,7 +3270,7 @@ def admin_api_blog_update(request, blog_id):
                 if 'is_featured' in data and data['is_featured'] != blog.is_featured:
                     old_featured = 'featured' if blog.is_featured else 'not featured'
                     new_featured = 'featured' if data['is_featured'] else 'not featured'
-                    changes.append(f'featured: {old_featured} → {new_featured}')
+                    changes.append(f'featured: {old_featured} â†’ {new_featured}')
                     blog.is_featured = data['is_featured']
                 
                 if 'meta_title' in data:
@@ -3300,7 +3300,7 @@ def admin_api_blog_update(request, blog_id):
                     'changes': changes
                 }
             )
-            print(f"✅ Blog updated with changes: {changes}")
+            print(f"âœ… Blog updated with changes: {changes}")
         
         # Get featured image URL
         featured_image_url = None
@@ -3322,7 +3322,7 @@ def admin_api_blog_update(request, blog_id):
         })
         
     except Exception as e:
-        print(f"❌ Error updating blog: {e}")
+        print(f"âŒ Error updating blog: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
@@ -3555,7 +3555,7 @@ def debug_media(request):
                 html += f"<li>{rel_path}/{file} - {os.path.getsize(full_path)} bytes</li>"
         html += "</ul>"
     else:
-        html += "<p>❌ Media directory does not exist!</p>"
+        html += "<p>âŒ Media directory does not exist!</p>"
     
     # Check video thumbnails
     from .models import TrainingVideo
@@ -3570,7 +3570,7 @@ def debug_media(request):
             except Exception as e:
                 html += f"<li>Video {video.id}: ERROR - {str(e)}</li>"
         else:
-            html += f"<li>Video {video.id}: {video.title} - ❌ No thumbnail</li>"
+            html += f"<li>Video {video.id}: {video.title} - âŒ No thumbnail</li>"
     html += "</ul>"
     
     # Check PDF covers
@@ -3586,7 +3586,7 @@ def debug_media(request):
             except Exception as e:
                 html += f"<li>PDF {pdf.id}: ERROR - {str(e)}</li>"
         else:
-            html += f"<li>PDF {pdf.id}: {pdf.title} - ❌ No cover</li>"
+            html += f"<li>PDF {pdf.id}: {pdf.title} - âŒ No cover</li>"
     html += "</ul>"
     
     return HttpResponse(html)
@@ -3611,7 +3611,7 @@ def test_course_simple(request):
             course.save()
             
             return HttpResponse(f"""
-            <h1>✅ Course Created Successfully!</h1>
+            <h1>âœ… Course Created Successfully!</h1>
             <p>ID: {course.id}</p>
             <p>Title: {course.title}</p>
             <p>Price: ${course.price}</p>
@@ -3620,7 +3620,7 @@ def test_course_simple(request):
             """)
         except Exception as e:
             return HttpResponse(f"""
-            <h1>❌ Error</h1>
+            <h1>âŒ Error</h1>
             <pre>{e}</pre>
             <p><a href="/admin/test-course-simple/">Try Again</a></p>
             """)

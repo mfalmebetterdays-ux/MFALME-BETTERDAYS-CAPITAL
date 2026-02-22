@@ -176,17 +176,17 @@ def send_verification_email(user, code):
         msg.attach_alternative(html_content, "text/html")
         msg.send()
         
-        print(f"✓ Verification email sent to {user.email}")
+        print(f"âœ“ Verification email sent to {user.email}")
         return True
         
     except Exception as e:
-        print(f"✗ Verification email error: {e}")
+        print(f"âœ— Verification email error: {e}")
         return False
 
 def send_admin_notification(user):
     """Send admin notification when new user registers"""
     try:
-        subject = '🔔 NEW USER REGISTRATION - Mfalme Betterdays Capital'
+        subject = 'ðŸ”” NEW USER REGISTRATION - Mfalme Betterdays Capital'
         
         admin_emails = getattr(settings, 'ADMIN_EMAILS', ['mfalmebetterdays@gmail.com'])
         
@@ -226,17 +226,17 @@ def send_admin_notification(user):
         msg.attach_alternative(html_content, "text/html")
         msg.send()
         
-        print(f"✓ Admin notification sent for {user.email}")
+        print(f"âœ“ Admin notification sent for {user.email}")
         return True
         
     except Exception as e:
-        print(f"✗ Admin notification error: {e}")
+        print(f"âœ— Admin notification error: {e}")
         return False
 
 def send_welcome_email(user):
     """Send welcome email after verification using HTML template"""
     try:
-        subject = '🎉 Welcome to the Elite Circle - Mfalme Betterdays Capital!'
+        subject = 'ðŸŽ‰ Welcome to the Elite Circle - Mfalme Betterdays Capital!'
         
         html_content = render_to_string('emails/welcome.html', {
             'username': user.username,
@@ -281,11 +281,11 @@ def send_welcome_email(user):
         msg.attach_alternative(html_content, "text/html")
         msg.send()
         
-        print(f"✓ Welcome email sent to {user.email}")
+        print(f"âœ“ Welcome email sent to {user.email}")
         return True
         
     except Exception as e:
-        print(f"✗ Welcome email error: {e}")
+        print(f"âœ— Welcome email error: {e}")
         return False
 
 def send_password_reset_email(user, code):
@@ -334,7 +334,7 @@ def send_password_reset_email(user, code):
 def send_community_application_email(user, community, request):
     """Send email to admin about community join request"""
     try:
-        subject = f'🔔 NEW COMMUNITY JOIN REQUEST - {community.name}'
+        subject = f'ðŸ”” NEW COMMUNITY JOIN REQUEST - {community.name}'
         
         html_content = render_to_string('emails/community_application.html', {
             'user': user,
@@ -359,7 +359,7 @@ def send_community_application_email(user, community, request):
 def send_institute_application_email(application):
     """Send email to admin about institute application"""
     try:
-        subject = '🔔 NEW INSTITUTE APPLICATION - Mfalme Betterdays Capital'
+        subject = 'ðŸ”” NEW INSTITUTE APPLICATION - Mfalme Betterdays Capital'
         
         send_admin_notification_email(subject, 'institute_application.html', {
             'application': application,
@@ -375,10 +375,10 @@ def send_ticket_notification_email(ticket, is_new=True):
     """Send email about support ticket"""
     try:
         if is_new:
-            subject = f'🔔 NEW SUPPORT TICKET - #{ticket.ticket_number}'
+            subject = f'ðŸ”” NEW SUPPORT TICKET - #{ticket.ticket_number}'
             template = 'new_ticket_notification.html'
         else:
-            subject = f'💬 TICKET REPLY - #{ticket.ticket_number}'
+            subject = f'ðŸ’¬ TICKET REPLY - #{ticket.ticket_number}'
             template = 'ticket_reply_notification.html'
         
         send_admin_notification_email(subject, template, {
@@ -516,9 +516,9 @@ def login_user(request):
     remember = request.POST.get('remember') == 'on'
     
     print("\n" + "="*60)
-    print("🔍 LOGIN ATTEMPT")
+    print("ðŸ” LOGIN ATTEMPT")
     print("="*60)
-    print(f"📝 Email: {email}")
+    print(f"ðŸ“ Email: {email}")
     
     if not email or not password:
         messages.error(request, 'Please fill in all fields')
@@ -526,10 +526,10 @@ def login_user(request):
     
     try:
         user = MfalmeUsers.objects.get(email=email)
-        print(f"✅ User found: {user.username}")
+        print(f"âœ… User found: {user.username}")
         
         if not user.check_password(password):
-            print("❌ Invalid password")
+            print("âŒ Invalid password")
             messages.error(request, 'Invalid password')
             return redirect('login_page')
         
@@ -567,7 +567,7 @@ def login_user(request):
         messages.error(request, 'No account found with this email')
         return redirect('login_page')
     except Exception as e:
-        print(f"❌ Unexpected error: {str(e)}")
+        print(f"âŒ Unexpected error: {str(e)}")
         import traceback
         traceback.print_exc()
         messages.error(request, f'Login error: {str(e)}')
@@ -577,11 +577,11 @@ def register_user(request):
     """Handle user registration"""
     import sys
     print("\n" + "="*60)
-    print("🔍 NEW REGISTRATION ATTEMPT")
+    print("ðŸ” NEW REGISTRATION ATTEMPT")
     print("="*60)
     
     if request.method != 'POST':
-        print("❌ Not a POST request, redirecting to login_page")
+        print("âŒ Not a POST request, redirecting to login_page")
         return redirect('login_page')
     
     # Get form data
@@ -596,8 +596,8 @@ def register_user(request):
     trading_experience = request.POST.get('trading_experience', 'Beginner')
     terms_accepted = request.POST.get('terms_accepted') == 'on'
     
-    print(f"📝 Email: {email}")
-    print(f"📝 Username: {username}")
+    print(f"ðŸ“ Email: {email}")
+    print(f"ðŸ“ Username: {username}")
     
     # Validation
     errors = []
@@ -606,13 +606,13 @@ def register_user(request):
         errors.append('Email is required')
     elif MfalmeUsers.objects.filter(email=email).exists():
         errors.append('Email already registered')
-        print(f"❌ Email already exists: {email}")
+        print(f"âŒ Email already exists: {email}")
     
     if not username:
         errors.append('Username is required')
     elif MfalmeUsers.objects.filter(username=username).exists():
         errors.append('Username already taken')
-        print(f"❌ Username already exists: {username}")
+        print(f"âŒ Username already exists: {username}")
     
     if not phone:
         errors.append('Phone number is required')
@@ -624,11 +624,11 @@ def register_user(request):
     
     if password != confirm_password:
         errors.append('Passwords do not match')
-        print(f"❌ Passwords do not match")
+        print(f"âŒ Passwords do not match")
     
     if not terms_accepted:
         errors.append('You must accept the terms and conditions')
-        print(f"❌ Terms not accepted")
+        print(f"âŒ Terms not accepted")
     
     if errors:
         for error in errors:
@@ -649,7 +649,7 @@ def register_user(request):
         ip_address = get_client_ip(request)
         user_agent = request.META.get('HTTP_USER_AGENT', '')
         
-        print(f"✅ Validation passed, creating user...")
+        print(f"âœ… Validation passed, creating user...")
         
         user = MfalmeUsers.objects.create_user(
             email=email,
@@ -666,7 +666,7 @@ def register_user(request):
             user_agent=user_agent,
         )
         
-        print(f"✅ User created with ID: {user.id}")
+        print(f"âœ… User created with ID: {user.id}")
         
         verification_code = generate_verification_code()
         VerificationCode.objects.create(
@@ -678,7 +678,7 @@ def register_user(request):
             user_agent=user_agent,
         )
         
-        print(f"✅ Verification code generated: {verification_code}")
+        print(f"âœ… Verification code generated: {verification_code}")
         
         email_sent = send_verification_email(user, verification_code)
         admin_notified = send_admin_notification(user)
@@ -702,7 +702,7 @@ def register_user(request):
             return redirect('login_page')
             
     except Exception as e:
-        print(f"❌ Registration exception: {str(e)}")
+        print(f"âŒ Registration exception: {str(e)}")
         import traceback
         traceback.print_exc()
         messages.error(request, f'Registration failed: {str(e)}')
@@ -712,19 +712,19 @@ def verify_account_page(request):
     """Account verification page"""
     import sys
     print("-" * 50)
-    print("🔍 VERIFY ACCOUNT PAGE ACCESSED")
+    print("ðŸ” VERIFY ACCOUNT PAGE ACCESSED")
     
     email = request.session.get('verification_email', '')
-    print(f"🔍 Email from session: '{email}'")
+    print(f"ðŸ” Email from session: '{email}'")
     
     if not email:
-        print("❌ No email in session")
+        print("âŒ No email in session")
         messages.error(request, 'No verification session found. Please register again.')
         return redirect('login_page')
     
     if request.method == 'POST':
         code = request.POST.get('code', '').strip()
-        print(f"🔍 POST request with code: '{code}'")
+        print(f"ðŸ” POST request with code: '{code}'")
         
         if not code:
             messages.error(request, 'Please enter verification code')
@@ -755,7 +755,7 @@ def verify_account_page(request):
                 user.verified_at = timezone.now()
                 user.save(update_fields=['email_verified', 'account_status', 'verified_at'])
                 
-                print(f"✅ User activated successfully!")
+                print(f"âœ… User activated successfully!")
                 
                 welcome_sent = send_welcome_email(user)
                 
@@ -783,7 +783,7 @@ def verify_account_page(request):
         except VerificationCode.DoesNotExist:
             messages.error(request, 'No verification code found. Please request a new one.')
         except Exception as e:
-            print(f"❌ Unexpected error: {str(e)}")
+            print(f"âŒ Unexpected error: {str(e)}")
             messages.error(request, f'An error occurred: {str(e)}')
     
     return render(request, 'verify_account.html', {'user_email': email})
@@ -932,14 +932,14 @@ def logout_user(request):
 def dashboard(request):
     """User dashboard - accessible to all authenticated users"""
     print("\n" + "="*60)
-    print("🔍 DASHBOARD ACCESSED")
+    print("ðŸ” DASHBOARD ACCESSED")
     
     if not request.user.is_authenticated:
-        print("❌ User not authenticated")
+        print("âŒ User not authenticated")
         return redirect('login_page')
     
     user = request.user
-    print(f"✅ Dashboard accessed by: {user.username}")
+    print(f"âœ… Dashboard accessed by: {user.username}")
     
     context = {
         'user': user,
@@ -3198,16 +3198,16 @@ def test_all_emails(request):
     
     code = generate_verification_code()
     result1 = send_verification_email(request.user, code)
-    results.append(f"Verification email: {'✓' if result1 else '✗'}")
+    results.append(f"Verification email: {'âœ“' if result1 else 'âœ—'}")
     
     result2 = send_password_reset_email(request.user, code)
-    results.append(f"Password reset email: {'✓' if result2 else '✗'}")
+    results.append(f"Password reset email: {'âœ“' if result2 else 'âœ—'}")
     
     result3 = send_welcome_email(request.user)
-    results.append(f"Welcome email: {'✓' if result3 else '✗'}")
+    results.append(f"Welcome email: {'âœ“' if result3 else 'âœ—'}")
     
     result4 = send_admin_notification(request.user)
-    results.append(f"Admin notification: {'✓' if result4 else '✗'}")
+    results.append(f"Admin notification: {'âœ“' if result4 else 'âœ—'}")
     
     return HttpResponse('<br>'.join(results))
 
@@ -3222,7 +3222,7 @@ def test_smtp_connection(request):
         connection = get_connection()
         connection.open()
         connection.close()
-        return HttpResponse('SMTP connection successful ✓')
+        return HttpResponse('SMTP connection successful âœ“')
     except Exception as e:
         return HttpResponse(f'SMTP connection failed: {str(e)}')
 

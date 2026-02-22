@@ -26,25 +26,25 @@ if not SECRET_KEY:
     is_local = 'runserver' in sys.argv or 'manage.py' in sys.argv
     
     if DEBUG or is_local:
-        print("⚠️ WARNING: Using fallback SECRET_KEY for local development")
+        print("âš ï¸ WARNING: Using fallback SECRET_KEY for local development")
         SECRET_KEY = 'django-insecure-dev-key-do-not-use-in-production-7x9p2m4k8j3h5g1f'
     else:
-        print("❌ CRITICAL: SECRET_KEY environment variable not set in production!")
+        print("âŒ CRITICAL: SECRET_KEY environment variable not set in production!")
         # In production, we should fail if no SECRET_KEY
         raise ValueError("SECRET_KEY must be set in production environment")
 
 # Print mode
 if DEBUG:
-    print("🔧 Running in DEBUG mode")
+    print("ðŸ”§ Running in DEBUG mode")
 else:
-    print("🚀 Running in PRODUCTION mode")
+    print("ðŸš€ Running in PRODUCTION mode")
 
 # ===== SENSITIVE DATA - MUST BE ENVIRONMENT VARIABLES =====
 # Email Configuration - MOVED TO ENVIRONMENT VARIABLES
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'mfalmebetterdays@gmail.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')  # MUST be set in Railway
 if not EMAIL_HOST_PASSWORD and not DEBUG:
-    print("❌ CRITICAL: EMAIL_HOST_PASSWORD environment variable not set!")
+    print("âŒ CRITICAL: EMAIL_HOST_PASSWORD environment variable not set!")
 
 # ===== SASA PAY CONFIGURATION =====
 SASAPAY_CONFIG = {
@@ -117,7 +117,7 @@ else:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
-    print("🔓 Running in HTTP mode (development)")
+    print("ðŸ”“ Running in HTTP mode (development)")
 
 # Application definition
 INSTALLED_APPS = [
@@ -185,10 +185,10 @@ DATABASES = {
     }
 }
 
-print("✅ PostgreSQL database configured with direct connection")
-print(f"📊 Database Host: mainline.proxy.rlwy.net:49307")
-print(f"📊 Database Name: railway")
-print(f"📊 Database User: postgres")
+print("âœ… PostgreSQL database configured with direct connection")
+print(f"ðŸ“Š Database Host: mainline.proxy.rlwy.net:49307")
+print(f"ðŸ“Š Database Name: railway")
+print(f"ðŸ“Š Database User: postgres")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -378,20 +378,20 @@ def startup_checks():
     
     # Log configuration
     startup_messages.append("=" * 60)
-    startup_messages.append("🚀 MFALME BETTERDAYS CAPITAL - Starting Up")
+    startup_messages.append("ðŸš€ MFALME BETTERDAYS CAPITAL - Starting Up")
     startup_messages.append("=" * 60)
     
     # Environment
-    startup_messages.append(f"📦 Environment: {'Production' if not DEBUG else 'Development'}")
-    startup_messages.append(f"🔧 DEBUG: {DEBUG}")
-    startup_messages.append(f"🌐 ALLOWED_HOSTS: {ALLOWED_HOSTS}")
+    startup_messages.append(f"ðŸ“¦ Environment: {'Production' if not DEBUG else 'Development'}")
+    startup_messages.append(f"ðŸ”§ DEBUG: {DEBUG}")
+    startup_messages.append(f"ðŸŒ ALLOWED_HOSTS: {ALLOWED_HOSTS}")
     
     # HTTPS Mode
     https_mode = SECURE_SSL_REDIRECT
-    startup_messages.append(f"🔒 HTTPS Redirects: {'ENABLED' if https_mode else 'DISABLED'}")
+    startup_messages.append(f"ðŸ”’ HTTPS Redirects: {'ENABLED' if https_mode else 'DISABLED'}")
     
     # Database
-    startup_messages.append(f"🗄️  Database: PostgreSQL (configured directly)")
+    startup_messages.append(f"ðŸ—„ï¸  Database: PostgreSQL (configured directly)")
     startup_messages.append(f"   Host: mainline.proxy.rlwy.net:49307")
     startup_messages.append(f"   Database: railway")
     startup_messages.append(f"   User: postgres")
@@ -401,29 +401,29 @@ def startup_checks():
         from django.db import connection
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
-        startup_messages.append("   ✅ Connection test: SUCCESS")
+        startup_messages.append("   âœ… Connection test: SUCCESS")
     except Exception as e:
-        startup_messages.append(f"   ❌ Connection test: FAILED - {e}")
+        startup_messages.append(f"   âŒ Connection test: FAILED - {e}")
     
     # Email
     if EMAIL_HOST_PASSWORD:
-        startup_messages.append(f"📧 Email: ✅ Configured ({EMAIL_HOST_USER})")
+        startup_messages.append(f"ðŸ“§ Email: âœ… Configured ({EMAIL_HOST_USER})")
     else:
-        startup_messages.append(f"📧 Email: ⚠️ Password missing - emails will fail")
+        startup_messages.append(f"ðŸ“§ Email: âš ï¸ Password missing - emails will fail")
     
     # SasaPay
-    sasapay_status = "✅ Configured" if SASAPAY_CONFIG['CLIENT_ID'] and SASAPAY_CONFIG['CLIENT_SECRET'] else "⚠️ Keys missing"
-    startup_messages.append(f"💳 SasaPay: {sasapay_status} ({SASAPAY_CONFIG['ENVIRONMENT']})")
+    sasapay_status = "âœ… Configured" if SASAPAY_CONFIG['CLIENT_ID'] and SASAPAY_CONFIG['CLIENT_SECRET'] else "âš ï¸ Keys missing"
+    startup_messages.append(f"ðŸ’³ SasaPay: {sasapay_status} ({SASAPAY_CONFIG['ENVIRONMENT']})")
     
     # Static files
     static_exists = os.path.exists(os.path.join(BASE_DIR, 'static'))
-    startup_messages.append(f"📁 Static Files: {'✅ Found' if static_exists else 'ℹ️ Not used'}")
+    startup_messages.append(f"ðŸ“ Static Files: {'âœ… Found' if static_exists else 'â„¹ï¸ Not used'}")
     
     # Custom User Model
-    startup_messages.append(f"👤 Custom User Model: {AUTH_USER_MODEL}")
+    startup_messages.append(f"ðŸ‘¤ Custom User Model: {AUTH_USER_MODEL}")
     
     # Session Settings
-    startup_messages.append(f"🍪 Session Engine: {SESSION_ENGINE}")
+    startup_messages.append(f"ðŸª Session Engine: {SESSION_ENGINE}")
     
     startup_messages.append("=" * 60)
     
@@ -444,7 +444,7 @@ if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY_SERVICE_ID')
     DATABASES['default']['CONN_MAX_AGE'] = 180
     DATABASES['default']['CONN_HEALTH_CHECKS'] = True
         
-    print("🚂 Railway environment detected - optimizations applied")
+    print("ðŸš‚ Railway environment detected - optimizations applied")
 
 # ===== DEVELOPMENT SETTINGS =====
 if DEBUG:
@@ -464,24 +464,24 @@ if DEBUG:
     
     # Show emails in console during development
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    print("⚠️ DEBUG MODE: Emails will be printed to console, not sent")
+    print("âš ï¸ DEBUG MODE: Emails will be printed to console, not sent")
 
 # ===== FINAL VALIDATION =====
 # Validate critical settings
 if not SECRET_KEY or SECRET_KEY == 'django-insecure-change-this-in-production':
     if DEBUG:
-        print("⚠️ WARNING: Using fallback SECRET_KEY in development")
+        print("âš ï¸ WARNING: Using fallback SECRET_KEY in development")
     else:
-        print("⚠️ CRITICAL WARNING: Using default/insecure SECRET_KEY in production!")
+        print("âš ï¸ CRITICAL WARNING: Using default/insecure SECRET_KEY in production!")
 
 if not EMAIL_HOST_PASSWORD and not DEBUG:
-    print("⚠️ CRITICAL WARNING: EMAIL_HOST_PASSWORD not set - email features will fail!")
+    print("âš ï¸ CRITICAL WARNING: EMAIL_HOST_PASSWORD not set - email features will fail!")
 
 if not SASAPAY_CONFIG['CLIENT_ID'] or not SASAPAY_CONFIG['CLIENT_SECRET']:
-    print("⚠️ WARNING: SasaPay credentials not fully configured!")
+    print("âš ï¸ WARNING: SasaPay credentials not fully configured!")
 
 if DEBUG and 'railway' in str(ALLOWED_HOSTS).lower():
-    print("⚠️ WARNING: DEBUG=True in production-like environment!")
+    print("âš ï¸ WARNING: DEBUG=True in production-like environment!")
 
 # Ensure critical directories exist
 for directory in ['staticfiles', 'media', 'logs']:
@@ -492,4 +492,4 @@ for directory in ['staticfiles', 'media', 'logs']:
 if 'gunicorn' in sys.argv or 'runserver' in sys.argv:
     startup_checks()
 
-print("✅ Settings loaded successfully!")
+print("âœ… Settings loaded successfully!")

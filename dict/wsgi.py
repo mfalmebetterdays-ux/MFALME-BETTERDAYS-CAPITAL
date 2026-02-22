@@ -6,7 +6,7 @@ import os
 import sys
 
 # Minimal startup - only essential logs
-print(f"🚀 WSGI: Starting MFALME BETTERDAYS CAPITAL")
+print(f"ðŸš€ WSGI: Starting MFALME BETTERDAYS CAPITAL")
 
 # Set Django settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dict.settings')
@@ -24,10 +24,10 @@ try:
     application = WhiteNoise(django_app, root=static_root)
     application.max_age = 31536000  # 1 year cache
     
-    print("✅ WSGI ready")
+    print("âœ… WSGI ready")
     
 except Exception as e:
-    print(f"❌ WSGI ERROR: {e}")
+    print(f"âŒ WSGI ERROR: {e}")
     raise
 
 # No debug info, no database checks, no fancy prints

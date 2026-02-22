@@ -2283,7 +2283,7 @@ class UserCourse(models.Model):
         # Create achievement notification
         Notification.objects.create(
             user=self.user,
-            title='Course Completed! 🎉',
+            title='Course Completed! ðŸŽ‰',
             message=f'Congratulations! You have completed {self.course.title}',
             notification_type='SUCCESS',
             related_object_type='course',
@@ -2443,7 +2443,7 @@ class UserCourse(models.Model):
         # Create achievement notification
         Notification.objects.create(
             user=self.user,
-            title='Course Completed! 🎉',
+            title='Course Completed! ðŸŽ‰',
             message=f'Congratulations! You have completed {self.course.title}',
             notification_type='SUCCESS',
             related_object_type='course',

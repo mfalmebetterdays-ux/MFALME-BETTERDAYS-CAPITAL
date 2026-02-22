@@ -47,7 +47,7 @@ def get_sasapay_token():
     """Get OAuth token from SasaPay"""
     
     if USE_MOCK_MODE:
-        print("🔧 MOCK MODE: Returning mock token")
+        print("ðŸ”§ MOCK MODE: Returning mock token")
         return "mock_token_for_development"
     
     # Try multiple API endpoints
@@ -88,13 +88,13 @@ def get_sasapay_token():
                 data = response.json()
                 token = data.get('access_token')
                 if token:
-                    print(f"✅ Successfully got token from {url}")
+                    print(f"âœ… Successfully got token from {url}")
                     return token
         except Exception as e:
             print(f"Failed for {url}: {type(e).__name__}")
     
     # If all methods fail, return None
-    print("❌ All SasaPay endpoints failed.")
+    print("âŒ All SasaPay endpoints failed.")
     return None
 
 def initiate_c2b_payment(phone, amount, reference, description):
@@ -102,7 +102,7 @@ def initiate_c2b_payment(phone, amount, reference, description):
     
     # Check if we're in mock mode
     if USE_MOCK_MODE:
-        print("🔧 MOCK MODE: Simulating C2B payment")
+        print("ðŸ”§ MOCK MODE: Simulating C2B payment")
         return {
             'success': True,
             'transaction_id': f"MOCK_{reference}",
@@ -179,7 +179,7 @@ def initiate_checkout(amount, reference, description, email, phone=None):
     
     # Check if we're in mock mode
     if USE_MOCK_MODE:
-        print("🔧 MOCK MODE: Simulating checkout")
+        print("ðŸ”§ MOCK MODE: Simulating checkout")
         return {
             'success': True,
             'checkout_id': f"CHECKOUT_{reference}",
