@@ -2306,7 +2306,7 @@
             <div class="package-footer">
               <div class="price">$200</div>
               <!-- ✅ CORRECT: market_consultation for $200 -->
-              <a href="{% url 'initiate_package_payment' 'market_consultation' 200 %}" class="btn-package">Pay</a>
+              <a href="{% url 'login_page' %}" class="btn-package">Pay</a>
             </div>
           </div>
         </div>
@@ -2322,7 +2322,7 @@
             <div class="package-footer">
               <div class="price">$5,000</div>
               <!-- ✅ CHANGE TO: lifetime_mentorship for $5000 -->
-              <a href="{% url 'initiate_package_payment' 'lifetime_mentorship' 5000 %}" class="btn-package">Pay </a>
+              <a href="{% url 'login_page' %}" class="btn-package">Pay </a>
             </div>
           </div>
         </div>
@@ -2338,7 +2338,7 @@
             <div class="package-footer">
               <div class="price">$100,000</div>
               <!-- ✅ CHANGE TO: leveraging_package for $100000 -->
-              <a href="{% url 'initiate_package_payment' 'leveraging_package' 100000 %}" class="btn-package">Pay </a>
+              <a href="{% url 'login_page' %}" class="btn-package">Pay </a>
             </div>
           </div>
         </div>
@@ -4279,7 +4279,7 @@ window.closeModal = function() {
             <span><i class="fas fa-check"></i> Professional Approach</span>
           </div>
           <!-- ✅ FIXED: Changed from #payment to actual payment URL -->
-          <a href="{% url 'initiate_education_payment' 'IPLT' '12_months' %}" class="btn-education">Enroll Now</a>
+          <a href="{% url 'login_page' %}" class="btn-education">Enroll Now</a>
         </div>
       </div>
       
@@ -4309,8 +4309,8 @@ window.closeModal = function() {
             <span><i class="fas fa-check"></i> Full System</span>
           </div>
           <!-- ✅ ADD TWO BUTTONS for 1 Month and 12 Months -->
-          <a href="{% url 'initiate_education_payment' 'PTM' '1_month' %}" class="btn-education">1 Month - $1,999</a>
-          <a href="{% url 'initiate_education_payment' 'PTM' '12_months' %}" class="btn-education" style="margin-top: 10px;">12 Months - $3,499</a>
+          <a href="{% url 'login_page' %}" class="btn-education">1 Month - $1,999</a>
+          <a href="{% url 'login_page' %}" class="btn-education" style="margin-top: 10px;">12 Months - $3,499</a>
         </div>
       </div>
       
@@ -4340,8 +4340,8 @@ window.closeModal = function() {
             <span><i class="fas fa-check"></i> Mentor Lessons</span>
           </div>
           <!-- ✅ ADD TWO BUTTONS for 1 Month and 12 Months -->
-          <a href="{% url 'initiate_education_payment' 'POTM' '1_month' %}" class="btn-education">1 Month - $1,999</a>
-          <a href="{% url 'initiate_education_payment' 'POTM' '12_months' %}" class="btn-education" style="margin-top: 10px;">12 Months - $3,499</a>
+          <a href="{% url 'login_page' %}" class="btn-education">1 Month - $1,999</a>
+          <a href="{% url 'login_page' %}" class="btn-education" style="margin-top: 10px;">12 Months - $3,499</a>
         </div>
       </div>
       
@@ -4371,8 +4371,8 @@ window.closeModal = function() {
             <span><i class="fas fa-check"></i> Pro Trader Method</span>
           </div>
           <!-- ✅ ADD TWO BUTTONS for 1 Month and 12 Months -->
-          <a href="{% url 'initiate_education_payment' 'PFTM' '1_month' %}" class="btn-education">1 Month - $1,499</a>
-          <a href="{% url 'initiate_education_payment' 'PFTM' '12_months' %}" class="btn-education" style="margin-top: 10px;">12 Months - $2,999</a>
+          <a href="{% url 'login_page' %}" class="btn-education">1 Month - $1,499</a>
+          <a href="{% url 'login_page' %}" class="btn-education" style="margin-top: 10px;">12 Months - $2,999</a>
         </div>
       </div>
     </div>
@@ -6194,7 +6194,7 @@ window.testimonialsSlider = {
         <i class="fas fa-question-circle"></i>
         <h4>Still have questions?</h4>
         <p>Contact our support team for personalized assistance</p>
-        <a href="#contact" class="btn-gold">Contact Support</a>
+        <a href="/contact" class="btn-gold">Contact Support</a>
       </div>
     </div>
   </div>
