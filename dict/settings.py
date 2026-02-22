@@ -166,18 +166,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'dict.wsgi.application'
 
 # ===== DATABASE CONFIGURATION - POSTGRESQL DIRECT CONNECTION =====
-# Your Railway PostgreSQL database URL
-DATABASE_URL = "postgresql://postgres:vdIJsXSjLElaiHOABtJKrlnXLPgNFlDD@interchange.proxy.rlwy.net:44077/railway"
+# NEW DATABASE URL - UPDATED
+DATABASE_URL = "postgresql://postgres:LJzpCEAuJalpOHrSxpTrsWkFjkztJhHj@mainline.proxy.rlwy.net:49307/railway"
+
+# Parse the database URL
+db_config = dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
 
 # Configure database with proper SSL settings
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'railway',
-        'USER': 'postgres',
-        'PASSWORD': 'vdIJsXSjLElaiHOABtJKrlnXLPgNFlDD',
-        'HOST': 'interchange.proxy.rlwy.net',
-        'PORT': '44077',
+        **db_config,
         'OPTIONS': {
             'sslmode': 'require',  # Railway requires SSL
             'connect_timeout': 10,
@@ -188,7 +186,7 @@ DATABASES = {
 }
 
 print("✅ PostgreSQL database configured with direct connection")
-print(f"📊 Database Host: interchange.proxy.rlwy.net:44077")
+print(f"📊 Database Host: mainline.proxy.rlwy.net:49307")
 print(f"📊 Database Name: railway")
 print(f"📊 Database User: postgres")
 
@@ -394,7 +392,7 @@ def startup_checks():
     
     # Database
     startup_messages.append(f"🗄️  Database: PostgreSQL (configured directly)")
-    startup_messages.append(f"   Host: interchange.proxy.rlwy.net:44077")
+    startup_messages.append(f"   Host: mainline.proxy.rlwy.net:49307")
     startup_messages.append(f"   Database: railway")
     startup_messages.append(f"   User: postgres")
     
