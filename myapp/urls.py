@@ -31,6 +31,7 @@ urlpatterns = [
     path('seminars/', views.seminars, name='seminars'),
     path('faqs/', views.faqs, name='faqs'),
     path('booking/', views.booking, name='booking'),
+    path('test-sasapay/', views.test_sasapay_connection, name='test_sasapay'),
     
     # ==================== USER AUTHENTICATION ====================
     path('login/', views.login_page, name='login_page'),

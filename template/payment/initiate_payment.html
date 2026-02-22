@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Payment - Mfalme</title>
+    <title>Payment - Mfalme Betterdays Capital</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
     <script src="https://js.paystack.co/v1/inline.js"></script>
     <meta name="csrf-token" content="{{ csrf_token }}">
@@ -26,7 +26,7 @@
         }
 
         .card {
-            max-width: 400px;
+            max-width: 450px;
             width: 100%;
             background: white;
             border-radius: 28px;
@@ -36,7 +36,7 @@
 
         .title {
             font-size: 1.5rem;
-            font-weight: 500;
+            font-weight: 600;
             color: #111;
             margin-bottom: 4px;
         }
@@ -55,9 +55,10 @@
         }
 
         .item-name {
-            font-weight: 500;
+            font-weight: 600;
             color: #111;
             margin-bottom: 16px;
+            font-size: 1.1rem;
         }
 
         .price-row {
@@ -193,12 +194,71 @@
             background: #4f52e0;
         }
 
+        .sasapay-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .sasapay-btn img {
             height: 24px;
             width: auto;
         }
 
-        /* Pesapal Button Styles */
+        .phone-input-container {
+            margin: 16px 0;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 16px;
+            display: none;
+        }
+
+        .phone-input-container.show {
+            display: block;
+        }
+
+        .phone-label {
+            display: block;
+            font-size: 0.9rem;
+            color: #374151;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .phone-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 40px;
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+
+        .phone-input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+
+        .phone-hint {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        .confirm-phone-btn {
+            width: 100%;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .confirm-phone-btn:hover {
+            background: #4f52e0;
+        }
+
         .pesapal-btn {
             width: 100%;
             background: #1e40af;
@@ -219,6 +279,11 @@
 
         .pesapal-btn:hover {
             background: #1e3a8a;
+        }
+
+        .pesapal-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .pesapal-btn img {
@@ -266,6 +331,18 @@
         }
 
         .error.show { display: block; }
+
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .success.show { display: block; }
 
         .loading {
             text-align: center;
@@ -375,41 +452,69 @@
             height: 100%;
             border: none;
         }
+
+        .payment-status {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .status-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .status-icon.success { color: #059669; }
+        .status-icon.pending { color: #f59e0b; }
+        .status-icon.failed { color: #dc2626; }
+
+        .payment-status h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: #111;
+        }
+
+        .payment-status p {
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="title">Complete payment</div>
-        <div class="subtitle">Choose your payment method</div>
+        <div class="title">Complete Payment</div>
+        <div class="subtitle">Choose your preferred payment method</div>
 
-        <!-- Error -->
+        <!-- Error Message -->
         <div class="error" id="errorMessage"></div>
+        
+        <!-- Success Message -->
+        <div class="success" id="successMessage"></div>
         
         <!-- Loading -->
         <div class="loading" id="loading">
-            <i class="fas fa-circle-notch"></i>
-            <p style="margin-top: 8px; color: #6b7280;">processing...</p>
+            <i class="fas fa-circle-notch fa-spin"></i>
+            <p style="margin-top: 8px; color: #6b7280;">Processing your payment...</p>
         </div>
 
-        <!-- Item -->
+        <!-- Item Details -->
         <div class="item-box">
             <div class="item-name">{{ title }}</div>
             
             <div class="price-row">
-                <span class="price-label">USD</span>
+                <span class="price-label">Amount (USD)</span>
                 <span class="price-usd">${{ amount_usd|floatformat:2 }}</span>
             </div>
             <div class="price-row">
-                <span class="price-label">KES</span>
+                <span class="price-label">Amount (KES)</span>
                 <span class="price-kes">KSh {{ amount_kes|floatformat:2 }}</span>
             </div>
             
             <div class="rate-note">
-                <span>1 USD = 129 KES • charged in KES</span>
+                <span>💰 1 USD = 129 KES • You will be charged in KES</span>
             </div>
         </div>
 
-        <!-- User -->
+        <!-- User Information -->
         <div class="user-section">
             <div class="user-row">
                 <span>👤</span>
@@ -431,7 +536,7 @@
                 <span class="method-icon">💳</span>
                 <div>
                     <div class="method-name">Card Payment (Paystack)</div>
-                    <div class="method-desc">Visa, Mastercard, Verve</div>
+                    <div class="method-desc">Visa, Mastercard, Verve, American Express</div>
                 </div>
             </div>
         </div>
@@ -440,54 +545,60 @@
             <div class="method-row">
                 <span class="method-icon">🇰🇪</span>
                 <div>
-                    <div class="method-name">SasaPay / M-PESA</div>
-                    <div class="method-desc">Pay with M-PESA, SasaPay Wallet, or Card</div>
+                    <div class="method-name">M-PESA (SasaPay)</div>
+                    <div class="method-desc">Pay with M-PESA STK Push</div>
                 </div>
             </div>
         </div>
 
-        <!-- NEW: Pesapal Payment Method -->
         <div class="method-box" id="methodPesapal" onclick="selectMethod('pesapal')">
             <div class="method-row">
                 <span class="method-icon">🌍</span>
                 <div>
                     <div class="method-name">Pesapal <span class="pesapal-badge">M-PESA • Airtel • Card</span></div>
-                    <div class="method-desc">Pay with M-PESA, Airtel Money, or Card</div>
+                    <div class="method-desc">Multiple payment options</div>
                 </div>
             </div>
         </div>
 
-        <!-- Paystack Button (shown when Paystack selected) -->
+        <!-- Phone Input for M-PESA (SasaPay) -->
+        <div class="phone-input-container" id="phoneInputContainer">
+            <label class="phone-label">📱 M-PESA Phone Number</label>
+            <input type="tel" class="phone-input" id="mpesaPhone" placeholder="e.g., 254712345678" value="{{ user.phone }}">
+            <div class="phone-hint">Enter your M-PESA registered phone number (format: 254XXXXXXXXX)</div>
+            <button class="confirm-phone-btn" id="confirmPhoneBtn" onclick="confirmMpesaPhone()">Continue with M-PESA</button>
+        </div>
+
+        <!-- Paystack Button -->
         <button class="pay-btn" id="paystackButton" onclick="initiatePaystack()" style="display: block;">
             Pay KSh {{ amount_kes|floatformat:2 }} with Card
         </button>
 
-        <!-- SasaPay Button (shown when SasaPay selected) -->
-        <button class="sasapay-btn" id="sasapayButton" onclick="initiateSasapay()" style="display: none;">
-            <span>Continue with SasaPay</span>
-            <span style="font-size: 0.8rem;">→</span>
+        <!-- SasaPay Button (hidden initially) -->
+        <button class="sasapay-btn" id="sasapayButton" style="display: none;">
+            <span>Pay with M-PESA</span>
         </button>
 
-        <!-- NEW: Pesapal Button (shown when Pesapal selected) -->
+        <!-- Pesapal Button -->
         <button class="pesapal-btn" id="pesapalButton" onclick="initiatePesapal()" style="display: none;">
-            <span>🇰🇪 Pay with Pesapal</span>
+            <span>Continue with Pesapal</span>
             <span style="font-size: 0.8rem;">→</span>
         </button>
 
-        <!-- Secure badges -->
+        <!-- Security Badges -->
         <div class="secure-row">
             <span>🔒 256-bit SSL</span>
-            <span>🛡️ Secure</span>
-            <span>✅ Pesapal Verified</span>
+            <span>🛡️ Secure Payment</span>
+            <span>✅ Verified</span>
         </div>
 
-        <!-- Back -->
+        <!-- Back Link -->
         <div class="back-link">
-            <a href="javascript:history.back()">← back</a>
+            <a href="javascript:history.back()">← Cancel and go back</a>
         </div>
     </div>
 
-    <!-- NEW: Pesapal Modal -->
+    <!-- Pesapal Modal -->
     <div class="modal" id="pesapalModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -495,26 +606,31 @@
                 <button class="modal-close" onclick="closePesapalModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <iframe class="pesapal-iframe" id="pesapalIframe" src="about:blank"></iframe>
+                <iframe class="pesapal-iframe" id="pesapalIframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation"></iframe>
             </div>
         </div>
     </div>
 
     <script>
+        // Get CSRF token
         const csrftoken = document.querySelector('[name=csrf-token]').content;
+        
+        // Payment details from Django
         const paystackPublicKey = "{{ paystack_public_key }}";
         const reference = "{{ reference }}";
         const amountKes = {{ amount_kes }};
         const amountUsd = {{ amount_usd }};
         const email = "{{ user.email }}";
-        const phone = "{{ user.phone|default:'' }}";
+        const userPhone = "{{ user.phone|default:'' }}";
         const firstName = "{{ user.first_name|default:user.username }}";
         const lastName = "{{ user.last_name|default:'' }}";
         const itemType = "{{ package_type }}";
         const itemId = "{{ package_id }}";
         
-        let selectedMethod = 'paystack'; // Default to paystack
+        let selectedMethod = 'paystack';
+        let mpesaPhoneNumber = userPhone;
 
+        // Select payment method
         function selectMethod(method) {
             selectedMethod = method;
             
@@ -523,24 +639,56 @@
             document.getElementById('methodSasapay').classList.remove('selected');
             document.getElementById('methodPesapal').classList.remove('selected');
             
-            // Hide all buttons
+            // Hide all buttons and phone input
             document.getElementById('paystackButton').style.display = 'none';
             document.getElementById('sasapayButton').style.display = 'none';
             document.getElementById('pesapalButton').style.display = 'none';
+            document.getElementById('phoneInputContainer').classList.remove('show');
             
             if (method === 'paystack') {
                 document.getElementById('methodPaystack').classList.add('selected');
                 document.getElementById('paystackButton').style.display = 'block';
             } else if (method === 'sasapay') {
                 document.getElementById('methodSasapay').classList.add('selected');
-                document.getElementById('sasapayButton').style.display = 'block';
+                document.getElementById('phoneInputContainer').classList.add('show');
+                // Pre-fill with user's phone if available
+                if (userPhone) {
+                    document.getElementById('mpesaPhone').value = userPhone;
+                }
             } else if (method === 'pesapal') {
                 document.getElementById('methodPesapal').classList.add('selected');
                 document.getElementById('pesapalButton').style.display = 'block';
             }
         }
 
-        // Paystack payment
+        // Confirm M-PESA phone number and initiate payment
+        function confirmMpesaPhone() {
+            const phoneInput = document.getElementById('mpesaPhone');
+            mpesaPhoneNumber = phoneInput.value.trim();
+            
+            // Validate phone number
+            if (!mpesaPhoneNumber) {
+                showError('Please enter your M-PESA phone number');
+                return;
+            }
+            
+            // Basic validation for Kenyan numbers
+            if (!mpesaPhoneNumber.match(/^254[0-9]{9}$/)) {
+                showError('Please enter a valid phone number in format: 254XXXXXXXXX (e.g., 254712345678)');
+                return;
+            }
+            
+            // Hide phone input and show processing button
+            document.getElementById('phoneInputContainer').classList.remove('show');
+            document.getElementById('sasapayButton').style.display = 'block';
+            document.getElementById('sasapayButton').innerHTML = '<span>Processing M-PESA...</span>';
+            document.getElementById('sasapayButton').disabled = true;
+            
+            // Initiate SasaPay payment
+            initiateSasapay();
+        }
+
+        // ==================== PAYSTACK PAYMENT ====================
         function initiatePaystack() {
             const btn = document.getElementById('paystackButton');
             const loading = document.getElementById('loading');
@@ -550,19 +698,17 @@
             loading.classList.add('show');
             error.classList.remove('show');
 
+            // If amount is 0 (free), just verify
             if (amountKes <= 0) {
-                fetch('/payment/verify/' + reference + '/', {
-                    headers: {'X-CSRFToken': csrftoken}
-                }).then(() => {
-                    window.location.href = '/payment/success/' + reference + '/';
-                });
+                window.location.href = '/payment/success/' + reference + '/';
                 return;
             }
 
+            // Initialize Paystack
             const handler = PaystackPop.setup({
                 key: paystackPublicKey,
                 email: email,
-                amount: Math.round(amountKes * 100),
+                amount: Math.round(amountKes * 100), // Paystack uses kobo/cents
                 currency: 'KES',
                 ref: reference,
                 metadata: {
@@ -572,87 +718,74 @@
                         value: itemType + ":" + itemId
                     }]
                 },
-                callback: (response) => {
+                callback: function(response) {
+                    // Payment successful - verify on backend
                     verifyPayment(response.reference);
                 },
-                onClose: () => {
+                onClose: function() {
+                    // User closed the payment window
                     btn.disabled = false;
                     loading.classList.remove('show');
-                    error.textContent = 'Payment cancelled';
-                    error.classList.add('show');
+                    showError('Payment cancelled');
                 }
             });
             
             handler.openIframe();
         }
 
+        // ==================== SASAPAY (M-PESA) PAYMENT ====================
         function initiateSasapay() {
-    const btn = document.getElementById('sasapayButton');
-    const loading = document.getElementById('loading');
-    const error = document.getElementById('errorMessage');
-    
-    btn.disabled = true;
-    loading.classList.add('show');
-    error.classList.remove('show');
-
-    // For testing, use M-PESA by default
-    const useMpesa = true; // Always use M-PESA for testing
-    
-    if (useMpesa) {
-        let mpesaPhone = phone || '254708374149'; // Use default test phone
-        
-        fetch('/sasapay/process/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken
-            },
-            body: JSON.stringify({
-                reference: reference,
-                phone: mpesaPhone,
-                payment_method: 'c2b'
-            })
-        })
-        .then(res => res.json())
-        .then(data => {
-            btn.disabled = false;
-            loading.classList.remove('show');
+            const btn = document.getElementById('sasapayButton');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('errorMessage');
             
-            if (data.success) {
-                if (data.mock) {
-                    // Mock mode - simulate success
-                    error.classList.remove('error');
-                    error.classList.add('success');
-                    error.style.background = '#d1fae5';
-                    error.style.color = '#065f46';
-                    error.textContent = '⚠️ TEST MODE: ' + data.message;
-                    error.classList.add('show');
-                    
-                    // Simulate payment completion after 3 seconds
-                    setTimeout(() => {
-                        window.location.href = '/payment/success/' + reference + '/';
-                    }, 3000);
-                } else {
-                    // Real mode
-                    error.textContent = data.message;
-                    error.classList.add('show');
-                    checkPaymentStatus(reference);
-                }
-            } else {
-                error.textContent = data.error || 'Payment failed';
-                error.classList.add('show');
-            }
-        })
-        .catch(err => {
-            btn.disabled = false;
-            loading.classList.remove('show');
-            error.textContent = 'Connection error';
-            error.classList.add('show');
-        });
-    }
-}
+            loading.classList.add('show');
+            error.classList.remove('show');
 
-        // NEW: Pesapal payment
+            // Make API call to initiate SasaPay payment
+            fetch('/sasapay/process/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({
+                    reference: reference,
+                    phone: mpesaPhoneNumber,
+                    payment_method: 'c2b' // c2b = M-PESA STK Push
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.classList.remove('show');
+                
+                if (data.success) {
+                    // REAL payment initiated - show message and start polling
+                    showSuccess(data.message || 'STK Push sent. Please check your phone and enter PIN.');
+                    
+                    // Reset button
+                    btn.innerHTML = '<span>Pay with M-PESA</span>';
+                    btn.disabled = false;
+                    
+                    // Start polling for payment status
+                    checkPaymentStatus(reference);
+                } else {
+                    // Payment failed
+                    btn.innerHTML = '<span>Pay with M-PESA</span>';
+                    btn.disabled = false;
+                    showError(data.error || 'Payment initiation failed');
+                }
+            })
+            .catch(error => {
+                loading.classList.remove('show');
+                btn.innerHTML = '<span>Pay with M-PESA</span>';
+                btn.disabled = false;
+                showError('Network error. Please try again.');
+                console.error('SasaPay error:', error);
+            });
+        }
+
+        // ==================== PESAPAL PAYMENT ====================
         function initiatePesapal() {
             const btn = document.getElementById('pesapalButton');
             const loading = document.getElementById('loading');
@@ -665,7 +798,7 @@
             // Prepare payment data
             const paymentData = {
                 amount: amountUsd,
-                phone: phone,
+                phone: userPhone,
                 email: email,
                 first_name: firstName,
                 last_name: lastName,
@@ -682,7 +815,7 @@
                 },
                 body: JSON.stringify(paymentData)
             })
-            .then(res => res.json())
+            .then(response => response.json())
             .then(data => {
                 btn.disabled = false;
                 loading.classList.remove('show');
@@ -692,50 +825,97 @@
                     document.getElementById('pesapalIframe').src = data.iframe_url;
                     document.getElementById('pesapalModal').classList.add('show');
                 } else {
-                    error.textContent = data.error || 'Failed to initiate Pesapal payment';
-                    error.classList.add('show');
+                    showError(data.error || 'Failed to initiate Pesapal payment');
                 }
             })
             .catch(err => {
                 btn.disabled = false;
                 loading.classList.remove('show');
-                error.textContent = 'Connection error';
-                error.classList.add('show');
+                showError('Connection error');
                 console.error('Pesapal error:', err);
             });
         }
 
-        // NEW: Close Pesapal modal
-        function closePesapalModal() {
-            document.getElementById('pesapalModal').classList.remove('show');
-            document.getElementById('pesapalIframe').src = 'about:blank';
-        }
-
+        // ==================== PAYMENT VERIFICATION ====================
         function verifyPayment(ref) {
             fetch('/payment/verify/' + ref + '/', {
-                headers: {'X-CSRFToken': csrftoken}
-            }).then(res => {
-                window.location.href = res.ok ? '/payment/success/' + ref + '/' : '/payment/failed/';
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/payment/success/' + ref + '/';
+                } else {
+                    window.location.href = '/payment/failed/';
+                }
+            })
+            .catch(() => {
+                window.location.href = '/payment/failed/';
             });
         }
 
+        // Poll for payment status (for M-PESA)
         function checkPaymentStatus(reference) {
-            const interval = setInterval(function() {
-                fetch('/sasapay/status/' + reference + '/')
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status === 'completed') {
-                            clearInterval(interval);
-                            window.location.href = data.success_url;
-                        } else if (data.status === 'failed') {
-                            clearInterval(interval);
-                            document.getElementById('loading').classList.remove('show');
-                            document.getElementById('sasapayButton').disabled = false;
-                            document.getElementById('errorMessage').textContent = data.error || 'Payment failed';
-                            document.getElementById('errorMessage').classList.add('show');
-                        }
-                    });
-            }, 3000);
+            const statusInterval = setInterval(function() {
+                fetch('/sasapay/status/' + reference + '/', {
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        clearInterval(statusInterval);
+                        window.location.href = data.success_url;
+                    } else if (data.status === 'failed') {
+                        clearInterval(statusInterval);
+                        document.getElementById('loading').classList.remove('show');
+                        showError('Payment failed. Please try again.');
+                    }
+                    // If pending, continue polling
+                })
+                .catch(error => {
+                    console.error('Status check error:', error);
+                });
+            }, 3000); // Check every 3 seconds
+
+            // Stop polling after 2 minutes
+            setTimeout(() => {
+                clearInterval(statusInterval);
+                document.getElementById('loading').classList.remove('show');
+                showError('Payment timeout. Please check your M-PESA and try again.');
+            }, 120000);
+        }
+
+        // ==================== HELPER FUNCTIONS ====================
+        function showError(message) {
+            const error = document.getElementById('errorMessage');
+            error.textContent = message;
+            error.classList.add('show');
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                error.classList.remove('show');
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const success = document.getElementById('successMessage');
+            success.textContent = message;
+            success.classList.add('show');
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                success.classList.remove('show');
+            }, 5000);
+        }
+
+        // Pesapal modal functions
+        function closePesapalModal() {
+            document.getElementById('pesapalModal').classList.remove('show');
+            document.getElementById('pesapalIframe').src = 'about:blank';
         }
 
         // Close modal when clicking outside
@@ -745,6 +925,23 @@
                 closePesapalModal();
             }
         }
+
+        // Handle page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Default to paystack
+            selectMethod('paystack');
+            
+            // Add event listener for phone input
+            document.getElementById('mpesaPhone').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmMpesaPhone();
+                }
+            });
+        });
     </script>
+
+    <!-- Font Awesome for icons -->
+    <script src="https://kit.fontawesome.com/your-kit-id.js" crossorigin="anonymous"></script>
 </body>
 </html>

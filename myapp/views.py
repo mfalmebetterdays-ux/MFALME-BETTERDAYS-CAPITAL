@@ -15,6 +15,10 @@ from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives, send_mail
 from django.template import Library
 from django.db import connection
+from django.http import HttpResponse
+from django.conf import settings
+import requests
+import socket
 import logging
 import json
 import random
@@ -25,6 +29,9 @@ import hmac
 from datetime import datetime, timedelta
 from decimal import Decimal
 import hashlib
+import socket
+import socket
+import ssl
 import base64
 import urllib.parse
 from .pesapal_utils import get_pesapal_iframe_url, query_pesapal_status
@@ -3817,15 +3824,14 @@ def sasapay_process_payment(request):
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     
     reference = data.get('reference')
-    phone = data.get('phone', '254708374149')  # Default test phone
+    phone = data.get('phone')  # ← REMOVED DEFAULT - USER MUST PROVIDE
     payment_method = data.get('payment_method', 'c2b')
-    
-    print(f"\n{'='*50}")
-    print(f"SasaPay Request: {payment_method} for {reference}")
-    print(f"{'='*50}")
     
     if not reference:
         return JsonResponse({'error': 'Reference required'}, status=400)
+    
+    if not phone and payment_method == 'c2b':
+        return JsonResponse({'error': 'Phone number required for M-PESA'}, status=400)
     
     try:
         transaction = PaymentTransaction.objects.get(reference=reference)
@@ -3837,15 +3843,13 @@ def sasapay_process_payment(request):
     amount_kes = int(transaction.amount)
     
     if payment_method == 'c2b':
-        # M-PESA STK Push
+        # REAL M-PESA STK Push
         result = initiate_c2b_payment(
             phone=phone,
             amount=amount_kes,
             reference=reference,
             description=transaction.description
         )
-        
-        print(f"SasaPay Result: {result}")
         
         if result.get('success'):
             transaction.sasapay_transaction_id = result.get('transaction_id')
@@ -3857,9 +3861,9 @@ def sasapay_process_payment(request):
             
             return JsonResponse({
                 'success': True,
-                'message': result.get('message', 'Payment initiated'),
-                'transaction_id': result.get('transaction_id'),
-                'mock': True  # Flag to indicate mock mode
+                'message': 'STK Push sent. Check your phone.',
+                'transaction_id': result.get('transaction_id')
+                # ← NO mock FLAG!
             })
         else:
             return JsonResponse({
@@ -3868,7 +3872,6 @@ def sasapay_process_payment(request):
             })
     
     elif payment_method == 'checkout':
-        # Web checkout
         result = initiate_checkout(
             amount=amount_kes,
             reference=reference,
@@ -3876,8 +3879,6 @@ def sasapay_process_payment(request):
             email=request.user.email,
             phone=phone
         )
-        
-        print(f"SasaPay Result: {result}")
         
         if result.get('success'):
             transaction.sasapay_checkout_id = result.get('checkout_id')
@@ -3889,8 +3890,8 @@ def sasapay_process_payment(request):
             return JsonResponse({
                 'success': True,
                 'checkout_url': result.get('checkout_url'),
-                'message': result.get('message'),
-                'mock': True  # Flag to indicate mock mode
+                'message': 'Redirecting to checkout...'
+                # ← NO mock FLAG!
             })
         else:
             return JsonResponse({
@@ -3899,6 +3900,52 @@ def sasapay_process_payment(request):
             })
     
     return JsonResponse({'error': 'Invalid payment method'}, status=400)
+
+def test_sasapay_connection(request):
+    """Simple test connection to SasaPay"""
+    import requests
+    import socket
+    from django.conf import settings
+    
+    results = []
+    results.append("<h1>SasaPay Connection Test</h1>")
+    
+    # Test 1: Import requests
+    results.append("<h3>1. Library Check</h3>")
+    results.append(f"✅ requests version: {requests.__version__}")
+    
+    # Test 2: DNS
+    results.append("<h3>2. DNS Resolution</h3>")
+    try:
+        ip = socket.gethostbyname('sandbox.sasapay.com')
+        results.append(f"✅ sandbox.sasapay.com → {ip}")
+    except Exception as e:
+        results.append(f"❌ DNS Error: {str(e)}")
+    
+    # Test 3: Simple HTTP Request
+    results.append("<h3>3. HTTP Request</h3>")
+    try:
+        response = requests.get(
+            "https://sandbox.sasapay.com",
+            timeout=5,
+            verify=False
+        )
+        results.append(f"✅ Status: {response.status_code}")
+    except requests.exceptions.Timeout:
+        results.append("⏱️ Timeout - Server not responding")
+    except requests.exceptions.ConnectionError as e:
+        results.append(f"❌ Connection Error: {str(e)}")
+    except Exception as e:
+        results.append(f"❌ Error: {type(e).__name__} - {str(e)}")
+    
+    # Test 4: Config Values
+    results.append("<h3>4. Configuration</h3>")
+    results.append(f"Environment: {settings.SASAPAY_CONFIG.get('ENVIRONMENT', 'Not set')}")
+    results.append(f"Client ID: {settings.SASAPAY_CONFIG.get('CLIENT_ID', 'Not set')[:10]}...")
+    client_secret = settings.SASAPAY_CONFIG.get('CLIENT_SECRET', '')
+    results.append(f"Client Secret: {'*' * 10 if client_secret else 'Not set'}")
+    
+    return HttpResponse("<br>".join(results))
 
 def process_successful_payment(transaction, request):
     """Process successful payment - grant access to content"""
