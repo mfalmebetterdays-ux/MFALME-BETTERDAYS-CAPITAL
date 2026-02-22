@@ -4172,7 +4172,7 @@ def sasapay_process_payment(request):
         return JsonResponse({'error': 'Transaction not found'}, status=404)
     
     # Import sasapay utils
-    from .sasapay_utils import initiate_c2b_payment, initiate_checkout
+    from .sasapay_utils import initiate_c2b_payment, process_sasapay_payment
     
     amount_kes = int(transaction.amount)  # Already in KES
     
