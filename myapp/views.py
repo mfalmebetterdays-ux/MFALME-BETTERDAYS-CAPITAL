@@ -4326,6 +4326,10 @@ def health_check(request):
     except Exception as e:
         return HttpResponse(f"ERROR - Database: {str(e)}", content_type="text/plain", status=500)
 
+def root_health(request):
+    """Simple root path that returns 200 OK for Railway health checks"""
+    return HttpResponse("OK", status=200, content_type="text/plain")
+
 def custom_404(request, exception):
     return render(request, '404.html', status=404)
 
