@@ -60,12 +60,22 @@ else:
 
 SASAPAY_ENVIRONMENT = os.environ.get('SASAPAY_ENVIRONMENT', DEFAULT_SASAPAY_ENV)
 
+# Network codes from SasaPay documentation
+SASAPAY_NETWORK_CODES = {
+    'SASAPAY': '0',
+    'MPESA': '63902',
+    'AIRTEL': '63903',
+    'TKASH': '63907',
+}
+
 SASAPAY_CONFIG = {
     'CLIENT_ID': os.environ.get('SASAPAY_CLIENT_ID', 'I4w49w1vftEVXTkMLwHQLr0DxdeXQYh34tYVFi5A'),
     'CLIENT_SECRET': os.environ.get('SASAPAY_CLIENT_SECRET', 'AfnotJReSgwaICxM6meV9IPbciQyOzuRLPLFyOmjzRzdXGZcptp5rrurstk8FAi5G8hcXP33tPiikjwEOR3CSrLlkeJs3b8G3feUq8QHKf0sJtiiS65BL6QCPe6AxC1X'),
     'ENVIRONMENT': SASAPAY_ENVIRONMENT,
+    'MERCHANT_CODE': os.environ.get('SASAPAY_MERCHANT_CODE', '600980'),  # Your merchant code from SasaPay
     'CALLBACK_URL': os.environ.get('SASAPAY_CALLBACK_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/sasapay/callback/'),
     'IPN_URL': os.environ.get('SASAPAY_IPN_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/sasapay/ipn/'),
+    'NETWORK_CODES': SASAPAY_NETWORK_CODES,
 }
 
 # SasaPay API Endpoints - Using OFFICIAL endpoints from documentation
@@ -74,23 +84,41 @@ if SASAPAY_ENVIRONMENT == 'sandbox':
     SASAPAY_BASE_URL = 'https://sandbox.sasapay.app'
     SASAPAY_API_URL = f'{SASAPAY_BASE_URL}/api/v1'
     SASAPAY_AUTH_URL = f'{SASAPAY_BASE_URL}/api/v1/auth/token/'
+    SASAPAY_PAYMENTS_URL = f'{SASAPAY_BASE_URL}/api/v1/payments'
+    SASAPAY_REQUEST_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/request-payment/'
+    SASAPAY_PROCESS_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/process-payment/'
     SASAPAY_CHECKOUT_URL = f'{SASAPAY_BASE_URL}/checkout'
     print("🔧 SasaPay: Using SANDBOX environment (.app domain)")
+    print(f"   Auth URL: {SASAPAY_AUTH_URL}")
+    print(f"   Request Payment URL: {SASAPAY_REQUEST_PAYMENT_URL}")
 else:
-    # Live - assuming similar pattern, but verify with SasaPay
-    SASAPAY_BASE_URL = 'https://api.sasapay.app'  # Confirm this with SasaPay
+    # Live endpoints - based on documentation pattern
+    SASAPAY_BASE_URL = os.environ.get('SASAPAY_LIVE_URL', 'https://api.sasapay.app')
     SASAPAY_API_URL = f'{SASAPAY_BASE_URL}/api/v1'
     SASAPAY_AUTH_URL = f'{SASAPAY_BASE_URL}/api/v1/auth/token/'
-    SASAPAY_CHECKOUT_URL = 'https://checkout.sasapay.app'  # Confirm this
+    SASAPAY_PAYMENTS_URL = f'{SASAPAY_BASE_URL}/api/v1/payments'
+    SASAPAY_REQUEST_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/request-payment/'
+    SASAPAY_PROCESS_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/process-payment/'
+    SASAPAY_CHECKOUT_URL = os.environ.get('SASAPAY_CHECKOUT_URL', 'https://checkout.sasapay.app')
     print("💰 SasaPay: Using LIVE environment (.app domain)")
+    print(f"   Auth URL: {SASAPAY_AUTH_URL}")
+    print(f"   Request Payment URL: {SASAPAY_REQUEST_PAYMENT_URL}")
 
-# Optional: Add these to your config for use in utils
-SASAPAY_CONFIG['BASE_URL'] = SASAPAY_BASE_URL
-SASAPAY_CONFIG['API_URL'] = SASAPAY_API_URL
-SASAPAY_CONFIG['AUTH_URL'] = SASAPAY_AUTH_URL
+# Add all URLs to config for easy access in utils
+SASAPAY_CONFIG.update({
+    'BASE_URL': SASAPAY_BASE_URL,
+    'API_URL': SASAPAY_API_URL,
+    'AUTH_URL': SASAPAY_AUTH_URL,
+    'PAYMENTS_URL': SASAPAY_PAYMENTS_URL,
+    'REQUEST_PAYMENT_URL': SASAPAY_REQUEST_PAYMENT_URL,
+    'PROCESS_PAYMENT_URL': SASAPAY_PROCESS_PAYMENT_URL,
+    'CHECKOUT_URL': SASAPAY_CHECKOUT_URL,
+})
 
 # Also update the USD to KES rate if needed
 USD_TO_KES_RATE = int(os.environ.get('USD_TO_KES_RATE', 129))
+
+
 # ===== PAYSTACK CONFIGURATION =====
 PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', '')
 PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY', '')
