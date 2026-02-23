@@ -202,6 +202,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Must be after SecurityMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -305,15 +306,17 @@ AUTH_USER_MODEL = 'myapp.MfalmeUsers'
 
 # ===== EMAIL CONFIGURATION =====
 # Gmail SMTP Configuration
+EMAIL_HOST_USER = "mfalmebetterdays@gmail.com"
+EMAIL_HOST_PASSWORD = "bccpooxkwxdassxh"
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST = 'smtp.gmail.com'  # Fixed: This should be smtp.gmail.com, not the email address
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 DEFAULT_FROM_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
 SERVER_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
 ADMIN_EMAILS = [EMAIL_HOST_USER]
-
 # Email timeouts
 EMAIL_TIMEOUT = 30
 EMAIL_CONNECTION_TIMEOUT = 30

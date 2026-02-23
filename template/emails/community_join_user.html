@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Join Request</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #0F172A; color: #FBBF24; padding: 20px; text-align: center; }
+        .content { padding: 30px 20px; background: #f9f9f9; }
+        .button { background: #FBBF24; color: #0F172A; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        .status-badge { 
+            display: inline-block; 
+            padding: 5px 15px; 
+            border-radius: 20px; 
+            background: {% if status == 'active' %}#10B981{% else %}#FBBF24{% endif %};
+            color: {% if status == 'active' %}white{% else %}black{% endif %};
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MFALME BETTERDAYS CAPITAL</h1>
+            <p>Elite Trading Community</p>
+        </div>
+        
+        <div class="content">
+            <h2>Community Join Request</h2>
+            
+            <p>Hello <strong>{{ username }}</strong>,</p>
+            
+            <p>Your request to join <strong>{{ community_name }}</strong> has been received.</p>
+            
+            <p style="text-align: center; margin: 30px 0;">
+                <span class="status-badge">
+                    {% if status == 'active' %}✓ APPROVED{% else %}⏳ PENDING{% endif %}
+                </span>
+            </p>
+            
+            {% if status == 'active' %}
+                <p>Congratulations! You now have immediate access to the {{ community_name }} community. You can start participating in discussions, accessing exclusive content, and connecting with fellow members.</p>
+                
+                <p style="text-align: center; margin: 30px 0;">
+                    <a href="{{ dashboard_url }}" class="button">Access Community</a>
+                </p>
+            {% else %}
+                <p>Your request is now pending approval from our admin team. You will receive another email once your membership is approved.</p>
+                
+                <p>This typically takes 24-48 hours. In the meantime, feel free to explore other areas of the platform.</p>
+            {% endif %}
+            
+            <p>If you have any questions, please contact our support team.</p>
+            
+            <p>To your success,<br>
+            <strong>The Mfalme Betterdays Capital Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; {% now "Y" %} Mfalme Betterdays Capital. All rights reserved.</p>
+            <p>This email was sent to you regarding your community membership.</p>
+        </div>
+    </div>
+</body>
+</html>

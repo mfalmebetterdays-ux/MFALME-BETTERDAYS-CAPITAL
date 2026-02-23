@@ -2,71 +2,130 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Registration - Mfalme Betterdays Capital</title>
 </head>
-<body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f5f5f5;">
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f5f5;">
+<body style="margin:0; padding:0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); background-color: #f5f5f5;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #F1F5F9; background-color: #f5f5f5;">
         <tr>
-            <td align="center" style="padding:30px 20px;">
-                <!-- Main Container -->
-                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#0A1520; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,0.1);">
+            <td align="center" style="padding:40px 20px;">
+                
+                <!-- MAIN CARD - Premium Dark with Gold Accents -->
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#0F172A; border-radius:24px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); overflow:hidden;">
                     
-                    <!-- Header -->
+                    <!-- GOLD ACCENT STRIP -->
                     <tr>
-                        <td style="padding:40px 40px 20px 40px; text-align:center; border-bottom:1px solid rgba(255,215,0,0.2);">
-                            <h1 style="font-size:20px; font-weight:400; color:#FFD700; margin:0 0 10px 0;">New registration</h1>
-                            <p style="color:#B0B7C3; font-size:14px; margin:0;">A user has joined the platform</p>
+                        <td style="height:6px; background: linear-gradient(90deg, #FBBF24 0%, #F59E0B 100%);"></td>
+                    </tr>
+                    
+                    <!-- HEADER WITH LOGO AREA -->
+                    <tr>
+                        <td style="padding:40px 40px 20px 40px; text-align:center;">
+                            <div style="width:60px; height:60px; background: rgba(251,191,36,0.1); border-radius:16px; margin:0 auto 20px auto; display:flex; align-items:center; justify-content:center;">
+                                <span style="color:#FBBF24; font-size:28px; font-weight:700;">MBC</span>
+                            </div>
+                            <h1 style="font-size:28px; font-weight:600; color:#FFFFFF; margin:0 0 8px 0; letter-spacing:-0.5px;">New Registration</h1>
+                            <p style="font-size:16px; color:#94A3B8; margin:0; font-weight:400;">A new soldier has joined the elite</p>
                         </td>
                     </tr>
                     
-                    <!-- Content -->
+                    <!-- CONTENT -->
                     <tr>
-                        <td style="padding:30px 40px;">
+                        <td style="padding:20px 40px 30px 40px;">
                             
-                            <!-- Summary -->
-                            <p style="color:#FFFFFF; font-size:16px; margin:0 0 20px 0;">
-                                User <strong style="color:#FFD700;">{{ username }}</strong> has registered and verified their account.
+                            <!-- GREETING -->
+                            <p style="color:#F1F5F9; font-size:16px; line-height:1.6; margin:0 0 25px 0;">
+                                <span style="color:#FBBF24; font-weight:600;">{{ username }}</span> has successfully registered and verified their account.
                             </p>
                             
-                            <!-- User Details Grid -->
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0E1A29; border-radius:6px; margin:25px 0;">
+                            <!-- USER DETAILS CARD - Premium Glass Effect -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(145deg, #1E2937, #0F172A); border-radius:20px; margin:25px 0; border:1px solid rgba(251,191,36,0.1);">
+                                <tr>
+                                    <td style="padding:30px;">
+                                        
+                                        <!-- SOLDIER ID - Featured -->
+                                        <div style="text-align:center; margin-bottom:25px;">
+                                            <span style="color:#94A3B8; font-size:12px; text-transform:uppercase; letter-spacing:2px;">Soldier ID</span>
+                                            <div style="color:#FBBF24; font-size:36px; font-weight:700; letter-spacing:3px; margin-top:5px;">#{{ soldier_id }}</div>
+                                        </div>
+                                        
+                                        <!-- DETAILS GRID -->
+                                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <!-- Row 1 -->
+                                            <tr>
+                                                <td width="50%" style="padding:12px 12px 12px 0; border-bottom:1px solid rgba(148,163,184,0.1);">
+                                                    <p style="color:#94A3B8; font-size:11px; text-transform:uppercase; margin:0 0 4px 0;">Full Name</p>
+                                                    <p style="color:#F1F5F9; font-size:15px; font-weight:500; margin:0;">{{ full_name|default:username }}</p>
+                                                </td>
+                                                <td width="50%" style="padding:12px 0 12px 12px; border-bottom:1px solid rgba(148,163,184,0.1);">
+                                                    <p style="color:#94A3B8; font-size:11px; text-transform:uppercase; margin:0 0 4px 0;">Username</p>
+                                                    <p style="color:#F1F5F9; font-size:15px; font-weight:500; margin:0;">@{{ username }}</p>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 2 -->
+                                            <tr>
+                                                <td width="50%" style="padding:12px 12px 12px 0; border-bottom:1px solid rgba(148,163,184,0.1);">
+                                                    <p style="color:#94A3B8; font-size:11px; text-transform:uppercase; margin:0 0 4px 0;">Email Address</p>
+                                                    <p style="color:#F1F5F9; font-size:15px; margin:0;">{{ email }}</p>
+                                                </td>
+                                                <td width="50%" style="padding:12px 0 12px 12px; border-bottom:1px solid rgba(148,163,184,0.1);">
+                                                    <p style="color:#94A3B8; font-size:11px; text-transform:uppercase; margin:0 0 4px 0;">Phone Number</p>
+                                                    <p style="color:#F1F5F9; font-size:15px; margin:0;">{{ phone|default:"Not provided" }}</p>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 3 -->
+                                            <tr>
+                                                <td width="50%" style="padding:12px 12px 12px 0; border-bottom:1px solid rgba(148,163,184,0.1);">
+                                                    <p style="color:#94A3B8; font-size:11px; text-transform:uppercase; margin:0 0 4px 0;">Country</p>
+                                                    <p style="color:#F1F5F9; font-size:15px; margin:0;">{{ country|default:"Not specified" }}</p>
+                                                </td>
+                                                <td width="50%" style="padding:12px 0 12px 12px; border-bottom:1px solid rgba(148,163,184,0.1);">
+                                                    <p style="color:#94A3B8; font-size:11px; text-transform:uppercase; margin:0 0 4px 0;">IP Address</p>
+                                                    <p style="color:#F1F5F9; font-size:15px; margin:0;">{{ ip_address }}</p>
+                                                </td>
+                                            </tr>
+                                            <!-- Row 4 -->
+                                            <tr>
+                                                <td width="50%" style="padding:12px 12px 0 0;">
+                                                    <p style="color:#94A3B8; font-size:11px; text-transform:uppercase; margin:0 0 4px 0;">Registration Date</p>
+                                                    <p style="color:#F1F5F9; font-size:15px; margin:0;">{{ date_joined|date:"M d, Y H:i" }}</p>
+                                                </td>
+                                                <td width="50%" style="padding:12px 0 0 12px;">
+                                                    <p style="color:#94A3B8; font-size:11px; text-transform:uppercase; margin:0 0 4px 0;">Status</p>
+                                                    <span style="background:#10B981; color:white; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600;">✓ Verified & Active</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                           
+                            
+                            <!-- ADMIN ACTIONS - Simple List -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:25px 0; background:#1E2937; border-radius:16px; border:1px solid rgba(251,191,36,0.1);">
                                 <tr>
                                     <td style="padding:25px;">
+                                        <p style="color:#F1F5F9; font-size:16px; font-weight:600; margin:0 0 15px 0;">⚡ Quick Actions</p>
                                         <table width="100%" cellpadding="0" cellspacing="0" border="0">
                                             <tr>
-                                                <td width="50%" style="padding:8px 8px 8px 0;">
-                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">User ID</p>
-                                                    <p style="color:#FFFFFF; font-size:15px; margin:0;">#{{ soldier_id }}</p>
-                                                </td>
-                                                <td width="50%" style="padding:8px 0 8px 8px;">
-                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">Registered</p>
-                                                    <p style="color:#FFFFFF; font-size:15px; margin:0;">{{ registration_time }}</p>
+                                                <td style="padding:8px 0;">
+                                                    <a href="{{ admin_user_url }}" style="color:#FBBF24; text-decoration:none; font-size:15px; display:flex; align-items:center;">
+                                                        <span style="margin-right:10px;">→</span> View User Profile
+                                                    </a>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td width="50%" style="padding:8px 8px 8px 0;">
-                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">Name</p>
-                                                    <p style="color:#FFFFFF; font-size:15px; margin:0;">{{ username }}</p>
-                                                </td>
-                                                <td width="50%" style="padding:8px 0 8px 8px;">
-                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">Email</p>
-                                                    <p style="color:#FFFFFF; font-size:15px; margin:0;">{{ email }}</p>
+                                                <td style="padding:8px 0;">
+                                                    <a href="{{ send_welcome_url }}" style="color:#FBBF24; text-decoration:none; font-size:15px; display:flex; align-items:center;">
+                                                        <span style="margin-right:10px;">→</span> Send Welcome Email
+                                                    </a>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td width="50%" style="padding:8px 8px 8px 0;">
-                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">Phone</p>
-                                                    <p style="color:#FFFFFF; font-size:15px; margin:0;">{{ phone }}</p>
-                                                </td>
-                                                <td width="50%" style="padding:8px 0 8px 8px;">
-                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">IP Address</p>
-                                                    <p style="color:#FFFFFF; font-size:15px; margin:0;">{{ ip_address }}</p>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td colspan="2" style="padding:8px 0 0 0;">
-                                                    <p style="color:#5E6F8D; font-size:12px; margin:0 0 4px 0;">Status</p>
-                                                    <p style="color:#28A745; font-size:14px; margin:0;">Verified & active</p>
+                                                <td style="padding:8px 0;">
+                                                    <a href="{{ admin_dashboard_url }}" style="color:#FBBF24; text-decoration:none; font-size:15px; display:flex; align-items:center;">
+                                                        <span style="margin-right:10px;">→</span> Go to Admin Panel
+                                                    </a>
                                                 </td>
                                             </tr>
                                         </table>
@@ -74,85 +133,32 @@
                                 </tr>
                             </table>
                             
-                            <!-- Quick Stats -->
+                            <!-- ONBOARDING CHECKLIST -->
                             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:25px 0;">
                                 <tr>
-                                    <td width="33%" style="padding:5px;">
-                                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0E1A29; border-radius:6px;">
-                                            <tr><td style="padding:15px; text-align:center;">
-                                                <p style="color:#FFD700; font-size:22px; margin:0 0 5px 0;">{{ total_users }}</p>
-                                                <p style="color:#5E6F8D; font-size:11px; margin:0;">Total users</p>
-                                            </td></tr>
-                                        </table>
-                                    </td>
-                                    <td width="33%" style="padding:5px;">
-                                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0E1A29; border-radius:6px;">
-                                            <tr><td style="padding:15px; text-align:center;">
-                                                <p style="color:#FFD700; font-size:22px; margin:0 0 5px 0;">{{ today_registrations }}</p>
-                                                <p style="color:#5E6F8D; font-size:11px; margin:0;">Today</p>
-                                            </td></tr>
-                                        </table>
-                                    </td>
-                                    <td width="33%" style="padding:5px;">
-                                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0E1A29; border-radius:6px;">
-                                            <tr><td style="padding:15px; text-align:center;">
-                                                <p style="color:#FFD700; font-size:22px; margin:0 0 5px 0;">{{ week_growth }}%</p>
-                                                <p style="color:#5E6F8D; font-size:11px; margin:0;">Growth</p>
-                                            </td></tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
-                            
-                            <!-- Admin Actions - Simple List -->
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:25px 0;">
-                                <tr>
-                                    <td style="padding:0 0 10px 0;">
-                                        <p style="color:#FFFFFF; font-size:16px; margin:0;">Admin actions</p>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding:6px 0;">
-                                        <table cellpadding="0" cellspacing="0" border="0">
-                                            <tr>
-                                                <td width="20" style="color:#FFD700;">—</td>
-                                                <td style="color:#B0B7C3; font-size:14px;"><a href="{{ admin_user_url }}" style="color:#B0B7C3; text-decoration:none;">View user profile</a></td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding:6px 0;">
-                                        <table cellpadding="0" cellspacing="0" border="0">
-                                            <tr>
-                                                <td width="20" style="color:#FFD700;">—</td>
-                                                <td style="color:#B0B7C3; font-size:14px;"><a href="{{ send_welcome_url }}" style="color:#B0B7C3; text-decoration:none;">Send welcome email</a></td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding:6px 0;">
-                                        <table cellpadding="0" cellspacing="0" border="0">
-                                            <tr>
-                                                <td width="20" style="color:#FFD700;">—</td>
-                                                <td style="color:#B0B7C3; font-size:14px;"><a href="{{ admin_dashboard_url }}" style="color:#B0B7C3; text-decoration:none;">Go to admin panel</a></td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
-                            
-                            <!-- Onboarding Checklist -->
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:25px 0; background-color:#0E1A29; border-radius:6px;">
-                                <tr>
-                                    <td style="padding:20px;">
-                                        <p style="color:#FFFFFF; margin:0 0 15px 0; font-size:14px;">Onboarding checklist</p>
+                                    <td style="padding:0;">
+                                        <p style="color:#F1F5F9; font-size:16px; font-weight:600; margin:0 0 15px 0;">📋 Onboarding Checklist</p>
                                         <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                                            <tr><td style="padding:4px 0; color:#B0B7C3; font-size:13px;">✓ Verify email confirmation</td></tr>
-                                            <tr><td style="padding:4px 0; color:#B0B7C3; font-size:13px;">✓ Send welcome package</td></tr>
-                                            <tr><td style="padding:4px 0; color:#B0B7C3; font-size:13px;">✓ Assign mentor ({{ recommended_mentor }})</td></tr>
-                                            <tr><td style="padding:4px 0; color:#B0B7C3; font-size:13px;">✓ Add to communication channels</td></tr>
+                                            <tr>
+                                                <td style="padding:8px 0; color:#94A3B8; font-size:14px;">
+                                                    <span style="color:#10B981; margin-right:10px;">✓</span> Verify email confirmation
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0; color:#94A3B8; font-size:14px;">
+                                                    <span style="color:#10B981; margin-right:10px;">✓</span> Send welcome package
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0; color:#94A3B8; font-size:14px;">
+                                                    <span style="color:#FBBF24; margin-right:10px;">→</span> Assign mentor ({{ recommended_mentor }})
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0; color:#94A3B8; font-size:14px;">
+                                                    <span style="color:#FBBF24; margin-right:10px;">→</span> Add to communication channels
+                                                </td>
+                                            </tr>
                                         </table>
                                     </td>
                                 </tr>
@@ -161,19 +167,26 @@
                         </td>
                     </tr>
                     
-                    <!-- Footer -->
+                    <!-- FOOTER - Premium Dark -->
                     <tr>
-                        <td style="background-color:#08111A; padding:30px; text-align:center;">
-                            <p style="color:#5E6F8D; font-size:12px; margin:0;">
-                                <strong style="color:#5E6F8D;">Mfalme Betterdays Capital</strong><br><br>
-                                Admin notification • {{ notification_time }} • ID: #{{ notification_id }}
+                        <td style="background:#0B1120; padding:30px 40px; text-align:center; border-top:1px solid rgba(251,191,36,0.1);">
+                            <p style="color:#94A3B8; font-size:13px; margin:0 0 15px 0; line-height:1.6;">
+                                <strong style="color:#FBBF24;">Mfalme Betterdays Capital</strong><br>
+                                Elite Trading Institute
                             </p>
-                            <p style="color:#3A4556; font-size:11px; margin:20px 0 0 0;">
+                            <p style="color:#475569; font-size:11px; margin:0;">
+                                This is an automated admin notification • {{ notification_time }} • ID: #{{ notification_id }}
+                            </p>
+                            <p style="color:#334155; font-size:10px; margin:15px 0 0 0;">
                                 Please complete onboarding within 24 hours
                             </p>
                         </td>
                     </tr>
                 </table>
+                
+                <!-- SIMPLE FOOTER NOTE -->
+                <p style="color:#94A3B8; font-size:12px; margin-top:20px;">© {% now "Y" %} Mfalme Betterdays Capital. All rights reserved.</p>
+                
             </td>
         </tr>
     </table>

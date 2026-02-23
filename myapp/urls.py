@@ -13,6 +13,7 @@ from .views import (
     pesapal_callback,
     pesapal_ipn,
     payment_pending,
+    
 )
 
 urlpatterns = [
@@ -59,6 +60,19 @@ urlpatterns = [
     path('my-pdfs/', views.my_pdfs, name='my_pdfs'),
     path('my-courses/', views.my_courses, name='my_courses'),
     path('transactions/', views.transaction_history, name='transaction_history'),
+
+    #=============ADMIN DATA==========================
+path('admin/api/users/export/', views.export_users, name='export_users'),
+    path('admin/api/orders/export/', views.export_orders, name='export_orders'),
+    path('admin/api/courses/export/', views.export_courses, name='export_courses'),
+    path('admin/api/videos/export/', views.export_videos, name='export_videos'),
+    path('admin/api/pdfs/export/', views.export_pdfs, name='export_pdfs'),
+    path('admin/api/blogs/export/', views.export_blogs, name='export_blogs'),
+    path('admin/api/packages/export/', views.export_packages, name='export_packages'),
+    path('admin/api/partnerships/export/', views.export_partnerships, name='export_partnerships'),
+    path('admin/api/reports/revenue/export/', views.export_revenue_report, name='export_revenue_report'),
+    path('api/user/community/join/', views.api_community_join, name='api_community_join'),
+
     
     # ==================== CONTENT VIEWING ====================
     # Video viewing

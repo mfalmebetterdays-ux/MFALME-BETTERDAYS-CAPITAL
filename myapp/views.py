@@ -17,6 +17,16 @@ from django.template import Library
 from django.db import connection
 from django.http import HttpResponse
 from django.conf import settings
+import csv
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment
+from django.http import HttpResponse, JsonResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_GET
+from django.db.models import Sum, Count
+from datetime import datetime, timedelta
+import json
+from .models import MfalmeUsers, Course, Video, PDF, Blog, Package, Order, Partnership
 import requests
 import socket
 import logging
@@ -579,7 +589,7 @@ def login_user(request):
         traceback.print_exc()
         messages.error(request, f'Login error: {str(e)}')
         return redirect('login_page')
-
+@csrf_exempt  
 def register_user(request):
     """Handle user registration"""
     import sys
@@ -4358,6 +4368,758 @@ def sasapay_status(request, reference):
         })
     except PaymentTransaction.DoesNotExist:
         return JsonResponse({'status': 'not_found'}, status=404)        
+
+
+# myapp/views.py - Add these functions at the end of your file
+
+import csv
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_GET
+from django.db.models import Sum, Count
+from datetime import datetime, timedelta
+import json
+
+from .models import MfalmeUsers, Course, Video, PDF, Blog, Package, Order, Partnership
+
+@require_GET
+def export_users(request):
+    """Export users to Excel or CSV"""
+    format_type = request.GET.get('format', 'excel')
+    all_fields = request.GET.get('all_fields', 'false') == 'true'
+    
+    # Get users
+    users = MfalmeUsers.objects.all().order_by('-date_joined')
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="users_export_{datetime.now().strftime("%Y%m%d")}.csv"'
+        
+        writer = csv.writer(response)
+        # Write headers
+        writer.writerow(['ID', 'Username', 'Email', 'First Name', 'Last Name', 'Phone', 'Tier', 'Status', 'Date Joined', 'Last Login'])
+        
+        # Write data
+        for user in users:
+            writer.writerow([
+                user.id,
+                user.username,
+                user.email,
+                user.first_name,
+                user.last_name,
+                user.phone or '',
+                user.tier or 'citizen',
+                'Active' if user.is_active else 'Inactive',
+                user.date_joined.strftime('%Y-%m-%d %H:%M') if user.date_joined else '',
+                user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else ''
+            ])
+        
+        return response
+    
+    else:  # Excel format
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="users_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Users Export"
+        
+        # Headers
+        headers = ['ID', 'Username', 'Email', 'First Name', 'Last Name', 'Phone', 'Tier', 'Status', 'Date Joined', 'Last Login']
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            cell.font = Font(color="FFFFFF", bold=True)
+        
+        # Data
+        for row_num, user in enumerate(users, 2):
+            ws.cell(row=row_num, column=1).value = user.id
+            ws.cell(row=row_num, column=2).value = user.username
+            ws.cell(row=row_num, column=3).value = user.email
+            ws.cell(row=row_num, column=4).value = user.first_name
+            ws.cell(row=row_num, column=5).value = user.last_name
+            ws.cell(row=row_num, column=6).value = user.phone
+            ws.cell(row=row_num, column=7).value = user.tier or 'citizen'
+            ws.cell(row=row_num, column=8).value = 'Active' if user.is_active else 'Inactive'
+            ws.cell(row=row_num, column=9).value = user.date_joined.strftime('%Y-%m-%d %H:%M') if user.date_joined else ''
+            ws.cell(row=row_num, column=10).value = user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else ''
+        
+        # Auto-adjust column widths
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+        
+        wb.save(response)
+        return response
+
+
+@require_GET
+def export_orders(request):
+    """Export orders to Excel"""
+    format_type = request.GET.get('format', 'excel')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    # Filter by date if provided
+    orders = Order.objects.all().order_by('-created_at')
+    
+    if start_date:
+        orders = orders.filter(created_at__date__gte=start_date)
+    if end_date:
+        orders = orders.filter(created_at__date__lte=end_date)
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="orders_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Orders Export"
+    
+    # Headers
+    headers = ['Order ID', 'Customer', 'Email', 'Package', 'Amount (KES)', 'Payment Method', 'Status', 'Date', 'Reference']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    # Data
+    total_amount = 0
+    for row_num, order in enumerate(orders, 2):
+        ws.cell(row=row_num, column=1).value = order.id
+        ws.cell(row=row_num, column=2).value = order.user.get_full_name() if order.user else 'Guest'
+        ws.cell(row=row_num, column=3).value = order.user.email if order.user else order.email or ''
+        ws.cell(row=row_num, column=4).value = order.package.name if order.package else 'N/A'
+        ws.cell(row=row_num, column=5).value = float(order.amount)
+        ws.cell(row=row_num, column=6).value = order.payment_method or 'N/A'
+        ws.cell(row=row_num, column=7).value = order.status
+        ws.cell(row=row_num, column=8).value = order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else ''
+        ws.cell(row=row_num, column=9).value = order.reference or ''
+        
+        total_amount += float(order.amount)
+    
+    # Add total row
+    total_row = len(orders) + 2
+    ws.cell(row=total_row, column=4).value = "TOTAL:"
+    ws.cell(row=total_row, column=4).font = Font(bold=True)
+    ws.cell(row=total_row, column=5).value = total_amount
+    ws.cell(row=total_row, column=5).font = Font(bold=True)
+    
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    wb.save(response)
+    return response
+
+
+@require_GET
+def export_courses(request):
+    """Export courses to Excel"""
+    format_type = request.GET.get('format', 'excel')
+    
+    courses = Course.objects.all().order_by('-created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="courses_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Courses Export"
+    
+    # Headers
+    headers = ['ID', 'Title', 'Price (KES)', 'Duration (weeks)', 'Videos Count', 'PDFs Count', 'Status', 'Created', 'Enrollments']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    # Data
+    for row_num, course in enumerate(courses, 2):
+        videos_count = Video.objects.filter(course=course).count()
+        pdfs_count = PDF.objects.filter(course=course).count()
+        enrollments = Order.objects.filter(package__course=course, status='completed').count() if hasattr(course, 'package') else 0
+        
+        ws.cell(row=row_num, column=1).value = course.id
+        ws.cell(row=row_num, column=2).value = course.title
+        ws.cell(row=row_num, column=3).value = float(course.price) if course.price else 0
+        ws.cell(row=row_num, column=4).value = course.duration_weeks or 0
+        ws.cell(row=row_num, column=5).value = videos_count
+        ws.cell(row=row_num, column=6).value = pdfs_count
+        ws.cell(row=row_num, column=7).value = 'Active' if course.is_active else 'Inactive'
+        ws.cell(row=row_num, column=8).value = course.created_at.strftime('%Y-%m-%d') if course.created_at else ''
+        ws.cell(row=row_num, column=9).value = enrollments
+    
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    wb.save(response)
+    return response
+
+
+@require_GET
+def export_videos(request):
+    """Export videos to Excel"""
+    videos = Video.objects.all().order_by('-created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="videos_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Videos Export"
+    
+    headers = ['ID', 'Title', 'Course', 'Duration (min)', 'Module', 'Views', 'Status', 'Uploaded', 'URL']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    for row_num, video in enumerate(videos, 2):
+        ws.cell(row=row_num, column=1).value = video.id
+        ws.cell(row=row_num, column=2).value = video.title
+        ws.cell(row=row_num, column=3).value = video.course.title if video.course else 'Uncategorized'
+        ws.cell(row=row_num, column=4).value = video.duration or 0
+        ws.cell(row=row_num, column=5).value = video.module or 'N/A'
+        ws.cell(row=row_num, column=6).value = video.views or 0
+        ws.cell(row=row_num, column=7).value = video.status or 'draft'
+        ws.cell(row=row_num, column=8).value = video.created_at.strftime('%Y-%m-%d') if video.created_at else ''
+        ws.cell(row=row_num, column=9).value = request.build_absolute_uri(video.video_url) if video.video_url else ''
+    
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    wb.save(response)
+    return response
+
+
+@require_GET
+def export_pdfs(request):
+    """Export PDFs to Excel"""
+    pdfs = PDF.objects.all().order_by('-created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="pdfs_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "PDFs Export"
+    
+    headers = ['ID', 'Title', 'Course', 'Pages', 'Size', 'Downloads', 'Access Level', 'Uploaded']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    for row_num, pdf in enumerate(pdfs, 2):
+        ws.cell(row=row_num, column=1).value = pdf.id
+        ws.cell(row=row_num, column=2).value = pdf.title
+        ws.cell(row=row_num, column=3).value = pdf.course.title if pdf.course else 'General'
+        ws.cell(row=row_num, column=4).value = pdf.pages or 0
+        ws.cell(row=row_num, column=5).value = pdf.file_size or 'N/A'
+        ws.cell(row=row_num, column=6).value = pdf.downloads or 0
+        ws.cell(row=row_num, column=7).value = pdf.access_level or 'free'
+        ws.cell(row=row_num, column=8).value = pdf.created_at.strftime('%Y-%m-%d') if pdf.created_at else ''
+    
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    wb.save(response)
+    return response
+
+
+@require_GET
+def export_blogs(request):
+    """Export blogs to Excel"""
+    blogs = Blog.objects.all().order_by('-created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="blogs_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Blogs Export"
+    
+    headers = ['ID', 'Title', 'Author', 'Category', 'Views', 'Status', 'Published', 'Created']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    for row_num, blog in enumerate(blogs, 2):
+        ws.cell(row=row_num, column=1).value = blog.id
+        ws.cell(row=row_num, column=2).value = blog.title
+        ws.cell(row=row_num, column=3).value = blog.author.username if blog.author else 'Admin'
+        ws.cell(row=row_num, column=4).value = blog.category or 'General'
+        ws.cell(row=row_num, column=5).value = blog.views or 0
+        ws.cell(row=row_num, column=6).value = blog.status or 'draft'
+        ws.cell(row=row_num, column=7).value = blog.published_at.strftime('%Y-%m-%d') if blog.published_at else 'Not published'
+        ws.cell(row=row_num, column=8).value = blog.created_at.strftime('%Y-%m-%d') if blog.created_at else ''
+    
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    wb.save(response)
+    return response
+
+
+@require_GET
+def export_packages(request):
+    """Export packages to Excel"""
+    packages = Package.objects.all().order_by('-created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="packages_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Packages Export"
+    
+    headers = ['ID', 'Name', 'Price (KES)', 'Type', 'Sales', 'Revenue (KES)', 'Status', 'Created']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    for row_num, package in enumerate(packages, 2):
+        sales = Order.objects.filter(package=package, status='completed').count()
+        revenue = Order.objects.filter(package=package, status='completed').aggregate(Sum('amount'))['amount__sum'] or 0
+        
+        ws.cell(row=row_num, column=1).value = package.id
+        ws.cell(row=row_num, column=2).value = package.name
+        ws.cell(row=row_num, column=3).value = float(package.price) if package.price else 0
+        ws.cell(row=row_num, column=4).value = package.package_type or 'N/A'
+        ws.cell(row=row_num, column=5).value = sales
+        ws.cell(row=row_num, column=6).value = float(revenue)
+        ws.cell(row=row_num, column=7).value = package.status or 'inactive'
+        ws.cell(row=row_num, column=8).value = package.created_at.strftime('%Y-%m-%d') if package.created_at else ''
+    
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    wb.save(response)
+    return response
+
+
+@require_GET
+def export_partnerships(request):
+    """Export partnerships to Excel"""
+    partnerships = Partnership.objects.all().order_by('-created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="partnerships_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Partnerships Export"
+    
+    headers = ['ID', 'Company', 'Contact Person', 'Email', 'Phone', 'Tier', 'Amount (KES)', 'NDA', 'Status', 'Applied']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    for row_num, p in enumerate(partnerships, 2):
+        ws.cell(row=row_num, column=1).value = p.id
+        ws.cell(row=row_num, column=2).value = p.company_name
+        ws.cell(row=row_num, column=3).value = p.contact_name
+        ws.cell(row=row_num, column=4).value = p.email
+        ws.cell(row=row_num, column=5).value = p.phone or ''
+        ws.cell(row=row_num, column=6).value = p.tier or 'N/A'
+        ws.cell(row=row_num, column=7).value = float(p.investment_amount) if p.investment_amount else 0
+        ws.cell(row=row_num, column=8).value = 'Signed' if p.nda_signed else 'Pending'
+        ws.cell(row=row_num, column=9).value = p.status or 'pending'
+        ws.cell(row=row_num, column=10).value = p.created_at.strftime('%Y-%m-%d') if p.created_at else ''
+    
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    wb.save(response)
+    return response
+
+
+@require_GET
+def export_revenue_report(request):
+    """Export revenue report to Excel"""
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    # Parse dates
+    if start_date:
+        start = datetime.strptime(start_date, '%Y-%m-%d')
+    else:
+        start = datetime.now() - timedelta(days=30)
+    
+    if end_date:
+        end = datetime.strptime(end_date, '%Y-%m-%d')
+    else:
+        end = datetime.now()
+    
+    # Get orders in date range
+    orders = Order.objects.filter(
+        created_at__date__gte=start.date(),
+        created_at__date__lte=end.date(),
+        status='completed'
+    ).order_by('created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="revenue_report_{start_date}_to_{end_date}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    
+    # Summary sheet
+    ws_summary = wb.active
+    ws_summary.title = "Summary"
+    
+    # Summary headers
+    ws_summary.cell(row=1, column=1).value = "Revenue Report"
+    ws_summary.cell(row=1, column=1).font = Font(bold=True, size=14)
+    ws_summary.merge_cells('A1:F1')
+    
+    ws_summary.cell(row=2, column=1).value = f"Period: {start_date} to {end_date}"
+    ws_summary.merge_cells('A2:F2')
+    
+    # Stats
+    total_revenue = orders.aggregate(Sum('amount'))['amount__sum'] or 0
+    total_orders = orders.count()
+    avg_order = total_revenue / total_orders if total_orders > 0 else 0
+    
+    ws_summary.cell(row=4, column=1).value = "Total Revenue:"
+    ws_summary.cell(row=4, column=1).font = Font(bold=True)
+    ws_summary.cell(row=4, column=2).value = float(total_revenue)
+    ws_summary.cell(row=4, column=2).number_format = '#,##0.00'
+    
+    ws_summary.cell(row=5, column=1).value = "Total Orders:"
+    ws_summary.cell(row=5, column=1).font = Font(bold=True)
+    ws_summary.cell(row=5, column=2).value = total_orders
+    
+    ws_summary.cell(row=6, column=1).value = "Average Order Value:"
+    ws_summary.cell(row=6, column=1).font = Font(bold=True)
+    ws_summary.cell(row=6, column=2).value = float(avg_order)
+    ws_summary.cell(row=6, column=2).number_format = '#,##0.00'
+    
+    # Daily breakdown sheet
+    ws_daily = wb.create_sheet("Daily Breakdown")
+    
+    headers = ['Date', 'Orders', 'Revenue (KES)', 'Avg Order Value']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws_daily.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    # Group by date
+    from django.db.models import Count, Sum
+    daily_stats = orders.values('created_at__date').annotate(
+        count=Count('id'),
+        total=Sum('amount')
+    ).order_by('created_at__date')
+    
+    for row_num, stat in enumerate(daily_stats, 2):
+        ws_daily.cell(row=row_num, column=1).value = stat['created_at__date'].strftime('%Y-%m-%d')
+        ws_daily.cell(row=row_num, column=2).value = stat['count']
+        ws_daily.cell(row=row_num, column=3).value = float(stat['total'])
+        ws_daily.cell(row=row_num, column=4).value = float(stat['total'] / stat['count'])
+        ws_daily.cell(row=row_num, column=4).number_format = '#,##0.00'
+    
+    # Orders detail sheet
+    ws_orders = wb.create_sheet("Orders Detail")
+    
+    order_headers = ['Order ID', 'Date', 'Customer', 'Package', 'Amount (KES)', 'Payment Method', 'Reference']
+    for col_num, header in enumerate(order_headers, 1):
+        cell = ws_orders.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    for row_num, order in enumerate(orders, 2):
+        ws_orders.cell(row=row_num, column=1).value = order.id
+        ws_orders.cell(row=row_num, column=2).value = order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else ''
+        ws_orders.cell(row=row_num, column=3).value = order.user.get_full_name() if order.user else 'Guest'
+        ws_orders.cell(row=row_num, column=4).value = order.package.name if order.package else 'N/A'
+        ws_orders.cell(row=row_num, column=5).value = float(order.amount)
+        ws_orders.cell(row=row_num, column=5).number_format = '#,##0.00'
+        ws_orders.cell(row=row_num, column=6).value = order.payment_method or 'N/A'
+        ws_orders.cell(row=row_num, column=7).value = order.reference or ''
+    
+    # Auto-adjust all sheets
+    for sheet in wb.worksheets:
+        for column in sheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            sheet.column_dimensions[column_letter].width = adjusted_width
+    
+    wb.save(response)
+    return response
+
+
+@login_required
+@csrf_exempt
+def api_community_join(request):
+    """Handle community join requests with email notifications"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    tier = data.get('tier')
+    community_name = data.get('community_name', tier.upper())
+    
+    if not tier:
+        return JsonResponse({'error': 'Tier required'}, status=400)
+    
+    user = request.user
+    
+    # Hardcoded community requirements
+    community_requirements = {
+        'citizens': {
+            'name': 'CITIZENS',
+            'min_investment': 0,
+            'auto_approve': True
+        },
+        'studyhall': {
+            'name': 'STUDY HALL',
+            'min_investment': 1000,
+            'auto_approve': False
+        },
+        'society': {
+            'name': 'SOCIETY',
+            'min_investment': 10000,
+            'auto_approve': False
+        }
+    }
+    
+    if tier not in community_requirements:
+        return JsonResponse({'error': 'Invalid community tier'}, status=400)
+    
+    community_info = community_requirements[tier]
+    
+    # Check if user already has a membership (in database or session)
+    # For now, we'll use a simple session-based tracking
+    if not hasattr(request, 'session'):
+        from django.contrib.sessions.backends.db import SessionStore
+        request.session = SessionStore()
+    
+    memberships = request.session.get('community_memberships', {})
+    
+    if tier in memberships:
+        return JsonResponse({
+            'error': f'You already have a {memberships[tier]} membership for this community'
+        }, status=400)
+    
+    # Check investment requirement
+    if user.total_deposits < community_info['min_investment']:
+        return JsonResponse({
+            'error': 'You do not meet the investment requirement',
+            'missing': [f'Minimum investment: ${community_info["min_investment"]:,}']
+        }, status=403)
+    
+    # Auto-approve citizens, pending for others
+    if community_info['auto_approve']:
+        status = 'active'
+        memberships[tier] = 'active'
+        message = f'Welcome to {community_info["name"]}! You now have access.'
+    else:
+        status = 'pending'
+        memberships[tier] = 'pending'
+        message = f'Your request to join {community_info["name"]} has been submitted for review.'
+    
+    # Store in session
+    request.session['community_memberships'] = memberships
+    request.session.modified = True
+    
+    # Create a record in database if you have the model
+    try:
+        # If you have the CommunityTier and UserCommunityMembership models
+        from .models import CommunityTier, UserCommunityMembership
+        
+        community, created = CommunityTier.objects.get_or_create(
+            tier=tier,
+            defaults={
+                'name': community_info['name'],
+                'minimum_investment': community_info['min_investment']
+            }
+        )
+        
+        membership, created = UserCommunityMembership.objects.update_or_create(
+            user=user,
+            community=community,
+            defaults={
+                'status': status,
+                'access_granted': status == 'active'
+            }
+        )
+    except ImportError:
+        # Models don't exist yet, just use session
+        pass
+    
+    # SEND EMAIL NOTIFICATIONS
+    try:
+        # Email to user
+        user_subject = f"Community Join Request: {community_info['name']}"
+        user_context = {
+            'username': user.username,
+            'community_name': community_info['name'],
+            'status': status,
+            'tier': tier,
+            'year': timezone.now().year
+        }
+        
+        html_content = render_to_string('emails/community_join_user.html', user_context)
+        text_content = f"Your request to join {community_info['name']} is {status}."
+        
+        user_email = EmailMultiAlternatives(
+            user_subject,
+            text_content,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email]
+        )
+        user_email.attach_alternative(html_content, "text/html")
+        user_email.send()
+        
+        # Email to admin
+        admin_subject = f"🔔 NEW COMMUNITY JOIN REQUEST - {community_info['name']}"
+        admin_context = {
+            'username': user.username,
+            'email': user.email,
+            'community_name': community_info['name'],
+            'tier': tier,
+            'status': status,
+            'total_deposits': user.total_deposits,
+            'trading_experience': user.trading_experience,
+            'user_id': user.id,
+            'admin_url': f"{settings.SITE_URL}/admin/",
+            'year': timezone.now().year
+        }
+        
+        admin_html = render_to_string('emails/community_join_admin.html', admin_context)
+        admin_text = f"New join request from {user.username} for {community_info['name']}"
+        
+        admin_email = EmailMultiAlternatives(
+            admin_subject,
+            admin_text,
+            settings.DEFAULT_FROM_EMAIL,
+            settings.ADMIN_EMAILS
+        )
+        admin_email.attach_alternative(admin_html, "text/html")
+        admin_email.send()
+        
+        print(f"✅ Emails sent for {tier} join request")
+        
+    except Exception as e:
+        print(f"❌ Email error: {e}")
+    
+    # Log activity
+    try:
+        log_activity(user, 'COMMUNITY_JOIN', f'Requested to join {community_info["name"]}', request)
+    except:
+        pass
+    
+    return JsonResponse({
+        'success': True,
+        'status': status,
+        'message': message
+    })
 
 
 
