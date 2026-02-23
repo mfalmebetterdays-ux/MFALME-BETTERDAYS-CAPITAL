@@ -3,7 +3,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
 from . import views
-from . import admin_views
+from . import admin_views  # <-- ADD THIS LINE (it was missing)
 from .views import (
     api_mark_lesson_complete,
     api_course_progress,
@@ -62,7 +62,7 @@ urlpatterns = [
     path('transactions/', views.transaction_history, name='transaction_history'),
 
     #=============ADMIN DATA==========================
-path('admin/api/users/export/', views.export_users, name='export_users'),
+    path('admin/api/users/export/', views.export_users, name='export_users'),
     path('admin/api/orders/export/', views.export_orders, name='export_orders'),
     path('admin/api/courses/export/', views.export_courses, name='export_courses'),
     path('admin/api/videos/export/', views.export_videos, name='export_videos'),
