@@ -203,7 +203,7 @@ def send_verification_email(user, code):
 def send_admin_notification(user):
     """Send admin notification when new user registers"""
     try:
-        subject = 'ðŸ”” NEW USER REGISTRATION - Mfalme Betterdays Capital'
+        subject = 'NEW USER REGISTRATION - Mfalme Betterdays Capital'
         
         admin_emails = getattr(settings, 'ADMIN_EMAILS', ['mfalmebetterdays@gmail.com'])
         
@@ -351,7 +351,7 @@ def send_password_reset_email(user, code):
 def send_community_application_email(user, community, request):
     """Send email to admin about community join request"""
     try:
-        subject = f'ðŸ”” NEW COMMUNITY JOIN REQUEST - {community.name}'
+        subject = f' NEW COMMUNITY JOIN REQUEST - {community.name}'
         
         html_content = render_to_string('emails/community_application.html', {
             'user': user,
@@ -376,7 +376,7 @@ def send_community_application_email(user, community, request):
 def send_institute_application_email(application):
     """Send email to admin about institute application"""
     try:
-        subject = 'ðŸ”” NEW INSTITUTE APPLICATION - Mfalme Betterdays Capital'
+        subject = ' NEW INSTITUTE APPLICATION - Mfalme Betterdays Capital'
         
         send_admin_notification_email(subject, 'institute_application.html', {
             'application': application,
@@ -392,7 +392,7 @@ def send_ticket_notification_email(ticket, is_new=True):
     """Send email about support ticket"""
     try:
         if is_new:
-            subject = f'ðŸ”” NEW SUPPORT TICKET - #{ticket.ticket_number}'
+            subject = f'NEW SUPPORT TICKET - #{ticket.ticket_number}'
             template = 'new_ticket_notification.html'
         else:
             subject = f'ðŸ’¬ TICKET REPLY - #{ticket.ticket_number}'
