@@ -2060,6 +2060,28 @@
             box-shadow: var(--shadow);
         }
 
+        /* ========== LOADER STYLES - ONLY ADDED THIS ========== */
+        .loader-container {
+            grid-column: 1/-1;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--gray-light);
+            border-top: 4px solid var(--gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         @media (max-width: 1200px) {
             .courses-grid,
             .videos-grid,
@@ -2921,6 +2943,16 @@
         let activitiesExpanded = false;
         let allActivities = [];
         
+        // ========== LOADER FUNCTION - ONLY ADDED THIS ==========
+        function showLoader(container, message = 'Loading...') {
+            $(container).html(`
+                <div class="loader-container">
+                    <div class="loader-spinner"></div>
+                    <div style="color: var(--gray-dark);">${message}</div>
+                </div>
+            `);
+        }
+        
         // ========== PAGE NAVIGATION ==========
         function switchPage(pageId) {
             document.querySelectorAll('.page').forEach(page => {
@@ -2994,6 +3026,8 @@
 
         // ========== LOAD USER ACTIVITIES WITH SHOW MORE ==========
         function loadUserActivities() {
+            showLoader('#activityList', 'Loading activities...');
+            
             $.ajax({
                 url: '/api/user/activities/',
                 method: 'GET',
@@ -3061,6 +3095,8 @@
 
         // ========== LOAD USER COMMUNITIES ==========
         function loadUserCommunities() {
+            showLoader('#userCommunities', 'Loading communities...');
+            
             $.ajax({
                 url: '/api/user/communities/',
                 method: 'GET',
@@ -3098,6 +3134,8 @@
         // ========== LOAD COURSES ==========
         function loadCourses(filter = 'all') {
             console.log("Loading courses...");
+            
+            showLoader('#coursesContent', 'Loading courses...');
             
             // Update active filter button
             $('.filter-btn').removeClass('active');
@@ -3327,6 +3365,8 @@
         }
 
         function loadWatchlist() {
+            showLoader('#watchlistContent', 'Loading watchlist...');
+            
             $.ajax({
                 url: '/api/user/watchlist/',
                 method: 'GET',
@@ -3374,6 +3414,8 @@
         // ========== LOAD VIDEOS ==========
         function loadVideos(filter = 'all') {
             console.log("Loading videos...");
+            
+            showLoader('#videosContent', 'Loading videos...');
             
             // Update active filter button
             $('.filter-btn').removeClass('active');
@@ -3483,12 +3525,11 @@
         function loadPDFs(filter = 'all') {
             console.log("Loading PDFs...");
             
+            showLoader('#pdfsContent', 'Loading PDFs...');
+            
             // Update active filter button
             $('.filter-btn').removeClass('active');
             $(`.filter-btn[data-filter="${filter}"]`).addClass('active');
-            
-            // Show loading state
-            $('#pdfsContent').html('<div style="grid-column:1/-1; text-align:center; padding:40px;"><i class="fas fa-spinner fa-spin"></i> Loading PDFs...</div>');
             
             // Get all PDFs
             $.ajax({
@@ -3816,8 +3857,12 @@
         `;
         document.head.appendChild(style);
 
-        // ========== LOAD PACKAGES ==========
+        // ========== LOAD PACKAGES - COOL CARDS WITH BANNER ==========
         function loadPackages() {
+            console.log("Loading packages...");
+            
+            showLoader('#packagesContent', 'Loading packages...');
+            
             $.ajax({
                 url: '/api/user/packages/',
                 method: 'GET',
@@ -3825,10 +3870,11 @@
                 success: function(packages) {
                     let html = '';
                     
-                    if (packages.length === 0) {
-                        html = '<div style="grid-column:1/-1; text-align:center; padding:40px;">No packages available</div>';
+                    if (!packages || packages.length === 0) {
+                        html = '<div class="no-packages">No packages available</div>';
                     } else {
-                        packages.forEach(pkg => {
+                        packages.forEach((pkg, index) => {
+                            // Features
                             let featuresHtml = '';
                             if (pkg.features && pkg.features.length) {
                                 pkg.features.slice(0, 4).forEach(f => {
@@ -3836,27 +3882,67 @@
                                 });
                             }
                             
-                            const icon = pkg.package_type === 'partnership' ? 'handshake' : 
-                                       (pkg.package_type === 'lifetime_mentorship' ? 'chalkboard-teacher' : 'chart-line');
+                            // Price
+                            let price = parseFloat(pkg.price) || 0;
+                            let priceFormatted = price.toFixed(2);
+                            
+                            // Banner image
+                            let bannerHtml = '';
+                            if (pkg.image) {
+                                bannerHtml = `<img src="${pkg.image}" alt="${pkg.name}">`;
+                            } else if (pkg.banner) {
+                                bannerHtml = `<img src="${pkg.banner}" alt="${pkg.name}">`;
+                            } else {
+                                // Default gradient with icon
+                                bannerHtml = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, var(--navy), #000);">
+                                    <i class="fas fa-box" style="font-size:50px; color:rgba(255,255,255,0.2);"></i>
+                                </div>`;
+                            }
+                            
+                            // Package type
+                            let packageType = pkg.package_type || 'premium';
+                            let typeDisplay = packageType.charAt(0).toUpperCase() + packageType.slice(1);
+                            
+                            // Duration
+                            let duration = pkg.duration || 'Lifetime access';
+                            
+                            // Check if popular
+                            let popularBadge = (index === 0 || pkg.popular) ? '<div class="package-popular">🔥 Most Popular</div>' : '';
                             
                             html += `
-                                <div class="package-card">
-                                    <div class="package-header">
-                                        <div class="package-icon">
-                                            <i class="fas fa-${icon}"></i>
-                                        </div>
-                                        <h3 class="package-name">${pkg.name}</h3>
+                                <div class="package-cool-card">
+                                    <div class="package-banner">
+                                        ${bannerHtml}
+                                        <div class="package-banner-overlay"></div>
+                                        ${popularBadge}
+                                        <span class="package-badge">${typeDisplay}</span>
                                     </div>
-                                    <div class="package-body">
-                                        <ul class="package-features">
-                                            ${featuresHtml}
-                                        </ul>
-                                        <div class="package-price">
-                                            $${pkg.price} <small>${pkg.is_recurring ? '/month' : 'one-time'}</small>
+                                    
+                                    <div class="package-content">
+                                        <h3 class="package-title">${pkg.name || 'Premium Package'}</h3>
+                                        <p class="package-desc">${pkg.description || 'Comprehensive trading package with exclusive benefits and tools.'}</p>
+                                        
+                                        <div class="package-meta-row">
+                                            <span class="package-type">${typeDisplay}</span>
+                                            <span class="package-duration"><i class="far fa-clock"></i> ${duration}</span>
                                         </div>
-                                        <button class="package-btn" onclick="purchaseItem(${pkg.id}, 'package')">
-                                            ${pkg.is_recurring ? 'Subscribe' : 'Purchase'}
-                                        </button>
+                                        
+                                        <div class="package-features-title">What's included:</div>
+                                        <ul class="package-features-list">
+                                            ${featuresHtml || '<li><i class="fas fa-check-circle"></i> Premium trading tools</li><li><i class="fas fa-check-circle"></i> 24/7 support</li><li><i class="fas fa-check-circle"></i> Weekly market analysis</li>'}
+                                        </ul>
+                                        
+                                        <div class="package-footer">
+                                            <div class="package-price-box">
+                                                <div class="package-price">
+                                                    $${priceFormatted} <small>${pkg.is_recurring ? '/mo' : ''}</small>
+                                                </div>
+                                                <div class="package-price-note">${pkg.is_recurring ? 'billed monthly' : 'one-time payment'}</div>
+                                            </div>
+                                            <button class="package-action-btn" onclick="purchasePackage(${pkg.id})">
+                                                <i class="fas fa-shopping-cart"></i> Start
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             `;
@@ -3867,13 +3953,21 @@
                 },
                 error: function(xhr) {
                     console.error('Error loading packages:', xhr);
-                    $('#packagesContent').html('<div>Unable to load packages</div>');
+                    $('#packagesContent').html('<div class="no-packages">Unable to load packages</div>');
                 }
             });
         }
 
+        function purchasePackage(id) {
+            window.location.href = `/payment/initiate/?type=package&id=${id}`;
+        }
+
         // ========== LOAD COMMUNITY TIERS ==========
         function loadCommunityTiers() {
+            console.log("Loading community tiers...");
+            
+            showLoader('#communityContent', 'Loading communities...');
+            
             $.ajax({
                 url: '/api/user/communities/',
                 method: 'GET',
@@ -3971,413 +4065,415 @@
         }
 
         // ========== JOIN COMMUNITY - UPDATED WITH EMAIL ==========
-function joinCommunity(tier) {
-    console.log("Joining community:", tier);
-    
-    // Show loading state on button
-    const button = event.target;
-    const originalText = button.innerText;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-    button.disabled = true;
-    
-    // Get community display name
-    const communityNames = {
-        'citizens': 'CITIZENS',
-        'studyhall': 'STUDY HALL',
-        'society': 'SOCIETY'
-    };
-    
-    const communityName = communityNames[tier] || tier.toUpperCase();
-    
-    $.ajax({
-        url: '/api/user/community/join/',
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrftoken,
-            'Content-Type': 'application/json'
-        },
-        data: JSON.stringify({
-            tier: tier,
-            community_name: communityName
-        }),
-        success: function(response) {
-            console.log("Join response:", response);
+        function joinCommunity(tier) {
+            console.log("Joining community:", tier);
             
-            // Show success message
-            if (response.status === 'active') {
-                showNotification(`🎉 Welcome to ${communityName}! You now have access.`, 'success');
-            } else {
-                showNotification(`✅ Your request to join ${communityName} has been submitted! The admin will review and approve your membership.`, 'success');
-            }
+            // Show loading state on button
+            const button = event.target;
+            const originalText = button.innerText;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            button.disabled = true;
             
-            // Refresh both community views
-            loadCommunityTiers(); // Refresh the community page
-            loadUserCommunities(); // Refresh the sidebar/dashboard communities
+            // Get community display name
+            const communityNames = {
+                'citizens': 'CITIZENS',
+                'studyhall': 'STUDY HALL',
+                'society': 'SOCIETY'
+            };
             
-            // Also refresh overview page if it's active
-            if (document.getElementById('overview-page').classList.contains('active')) {
-                loadUserCommunities();
-            }
+            const communityName = communityNames[tier] || tier.toUpperCase();
             
-            // Send email notification (handled by backend)
-        },
-        error: function(xhr) {
-            console.error("Join error:", xhr);
-            
-            // Reset button
-            button.innerHTML = originalText;
-            button.disabled = false;
-            
-            const error = xhr.responseJSON?.error || 'Error submitting request';
-            
-            if (xhr.status === 403) {
-                const requirements = xhr.responseJSON?.requirements || [];
-                let message = 'You do not meet the requirements:\n';
-                requirements.forEach(req => {
-                    message += `• ${req}\n`;
-                });
-                showNotification(message, 'error');
-            } else {
-                showNotification('❌ ' + error, 'error');
-            }
-        }
-    });
-}
-
-// ========== LOAD USER COMMUNITIES - UPDATED ==========
-function loadUserCommunities() {
-    console.log("Loading user communities...");
-    
-    $.ajax({
-        url: '/api/user/communities/',
-        method: 'GET',
-        headers: {'X-CSRFToken': csrftoken},
-        success: function(memberships) {
-            console.log("User communities:", memberships);
-            
-            let html = '';
-            let activeCount = 0;
-            
-            if (memberships && memberships.length > 0) {
-                memberships.forEach(m => {
-                    if (m.status === 'active') activeCount++;
-                    
-                    let statusClass = m.status === 'active' ? 'status-active' : 
-                                     (m.status === 'pending' ? 'status-pending' : 'status-inactive');
-                    
-                    // Get appropriate icon based on community
-                    let icon = 'users';
-                    if (m.community_name.toLowerCase().includes('citizen')) icon = 'user-friends';
-                    else if (m.community_name.toLowerCase().includes('study')) icon = 'graduation-cap';
-                    else if (m.community_name.toLowerCase().includes('society')) icon = 'crown';
-                    
-                    html += `
-                        <div class="broker-item" style="border-left: 3px solid ${m.status === 'active' ? '#10B981' : '#FBBF24'};">
-                            <div class="broker-logo"><i class="fas fa-${icon}"></i></div>
-                            <div class="broker-info">
-                                <div class="broker-name">${m.community_name}</div>
-                                <div class="broker-desc">Joined: ${m.joined_date || 'Just now'}</div>
-                            </div>
-                            <div class="broker-rating" style="color: ${m.status === 'active' ? '#10B981' : '#FBBF24'};">
-                                <i class="fas ${m.status === 'active' ? 'fa-check-circle' : 'fa-clock'}"></i>
-                                ${m.status}
-                            </div>
-                        </div>
-                    `;
-                });
-            } else {
-                html = `
-                    <div class="broker-item" style="justify-content: center; color: var(--gray);">
-                        <i class="fas fa-info-circle"></i> You haven't joined any communities yet
-                    </div>
-                `;
-            }
-            
-            $('#userCommunities').html(html);
-            $('#community-status').text(activeCount);
-        },
-        error: function(xhr) {
-            console.error('Error loading communities:', xhr);
-            $('#userCommunities').html(`
-                <div class="broker-item" style="justify-content: center; color: var(--red);">
-                    <i class="fas fa-exclamation-circle"></i> Unable to load communities
-                </div>
-            `);
-        }
-    });
-}
-
-// ========== LOAD COMMUNITY TIERS - WITH HARDCODED FALLBACK ==========
-function loadCommunityTiers() {
-    console.log("Loading community tiers...");
-    
-    $('#communityContent').html('<div style="grid-column:1/-1; text-align:center; padding:40px;"><i class="fas fa-spinner fa-spin"></i> Loading communities...</div>');
-    
-    // Try to get user memberships first
-    $.ajax({
-        url: '/api/user/communities/',
-        method: 'GET',
-        headers: {'X-CSRFToken': csrftoken},
-        success: function(memberships) {
-            const membershipMap = {};
-            if (memberships && memberships.length > 0) {
-                memberships.forEach(m => {
-                    membershipMap[m.community_tier] = m;
-                });
-            }
-            
-            // Try to get tiers from API
             $.ajax({
-                url: '/api/public/community/tiers/',
-                method: 'GET',
-                success: function(tiers) {
-                    if (tiers && tiers.length > 0) {
-                        renderCommunityTiers(tiers, membershipMap);
-                    } else {
-                        renderHardcodedTiers(membershipMap);
-                    }
+                url: '/api/user/community/join/',
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json'
                 },
-                error: function() {
-                    console.log("API failed, using hardcoded tiers");
-                    renderHardcodedTiers(membershipMap);
+                data: JSON.stringify({
+                    tier: tier,
+                    community_name: communityName
+                }),
+                success: function(response) {
+                    console.log("Join response:", response);
+                    
+                    // Show success message
+                    if (response.status === 'active') {
+                        showNotification(`🎉 Welcome to ${communityName}! You now have access.`, 'success');
+                    } else {
+                        showNotification(`✅ Your request to join ${communityName} has been submitted! The admin will review and approve your membership.`, 'success');
+                    }
+                    
+                    // Refresh both community views
+                    loadCommunityTiers(); // Refresh the community page
+                    loadUserCommunities(); // Refresh the sidebar/dashboard communities
+                    
+                    // Also refresh overview page if it's active
+                    if (document.getElementById('overview-page').classList.contains('active')) {
+                        loadUserCommunities();
+                    }
+                    
+                    // Send email notification (handled by backend)
+                },
+                error: function(xhr) {
+                    console.error("Join error:", xhr);
+                    
+                    // Reset button
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    
+                    const error = xhr.responseJSON?.error || 'Error submitting request';
+                    
+                    if (xhr.status === 403) {
+                        const requirements = xhr.responseJSON?.requirements || [];
+                        let message = 'You do not meet the requirements:\n';
+                        requirements.forEach(req => {
+                            message += `• ${req}\n`;
+                        });
+                        showNotification(message, 'error');
+                    } else {
+                        showNotification('❌ ' + error, 'error');
+                    }
                 }
             });
-        },
-        error: function() {
-            console.log("Membership API failed, using hardcoded tiers");
-            renderHardcodedTiers({});
         }
-    });
-}
 
-// ========== RENDER HARDCODED TIERS ==========
-function renderHardcodedTiers(membershipMap) {
-    console.log("Rendering hardcoded communities");
-    
-    const hardcodedTiers = [
-        {
-            tier: 'citizens',
-            name: 'CITIZENS',
-            description: 'Entry level community access - Free for all members',
-            icon_class: 'users',
-            color: '#3B82F6', // blue
-            features: [
-                '✓ Access to public chat rooms',
-                '✓ Daily market updates',
-                '✓ Weekly newsletter',
-                '✓ Community events access',
-                '✓ Basic trading resources'
-            ],
-            minimum_investment: 0,
-            requirements: ['Active account']
-        },
-        {
-            tier: 'studyhall',
-            name: 'STUDY HALL',
-            description: 'Advanced learning community for serious traders',
-            icon_class: 'graduation-cap',
-            color: '#8B5CF6', // purple
-            features: [
-                '✓ All Citizens features',
-                '✓ Premium educational content',
-                '✓ Live trading sessions',
-                '✓ Mentorship program',
-                '✓ Weekly webinars',
-                '✓ Trading strategy library'
-            ],
-            minimum_investment: 1000,
-            requirements: ['Minimum $1,000 investment', 'Completed basic training']
-        },
-        {
-            tier: 'society',
-            name: 'SOCIETY',
-            description: 'Elite trading community for high-volume traders',
-            icon_class: 'crown',
-            color: '#FBBF24', // gold
-            features: [
-                '✓ All Study Hall features',
-                '✓ Direct mentor access (24/7)',
-                '✓ VIP trading signals',
-                '✓ Private networking events',
-                '✓ 1-on-1 coaching sessions',
-                '✓ Priority support',
-                '✓ Profit-sharing opportunities'
-            ],
-            minimum_investment: 10000,
-            requirements: ['Minimum $10,000 investment', 'Active trading history', 'Interview required']
-        }
-    ];
-    
-    let html = '';
-    
-    hardcodedTiers.forEach(tier => {
-        const userMembership = membershipMap[tier.tier];
-        let buttonText = 'Join Community';
-        let buttonDisabled = false;
-        let buttonClass = '';
-        let statusBadge = '';
-        
-        if (userMembership) {
-            if (userMembership.status === 'active') {
-                buttonText = '✓ Already a Member';
-                buttonDisabled = true;
-                buttonClass = 'active';
-                statusBadge = '<span style="background:#10B981; color:white; padding:2px 8px; border-radius:12px; font-size:0.65rem; margin-left:8px;">Active</span>';
-            } else if (userMembership.status === 'pending') {
-                buttonText = '⏳ Pending Approval';
-                buttonDisabled = true;
-                buttonClass = 'pending';
-                statusBadge = '<span style="background:#FBBF24; color:black; padding:2px 8px; border-radius:12px; font-size:0.65rem; margin-left:8px;">Pending</span>';
-            }
-        }
-        
-        let featuresHtml = '';
-        tier.features.forEach(f => {
-            featuresHtml += `<li><i class="fas fa-check-circle" style="color: ${tier.color};"></i> ${f}</li>`;
-        });
-        
-        html += `
-            <div class="tier-card" style="border-color: ${tier.color};">
-                <div class="tier-header" style="background: rgba(${tier.color.replace('#', '')}, 0.05);">
-                    <div class="tier-icon" style="color: ${tier.color};">
-                        <i class="fas fa-${tier.icon_class}"></i>
-                    </div>
-                    <h3 class="tier-name" style="display: flex; align-items: center; justify-content: center;">
-                        ${tier.name}
-                        ${statusBadge}
-                    </h3>
-                    <p class="tier-description" style="font-size:0.85rem; color:var(--gray-dark); margin-top:8px;">
-                        ${tier.description}
-                    </p>
-                </div>
-                <ul class="tier-features">
-                    ${featuresHtml}
-                </ul>
-                <div class="tier-requirements" style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 10px;">
-                    <strong style="color: var(--navy-dark);">Requirements:</strong><br>
-                    ${tier.requirements.map(req => `<small>• ${req}</small><br>`).join('')}
-                </div>
-                ${tier.minimum_investment > 0 ? 
-                    `<div class="tier-requirements" style="background: rgba(${tier.color.replace('#', '')}, 0.05); padding: 10px; text-align: center;">
-                        <i class="fas fa-dollar-sign" style="color: ${tier.color};"></i> 
-                        <strong style="color: ${tier.color};">Min. Investment: $${tier.minimum_investment.toLocaleString()}</strong>
-                    </div>` : 
-                    `<div class="tier-requirements" style="background: rgba(16, 185, 129, 0.05); padding: 10px; text-align: center;">
-                        <i class="fas fa-star" style="color: #10B981;"></i> 
-                        <strong style="color: #10B981;">Free Access for All Members</strong>
-                    </div>`
+        // ========== LOAD USER COMMUNITIES - UPDATED ==========
+        function loadUserCommunities() {
+            console.log("Loading user communities...");
+            
+            $.ajax({
+                url: '/api/user/communities/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(memberships) {
+                    console.log("User communities:", memberships);
+                    
+                    let html = '';
+                    let activeCount = 0;
+                    
+                    if (memberships && memberships.length > 0) {
+                        memberships.forEach(m => {
+                            if (m.status === 'active') activeCount++;
+                            
+                            let statusClass = m.status === 'active' ? 'status-active' : 
+                                             (m.status === 'pending' ? 'status-pending' : 'status-inactive');
+                            
+                            // Get appropriate icon based on community
+                            let icon = 'users';
+                            if (m.community_name.toLowerCase().includes('citizen')) icon = 'user-friends';
+                            else if (m.community_name.toLowerCase().includes('study')) icon = 'graduation-cap';
+                            else if (m.community_name.toLowerCase().includes('society')) icon = 'crown';
+                            
+                            html += `
+                                <div class="broker-item" style="border-left: 3px solid ${m.status === 'active' ? '#10B981' : '#FBBF24'};">
+                                    <div class="broker-logo"><i class="fas fa-${icon}"></i></div>
+                                    <div class="broker-info">
+                                        <div class="broker-name">${m.community_name}</div>
+                                        <div class="broker-desc">Joined: ${m.joined_date || 'Just now'}</div>
+                                    </div>
+                                    <div class="broker-rating" style="color: ${m.status === 'active' ? '#10B981' : '#FBBF24'};">
+                                        <i class="fas ${m.status === 'active' ? 'fa-check-circle' : 'fa-clock'}"></i>
+                                        ${m.status}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        html = `
+                            <div class="broker-item" style="justify-content: center; color: var(--gray);">
+                                <i class="fas fa-info-circle"></i> You haven't joined any communities yet
+                            </div>
+                        `;
+                    }
+                    
+                    $('#userCommunities').html(html);
+                    $('#community-status').text(activeCount);
+                },
+                error: function(xhr) {
+                    console.error('Error loading communities:', xhr);
+                    $('#userCommunities').html(`
+                        <div class="broker-item" style="justify-content: center; color: var(--red);">
+                            <i class="fas fa-exclamation-circle"></i> Unable to load communities
+                        </div>
+                    `);
                 }
-                <button class="tier-btn" 
-                        style="background: ${tier.color}; color: ${tier.tier === 'society' ? 'black' : 'white'}; width: calc(100% - 40px); margin: 20px;"
-                        onclick="joinCommunity('${tier.tier}')" 
-                        ${buttonDisabled ? 'disabled' : ''}>
-                    ${buttonText}
-                </button>
-            </div>
+            });
+        }
+
+        // ========== LOAD COMMUNITY TIERS - WITH HARDCODED FALLBACK ==========
+        function loadCommunityTiers() {
+            console.log("Loading community tiers...");
+            
+            showLoader('#communityContent', 'Loading communities...');
+            
+            // Try to get user memberships first
+            $.ajax({
+                url: '/api/user/communities/',
+                method: 'GET',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function(memberships) {
+                    const membershipMap = {};
+                    if (memberships && memberships.length > 0) {
+                        memberships.forEach(m => {
+                            membershipMap[m.community_tier] = m;
+                        });
+                    }
+                    
+                    // Try to get tiers from API
+                    $.ajax({
+                        url: '/api/public/community/tiers/',
+                        method: 'GET',
+                        success: function(tiers) {
+                            if (tiers && tiers.length > 0) {
+                                renderCommunityTiers(tiers, membershipMap);
+                            } else {
+                                renderHardcodedTiers(membershipMap);
+                            }
+                        },
+                        error: function() {
+                            console.log("API failed, using hardcoded tiers");
+                            renderHardcodedTiers(membershipMap);
+                        }
+                    });
+                },
+                error: function() {
+                    console.log("Membership API failed, using hardcoded tiers");
+                    renderHardcodedTiers({});
+                }
+            });
+        }
+
+        // ========== RENDER HARDCODED TIERS ==========
+        function renderHardcodedTiers(membershipMap) {
+            console.log("Rendering hardcoded communities");
+            
+            const hardcodedTiers = [
+                {
+                    tier: 'citizens',
+                    name: 'CITIZENS',
+                    description: 'Entry level community access - Free for all members',
+                    icon_class: 'users',
+                    color: '#3B82F6', // blue
+                    features: [
+                        '✓ Access to public chat rooms',
+                        '✓ Daily market updates',
+                        '✓ Weekly newsletter',
+                        '✓ Community events access',
+                        '✓ Basic trading resources'
+                    ],
+                    minimum_investment: 0,
+                    requirements: ['Active account']
+                },
+                {
+                    tier: 'studyhall',
+                    name: 'STUDY HALL',
+                    description: 'Advanced learning community for serious traders',
+                    icon_class: 'graduation-cap',
+                    color: '#8B5CF6', // purple
+                    features: [
+                        '✓ All Citizens features',
+                        '✓ Premium educational content',
+                        '✓ Live trading sessions',
+                        '✓ Mentorship program',
+                        '✓ Weekly webinars',
+                        '✓ Trading strategy library'
+                    ],
+                    minimum_investment: 1000,
+                    requirements: ['Minimum $1,000 investment', 'Completed basic training']
+                },
+                {
+                    tier: 'society',
+                    name: 'SOCIETY',
+                    description: 'Elite trading community for high-volume traders',
+                    icon_class: 'crown',
+                    color: '#FBBF24', // gold
+                    features: [
+                        '✓ All Study Hall features',
+                        '✓ Direct mentor access (24/7)',
+                        '✓ VIP trading signals',
+                        '✓ Private networking events',
+                        '✓ 1-on-1 coaching sessions',
+                        '✓ Priority support',
+                        '✓ Profit-sharing opportunities'
+                    ],
+                    minimum_investment: 10000,
+                    requirements: ['Minimum $10,000 investment', 'Active trading history', 'Interview required']
+                }
+            ];
+            
+            let html = '';
+            
+            hardcodedTiers.forEach(tier => {
+                const userMembership = membershipMap[tier.tier];
+                let buttonText = 'Join Community';
+                let buttonDisabled = false;
+                let buttonClass = '';
+                let statusBadge = '';
+                
+                if (userMembership) {
+                    if (userMembership.status === 'active') {
+                        buttonText = '✓ Already a Member';
+                        buttonDisabled = true;
+                        buttonClass = 'active';
+                        statusBadge = '<span style="background:#10B981; color:white; padding:2px 8px; border-radius:12px; font-size:0.65rem; margin-left:8px;">Active</span>';
+                    } else if (userMembership.status === 'pending') {
+                        buttonText = '⏳ Pending Approval';
+                        buttonDisabled = true;
+                        buttonClass = 'pending';
+                        statusBadge = '<span style="background:#FBBF24; color:black; padding:2px 8px; border-radius:12px; font-size:0.65rem; margin-left:8px;">Pending</span>';
+                    }
+                }
+                
+                let featuresHtml = '';
+                tier.features.forEach(f => {
+                    featuresHtml += `<li><i class="fas fa-check-circle" style="color: ${tier.color};"></i> ${f}</li>`;
+                });
+                
+                html += `
+                    <div class="tier-card" style="border-color: ${tier.color};">
+                        <div class="tier-header" style="background: rgba(${tier.color.replace('#', '')}, 0.05);">
+                            <div class="tier-icon" style="color: ${tier.color};">
+                                <i class="fas fa-${tier.icon_class}"></i>
+                            </div>
+                            <h3 class="tier-name" style="display: flex; align-items: center; justify-content: center;">
+                                ${tier.name}
+                                ${statusBadge}
+                            </h3>
+                            <p class="tier-description" style="font-size:0.85rem; color:var(--gray-dark); margin-top:8px;">
+                                ${tier.description}
+                            </p>
+                        </div>
+                        <ul class="tier-features">
+                            ${featuresHtml}
+                        </ul>
+                        <div class="tier-requirements" style="border-top: 1px solid var(--border); padding-top: 15px; margin-top: 10px;">
+                            <strong style="color: var(--navy-dark);">Requirements:</strong><br>
+                            ${tier.requirements.map(req => `<small>• ${req}</small><br>`).join('')}
+                        </div>
+                        ${tier.minimum_investment > 0 ? 
+                            `<div class="tier-requirements" style="background: rgba(${tier.color.replace('#', '')}, 0.05); padding: 10px; text-align: center;">
+                                <i class="fas fa-dollar-sign" style="color: ${tier.color};"></i> 
+                                <strong style="color: ${tier.color};">Min. Investment: $${tier.minimum_investment.toLocaleString()}</strong>
+                            </div>` : 
+                            `<div class="tier-requirements" style="background: rgba(16, 185, 129, 0.05); padding: 10px; text-align: center;">
+                                <i class="fas fa-star" style="color: #10B981;"></i> 
+                                <strong style="color: #10B981;">Free Access for All Members</strong>
+                            </div>`
+                        }
+                        <button class="tier-btn" 
+                                style="background: ${tier.color}; color: ${tier.tier === 'society' ? 'black' : 'white'}; width: calc(100% - 40px); margin: 20px;"
+                                onclick="joinCommunity('${tier.tier}')" 
+                                ${buttonDisabled ? 'disabled' : ''}>
+                            ${buttonText}
+                        </button>
+                    </div>
+                `;
+            });
+            
+            $('#communityContent').html(html);
+            
+            // Update badge count
+            const activeCount = Object.values(membershipMap).filter(m => m.status === 'active').length;
+            $('#community-status').text(activeCount);
+        }
+
+        // ========== ENHANCED NOTIFICATION FUNCTION ==========
+        function showNotification(message, type = 'info') {
+            // Create toast container if it doesn't exist
+            if (!$('#toast-container').length) {
+                $('body').append('<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>');
+            }
+            
+            const toastId = 'toast-' + Date.now();
+            const colors = {
+                success: '#10B981',
+                error: '#EF4444',
+                info: '#3B82F6',
+                warning: '#F59E0B'
+            };
+            
+            const icon = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                info: 'fa-info-circle',
+                warning: 'fa-exclamation-triangle'
+            };
+            
+            const toast = `
+                <div id="${toastId}" style="background: ${colors[type]}; color: white; padding: 15px 25px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease;">
+                    <i class="fas ${icon[type]}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            $('#toast-container').append(toast);
+            
+            setTimeout(() => {
+                $(`#${toastId}`).css('animation', 'slideOut 0.3s ease');
+                setTimeout(() => {
+                    $(`#${toastId}`).remove();
+                }, 300);
+            }, 5000);
+        }
+
+        // Add these CSS animations if not already present
+        const additionalStyles = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+            
+            .tier-card {
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+            
+            .tier-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+            }
+            
+            .tier-btn {
+                transition: all 0.3s ease;
+                font-weight: 600;
+                padding: 12px;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+            
+            .tier-btn:hover:not(:disabled) {
+                transform: scale(1.02);
+                filter: brightness(1.1);
+            }
+            
+            .tier-btn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+            
+            .status-active {
+                background: #10B981 !important;
+                color: white !important;
+            }
+            
+            .status-pending {
+                background: #FBBF24 !important;
+                color: black !important;
+            }
         `;
-    });
-    
-    $('#communityContent').html(html);
-    
-    // Update badge count
-    const activeCount = Object.values(membershipMap).filter(m => m.status === 'active').length;
-    $('#community-status').text(activeCount);
-}
 
-// ========== ENHANCED NOTIFICATION FUNCTION ==========
-function showNotification(message, type = 'info') {
-    // Create toast container if it doesn't exist
-    if (!$('#toast-container').length) {
-        $('body').append('<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>');
-    }
-    
-    const toastId = 'toast-' + Date.now();
-    const colors = {
-        success: '#10B981',
-        error: '#EF4444',
-        info: '#3B82F6',
-        warning: '#F59E0B'
-    };
-    
-    const icon = {
-        success: 'fa-check-circle',
-        error: 'fa-exclamation-circle',
-        info: 'fa-info-circle',
-        warning: 'fa-exclamation-triangle'
-    };
-    
-    const toast = `
-        <div id="${toastId}" style="background: ${colors[type]}; color: white; padding: 15px 25px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease;">
-            <i class="fas ${icon[type]}"></i>
-            <span>${message}</span>
-        </div>
-    `;
-    
-    $('#toast-container').append(toast);
-    
-    setTimeout(() => {
-        $(`#${toastId}`).css('animation', 'slideOut 0.3s ease');
-        setTimeout(() => {
-            $(`#${toastId}`).remove();
-        }, 300);
-    }, 5000);
-}
-
-// Add these CSS animations if not already present
-const additionalStyles = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-    
-    .tier-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .tier-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
-    }
-    
-    .tier-btn {
-        transition: all 0.3s ease;
-        font-weight: 600;
-        padding: 12px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-    
-    .tier-btn:hover:not(:disabled) {
-        transform: scale(1.02);
-        filter: brightness(1.1);
-    }
-    
-    .tier-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-    
-    .status-active {
-        background: #10B981 !important;
-        color: white !important;
-    }
-    
-    .status-pending {
-        background: #FBBF24 !important;
-        color: black !important;
-    }
-`;
-
-// Add the styles to the page
-$('<style>').text(additionalStyles).appendTo('head');
+        // Add the styles to the page
+        $('<style>').text(additionalStyles).appendTo('head');
 
         // ========== LOAD PAYMENTS ==========
         function loadPayments() {
+            showLoader('#paymentsTableBody', 'Loading transactions...');
+            
             $.ajax({
                 url: '/api/user/orders/',
                 method: 'GET',
@@ -4412,6 +4508,8 @@ $('<style>').text(additionalStyles).appendTo('head');
 
         // ========== LOAD TICKETS ==========
         function loadTickets() {
+            showLoader('#ticketsTableBody', 'Loading tickets...');
+            
             $.ajax({
                 url: '/api/user/tickets/',
                 method: 'GET',
@@ -4555,6 +4653,8 @@ $('<style>').text(additionalStyles).appendTo('head');
 
         // ========== CHECK INSTITUTE ELIGIBILITY ==========
         function checkInstituteEligibility() {
+            showLoader('#instituteRequirements', 'Checking eligibility...');
+            
             $.ajax({
                 url: '/api/user/institute/eligibility/',
                 method: 'GET',

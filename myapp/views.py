@@ -2160,6 +2160,180 @@ def api_unlock_video(request):
         'authorization_url': f"/payment/verify/{transaction.reference}/"
     })
 
+
+@csrf_exempt
+def initialize_package_payment(request):
+    """Initialize payment for a package and redirect to payment page"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Convert USD to KES
+            amount_usd = Decimal(str(data.get('amount', 0)))
+            amount_kes = amount_usd * Decimal('129')
+            
+            # Create transaction
+            transaction = PaymentTransaction.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                reference=generate_reference(),
+                amount=amount_kes,
+                currency='KES',
+                payment_type='package_purchase',
+                payment_method='sasapay',
+                description=data.get('description', 'Package Purchase'),
+                metadata=data.get('metadata', {}),
+                status='initiated',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'reference': transaction.reference
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@csrf_exempt
+def api_create_order(request):
+    """Create a new order - Handles both POST (JSON) and GET (URL parameters)"""
+    
+    # Handle GET requests from education section links
+    if request.method == 'GET':
+        program = request.GET.get('program')
+        name = request.GET.get('name')
+        amount = request.GET.get('amount')
+        payment_type = request.GET.get('type', 'education_purchase')
+        
+        # Validate required parameters
+        if not all([program, name, amount]):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Missing required parameters: program, name, amount'
+            }, status=400)
+        
+        try:
+            # Convert amount to Decimal
+            amount_usd = Decimal(str(amount))
+            amount_kes = amount_usd * Decimal('129')
+            
+            # Create transaction
+            transaction = PaymentTransaction.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                reference=generate_reference(),
+                amount=amount_kes,
+                currency='KES',
+                payment_type=payment_type,
+                payment_method='sasapay',
+                description=name,
+                metadata={
+                    'program_code': program,
+                    'program_name': name,
+                    'amount_usd': float(amount_usd),
+                    'source': 'education_section'
+                },
+                status='initiated',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            )
+            
+            # Redirect to payment page
+            from django.shortcuts import redirect
+            return redirect(f'/payment/?ref={transaction.reference}')
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+    
+    # Handle POST requests from packages section (JSON)
+    elif request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        
+        # Get USD amount and convert to KES
+        amount_usd = Decimal(str(data.get('amount', 0)))
+        amount_kes = amount_usd * Decimal('129')
+        
+        transaction = PaymentTransaction.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            reference=generate_reference(),
+            amount=amount_kes,  # Store KES
+            currency='KES',
+            payment_type=data.get('payment_type', 'other'),
+            payment_method='sasapay',
+            description=data.get('description', ''),
+            metadata={
+                **data.get('metadata', {}),
+                'amount_usd': float(amount_usd)
+            },
+            status='initiated',
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'reference': transaction.reference,
+            'amount': float(amount_kes),
+            'currency': 'KES'
+        })
+    
+    # Handle other methods
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+@csrf_exempt
+def education_payment(request):
+    """Simple GET endpoint for education payments"""
+    # Get parameters from URL
+    program = request.GET.get('program')
+    name = request.GET.get('name')
+    amount = request.GET.get('amount')
+    
+    # Validate
+    if not all([program, name, amount]):
+        messages.error(request, 'Missing payment information')
+        return redirect('index')
+    
+    try:
+        # Convert to Decimal
+        from decimal import Decimal
+        amount_usd = Decimal(str(amount))
+        amount_kes = amount_usd * Decimal('129')
+        
+        # Create transaction
+        transaction = PaymentTransaction.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            reference=generate_reference(),
+            amount=amount_kes,
+            currency='KES',
+            payment_type='education_purchase',
+            payment_method='sasapay',
+            description=name,
+            metadata={
+                'program_code': program,
+                'program_name': name,
+                'amount_usd': float(amount_usd),
+                'source': 'education_section'
+            },
+            status='initiated'
+        )
+        
+        # Redirect to payment page
+        return redirect(f'/payment/?ref={transaction.reference}')
+        
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+        return redirect('index')
+    
 @login_required
 def api_send_support(request):
     """API to send support message"""
@@ -3085,12 +3259,101 @@ def contact(request):
     }
     return render(request, 'main/contact.html', context)
 
+
+
+
+
 def payment(request):
-    context = {
-        'packages': Package.objects.filter(is_active=True),
-        'payment_methods': ['Paystack', 'M-Pesa', 'Bitcoin', 'USDT', 'Bank Transfer'],
-    }
-    return render(request, 'main/payment.html', context)
+    """Payment page with SasaPay integration"""
+    reference = request.GET.get('ref')
+    
+    if not reference:
+        messages.error(request, 'No transaction reference provided')
+        return redirect('index')
+    
+    try:
+        transaction = PaymentTransaction.objects.get(reference=reference)
+        
+        # If transaction is already completed, redirect to success
+        if transaction.status == 'completed':
+            return redirect('payment_success', reference=reference)
+        
+        # Get SasaPay checkout URL
+        from .sasapay_utils import create_checkout
+        
+        # Create SasaPay checkout session
+        checkout_data = create_checkout(
+            amount=int(transaction.amount),  # Amount in KES
+            reference=reference,
+            description=transaction.description,
+            email=request.user.email if request.user.is_authenticated else 'customer@example.com',
+            phone=request.user.phone if request.user.is_authenticated else '',
+            callback_url=request.build_absolute_uri('/sasapay/callback/'),
+            success_url=request.build_absolute_uri(f'/payment/success/{reference}/'),
+            failure_url=request.build_absolute_uri('/payment/failed/')
+        )
+        
+        context = {
+            'title': transaction.metadata.get('package_name', 'Package'),
+            'amount_usd': transaction.metadata.get('amount_usd', 0),
+            'amount_kes': float(transaction.amount),
+            'user': request.user,
+            'reference': reference,
+            'transaction': transaction,
+            'checkout_url': checkout_data.get('checkout_url'),
+            'sasapay_script': checkout_data.get('script_url', 'https://checkout.sasapay.app/v1.js')
+        }
+        
+        return render(request, 'payment.html', context)
+        
+    except PaymentTransaction.DoesNotExist:
+        messages.error(request, 'Transaction not found')
+        return redirect('index')
+    except Exception as e:
+        print(f"SasaPay error: {e}")
+        # Fall back to manual payment
+        context = {
+            'title': transaction.metadata.get('package_name', 'Package'),
+            'amount_usd': transaction.metadata.get('amount_usd', 0),
+            'amount_kes': float(transaction.amount),
+            'user': request.user,
+            'reference': reference,
+            'transaction': transaction
+        }
+        return render(request, 'payment/payment.html', context)
+    
+
+    
+
+@csrf_exempt
+def sasapay_initiate_payment(request):
+    """Initiate SasaPay payment"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    reference = data.get('reference')
+    amount = data.get('amount')
+    email = data.get('email')
+    
+    if not reference:
+        return JsonResponse({'error': 'Reference required'}, status=400)
+    
+    try:
+        transaction = PaymentTransaction.objects.get(reference=reference)
+    except PaymentTransaction.DoesNotExist:
+        return JsonResponse({'error': 'Transaction not found'}, status=404)
+    
+    # For now, return a mock checkout URL (replace with actual SasaPay integration)
+    return JsonResponse({
+        'success': True,
+        'checkout_url': f'/payment/success/{reference}/',  # This will be replaced with actual SasaPay URL
+        'message': 'Payment initiated'
+    })
 
 def accounts(request):
     context = {

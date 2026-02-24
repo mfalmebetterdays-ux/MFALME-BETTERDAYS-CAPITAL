@@ -2251,61 +2251,87 @@
         }
         
         // ========== LOAD PACKAGES ==========
-        function loadPackages() {
-            $.ajax({
-                url: '/admin/api/packages/',
-                method: 'GET',
-                headers: {'X-CSRFToken': csrftoken},
-                success: function(packages) {
-                    console.log("Packages loaded:", packages);
+       // Update the loadPackages function in admin
+function loadPackages() {
+    showLoader('Loading packages...');
+    
+    $.ajax({
+        url: '/admin/api/packages/',
+        method: 'GET',
+        headers: {'X-CSRFToken': csrftoken},
+        success: function(response) {
+            hideLoader();
+            
+            let packages = response.items || response || [];
+            let html = '';
+            
+            if (packages.length > 0) {
+                packages.forEach((pkg, index) => {
+                    // Format price with currency
+                    let price = parseFloat(pkg.price) || 0;
+                    let priceFormatted = price.toFixed(2);
                     
-                    let html = '';
-                    let packagesArray = [];
-                    
-                    if (Array.isArray(packages)) {
-                        packagesArray = packages;
-                    } else if (packages && packages.results) {
-                        packagesArray = packages.results;
-                    } else if (packages && packages.packages) {
-                        packagesArray = packages.packages;
+                    // Image HTML
+                    let imageHtml = '<div class="no-thumbnail"><i class="fas fa-box"></i></div>';
+                    if (pkg.image) {
+                        imageHtml = `<img src="${pkg.image}" alt="${pkg.name}" class="thumbnail-img" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\\'no-thumbnail\\'><i class=\\'fas fa-image\\'></i></div>';">`;
                     }
                     
-                    if (packagesArray.length > 0) {
-                        packagesArray.sort((a, b) => b.id - a.id);
-                        
-                        packagesArray.forEach((pkg, index) => {
-                            let imageUrl = pkg.image;
-                            html += `
-                                <tr>
-                                    <td>${packagesArray.length - index}</td>
-                                    <td>${getThumbnailHtml(imageUrl, pkg.name)}</td>
-                                    <td>${pkg.name || 'Unnamed'}</td>
-                                    <td>${formatCurrency(pkg.price, 'KES')}</td>
-                                    <td>${pkg.type || pkg.package_type || 'N/A'}</td>
-                                    <td>${pkg.sales || 0}</td>
-                                    <td>${formatCurrency(pkg.revenue, 'KES')}</td>
-                                    <td><span class="status-badge status-${pkg.status || 'inactive'}">${pkg.status || 'inactive'}</span></td>
-                                    <td class="action-cell">
-                                        <button class="action-btn btn-edit" onclick="editItem('package', ${pkg.id})"><i class="fas fa-edit"></i> Edit</button>
-                                        <button class="action-btn btn-view" onclick="viewItem('package', ${pkg.id})"><i class="fas fa-eye"></i> View</button>
-                                        <button class="action-btn btn-delete" onclick="deleteItem('package', ${pkg.id})"><i class="fas fa-trash"></i> Del</button>
-                                    </td>
-                                </tr>
-                            `;
-                        });
-                    } else {
-                        html = '<tr><td colspan="9" class="text-center">No packages found</td></tr>';
-                    }
-                    $('#packagesTableBody').html(html);
-                    checkTableScroll();
-                },
-                error: function(xhr) {
-                    console.error("Error loading packages:", xhr.responseText);
-                    $('#packagesTableBody').html('<tr><td colspan="9" class="text-center text-danger">Error loading packages</td></tr>');
-                    checkTableScroll();
-                }
-            });
+                    // Popular badge
+                    let popularBadge = pkg.popular ? 
+                        '<span style="background:#FBBF24; color:black; padding:2px 6px; border-radius:12px; font-size:10px; margin-left:5px;">🔥 POPULAR</span>' : '';
+                    
+                    html += `
+                        <tr>
+                            <td>${pkg.id}</td>
+                            <td>${imageHtml}</td>
+                            <td>${pkg.name} ${popularBadge}</td>
+                            <td>$${priceFormatted} ${pkg.is_recurring ? '/mo' : ''}</td>
+                            <td>${pkg.package_type || 'N/A'}</td>
+                            <td><span class="package-duration">${pkg.duration || 'Lifetime'}</span></td>
+                            <td>${pkg.sales_count || 0}</td>
+                            <td>$${(parseFloat(pkg.total_revenue) || 0).toFixed(2)}</td>
+                            <td><span class="status-badge status-${pkg.status}">${pkg.status}</span></td>
+                            <td class="action-cell">
+                                <button class="action-btn btn-edit" onclick="editItem('package', ${pkg.id})"><i class="fas fa-edit"></i></button>
+                                <button class="action-btn btn-view" onclick="viewItem('package', ${pkg.id})"><i class="fas fa-eye"></i></button>
+                                <button class="action-btn btn-delete" onclick="deleteItem('package', ${pkg.id})"><i class="fas fa-trash"></i></button>
+                                <button class="action-btn btn-${pkg.popular ? 'warning' : 'success'}" onclick="togglePopular(${pkg.id})">
+                                    <i class="fas fa-${pkg.popular ? 'star' : 'star-o'}"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                html = '<tr><td colspan="10" style="text-align:center; padding:40px;">No packages found. Click "ADD PACKAGE" to create one.</td></tr>';
+            }
+            
+            $('#packagesTableBody').html(html);
+        },
+        error: function(xhr) {
+            hideLoader();
+            console.error('Error loading packages:', xhr.responseText);
+            $('#packagesTableBody').html('<tr><td colspan="10" style="text-align:center; color:red;">Error loading packages</td></tr>');
         }
+    });
+}
+
+// Add toggle popular function
+function togglePopular(packageId) {
+    $.ajax({
+        url: `/admin/api/packages/${packageId}/toggle-popular/`,
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken},
+        success: function() {
+            showToast('Popular status updated');
+            loadPackages();
+        },
+        error: function() {
+            showToast('Error updating popular status', true);
+        }
+    });
+}
         
         // ========== LOAD ORDERS ==========
         function loadOrders() {

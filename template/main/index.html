@@ -2286,8 +2286,7 @@
 
 
 
-
-  <!-- Packages Section -->
+<!-- Packages Section -->
 <section class="packages-section" id="packages">
   <div class="container">
     <div class="section-header">
@@ -2298,15 +2297,17 @@
       <div class="col-lg-4 col-md-6 mb-4">
         <div class="package-card">
           <div class="package-image">
-            <img src="https://cdn.open-pr.com/L/1/L126144575_g.jpg" alt="Lifetime Signals">
+            <img src="https://cdn.open-pr.com/L/1/L126144575_g.jpg" alt="Market Consultation">
           </div>
           <div class="package-body">
             <h3>Market Consultation</h3>
             <p>Our Market Consultation provides professional market analysis and strategic guidance across indices, currencies, and commodities, helping traders understand market trends, manage risk, and make confident, informed decisions.</p>
             <div class="package-footer">
               <div class="price">$200</div>
-              <!-- ✅ CORRECT: market_consultation for $200 -->
-              <a href="{% url 'login_page' %}" class="btn-package">Pay</a>
+              <!-- Async Payment Button -->
+              <button type="button" class="btn-package" onclick="initPayment('market_consultation', 'Market Consultation', 200)" id="pay-btn-1">
+                Pay Now
+              </button>
             </div>
           </div>
         </div>
@@ -2321,8 +2322,10 @@
             <p>Enroll in our exclusive forex mentorship program, incorporating Mfalme Betterdays' El-quago strategy. Experience personalized Zoom sessions three times a week, supplemented with extensive research materials.</p>
             <div class="package-footer">
               <div class="price">$5,000</div>
-              <!-- ✅ CHANGE TO: lifetime_mentorship for $5000 -->
-              <a href="{% url 'login_page' %}" class="btn-package">Pay </a>
+              <!-- Async Payment Button -->
+              <button type="button" class="btn-package" onclick="initPayment('lifetime_mentorship', 'Lifetime Mentorship', 5000)" id="pay-btn-2">
+                Pay Now
+              </button>
             </div>
           </div>
         </div>
@@ -2337,8 +2340,10 @@
             <p>Embark on a thrilling journey with our leveraging package, requiring a minimum $100,000 deposit. Utilizing defined standard deviation, we leverage amounts for high-stakes trading.</p>
             <div class="package-footer">
               <div class="price">$100,000</div>
-              <!-- ✅ CHANGE TO: leveraging_package for $100000 -->
-              <a href="{% url 'login_page' %}" class="btn-package">Pay </a>
+              <!-- Async Payment Button -->
+              <button type="button" class="btn-package" onclick="initPayment('leveraging_package', 'Leveraging Package', 100000)" id="pay-btn-3">
+                Pay Now
+              </button>
             </div>
           </div>
         </div>
@@ -2346,6 +2351,139 @@
     </div>
   </div>
 </section>
+
+<!-- Payment Initialization Script -->
+<script>
+// Store CSRF token
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+
+// Track active button to prevent double-clicks
+let isProcessing = false;
+
+async function initPayment(packageType, packageName, amountUSD) {
+    // Prevent multiple clicks
+    if (isProcessing) {
+        return;
+    }
+    
+    // Find and disable the clicked button
+    const buttons = document.querySelectorAll('.btn-package');
+    const clickedButton = event?.target;
+    
+    if (clickedButton) {
+        clickedButton.disabled = true;
+        clickedButton.innerHTML = '⏳ Processing...';
+    }
+    
+    isProcessing = true;
+    
+    try {
+        // Show loading state (optional toast notification)
+        showNotification('Creating payment order...', 'info');
+        
+        // Create order via API
+        const response = await fetch('/api/create-order/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                payment_type: 'package_purchase',
+                amount: amountUSD,
+                description: `${packageName} Package`,
+                metadata: {
+                    package_type: packageType,
+                    package_name: packageName,
+                    amount_usd: amountUSD
+                }
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Success - redirect to payment page with reference
+            showNotification('Order created! Redirecting to payment...', 'success');
+            window.location.href = `/payment/?ref=${data.reference}`;
+        } else {
+            // Error
+            showNotification('Error: ' + (data.error || 'Failed to create order'), 'error');
+            resetButton(clickedButton, 'Pay Now');
+        }
+    } catch (error) {
+        console.error('Payment initialization error:', error);
+        showNotification('Network error. Please try again.', 'error');
+        resetButton(clickedButton, 'Pay Now');
+    } finally {
+        isProcessing = false;
+    }
+}
+
+function resetButton(button, text) {
+    if (button) {
+        button.disabled = false;
+        button.innerHTML = text;
+    }
+}
+
+// Simple notification system
+function showNotification(message, type = 'info') {
+    // Check if notification container exists, if not create it
+    let container = document.getElementById('notification-container');
+    
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notification-container';
+        container.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        `;
+        document.body.appendChild(container);
+    }
+    
+    // Create notification
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        animation: slideIn 0.3s ease;
+        font-size: 14px;
+    `;
+    notification.textContent = message;
+    
+    container.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+</script>
+
+<!-- Include CSRF token if not already in template -->
+{% csrf_token %}
 
  <!-- Payment Methods -->
 <section class="payment-section" id="payment">
@@ -4252,7 +4390,7 @@ window.closeModal = function() {
 
 <!-- ===== EDUCATION SECTION ===== -->
 <section class="education-section" id="education">
-  <div class="container" id="Accounts">
+  <div class="container">
     <div class="section-header">
       <h2>Online <span class="gold-gradient-text">Education Programs</span></h2>
       <p>Welcome to the most comprehensive online Trading Education Programs available in the World</p>
@@ -4278,8 +4416,10 @@ window.closeModal = function() {
             <span><i class="fas fa-check"></i> Beginner Friendly</span>
             <span><i class="fas fa-check"></i> Professional Approach</span>
           </div>
-          <!-- ✅ FIXED: Changed from #payment to actual payment URL -->
-          <a href="{% url 'login_page' %}" class="btn-education">Enroll Now</a>
+          <!-- FIXED: Using dedicated education payment endpoint -->
+          <a href="/education/pay/?program=IPLT&name=IPLT%20-%2012%20Months&amount=1299" class="btn-education">
+            Enroll Now - $1,299
+          </a>
         </div>
       </div>
       
@@ -4308,9 +4448,13 @@ window.closeModal = function() {
             <span><i class="fas fa-check"></i> 20-30% Returns</span>
             <span><i class="fas fa-check"></i> Full System</span>
           </div>
-          <!-- ✅ ADD TWO BUTTONS for 1 Month and 12 Months -->
-          <a href="{% url 'login_page' %}" class="btn-education">1 Month - $1,999</a>
-          <a href="{% url 'login_page' %}" class="btn-education" style="margin-top: 10px;">12 Months - $3,499</a>
+          <!-- FIXED: Using dedicated education payment endpoint -->
+          <a href="/education/pay/?program=PTM&name=PTM%20-%201%20Month&amount=1999" class="btn-education" style="margin-bottom: 8px;">
+            1 Month - $1,999
+          </a>
+          <a href="/education/pay/?program=PTM&name=PTM%20-%2012%20Months&amount=3499" class="btn-education">
+            12 Months - $3,499
+          </a>
         </div>
       </div>
       
@@ -4339,9 +4483,13 @@ window.closeModal = function() {
             <span><i class="fas fa-check"></i> Updated 2025</span>
             <span><i class="fas fa-check"></i> Mentor Lessons</span>
           </div>
-          <!-- ✅ ADD TWO BUTTONS for 1 Month and 12 Months -->
-          <a href="{% url 'login_page' %}" class="btn-education">1 Month - $1,999</a>
-          <a href="{% url 'login_page' %}" class="btn-education" style="margin-top: 10px;">12 Months - $3,499</a>
+          <!-- FIXED: Using dedicated education payment endpoint -->
+          <a href="/education/pay/?program=POTM&name=POTM%202.0%20-%201%20Month&amount=1999" class="btn-education" style="margin-bottom: 8px;">
+            1 Month - $1,999
+          </a>
+          <a href="/education/pay/?program=POTM&name=POTM%202.0%20-%2012%20Months&amount=3499" class="btn-education">
+            12 Months - $3,499
+          </a>
         </div>
       </div>
       
@@ -4370,9 +4518,13 @@ window.closeModal = function() {
             <span><i class="fas fa-check"></i> Macro Focus</span>
             <span><i class="fas fa-check"></i> Pro Trader Method</span>
           </div>
-          <!-- ✅ ADD TWO BUTTONS for 1 Month and 12 Months -->
-          <a href="{% url 'login_page' %}" class="btn-education">1 Month - $1,499</a>
-          <a href="{% url 'login_page' %}" class="btn-education" style="margin-top: 10px;">12 Months - $2,999</a>
+          <!-- FIXED: Using dedicated education payment endpoint -->
+          <a href="/education/pay/?program=PFTM&name=PFTM%20-%201%20Month&amount=1499" class="btn-education" style="margin-bottom: 8px;">
+            1 Month - $1,499
+          </a>
+          <a href="/education/pay/?program=PFTM&name=PFTM%20-%2012%20Months&amount=2999" class="btn-education">
+            12 Months - $2,999
+          </a>
         </div>
       </div>
     </div>
@@ -4386,8 +4538,9 @@ window.closeModal = function() {
     </div>
     
     <!-- Detailed Program Information (Initially Hidden) -->
-    <div class="program-details-container" id="programDetails">
+    <div class="program-details-container" id="programDetails" style="display: none;">
       <div class="row">
+        <!-- IPLT Details -->
         <div class="col-md-6 mb-4">
           <div class="detail-card">
             <h4><i class="fas fa-play-circle gold-text"></i> IPLT Video Series</h4>
@@ -4403,9 +4556,13 @@ window.closeModal = function() {
               </div>
             </div>
             <div class="detail-price">12 Months Access — <span class="price">$1,299</span></div>
+            <a href="/education/pay/?program=IPLT&name=IPLT%20-%2012%20Months&amount=1299" class="btn-education" style="margin-top:15px;">
+              Enroll Now - $1,299
+            </a>
           </div>
         </div>
         
+        <!-- PTM Details -->
         <div class="col-md-6 mb-4">
           <div class="detail-card">
             <h4><i class="fas fa-graduation-cap gold-text"></i> PTM Video Series</h4>
@@ -4424,9 +4581,18 @@ window.closeModal = function() {
               <div class="price-option">1 Month — <span class="price">$1,999</span></div>
               <div class="price-option">12 Months — <span class="price">$3,499</span></div>
             </div>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+              <a href="/education/pay/?program=PTM&name=PTM%20-%201%20Month&amount=1999" class="btn-education">
+                1 Month
+              </a>
+              <a href="/education/pay/?program=PTM&name=PTM%20-%2012%20Months&amount=3499" class="btn-education">
+                12 Months
+              </a>
+            </div>
           </div>
         </div>
         
+        <!-- POTM Details -->
         <div class="col-md-6 mb-4">
           <div class="detail-card">
             <h4><i class="fas fa-chart-line gold-text"></i> POTM 2.0 Video Series</h4>
@@ -4445,9 +4611,18 @@ window.closeModal = function() {
               <div class="price-option">1 Month — <span class="price">$1,999</span></div>
               <div class="price-option">12 Months — <span class="price">$3,499</span></div>
             </div>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+              <a href="/education/pay/?program=POTM&name=POTM%202.0%20-%201%20Month&amount=1999" class="btn-education">
+                1 Month
+              </a>
+              <a href="/education/pay/?program=POTM&name=POTM%202.0%20-%2012%20Months&amount=3499" class="btn-education">
+                12 Months
+              </a>
+            </div>
           </div>
         </div>
         
+        <!-- PFTM Details -->
         <div class="col-md-6 mb-4">
           <div class="detail-card">
             <h4><i class="fas fa-globe gold-text"></i> PFTM Video Series</h4>
@@ -4466,6 +4641,14 @@ window.closeModal = function() {
               <div class="price-option">1 Month — <span class="price">$1,499</span></div>
               <div class="price-option">12 Months — <span class="price">$2,999</span></div>
             </div>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+              <a href="/education/pay/?program=PFTM&name=PFTM%20-%201%20Month&amount=1499" class="btn-education">
+                1 Month
+              </a>
+              <a href="/education/pay/?program=PFTM&name=PFTM%20-%2012%20Months&amount=2999" class="btn-education">
+                12 Months
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -4473,16 +4656,98 @@ window.closeModal = function() {
   </div>
 </section>
 
+<!-- CSS STYLES -->
 <style>
-/* ===== EDUCATION SECTION STYLES ===== */
+:root {
+  --deep-navy: #0a0f1e;
+  --navy-light: #151f30;
+  --navy-dark: #0a0f1e;
+  --gold-primary: #FFD700;
+  --gold-bright: #FDB931;
+  --gold-gradient: linear-gradient(135deg, #FFD700, #FDB931);
+  --white: #ffffff;
+  --white-smoke: #f5f5f5;
+  --light-gray: #cccccc;
+}
+
 .education-section {
   padding: 80px 0;
   background: var(--deep-navy);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.section-header h2 {
+  font-size: 2.5rem;
+  color: var(--white);
+  margin-bottom: 15px;
+  font-weight: 700;
+}
+
+.gold-gradient-text {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section-header p {
+  color: var(--light-gray);
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+}
+
+.lead-text {
+  color: var(--gold-primary) !important;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -15px;
 }
 
 .education-row {
   margin-top: 40px;
   justify-content: center;
+}
+
+.col-md-3 {
+  flex: 0 0 25%;
+  max-width: 25%;
+  padding: 0 15px;
+  box-sizing: border-box;
+}
+
+.col-md-6 {
+  flex: 0 0 50%;
+  max-width: 50%;
+  padding: 0 15px;
+  box-sizing: border-box;
+}
+
+.mb-4 {
+  margin-bottom: 30px;
+}
+
+.mt-4 {
+  margin-top: 40px;
+}
+
+.text-center {
+  text-align: center;
 }
 
 .education-card {
@@ -4494,7 +4759,7 @@ window.closeModal = function() {
   border: 2px solid rgba(255, 215, 0, 0.1);
   position: relative;
   transition: all 0.3s ease;
-  min-height: 380px;
+  box-sizing: border-box;
 }
 
 .education-card:hover {
@@ -4513,6 +4778,7 @@ window.closeModal = function() {
   border-radius: 20px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  z-index: 10;
 }
 
 .education-badge:not(.premium):not(.new) {
@@ -4566,7 +4832,6 @@ window.closeModal = function() {
   font-weight: 600;
   margin-bottom: 20px;
   line-height: 1.4;
-  min-height: 40px;
 }
 
 .education-price {
@@ -4629,7 +4894,6 @@ window.closeModal = function() {
   font-size: 0.85rem;
   line-height: 1.5;
   margin-bottom: 15px;
-  min-height: 60px;
 }
 
 .education-features {
@@ -4659,14 +4923,16 @@ window.closeModal = function() {
   color: var(--navy-dark);
   border: none;
   border-radius: 6px;
-  padding: 10px 20px;
+  padding: 12px 20px;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   text-decoration: none;
   display: inline-block;
   transition: all 0.3s ease;
   width: 100%;
   text-align: center;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
 .btn-education:hover {
@@ -4675,7 +4941,6 @@ window.closeModal = function() {
   color: var(--navy-dark);
 }
 
-/* Detailed View Toggle */
 .btn-view-details {
   background: rgba(255, 215, 0, 0.1);
   color: var(--gold-primary);
@@ -4689,6 +4954,7 @@ window.closeModal = function() {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  font-family: inherit;
 }
 
 .btn-view-details:hover {
@@ -4696,24 +4962,10 @@ window.closeModal = function() {
   transform: translateY(-2px);
 }
 
-.btn-view-details i {
-  transition: transform 0.3s ease;
-}
-
-.btn-view-details.active i {
-  transform: rotate(180deg);
-}
-
-/* Program Details Container */
 .program-details-container {
-  display: none;
   margin-top: 40px;
   padding-top: 40px;
   border-top: 1px solid rgba(255, 215, 0, 0.1);
-}
-
-.program-details-container.show {
-  display: block;
 }
 
 .detail-card {
@@ -4722,6 +4974,7 @@ window.closeModal = function() {
   padding: 25px;
   border: 2px solid rgba(255, 215, 0, 0.1);
   height: 100%;
+  box-sizing: border-box;
 }
 
 .detail-card h4 {
@@ -4732,6 +4985,10 @@ window.closeModal = function() {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.gold-text {
+  color: var(--gold-primary);
 }
 
 .detail-card p {
@@ -4793,95 +5050,60 @@ window.closeModal = function() {
   font-size: 1.1rem;
 }
 
-/* Responsive Design */
 @media (max-width: 992px) {
-  .education-card {
-    min-height: 400px;
+  .col-md-3 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+  .col-md-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
   }
 }
 
 @media (max-width: 768px) {
-  .education-row {
-    justify-content: center;
+  .col-md-3 {
+    flex: 0 0 100%;
+    max-width: 100%;
   }
-  
   .education-card {
-    max-width: 300px;
+    max-width: 350px;
     margin: 0 auto;
   }
-  
-  .education-subtitle {
-    min-height: auto;
-  }
-  
-  .education-desc {
-    min-height: auto;
-  }
-}
-
-@media (max-width: 576px) {
-  .education-section {
-    padding: 60px 0;
-  }
-  
-  .education-card {
-    padding: 20px 15px;
-  }
-  
-  .education-card h3 {
-    font-size: 1.6rem;
-  }
-  
-  .price-main {
-    font-size: 1.8rem;
+  .section-header h2 {
+    font-size: 2rem;
   }
 }
 </style>
 
-<script>
-// Toggle program details visibility
-document.addEventListener('DOMContentLoaded', function() {
-  const toggleButton = document.getElementById('toggleDetails');
-  const detailsContainer = document.getElementById('programDetails');
-  
-  if (toggleButton && detailsContainer) {
-    toggleButton.addEventListener('click', function() {
-      detailsContainer.classList.toggle('show');
-      this.classList.toggle('active');
-      
-      const span = this.querySelector('span');
-      const icon = this.querySelector('i');
-      
-      if (detailsContainer.classList.contains('show')) {
-        span.textContent = 'Hide Program Details';
-        icon.className = 'fas fa-chevron-up';
-      } else {
-        span.textContent = 'View Program Details';
-        icon.className = 'fas fa-chevron-down';
-      }
-    });
-  }
-  
-  // Smooth scroll to payment section
-  const enrollButtons = document.querySelectorAll('.btn-education');
-  enrollButtons.forEach(button => {
-    button.addEventListener('click', function(e) {
-      const href = this.getAttribute('href');
-      if (href === '#payment') {
-        e.preventDefault();
-        const target = document.querySelector(href);
-        if (target) {
-          window.scrollTo({
-            top: target.offsetTop - 100,
-            behavior: 'smooth'
-          });
-        }
-      }
-    });
-  });
-});
-</script>
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
+<!-- Simple Toggle JavaScript -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('toggleDetails');
+    const detailsContainer = document.getElementById('programDetails');
+    
+    if (toggleBtn && detailsContainer) {
+      toggleBtn.addEventListener('click', function() {
+        if (detailsContainer.style.display === 'none') {
+          detailsContainer.style.display = 'block';
+          this.innerHTML = '<i class="fas fa-chevron-up"></i><span>Hide Program Details</span>';
+        } else {
+          detailsContainer.style.display = 'none';
+          this.innerHTML = '<i class="fas fa-chevron-down"></i><span>View Program Details</span>';
+        }
+      });
+    }
+  });
+  </script>
+  
+  <!-- CSRF Token -->
+  {% csrf_token %}
+
+<!-- CSRF Token -->
+{% csrf_token %}
 <!-- ===== MENTORING SECTION ===== -->
 <section class="mentoring-section" id="mentoring">
   <div class="container">

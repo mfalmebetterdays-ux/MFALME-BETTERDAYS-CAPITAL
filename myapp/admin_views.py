@@ -2487,36 +2487,56 @@ def admin_api_pdf_debug(request, pdf_id):
 
 # ==================== ADMIN API - PACKAGE MANAGEMENT ====================
 
-@admin_required
 def admin_api_packages(request):
-    """Get all packages with images"""
-    packages = Package.objects.all().order_by('order')
-    
-    data = []
-    for pkg in packages:
-        image_url = None
-        if pkg.image:
-            try:
-                image_url = pkg.image.url
-            except:
-                image_url = None
+    """API endpoint for packages in admin"""
+    if request.method == 'GET':
+        packages = Package.objects.all().order_by('-id')
         
-        data.append({
-            'id': pkg.id,
-            'name': pkg.name,
-            'price': f"${float(pkg.price)}",
-            'type': pkg.package_type.replace('_', ' ').title(),
-            'sales': pkg.total_sales,
-            'revenue': f"${float(pkg.total_revenue):,.2f}",
-            'status': 'active' if pkg.is_active else 'inactive',
-            'is_featured': pkg.is_featured,
-            'is_popular': pkg.is_popular,
-            'order': pkg.order,
-            'image': image_url,
-        })
+        data = []
+        for pkg in packages:
+            # Get image URL properly
+            image_url = None
+            if pkg.image:
+                try:
+                    # This will return the full URL including /media/
+                    image_url = pkg.image.url
+                    print(f"Package {pkg.id} image URL: {image_url}")  # DEBUG
+                except Exception as e:
+                    print(f"Error getting image for package {pkg.id}: {e}")
+                    image_url = None
+            
+            # Get features as list
+            features = []
+            if pkg.features:
+                if isinstance(pkg.features, list):
+                    features = pkg.features
+                elif isinstance(pkg.features, str):
+                    # Try to parse JSON first
+                    try:
+                        import json
+                        features = json.loads(pkg.features)
+                    except:
+                        # Split by new lines
+                        features = [f.strip() for f in pkg.features.split('\n') if f.strip()]
+            
+            data.append({
+                'id': pkg.id,
+                'name': pkg.name,
+                'description': pkg.full_description or pkg.short_description,
+                'price': float(pkg.price) if pkg.price else 0,
+                'package_type': pkg.package_type,
+                'features': features,
+                'image': image_url,  # ← THIS MUST BE THE FULL URL
+                'status': 'active' if pkg.is_active else 'inactive',
+                'sales': pkg.total_sales,
+                'revenue': float(pkg.total_revenue) if pkg.total_revenue else 0,
+                'is_recurring': pkg.is_recurring,
+                'duration': f"{pkg.duration_days} days",
+                'created_at': pkg.created_at.strftime('%Y-%m-%d %H:%M') if pkg.created_at else None
+            })
+        
+        return JsonResponse(data, safe=False)
     
-    return JsonResponse(data, safe=False)
-
 
 @admin_required
 @csrf_exempt

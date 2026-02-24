@@ -1,0 +1,785 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Payment - Mfalme Betterdays Capital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #111;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+        }
+
+        .payment-container {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* TWO COLUMN LAYOUT */
+        @media (min-width: 768px) {
+            .payment-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 24px;
+                align-items: start;
+            }
+        }
+
+        /* LEFT COLUMN - ORDER SUMMARY */
+        .order-summary {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .item-box {
+            background: #f9fafb;
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 16px;
+            font-size: 1.1rem;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 0.95rem;
+        }
+
+        .price-label {
+            color: #6b7280;
+        }
+
+        .price-usd {
+            color: #111;
+            font-weight: 500;
+        }
+
+        .price-kes {
+            color: #059669;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .rate-note {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #e5e7eb;
+        }
+
+        .user-section {
+            background: #f9fafb;
+            border-radius: 18px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .user-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 0;
+            color: #374151;
+            font-size: 0.95rem;
+        }
+
+        /* RIGHT COLUMN - PAYMENT METHODS */
+        .payment-methods {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        /* HORIZONTAL GRID - 3 COLUMNS */
+        .methods-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 640px) {
+            .methods-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .method-box {
+            border: 1.5px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 16px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .method-box:hover {
+            border-color: #6366f1;
+            transform: translateY(-2px);
+        }
+
+        .method-box.selected {
+            border-color: #6366f1;
+            background: #eef2ff;
+        }
+
+        .method-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .method-name {
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 4px;
+        }
+
+        .method-desc {
+            font-size: 0.7rem;
+            color: #6b7280;
+        }
+
+        .sasapay-badge {
+            display: inline-block;
+            background: #6366f1;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        /* Payment Sections */
+        .payment-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 16px;
+            display: none;
+        }
+
+        .payment-section.show {
+            display: block;
+        }
+
+        /* Phone Input */
+        .phone-label {
+            display: block;
+            font-size: 0.9rem;
+            color: #374151;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .phone-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 40px;
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+
+        .phone-input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+
+        .phone-hint {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        /* Crypto Container */
+        .crypto-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .crypto-tab {
+            flex: 1;
+            padding: 10px;
+            background: white;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .crypto-tab.active {
+            background: #f59e0b;
+            color: white;
+            border-color: #f59e0b;
+        }
+
+        .crypto-address-box {
+            background: white;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            word-break: break-all;
+        }
+
+        .crypto-address {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #111;
+            flex: 1;
+        }
+
+        .copy-btn {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .crypto-qr {
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .crypto-qr img {
+            width: 150px;
+            height: 150px;
+            border-radius: 12px;
+        }
+
+        /* Buttons */
+        .btn-payment {
+            width: 100%;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 16px 0;
+        }
+
+        .btn-payment:hover {
+            background: #4f52e0;
+            transform: translateY(-2px);
+        }
+
+        .btn-payment:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .secure-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            color: #9ca3af;
+            font-size: 0.8rem;
+            margin: 16px 0;
+        }
+
+        .back-link {
+            text-align: center;
+        }
+
+        .back-link a {
+            color: #9ca3af;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        /* Messages */
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .error.show { display: block; }
+
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .success.show { display: block; }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+
+        .loading.show { display: block; }
+
+        .loading i {
+            color: #6366f1;
+            font-size: 1.8rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <!-- LEFT COLUMN - ORDER SUMMARY -->
+        <div class="order-summary">
+            <div class="item-box">
+                <div class="item-name">{{ title }}</div>
+                
+                <div class="price-row">
+                    <span class="price-label">Amount (USD)</span>
+                    <span class="price-usd">${{ amount_usd|floatformat:2 }}</span>
+                </div>
+                <div class="price-row">
+                    <span class="price-label">Amount (KES)</span>
+                    <span class="price-kes">KSh {{ amount_kes|floatformat:2 }}</span>
+                </div>
+                
+                <div class="rate-note">
+                    <span>💰 1 USD = 129 KES • Live rate</span>
+                </div>
+            </div>
+
+            <div class="user-section">
+                <div class="user-row">
+                    <span>👤</span>
+                    <span>{{ user.get_full_name|default:user.username|default:"Guest" }}</span>
+                </div>
+                <div class="user-row">
+                    <span>📧</span>
+                    <span>{{ user.email|default:"guest@example.com" }}</span>
+                </div>
+                <div class="user-row">
+                    <span>📱</span>
+                    <span>{{ user.phone|default:"—" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN - PAYMENT METHODS -->
+        <div class="payment-methods">
+            <div class="title">Complete Payment</div>
+            <div class="subtitle">Secured by <strong>SasaPay</strong></div>
+
+            <!-- Messages -->
+            <div class="error" id="errorMessage"></div>
+            <div class="success" id="successMessage"></div>
+            <div class="loading" id="loading">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <p style="margin-top: 8px;">Processing...</p>
+            </div>
+
+            <!-- Payment Methods Grid -->
+            <div class="methods-grid">
+                <div class="method-box selected" id="methodCard" onclick="selectMethod('card')">
+                    <div class="method-icon">💳</div>
+                    <div class="method-name">Card</div>
+                    <div class="method-desc">Visa, Mastercard</div>
+                    <span class="sasapay-badge">SasaPay</span>
+                </div>
+
+                <div class="method-box" id="methodMpesa" onclick="selectMethod('mpesa')">
+                    <div class="method-icon">📱</div>
+                    <div class="method-name">M-PESA</div>
+                    <div class="method-desc">STK Push</div>
+                    <span class="sasapay-badge">SasaPay</span>
+                </div>
+
+                <div class="method-box" id="methodCrypto" onclick="selectMethod('crypto')">
+                    <div class="method-icon">₿</div>
+                    <div class="method-name">Crypto</div>
+                    <div class="method-desc">BTC, USDT, ETH</div>
+                    <span class="sasapay-badge">SasaPay</span>
+                </div>
+            </div>
+
+            <!-- CARD PAYMENT SECTION -->
+            <div class="payment-section" id="cardSection">
+                <button class="btn-payment" onclick="initiateCardPayment()" id="cardBtn">
+                    Pay with Card via SasaPay
+                </button>
+            </div>
+
+            <!-- M-PESA SECTION -->
+            <div class="payment-section" id="mpesaSection">
+                <label class="phone-label">📱 M-PESA Number</label>
+                <input type="tel" class="phone-input" id="mpesaPhone" placeholder="0712345678" value="{{ user.phone }}">
+                <div class="phone-hint">Enter your M-PESA registered number</div>
+                <button class="btn-payment" onclick="initiateMpesaPayment()" id="mpesaBtn">
+                    Pay with M-PESA
+                </button>
+            </div>
+
+            <!-- CRYPTO SECTION -->
+            <div class="payment-section" id="cryptoSection">
+                <div class="crypto-tabs">
+                    <button class="crypto-tab active" onclick="switchCrypto('btc', event)">BTC</button>
+                    <button class="crypto-tab" onclick="switchCrypto('usdt', event)">USDT</button>
+                    <button class="crypto-tab" onclick="switchCrypto('eth', event)">ETH</button>
+                </div>
+
+                <!-- Bitcoin -->
+                <div id="crypto-btc">
+                    <div class="crypto-qr">
+                        <img src="https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" alt="BTC QR">
+                    </div>
+                    <div class="crypto-address-box">
+                        <span class="crypto-address">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</span>
+                        <button class="copy-btn" onclick="copyAddress(this)">Copy</button>
+                    </div>
+                    <p style="text-align:center; font-size:0.8rem;">Send exactly <strong>${{ amount_usd|floatformat:2 }}</strong> BTC</p>
+                </div>
+
+                <!-- USDT -->
+                <div id="crypto-usdt" style="display:none;">
+                    <div class="crypto-qr">
+                        <img src="https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t" alt="USDT QR">
+                    </div>
+                    <div class="crypto-address-box">
+                        <span class="crypto-address">TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t</span>
+                        <button class="copy-btn" onclick="copyAddress(this)">Copy</button>
+                    </div>
+                    <p style="text-align:center; font-size:0.8rem;">Send exactly <strong>${{ amount_usd|floatformat:2 }}</strong> USDT</p>
+                </div>
+
+                <!-- ETH -->
+                <div id="crypto-eth" style="display:none;">
+                    <div class="crypto-qr">
+                        <img src="https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=0x742d35Cc6634C0532925a3b844BcAc8765d7fC5c" alt="ETH QR">
+                    </div>
+                    <div class="crypto-address-box">
+                        <span class="crypto-address">0x742d35Cc6634C0532925a3b844BcAc8765d7fC5c</span>
+                        <button class="copy-btn" onclick="copyAddress(this)">Copy</button>
+                    </div>
+                    <p style="text-align:center; font-size:0.8rem;">Send exactly <strong>${{ amount_usd|floatformat:2 }}</strong> ETH</p>
+                </div>
+
+                <button class="btn-payment" onclick="confirmCrypto()" id="cryptoBtn">
+                    I've Sent Crypto
+                </button>
+            </div>
+
+            <!-- Security Badges -->
+            <div class="secure-row">
+                <span>🔒 256-bit SSL</span>
+                <span>🛡️ SasaPay</span>
+                <span>✅ PCI Compliant</span>
+            </div>
+
+            <!-- Back Link -->
+            <div class="back-link">
+                <a href="javascript:history.back()">← Cancel</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const csrftoken = document.querySelector('[name=csrf-token]').content;
+        const reference = "{{ reference }}";
+        const amountKes = {{ amount_kes }};
+        const email = "{{ user.email|default:'' }}";
+        
+        let selectedMethod = 'card';
+        let currentCrypto = 'btc';
+        let isProcessing = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            selectMethod('card');
+        });
+
+        // Select payment method
+        function selectMethod(method) {
+            selectedMethod = method;
+            
+            // Update UI
+            document.getElementById('methodCard').classList.remove('selected');
+            document.getElementById('methodMpesa').classList.remove('selected');
+            document.getElementById('methodCrypto').classList.remove('selected');
+            
+            document.getElementById('cardSection').classList.remove('show');
+            document.getElementById('mpesaSection').classList.remove('show');
+            document.getElementById('cryptoSection').classList.remove('show');
+            
+            document.getElementById('method' + method.charAt(0).toUpperCase() + method.slice(1)).classList.add('selected');
+            document.getElementById(method + 'Section').classList.add('show');
+        }
+
+        // CARD PAYMENT
+        async function initiateCardPayment() {
+            if (isProcessing) return;
+            
+            const btn = document.getElementById('cardBtn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Processing...';
+            isProcessing = true;
+            
+            document.getElementById('loading').classList.add('show');
+            
+            try {
+                // For now, simulate success
+                setTimeout(() => {
+                    document.getElementById('loading').classList.remove('show');
+                    showSuccess('Payment successful! Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = '/payment/success/' + reference + '/';
+                    }, 2000);
+                }, 2000);
+                
+            } catch (error) {
+                document.getElementById('loading').classList.remove('show');
+                showError('Payment failed');
+                resetButton(btn, 'Pay with Card via SasaPay');
+                isProcessing = false;
+            }
+        }
+
+        // M-PESA PAYMENT
+        async function initiateMpesaPayment() {
+            if (isProcessing) return;
+            
+            const phone = document.getElementById('mpesaPhone').value.replace(/\D/g, '');
+            if (!phone) {
+                showError('Please enter your M-PESA number');
+                return;
+            }
+            
+            // Format phone number
+            let formattedPhone = phone;
+            if (phone.startsWith('0')) {
+                formattedPhone = '254' + phone.slice(1);
+            } else if (phone.startsWith('7')) {
+                formattedPhone = '254' + phone;
+            }
+            
+            const btn = document.getElementById('mpesaBtn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Sending STK Push...';
+            isProcessing = true;
+            
+            document.getElementById('loading').classList.add('show');
+            
+            try {
+                const response = await fetch('/sasapay/process/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({
+                        reference: reference,
+                        phone: formattedPhone,
+                        payment_method: 'c2b'
+                    })
+                });
+                
+                const data = await response.json();
+                document.getElementById('loading').classList.remove('show');
+                
+                if (data.success) {
+                    showSuccess('STK Push sent! Please check your phone and enter your PIN.');
+                    checkPaymentStatus();
+                } else {
+                    showError(data.error || 'Payment failed');
+                    resetButton(btn, 'Pay with M-PESA');
+                    isProcessing = false;
+                }
+            } catch (error) {
+                document.getElementById('loading').classList.remove('show');
+                showError('Network error');
+                resetButton(btn, 'Pay with M-PESA');
+                isProcessing = false;
+            }
+        }
+
+        // CRYPTO FUNCTIONS
+        function switchCrypto(crypto, event) {
+            currentCrypto = crypto;
+            
+            // Update tabs
+            document.querySelectorAll('.crypto-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Show selected crypto
+            document.getElementById('crypto-btc').style.display = 'none';
+            document.getElementById('crypto-usdt').style.display = 'none';
+            document.getElementById('crypto-eth').style.display = 'none';
+            document.getElementById('crypto-' + crypto).style.display = 'block';
+        }
+
+        function copyAddress(btn) {
+            const address = btn.parentElement.querySelector('.crypto-address').innerText;
+            navigator.clipboard.writeText(address);
+            showSuccess('Address copied!');
+        }
+
+        async function confirmCrypto() {
+            if (isProcessing) return;
+            
+            const btn = document.getElementById('cryptoBtn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Confirming...';
+            isProcessing = true;
+            
+            document.getElementById('loading').classList.add('show');
+            
+            try {
+                const response = await fetch('/sasapay/process/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({
+                        reference: reference,
+                        payment_method: 'crypto',
+                        crypto_currency: currentCrypto
+                    })
+                });
+                
+                const data = await response.json();
+                document.getElementById('loading').classList.remove('show');
+                
+                if (data.success) {
+                    showSuccess('Crypto payment recorded. Verifying...');
+                    checkPaymentStatus();
+                } else {
+                    showError(data.error || 'Failed to record payment');
+                    resetButton(btn, "I've Sent Crypto");
+                    isProcessing = false;
+                }
+            } catch (error) {
+                document.getElementById('loading').classList.remove('show');
+                showError('Network error');
+                resetButton(btn, "I've Sent Crypto");
+                isProcessing = false;
+            }
+        }
+
+        // Check payment status
+        function checkPaymentStatus() {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch('/sasapay/status/' + reference + '/');
+                    const data = await response.json();
+                    
+                    if (data.status === 'completed') {
+                        clearInterval(interval);
+                        showSuccess('Payment successful! Redirecting...');
+                        setTimeout(() => {
+                            window.location.href = '/payment/success/' + reference + '/';
+                        }, 2000);
+                    } else if (data.status === 'failed') {
+                        clearInterval(interval);
+                        showError('Payment failed. Please try again.');
+                        isProcessing = false;
+                    }
+                } catch (error) {
+                    console.error('Status check error:', error);
+                }
+            }, 3000);
+        }
+
+        // Utility functions
+        function showError(message) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = message;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 5000);
+        }
+
+        function showSuccess(message) {
+            const el = document.getElementById('successMessage');
+            el.textContent = message;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        function resetButton(btn, text) {
+            btn.disabled = false;
+            btn.innerHTML = text;
+        }
+
+        // Auto-check status on load
+        {% if reference and reference != 'pending' %}
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/sasapay/status/' + reference + '/')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        window.location.href = '/payment/success/' + reference + '/';
+                    }
+                });
+        });
+        {% endif %}
+    </script>
+    <script src="https://kit.fontawesome.com/your-kit-id.js" crossorigin="anonymous"></script>
+</body>
+</html>

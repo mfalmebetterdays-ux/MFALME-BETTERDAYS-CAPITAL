@@ -88,6 +88,13 @@ urlpatterns = [
     path('course/<int:course_id>/', views.view_course, name='view_course'),
     path('course/<int:course_id>/complete/<str:lesson_type>/<int:lesson_id>/', 
          views.mark_lesson_complete, name='mark_lesson_complete'),
+      path('api/initialize-payment/', views.initialize_package_payment, name='initialize_payment'),
+       path('api/create-order/', views.api_create_order, name='api_create_order'),
+    path('api/initialize-payment/', views.initialize_package_payment, name='initialize_payment'),
+    path('api/create-order/', views.api_create_order, name='api_create_order'),
+    path('payment/success/<str:reference>/', views.payment_success, name='payment_success'),
+    path('sasapay/status/<str:reference>/', views.sasapay_status, name='sasapay_status'),
+    path('education/pay/', views.education_payment, name='education_payment'),
     
     # ==================== SUPPORT TICKETS ====================
     path('support/tickets/', views.support_tickets, name='support_tickets'),
@@ -311,6 +318,7 @@ urlpatterns = [
     path('pesapal/initiate/', pesapal_initiate_payment, name='pesapal_initiate_payment'),
 path('pesapal/callback/', pesapal_callback, name='pesapal_callback'),
 path('pesapal/ipn/', pesapal_ipn, name='pesapal_ipn'),
+path('payment/', views.payment, name='payment_page'),
 
 
  # SasaPay URLs - use views. prefix
