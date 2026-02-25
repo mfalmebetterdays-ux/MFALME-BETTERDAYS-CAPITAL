@@ -130,6 +130,45 @@
             margin-bottom: 24px;
         }
 
+        /* WHATSAPP REMINDER BANNER */
+        .whatsapp-reminder {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .whatsapp-reminder i {
+            font-size: 2rem;
+        }
+
+        .whatsapp-reminder strong {
+            font-size: 1.1rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .whatsapp-number {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 40px;
+            display: inline-block;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
         /* HORIZONTAL GRID - 3 COLUMNS */
         .methods-grid {
             display: grid;
@@ -155,12 +194,12 @@
         }
 
         .method-box:hover {
-            border-color: #6366f1;
+            border-color: #25D366;
         }
 
         .method-box.selected {
-            border-color: #6366f1;
-            background: #eef2ff;
+            border-color: #25D366;
+            background: #e8f5e9;
         }
 
         .method-icon {
@@ -190,27 +229,50 @@
             margin-top: 6px;
         }
 
-        /* Phone Input */
-        .phone-input-container {
+        /* Payment Details Container */
+        .payment-details-container {
             margin: 16px 0;
-            padding: 16px;
+            padding: 20px;
             background: #f9fafb;
             border-radius: 16px;
             display: none;
         }
 
-        .phone-input-container.show {
+        .payment-details-container.show {
             display: block;
         }
 
-        .phone-label {
-            display: block;
+        /* Bank/Card Details */
+        .bank-details {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            color: #111;
             font-size: 0.9rem;
-            color: #374151;
-            margin-bottom: 8px;
-            font-weight: 500;
         }
 
+        /* M-PESA Input */
         .phone-input {
             width: 100%;
             padding: 14px 16px;
@@ -222,63 +284,10 @@
 
         .phone-input:focus {
             outline: none;
-            border-color: #6366f1;
+            border-color: #25D366;
         }
 
-        .phone-hint {
-            font-size: 0.75rem;
-            color: #9ca3af;
-            margin-top: 4px;
-        }
-
-        .confirm-phone-btn {
-            width: 100%;
-            background: #6366f1;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            padding: 14px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        /* Crypto Container */
-        .crypto-address-container {
-            margin: 16px 0;
-            padding: 16px;
-            background: #f9fafb;
-            border-radius: 16px;
-            display: none;
-        }
-
-        .crypto-address-container.show {
-            display: block;
-        }
-
-        .crypto-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .crypto-tab {
-            flex: 1;
-            padding: 10px;
-            background: white;
-            border: 1.5px solid #e5e7eb;
-            border-radius: 40px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .crypto-tab.active {
-            background: #f59e0b;
-            color: white;
-            border-color: #f59e0b;
-        }
-
+        /* Crypto Address */
         .crypto-address-box {
             background: white;
             border: 1.5px solid #e5e7eb;
@@ -305,6 +314,19 @@
             padding: 8px 12px;
             cursor: pointer;
             font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #25D366;
+            color: white;
+            border-color: #25D366;
+        }
+
+        .copy-btn.copied {
+            background: #10B981;
+            color: white;
+            border-color: #10B981;
         }
 
         .crypto-qr {
@@ -318,23 +340,98 @@
             border-radius: 12px;
         }
 
-        /* SasaPay Button */
-        .sasapay-btn {
+        /* Action Buttons */
+        .action-btn {
             width: 100%;
-            background: #6366f1;
+            background: #25D366;
             color: white;
             border: none;
             border-radius: 40px;
-            padding: 18px;
+            padding: 16px;
             font-size: 1rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
-            margin: 16px 0;
+            transition: all 0.2s;
+            margin: 12px 0;
         }
 
-        .sasapay-btn:hover {
+        .action-btn:hover {
+            background: #128C7E;
+            transform: translateY(-2px);
+        }
+
+        .action-btn.secondary {
+            background: #6366f1;
+        }
+
+        .action-btn.secondary:hover {
             background: #4f52e0;
+        }
+
+        /* WhatsApp Follow-up Section */
+        .followup-section {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #25D366;
+        }
+
+        .followup-title {
+            color: #075e54;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .followup-steps {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .followup-step {
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .step-number {
+            background: #25D366;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+        }
+
+        .whatsapp-button {
+            background: #25D366;
+            color: white;
+            padding: 14px;
+            border-radius: 40px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .whatsapp-button:hover {
+            background: #128C7E;
+            transform: translateY(-2px);
+            color: white;
         }
 
         .secure-row {
@@ -388,7 +485,7 @@
         .loading.show { display: block; }
 
         .loading i {
-            color: #6366f1;
+            color: #25D366;
             font-size: 1.8rem;
             animation: spin 1s linear infinite;
         }
@@ -401,7 +498,7 @@
 </head>
 <body>
     <div class="payment-container">
-        <!-- LEFT COLUMN - ORDER SUMMARY (YOUR ORIGINAL DESIGN) -->
+        <!-- LEFT COLUMN - ORDER SUMMARY -->
         <div class="order-summary">
             <div class="item-box">
                 <div class="item-name">{{ title }}</div>
@@ -439,7 +536,17 @@
         <!-- RIGHT COLUMN - PAYMENT METHODS -->
         <div class="payment-methods">
             <div class="title">Complete Payment</div>
-            <div class="subtitle">Secured by <strong>SasaPay</strong></div>
+            <div class="subtitle">Choose your payment method</div>
+
+            <!-- WhatsApp Reminder Banner -->
+            <div class="whatsapp-reminder">
+                <i class="fab fa-whatsapp"></i>
+                <div>
+                    <strong>⚠️ IMPORTANT: WhatsApp Follow-up Required</strong>
+                    <p>Send payment confirmation before AND after payment to:</p>
+                    <span class="whatsapp-number">📱 0706286667</span>
+                </div>
+            </div>
 
             <!-- Error/Success Messages -->
             <div class="error" id="errorMessage"></div>
@@ -449,64 +556,110 @@
                 <p style="margin-top: 8px;">Processing...</p>
             </div>
 
-            <!-- HORIZONTAL PAYMENT OPTIONS GRID -->
+            <!-- PAYMENT METHODS GRID -->
             <div class="methods-grid">
-                <!-- Card -->
-                <div class="method-box selected" id="methodCard" onclick="selectMethod('card')">
+                <!-- Card / Bank Transfer -->
+                <div class="method-box" id="methodCard" onclick="selectMethod('card')">
                     <div class="method-icon">💳</div>
-                    <div class="method-name">Card</div>
-                    <div class="method-desc">Visa, Mastercard</div>
-                    <span class="sasapay-badge">SasaPay</span>
+                    <div class="method-name">Card/Bank</div>
+                    <div class="method-desc">Visa, Equity, etc</div>
                 </div>
 
-                <!-- M-PESA -->
+                <!-- M-PESA (Working) -->
                 <div class="method-box" id="methodMpesa" onclick="selectMethod('mpesa')">
                     <div class="method-icon">📱</div>
                     <div class="method-name">M-PESA</div>
-                    <div class="method-desc">STK Push</div>
-                    <span class="sasapay-badge">SasaPay</span>
+                    <div class="method-desc">STK Push (Working)</div>
+                    <span class="sasapay-badge">✓ Active</span>
                 </div>
 
                 <!-- Crypto -->
                 <div class="method-box" id="methodCrypto" onclick="selectMethod('crypto')">
                     <div class="method-icon">₿</div>
                     <div class="method-name">Crypto</div>
-                    <div class="method-desc">BTC, USDT, ETH</div>
-                    <span class="sasapay-badge">SasaPay</span>
+                    <div class="method-desc">BTC, USDT</div>
                 </div>
             </div>
 
-            <!-- CARD PAYMENT - Redirect to SasaPay (NO INPUT FIELDS) -->
-            <button class="sasapay-btn" id="sasapayCardBtn" onclick="initiateCardPayment()">
-                Pay with Card via SasaPay
-            </button>
+            <!-- CARD/BANK PAYMENT DETAILS -->
+            <div class="payment-details-container" id="cardDetails">
+                <div class="bank-details">
+                    <h4 style="margin-bottom: 12px; color: #075e54;">🏦 Equity Bank Details</h4>
+                    <div class="detail-row">
+                        <span class="detail-label">Account Name:</span>
+                        <span class="detail-value">MFALME BETTERDAYS</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Account No:</span>
+                        <span class="detail-value">1180284568232</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Swift Code:</span>
+                        <span class="detail-value">EQDLKENA</span>
+                    </div>
+                </div>
 
-            <!-- M-PESA INPUT -->
-            <div class="phone-input-container" id="phoneInputContainer">
-                <label class="phone-label">📱 M-PESA Number</label>
-                <input type="tel" class="phone-input" id="mpesaPhone" placeholder="0712345678" value="{{ user.phone }}">
-                <div class="phone-hint">Enter your M-PESA number</div>
-                <button class="confirm-phone-btn" onclick="initiateMpesaPayment()">
-                    Pay with M-PESA
+                <div class="bank-details">
+                    <h4 style="margin-bottom: 12px; color: #075e54;">💳 Card Payments (via SasaPay)</h4>
+                    <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 16px;">Secure card processing by SasaPay</p>
+                    <button class="action-btn secondary" onclick="initiateCardPayment()">
+                        Pay with Card via SasaPay
+                    </button>
+                </div>
+
+                <!-- Copy Account Button -->
+                <button class="action-btn" onclick="copyAccountDetails()" style="background: #075e54;">
+                    📋 Copy All Account Details
                 </button>
             </div>
 
-            <!-- CRYPTO OPTIONS -->
-            <div class="crypto-address-container" id="cryptoContainer">
-                <div class="crypto-tabs">
-                    <button class="crypto-tab active" onclick="switchCrypto('btc')">BTC</button>
-                    <button class="crypto-tab" onclick="switchCrypto('usdt')">USDT</button>
-                    <button class="crypto-tab" onclick="switchCrypto('eth')">ETH</button>
+            <!-- M-PESA PAYMENT (WORKING) -->
+            <div class="payment-details-container" id="mpesaDetails">
+                <div class="bank-details">
+                    <h4 style="margin-bottom: 12px; color: #075e54;">📱 M-PESA Payment</h4>
+                    <div class="detail-row">
+                        <span class="detail-label">Paybill:</span>
+                        <span class="detail-value">247247</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Account:</span>
+                        <span class="detail-value">1180284568232</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Amount:</span>
+                        <span class="detail-value">KSh {{ amount_kes|floatformat:2 }}</span>
+                    </div>
+                </div>
+
+                <label class="phone-label">📱 Your M-PESA Number</label>
+                <input type="tel" class="phone-input" id="mpesaPhone" placeholder="0712345678" value="{{ user.phone }}">
+                
+                <button class="action-btn" onclick="initiateMpesaPayment()">
+                    Pay with M-PESA STK Push
+                </button>
+
+                <p style="text-align:center; font-size:0.8rem; color:#6b7280; margin-top:12px;">
+                    <i class="fas fa-info-circle"></i> 
+                    You'll receive an STK push on your phone
+                </p>
+            </div>
+
+            <!-- CRYPTO PAYMENT DETAILS -->
+            <div class="payment-details-container" id="cryptoDetails">
+                <!-- Crypto Tabs -->
+                <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                    <button class="copy-btn" style="flex:1;" onclick="switchCrypto('btc')" id="btcTab">₿ BTC</button>
+                    <button class="copy-btn" style="flex:1;" onclick="switchCrypto('usdt')" id="usdtTab">💵 USDT</button>
                 </div>
 
                 <!-- Bitcoin -->
                 <div id="crypto-btc">
                     <div class="crypto-qr">
-                        <img src="https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" alt="BTC QR">
+                        <img src="https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=bc1qfdr3w9kqshrjhywj2kjmugww7lh2mvxpdvfqqn" alt="BTC QR">
                     </div>
                     <div class="crypto-address-box">
-                        <span class="crypto-address">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</span>
-                        <button class="copy-btn" onclick="copyAddress(this)">Copy</button>
+                        <span class="crypto-address" id="btcAddress">bc1qfdr3w9kqshrjhywj2kjmugww7lh2mvxpdvfqqn</span>
+                        <button class="copy-btn" onclick="copyAddress('btcAddress', this)">Copy</button>
                     </div>
                     <p style="text-align:center; font-size:0.8rem;">Send exactly <strong>${{ amount_usd|floatformat:2 }}</strong> BTC</p>
                 </div>
@@ -514,36 +667,55 @@
                 <!-- USDT -->
                 <div id="crypto-usdt" style="display:none;">
                     <div class="crypto-qr">
-                        <img src="https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t" alt="USDT QR">
+                        <img src="https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=TL7tx1WbQKR4mHwjViAf8Y6DKVsDXnzMmN" alt="USDT QR">
                     </div>
                     <div class="crypto-address-box">
-                        <span class="crypto-address">TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t</span>
-                        <button class="copy-btn" onclick="copyAddress(this)">Copy</button>
+                        <span class="crypto-address" id="usdtAddress">TL7tx1WbQKR4mHwjViAf8Y6DKVsDXnzMmN</span>
+                        <button class="copy-btn" onclick="copyAddress('usdtAddress', this)">Copy</button>
                     </div>
-                    <p style="text-align:center; font-size:0.8rem;">Send exactly <strong>${{ amount_usd|floatformat:2 }}</strong> USDT</p>
+                    <p style="text-align:center; font-size:0.8rem;">Send exactly <strong>${{ amount_usd|floatformat:2 }}</strong> USDT (TRC20)</p>
                 </div>
 
-                <!-- ETH -->
-                <div id="crypto-eth" style="display:none;">
-                    <div class="crypto-qr">
-                        <img src="https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=0x742d35Cc6634C0532925a3b844BcAc8765d7fC5c" alt="ETH QR">
-                    </div>
-                    <div class="crypto-address-box">
-                        <span class="crypto-address">0x742d35Cc6634C0532925a3b844BcAc8765d7fC5c</span>
-                        <button class="copy-btn" onclick="copyAddress(this)">Copy</button>
-                    </div>
-                    <p style="text-align:center; font-size:0.8rem;">Send exactly <strong>${{ amount_usd|floatformat:2 }}</strong> ETH</p>
-                </div>
-
-                <button class="confirm-phone-btn" style="margin-top:16px;" onclick="confirmCrypto()">
+                <button class="action-btn" onclick="confirmCrypto()">
                     I've Sent Crypto
                 </button>
+            </div>
+
+            <!-- WHATSAPP FOLLOW-UP SECTION (ALWAYS VISIBLE) -->
+            <div class="followup-section">
+                <div class="followup-title">
+                    <i class="fab fa-whatsapp fa-lg"></i>
+                    <span>Required: WhatsApp Confirmation</span>
+                </div>
+                
+                <div class="followup-steps">
+                    <div class="followup-step">
+                        <div class="step-number">1</div>
+                        <strong>Before Payment</strong>
+                        <p style="font-size:0.8rem; margin-top:4px;">Send screenshot of payment screen</p>
+                    </div>
+                    <div class="followup-step">
+                        <div class="step-number">2</div>
+                        <strong>After Payment</strong>
+                        <p style="font-size:0.8rem; margin-top:4px;">Send payment confirmation</p>
+                    </div>
+                </div>
+
+                <a href="https://wa.me/254706286667?text=Hello%20Mfalme%20Betterdays%2C%20I%27m%20about%20to%20make%20a%20payment%20of%20KSh%20{{ amount_kes|floatformat:2 }}%20for%20{{ title|urlencode }}.%20Reference%3A%20{{ reference }}" 
+                   class="whatsapp-button" target="_blank">
+                    <i class="fab fa-whatsapp fa-lg"></i>
+                    Message on WhatsApp Now
+                </a>
+                
+                <p style="text-align:center; font-size:0.75rem; margin-top:12px; color:#075e54;">
+                    <i class="fas fa-check-circle"></i> 
+                    Your payment won't be processed without WhatsApp confirmation
+                </p>
             </div>
 
             <!-- Security Badges -->
             <div class="secure-row">
                 <span>🔒 256-bit SSL</span>
-                <span>🛡️ SasaPay</span>
                 <span>✅ PCI Compliant</span>
             </div>
 
@@ -560,33 +732,83 @@
         const amountKes = {{ amount_kes }};
         const email = "{{ user.email }}";
         
-        let selectedMethod = 'card';
+        let selectedMethod = 'mpesa'; // Default to M-PESA since it's working
         let currentCrypto = 'btc';
+
+        // Initialize - Select M-PESA by default
+        document.addEventListener('DOMContentLoaded', () => {
+            selectMethod('mpesa');
+        });
 
         function selectMethod(method) {
             selectedMethod = method;
             
+            // Update selected state
             document.getElementById('methodCard').classList.remove('selected');
             document.getElementById('methodMpesa').classList.remove('selected');
             document.getElementById('methodCrypto').classList.remove('selected');
             
-            document.getElementById('sasapayCardBtn').style.display = 'none';
-            document.getElementById('phoneInputContainer').classList.remove('show');
-            document.getElementById('cryptoContainer').classList.remove('show');
+            // Hide all detail containers
+            document.getElementById('cardDetails').classList.remove('show');
+            document.getElementById('mpesaDetails').classList.remove('show');
+            document.getElementById('cryptoDetails').classList.remove('show');
             
+            // Show selected method details
             if (method === 'card') {
                 document.getElementById('methodCard').classList.add('selected');
-                document.getElementById('sasapayCardBtn').style.display = 'block';
+                document.getElementById('cardDetails').classList.add('show');
             } else if (method === 'mpesa') {
                 document.getElementById('methodMpesa').classList.add('selected');
-                document.getElementById('phoneInputContainer').classList.add('show');
+                document.getElementById('mpesaDetails').classList.add('show');
             } else {
                 document.getElementById('methodCrypto').classList.add('selected');
-                document.getElementById('cryptoContainer').classList.add('show');
+                document.getElementById('cryptoDetails').classList.add('show');
             }
         }
 
-        // CARD - Redirect to SasaPay (they handle everything)
+        // Copy Account Details
+        function copyAccountDetails() {
+            const details = `MFALME BETTERDAYS - Equity Bank\nAccount No: 1180284568232\nSwift: EQDLKENA\nAmount: KSh ${amountKes}`;
+            
+            navigator.clipboard.writeText(details).then(() => {
+                showSuccess('Account details copied!');
+            });
+        }
+
+        // Copy Crypto Address
+        function copyAddress(elementId, btn) {
+            const address = document.getElementById(elementId).innerText;
+            
+            navigator.clipboard.writeText(address).then(() => {
+                // Visual feedback
+                btn.classList.add('copied');
+                btn.textContent = 'Copied!';
+                
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.textContent = 'Copy';
+                }, 2000);
+                
+                showSuccess('Address copied!');
+            });
+        }
+
+        // Switch Crypto
+        function switchCrypto(crypto) {
+            currentCrypto = crypto;
+            
+            // Update tab styles
+            document.getElementById('btcTab').style.background = crypto === 'btc' ? '#25D366' : '#f3f4f6';
+            document.getElementById('btcTab').style.color = crypto === 'btc' ? 'white' : '#111';
+            document.getElementById('usdtTab').style.background = crypto === 'usdt' ? '#25D366' : '#f3f4f6';
+            document.getElementById('usdtTab').style.color = crypto === 'usdt' ? 'white' : '#111';
+            
+            // Show selected crypto
+            document.getElementById('crypto-btc').style.display = crypto === 'btc' ? 'block' : 'none';
+            document.getElementById('crypto-usdt').style.display = crypto === 'usdt' ? 'block' : 'none';
+        }
+
+        // Card Payment
         function initiateCardPayment() {
             const loading = document.getElementById('loading');
             loading.classList.add('show');
@@ -619,13 +841,16 @@
             });
         }
 
-        // M-PESA
+        // M-PESA Payment (Working)
         function initiateMpesaPayment() {
             const phone = document.getElementById('mpesaPhone').value.replace(/\D/g, '');
             if (!phone) {
-                showError('Enter phone number');
+                showError('Enter your M-PESA number');
                 return;
             }
+            
+            // Show WhatsApp reminder
+            showSuccess('📱 Check your phone for STK push. Remember to send confirmation on WhatsApp!');
             
             const loading = document.getElementById('loading');
             loading.classList.add('show');
@@ -646,31 +871,19 @@
             .then(data => {
                 loading.classList.remove('show');
                 if (data.success) {
-                    showSuccess('STK Push sent');
+                    showSuccess('✅ STK Push sent! Confirm payment on your phone and WhatsApp');
                     checkStatus();
                 } else {
-                    showError(data.error || 'Failed');
+                    showError(data.error || 'Payment failed');
                 }
+            })
+            .catch(() => {
+                loading.classList.remove('show');
+                showError('Network error');
             });
         }
 
-        // Crypto
-        function switchCrypto(crypto) {
-            currentCrypto = crypto;
-            document.querySelectorAll('.crypto-tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById('crypto-btc').style.display = 'none';
-            document.getElementById('crypto-usdt').style.display = 'none';
-            document.getElementById('crypto-eth').style.display = 'none';
-            document.getElementById('crypto-' + crypto).style.display = 'block';
-        }
-
-        function copyAddress(btn) {
-            const address = btn.parentElement.querySelector('.crypto-address').innerText;
-            navigator.clipboard.writeText(address);
-            showSuccess('Copied!');
-        }
-
+        // Confirm Crypto
         function confirmCrypto() {
             const loading = document.getElementById('loading');
             loading.classList.add('show');
@@ -691,12 +904,17 @@
             .then(data => {
                 loading.classList.remove('show');
                 if (data.success) {
-                    showSuccess('Crypto payment recorded');
+                    showSuccess('✅ Crypto payment recorded. Send proof on WhatsApp!');
                     checkStatus();
                 }
+            })
+            .catch(() => {
+                loading.classList.remove('show');
+                showError('Failed to record payment');
             });
         }
 
+        // Check Payment Status
         function checkStatus() {
             const interval = setInterval(() => {
                 fetch('/sasapay/status/' + reference + '/')
@@ -710,6 +928,7 @@
             }, 3000);
         }
 
+        // Utility Functions
         function showError(msg) {
             const el = document.getElementById('errorMessage');
             el.textContent = msg;
@@ -721,11 +940,8 @@
             const el = document.getElementById('successMessage');
             el.textContent = msg;
             el.classList.add('show');
-            setTimeout(() => el.classList.remove('show'), 3000);
+            setTimeout(() => el.classList.remove('show'), 5000);
         }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => selectMethod('card'));
     </script>
     <script src="https://kit.fontawesome.com/your-kit-id.js" crossorigin="anonymous"></script>
 </body>
