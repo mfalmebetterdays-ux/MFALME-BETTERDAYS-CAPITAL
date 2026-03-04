@@ -156,29 +156,145 @@ def send_user_notification_email(user, subject, template, context):
 # ==================== EMAIL FUNCTIONS ====================
 
 def send_verification_email(user, code):
-    """Send verification email using HTML template"""
+    """Send verification email - Clean professional version"""
     try:
         subject = 'Verify Your Account - Mfalme Betterdays Capital'
         
-        html_content = render_to_string('emails/verification.html', {
-            'username': user.username,
-            'verification_code': code,
-            'email': user.email,
-            'expiry_minutes': 30,
-            'year': timezone.now().year,
-            'current_year': timezone.now().year
-        })
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Verify Your Account</title>
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    line-height: 1.6;
+                    color: #1a1a1a;
+                    margin: 0;
+                    padding: 0;
+                    background-color: #f5f5f5;
+                }}
+                .container {{
+                    max-width: 480px;
+                    margin: 20px auto;
+                    background: white;
+                    border-radius: 12px;
+                    padding: 40px 32px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                }}
+                .logo {{
+                    text-align: center;
+                    margin-bottom: 32px;
+                }}
+                .logo h1 {{
+                    color: #B8860B;
+                    font-size: 1.5rem;
+                    font-weight: 600;
+                    margin: 0;
+                }}
+                h2 {{
+                    font-size: 1.3rem;
+                    font-weight: 500;
+                    margin-bottom: 24px;
+                    text-align: center;
+                }}
+                .code-box {{
+                    background: #f8f9fa;
+                    border: 1px solid #e9ecef;
+                    border-radius: 8px;
+                    padding: 24px;
+                    text-align: center;
+                    margin: 24px 0;
+                }}
+                .code {{
+                    font-size: 2.5rem;
+                    font-weight: 600;
+                    letter-spacing: 8px;
+                    color: #B8860B;
+                    font-family: monospace;
+                    margin: 16px 0;
+                }}
+                .button {{
+                    display: inline-block;
+                    background: #B8860B;
+                    color: white;
+                    text-decoration: none;
+                    padding: 12px 32px;
+                    border-radius: 40px;
+                    font-weight: 500;
+                    margin: 16px 0;
+                }}
+                .footer {{
+                    margin-top: 32px;
+                    padding-top: 20px;
+                    border-top: 1px solid #e9ecef;
+                    font-size: 0.8rem;
+                    color: #6c757d;
+                    text-align: center;
+                }}
+                .note {{
+                    background: #fff3cd;
+                    border: 1px solid #ffeeba;
+                    border-radius: 6px;
+                    padding: 12px;
+                    font-size: 0.9rem;
+                    color: #856404;
+                    margin: 20px 0;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="logo">
+                    <h1> Mfalme Betterdays Capital</h1>
+                </div>
+                
+                <h2>Verify your email address</h2>
+                
+                <p>Hello {user.username},</p>
+                
+                <p>Thank you for registering with Mfalme Betterdays Capital. Please use the verification code below to complete your account setup.</p>
+                
+                <div class="code-box">
+                    <div style="color: #6c757d; font-size: 0.9rem; margin-bottom: 8px;">Your verification code</div>
+                    <div class="code">{code}</div>
+                    
+                    <button onclick="navigator.clipboard.writeText('{code}')" style="background: none; border: 1px solid #B8860B; color: #B8860B; padding: 8px 24px; border-radius: 40px; cursor: pointer; font-size: 0.9rem;">
+                        Copy code
+                    </button>
+                </div>
+                
+                <div style="text-align: center;">
+                    <a href="{settings.SITE_URL}/verify/?email={user.email}" class="button">
+                        Verify Account
+                    </a>
+                </div>
+                
+                <div class="note">
+                    <strong>Note:</strong> This code will expire in 30 minutes. If you didn't request this verification, please ignore this email.
+                </div>
+                
+                <div class="footer">
+                    <p>© {timezone.now().year} Mfalme Betterdays Capital. All rights reserved.</p>
+                    <p>Nairobi, Kenya</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
         
         text_content = f"""
-        Hello {user.username},
+        Mfalme Betterdays Capital - Account Verification
         
-        Thank you for registering with Mfalme Betterdays Capital.
+        Hello {user.username},
         
         Your verification code is: {code}
         
         This code will expire in 30 minutes.
         
-        If you didn't request this, please ignore this email.
+        If you didn't request this verification, please ignore this email.
         
         Best regards,
         Mfalme Betterdays Capital Team
@@ -193,11 +309,10 @@ def send_verification_email(user, code):
         msg.attach_alternative(html_content, "text/html")
         msg.send()
         
-        print(f"âœ“ Verification email sent to {user.email}")
         return True
         
     except Exception as e:
-        print(f"âœ— Verification email error: {e}")
+        print(f"Email error: {e}")
         return False
 
 def send_admin_notification(user):
@@ -726,123 +841,287 @@ def register_user(request):
         return redirect('login_page')
 
 def verify_account_page(request):
-    """Account verification page"""
+    """Account verification page - FIXED VERSION with copy button"""
     import sys
-    print("-" * 50)
-    print("ðŸ” VERIFY ACCOUNT PAGE ACCESSED")
+    print("\n" + "="*60)
+    print("🔍 VERIFY ACCOUNT PAGE ACCESSED")
+    print("="*60)
     
-    email = request.session.get('verification_email', '')
-    print(f"ðŸ” Email from session: '{email}'")
+    # Get email from session or GET parameter
+    email = request.session.get('verification_email', request.GET.get('email', ''))
+    
+    print(f"📧 Email from session/GET: '{email}'")
     
     if not email:
-        print("âŒ No email in session")
+        print("❌ No email in session or GET")
         messages.error(request, 'No verification session found. Please register again.')
         return redirect('login_page')
     
+    # Get user
+    try:
+        user = MfalmeUsers.objects.get(email=email)
+        print(f"✅ User found: {user.username} (ID: {user.id})")
+        print(f"📊 Account status: {user.account_status}")
+        print(f"📧 Email verified: {user.email_verified}")
+    except MfalmeUsers.DoesNotExist:
+        print(f"❌ User not found with email: {email}")
+        messages.error(request, 'User not found. Please register again.')
+        return redirect('login_page')
+    
+    # Get the latest verification code for display
+    latest_code = None
+    try:
+        latest_code = VerificationCode.objects.filter(
+            user=user,
+            code_type='account_verification',
+            is_used=False
+        ).order_by('-created_at').first()
+        
+        if latest_code:
+            print(f"🔑 Latest code: {latest_code.code}")
+            print(f"⏰ Expires at: {latest_code.expires_at}")
+            print(f"⏳ Expired: {latest_code.is_expired()}")
+        else:
+            print("❌ No active verification code found")
+            
+            # Generate a new code if none exists
+            new_code = generate_verification_code()
+            latest_code = VerificationCode.objects.create(
+                user=user,
+                code=new_code,
+                code_type='account_verification',
+                expires_at=timezone.now() + timedelta(minutes=30),
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            )
+            print(f"✅ Generated new code: {new_code}")
+            
+            # Send email
+            send_verification_email(user, new_code)
+    except Exception as e:
+        print(f"❌ Error getting verification code: {e}")
+    
     if request.method == 'POST':
-        code = request.POST.get('code', '').strip()
-        print(f"ðŸ” POST request with code: '{code}'")
+        code = request.POST.get('code', '').strip().replace(' ', '')
+        print(f"\n🔐 POST request with code: '{code}'")
         
         if not code:
             messages.error(request, 'Please enter verification code')
-            return render(request, 'verify_account.html', {'user_email': email})
+            return render(request, 'verify_account.html', {
+                'user_email': email,
+                'user': user,
+                'verification_code': latest_code.code if latest_code else None,
+                'expires_at': latest_code.expires_at if latest_code else None
+            })
         
         try:
-            user = MfalmeUsers.objects.get(email=email)
-            
-            verification = VerificationCode.objects.filter(
+            # Get all active verification codes for this user
+            verifications = VerificationCode.objects.filter(
                 user=user,
                 code_type='account_verification',
                 is_used=False
-            ).latest('created_at')
+            ).order_by('-created_at')
             
-            if verification.code != code:
+            print(f"📋 Found {verifications.count()} active verification codes")
+            
+            verification = None
+            for v in verifications:
+                print(f"  - Checking code: {v.code} (expired: {v.is_expired()})")
+                if v.code == code:
+                    verification = v
+                    print(f"  ✅ Code matches!")
+                    break
+            
+            if not verification:
+                print(f"❌ No matching code found")
                 messages.error(request, 'Invalid verification code')
-            elif verification.is_expired():
-                messages.error(request, 'Verification code has expired')
-                verification.is_used = True
-                verification.save()
-            else:
-                verification.is_used = True
-                verification.used_at = timezone.now()
-                verification.save()
                 
-                user.email_verified = True
-                user.account_status = 'active'
-                user.verified_at = timezone.now()
-                user.save(update_fields=['email_verified', 'account_status', 'verified_at'])
-                
-                print(f"âœ… User activated successfully!")
-                
-                welcome_sent = send_welcome_email(user)
-                
-                Notification.objects.create(
+                # Log failed attempt
+                ActivityLog.objects.create(
                     user=user,
-                    title='Account Verified!',
-                    message='Your account has been verified. You can now login.',
-                    notification_type='SUCCESS',
+                    action='VERIFICATION_FAILED',
+                    description=f'Invalid verification code attempt: {code}',
+                    ip_address=get_client_ip(request)
                 )
                 
-                log_activity(user, 'ACCOUNT_VERIFICATION', 'Account verified successfully', request)
+                return render(request, 'verify_account.html', {
+                    'user_email': email,
+                    'user': user,
+                    'verification_code': latest_code.code if latest_code else None,
+                    'expires_at': latest_code.expires_at if latest_code else None
+                })
+            
+            if verification.is_expired():
+                print(f"❌ Code expired")
+                messages.error(request, 'Verification code has expired. Request a new one.')
+                verification.is_used = True
+                verification.is_valid = False
+                verification.save(update_fields=['is_used', 'is_valid'])
                 
-                if welcome_sent:
-                    messages.success(request, 'Account verified successfully! Check your email for welcome message.')
-                else:
-                    messages.success(request, 'Account verified successfully!')
+                return render(request, 'verify_account.html', {
+                    'user_email': email,
+                    'user': user,
+                    'verification_code': None,
+                    'expires_at': None
+                })
+            
+            # Mark as used
+            verification.is_used = True
+            verification.used_at = timezone.now()
+            verification.save(update_fields=['is_used', 'used_at'])
+            
+            # Activate user
+            user.email_verified = True
+            user.account_status = 'active'
+            user.verified_at = timezone.now()
+            user.save(update_fields=['email_verified', 'account_status', 'verified_at'])
+            
+            print(f"✅ User activated successfully!")
+            print(f"📊 New status: {user.account_status}")
+            
+            # Send welcome email
+            welcome_sent = send_welcome_email(user)
+            print(f"📧 Welcome email sent: {welcome_sent}")
+            
+            # Create notification
+            Notification.objects.create(
+                user=user,
+                title='🎉 Account Verified!',
+                message='Your account has been successfully verified. Welcome to the elite circle!',
+                notification_type='SUCCESS',
+            )
+            
+            # Log activity
+            ActivityLog.objects.create(
+                user=user,
+                action='ACCOUNT_VERIFIED',
+                description=f'Account verified successfully',
+                ip_address=get_client_ip(request)
+            )
+            
+            messages.success(request, '✅ Account verified successfully! You can now login.')
+            
+            # Clear session
+            if 'verification_email' in request.session:
+                del request.session['verification_email']
+            
+            return redirect('login_page')
                 
-                if 'verification_email' in request.session:
-                    del request.session['verification_email']
-                
-                return redirect('login_page')
-                
-        except MfalmeUsers.DoesNotExist:
-            messages.error(request, 'User not found')
-        except VerificationCode.DoesNotExist:
-            messages.error(request, 'No verification code found. Please request a new one.')
         except Exception as e:
-            print(f"âŒ Unexpected error: {str(e)}")
+            print(f"❌ Unexpected error: {str(e)}")
+            import traceback
+            traceback.print_exc()
             messages.error(request, f'An error occurred: {str(e)}')
     
-    return render(request, 'verify_account.html', {'user_email': email})
+    # Prepare context for GET request
+    context = {
+        'user_email': email,
+        'user': user,
+        'verification_code': latest_code.code if latest_code else None,
+        'expires_at': latest_code.expires_at if latest_code else None,
+        'expires_in': latest_code.expires_at - timezone.now() if latest_code and latest_code.expires_at else None
+    }
+    
+    return render(request, 'verify_account.html', context)
 
 def resend_verification(request):
-    """Resend verification code"""
+    """Resend verification code - FIXED VERSION"""
+    print("\n" + "="*60)
+    print("🔄 RESEND VERIFICATION REQUEST")
+    print("="*60)
+    
     if request.method == 'POST':
+        # Handle both JSON and form submissions
         if request.content_type == 'application/json':
-            data = json.loads(request.body)
-            email = data.get('email', '')
+            try:
+                data = json.loads(request.body)
+                email = data.get('email', '')
+            except:
+                email = ''
         else:
             email = request.POST.get('email', '')
         
+        print(f"📧 Email: {email}")
+        
         if not email:
-            return JsonResponse({'success': False, 'error': 'Email required'})
+            if request.content_type == 'application/json':
+                return JsonResponse({'success': False, 'error': 'Email required'})
+            messages.error(request, 'Email required')
+            return redirect('verify_account')
         
         try:
             user = MfalmeUsers.objects.get(email=email)
+            print(f"✅ User found: {user.username}")
             
             if user.email_verified:
-                return JsonResponse({'success': False, 'error': 'Account already verified'})
+                print(f"⚠️ Account already verified")
+                if request.content_type == 'application/json':
+                    return JsonResponse({'success': False, 'error': 'Account already verified'})
+                messages.warning(request, 'Account already verified. Please login.')
+                return redirect('login_page')
             
+            # Invalidate old codes
+            VerificationCode.objects.filter(
+                user=user,
+                code_type='account_verification',
+                is_used=False
+            ).update(is_used=True, is_valid=False)
+            
+            # Generate new code
             verification_code = generate_verification_code()
-            VerificationCode.objects.create(
+            verification = VerificationCode.objects.create(
                 user=user,
                 code=verification_code,
                 code_type='account_verification',
                 expires_at=timezone.now() + timedelta(minutes=30),
                 ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
             )
             
+            print(f"✅ New code generated: {verification_code}")
+            print(f"⏰ Expires: {verification.expires_at}")
+            
+            # Send email
             email_sent = send_verification_email(user, verification_code)
             
+            # Log activity
+            ActivityLog.objects.create(
+                user=user,
+                action='VERIFICATION_RESENT',
+                description=f'Verification code resent',
+                ip_address=get_client_ip(request)
+            )
+            
             if email_sent:
-                return JsonResponse({'success': True, 'message': 'New verification code sent'})
+                if request.content_type == 'application/json':
+                    return JsonResponse({
+                        'success': True, 
+                        'message': 'New verification code sent to your email',
+                        'code': verification_code  # Remove this in production!
+                    })
+                messages.success(request, 'New verification code sent to your email')
             else:
-                return JsonResponse({'success': False, 'error': 'Failed to send email'})
+                if request.content_type == 'application/json':
+                    return JsonResponse({
+                        'success': False, 
+                        'error': 'Failed to send email. Please contact support.'
+                    })
+                messages.error(request, 'Failed to send email. Please contact support.')
+            
+            # Update session
+            request.session['verification_email'] = email
+            request.session.save()
+            
+            return redirect('verify_account')
                 
         except MfalmeUsers.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'User not found'})
+            print(f"❌ User not found: {email}")
+            if request.content_type == 'application/json':
+                return JsonResponse({'success': False, 'error': 'User not found'})
+            messages.error(request, 'User not found')
+            return redirect('login_page')
     
-    return JsonResponse({'success': False, 'error': 'Invalid request'})
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
 
 def forgot_password(request):
     """Forgot password page"""
