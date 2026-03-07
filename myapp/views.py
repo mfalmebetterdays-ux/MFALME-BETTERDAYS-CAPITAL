@@ -4969,7 +4969,6 @@ from .models import MfalmeUsers, Course, Video, PDF, Blog, Package, Order, Partn
 def export_users(request):
     """Export users to Excel or CSV"""
     format_type = request.GET.get('format', 'excel')
-    all_fields = request.GET.get('all_fields', 'false') == 'true'
     
     # Get users
     users = MfalmeUsers.objects.all().order_by('-date_joined')
@@ -4979,10 +4978,8 @@ def export_users(request):
         response['Content-Disposition'] = f'attachment; filename="users_export_{datetime.now().strftime("%Y%m%d")}.csv"'
         
         writer = csv.writer(response)
-        # Write headers
-        writer.writerow(['ID', 'Username', 'Email', 'First Name', 'Last Name', 'Phone', 'Tier', 'Status', 'Date Joined', 'Last Login'])
+        writer.writerow(['ID', 'Username', 'Email', 'First Name', 'Last Name', 'Phone', 'Tier', 'Status', 'Date Joined'])
         
-        # Write data
         for user in users:
             writer.writerow([
                 user.id,
@@ -4994,82 +4991,66 @@ def export_users(request):
                 user.tier or 'citizen',
                 'Active' if user.is_active else 'Inactive',
                 user.date_joined.strftime('%Y-%m-%d %H:%M') if user.date_joined else '',
-                user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else ''
             ])
-        
         return response
     
-    else:  # Excel format
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = f'attachment; filename="users_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
-        
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Users Export"
-        
-        # Headers
-        headers = ['ID', 'Username', 'Email', 'First Name', 'Last Name', 'Phone', 'Tier', 'Status', 'Date Joined', 'Last Login']
-        for col_num, header in enumerate(headers, 1):
-            cell = ws.cell(row=1, column=col_num)
-            cell.value = header
-            cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-            cell.font = Font(color="FFFFFF", bold=True)
-        
-        # Data
-        for row_num, user in enumerate(users, 2):
-            ws.cell(row=row_num, column=1).value = user.id
-            ws.cell(row=row_num, column=2).value = user.username
-            ws.cell(row=row_num, column=3).value = user.email
-            ws.cell(row=row_num, column=4).value = user.first_name
-            ws.cell(row=row_num, column=5).value = user.last_name
-            ws.cell(row=row_num, column=6).value = user.phone
-            ws.cell(row=row_num, column=7).value = user.tier or 'citizen'
-            ws.cell(row=row_num, column=8).value = 'Active' if user.is_active else 'Inactive'
-            ws.cell(row=row_num, column=9).value = user.date_joined.strftime('%Y-%m-%d %H:%M') if user.date_joined else ''
-            ws.cell(row=row_num, column=10).value = user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else ''
-        
-        # Auto-adjust column widths
-        for column in ws.columns:
-            max_length = 0
-            column_letter = column[0].column_letter
-            for cell in column:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except:
-                    pass
-            adjusted_width = min(max_length + 2, 50)
-            ws.column_dimensions[column_letter].width = adjusted_width
-        
-        wb.save(response)
-        return response
+    # Excel format
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="users_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Users Export"
+    
+    # Headers
+    headers = ['ID', 'Username', 'Email', 'First Name', 'Last Name', 'Phone', 'Tier', 'Status', 'Date Joined']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    # Data
+    for row_num, user in enumerate(users, 2):
+        ws.cell(row=row_num, column=1).value = user.id
+        ws.cell(row=row_num, column=2).value = user.username
+        ws.cell(row=row_num, column=3).value = user.email
+        ws.cell(row=row_num, column=4).value = user.first_name
+        ws.cell(row=row_num, column=5).value = user.last_name
+        ws.cell(row=row_num, column=6).value = user.phone
+        ws.cell(row=row_num, column=7).value = user.tier or 'citizen'
+        ws.cell(row=row_num, column=8).value = 'Active' if user.is_active else 'Inactive'
+        ws.cell(row=row_num, column=9).value = user.date_joined.strftime('%Y-%m-%d %H:%M') if user.date_joined else ''
+    
+    wb.save(response)
+    return response
 
 
 @require_GET
 def export_orders(request):
-    """Export orders to Excel"""
+    """Export orders/transactions to Excel"""
     format_type = request.GET.get('format', 'excel')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     
-    # Filter by date if provided
-    orders = Order.objects.all().order_by('-created_at')
+    # Use PaymentTransaction model (not Order)
+    transactions = PaymentTransaction.objects.all().order_by('-created_at')
     
     if start_date:
-        orders = orders.filter(created_at__date__gte=start_date)
+        transactions = transactions.filter(created_at__date__gte=start_date)
     if end_date:
-        orders = orders.filter(created_at__date__lte=end_date)
+        transactions = transactions.filter(created_at__date__lte=end_date)
     
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = f'attachment; filename="orders_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="transactions_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
     
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Orders Export"
+    ws.title = "Transactions Export"
     
     # Headers
-    headers = ['Order ID', 'Customer', 'Email', 'Package', 'Amount (KES)', 'Payment Method', 'Status', 'Date', 'Reference']
+    headers = ['Reference', 'User', 'Email', 'Amount (KES)', 'Payment Type', 'Payment Method', 'Status', 'Date']
     for col_num, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col_num)
         cell.value = header
@@ -5079,38 +5060,26 @@ def export_orders(request):
     
     # Data
     total_amount = 0
-    for row_num, order in enumerate(orders, 2):
-        ws.cell(row=row_num, column=1).value = order.id
-        ws.cell(row=row_num, column=2).value = order.user.get_full_name() if order.user else 'Guest'
-        ws.cell(row=row_num, column=3).value = order.user.email if order.user else order.email or ''
-        ws.cell(row=row_num, column=4).value = order.package.name if order.package else 'N/A'
-        ws.cell(row=row_num, column=5).value = float(order.amount)
-        ws.cell(row=row_num, column=6).value = order.payment_method or 'N/A'
-        ws.cell(row=row_num, column=7).value = order.status
-        ws.cell(row=row_num, column=8).value = order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else ''
-        ws.cell(row=row_num, column=9).value = order.reference or ''
+    for row_num, trans in enumerate(transactions, 2):
+        ws.cell(row=row_num, column=1).value = trans.reference
+        ws.cell(row=row_num, column=2).value = trans.user.get_full_name() if trans.user else 'Guest'
+        ws.cell(row=row_num, column=3).value = trans.user.email if trans.user else 'guest@example.com'
+        ws.cell(row=row_num, column=4).value = float(trans.amount)
+        ws.cell(row=row_num, column=5).value = trans.payment_type or 'N/A'
+        ws.cell(row=row_num, column=6).value = trans.payment_method or 'N/A'
+        ws.cell(row=row_num, column=7).value = trans.status
+        ws.cell(row=row_num, column=8).value = trans.created_at.strftime('%Y-%m-%d %H:%M') if trans.created_at else ''
         
-        total_amount += float(order.amount)
+        if trans.status == 'completed':
+            total_amount += float(trans.amount)
     
     # Add total row
-    total_row = len(orders) + 2
-    ws.cell(row=total_row, column=4).value = "TOTAL:"
+    total_row = len(transactions) + 2
+    ws.cell(row=total_row, column=3).value = "TOTAL:"
+    ws.cell(row=total_row, column=3).font = Font(bold=True)
+    ws.cell(row=total_row, column=4).value = total_amount
     ws.cell(row=total_row, column=4).font = Font(bold=True)
-    ws.cell(row=total_row, column=5).value = total_amount
-    ws.cell(row=total_row, column=5).font = Font(bold=True)
-    
-    # Auto-adjust column widths
-    for column in ws.columns:
-        max_length = 0
-        column_letter = column[0].column_letter
-        for cell in column:
-            try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
-            except:
-                pass
-        adjusted_width = min(max_length + 2, 50)
-        ws.column_dimensions[column_letter].width = adjusted_width
+    ws.cell(row=total_row, column=4).number_format = '#,##0.00'
     
     wb.save(response)
     return response
@@ -5119,8 +5088,6 @@ def export_orders(request):
 @require_GET
 def export_courses(request):
     """Export courses to Excel"""
-    format_type = request.GET.get('format', 'excel')
-    
     courses = Course.objects.all().order_by('-created_at')
     
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -5131,7 +5098,7 @@ def export_courses(request):
     ws.title = "Courses Export"
     
     # Headers
-    headers = ['ID', 'Title', 'Price (KES)', 'Duration (weeks)', 'Videos Count', 'PDFs Count', 'Status', 'Created', 'Enrollments']
+    headers = ['ID', 'Title', 'Price (USD)', 'Duration (weeks)', 'Videos Count', 'PDFs Count', 'Status', 'Created']
     for col_num, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col_num)
         cell.value = header
@@ -5141,9 +5108,9 @@ def export_courses(request):
     
     # Data
     for row_num, course in enumerate(courses, 2):
-        videos_count = Video.objects.filter(course=course).count()
+        # Count related videos and PDFs
+        videos_count = TrainingVideo.objects.filter(course=course).count()
         pdfs_count = PDF.objects.filter(course=course).count()
-        enrollments = Order.objects.filter(package__course=course, status='completed').count() if hasattr(course, 'package') else 0
         
         ws.cell(row=row_num, column=1).value = course.id
         ws.cell(row=row_num, column=2).value = course.title
@@ -5153,20 +5120,6 @@ def export_courses(request):
         ws.cell(row=row_num, column=6).value = pdfs_count
         ws.cell(row=row_num, column=7).value = 'Active' if course.is_active else 'Inactive'
         ws.cell(row=row_num, column=8).value = course.created_at.strftime('%Y-%m-%d') if course.created_at else ''
-        ws.cell(row=row_num, column=9).value = enrollments
-    
-    # Auto-adjust column widths
-    for column in ws.columns:
-        max_length = 0
-        column_letter = column[0].column_letter
-        for cell in column:
-            try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
-            except:
-                pass
-        adjusted_width = min(max_length + 2, 50)
-        ws.column_dimensions[column_letter].width = adjusted_width
     
     wb.save(response)
     return response
@@ -5175,7 +5128,8 @@ def export_courses(request):
 @require_GET
 def export_videos(request):
     """Export videos to Excel"""
-    videos = Video.objects.all().order_by('-created_at')
+    # Use TrainingVideo model (not Video)
+    videos = TrainingVideo.objects.all().order_by('-created_at')
     
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = f'attachment; filename="videos_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
@@ -5184,7 +5138,7 @@ def export_videos(request):
     ws = wb.active
     ws.title = "Videos Export"
     
-    headers = ['ID', 'Title', 'Course', 'Duration (min)', 'Module', 'Views', 'Status', 'Uploaded', 'URL']
+    headers = ['ID', 'Title', 'Course', 'Duration (min)', 'Price (USD)', 'Views', 'Status', 'Uploaded']
     for col_num, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col_num)
         cell.value = header
@@ -5197,23 +5151,10 @@ def export_videos(request):
         ws.cell(row=row_num, column=2).value = video.title
         ws.cell(row=row_num, column=3).value = video.course.title if video.course else 'Uncategorized'
         ws.cell(row=row_num, column=4).value = video.duration or 0
-        ws.cell(row=row_num, column=5).value = video.module or 'N/A'
-        ws.cell(row=row_num, column=6).value = video.views or 0
-        ws.cell(row=row_num, column=7).value = video.status or 'draft'
+        ws.cell(row=row_num, column=5).value = float(video.price) if video.price else 0
+        ws.cell(row=row_num, column=6).value = video.view_count or 0
+        ws.cell(row=row_num, column=7).value = 'Active' if video.is_active else 'Inactive'
         ws.cell(row=row_num, column=8).value = video.created_at.strftime('%Y-%m-%d') if video.created_at else ''
-        ws.cell(row=row_num, column=9).value = request.build_absolute_uri(video.video_url) if video.video_url else ''
-    
-    for column in ws.columns:
-        max_length = 0
-        column_letter = column[0].column_letter
-        for cell in column:
-            try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
-            except:
-                pass
-        adjusted_width = min(max_length + 2, 50)
-        ws.column_dimensions[column_letter].width = adjusted_width
     
     wb.save(response)
     return response
@@ -5231,8 +5172,7 @@ def export_pdfs(request):
     ws = wb.active
     ws.title = "PDFs Export"
     
-    # REMOVED 'Size' and 'Downloads' columns - these cause issues with S3
-    headers = ['ID', 'Title', 'Course', 'Pages', 'Access Level', 'Uploaded']
+    headers = ['ID', 'Title', 'Course', 'Pages', 'Price (USD)', 'Is Free', 'Access Level', 'Views', 'Uploaded']
     for col_num, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col_num)
         cell.value = header
@@ -5245,21 +5185,163 @@ def export_pdfs(request):
         ws.cell(row=row_num, column=2).value = pdf.title
         ws.cell(row=row_num, column=3).value = pdf.course.title if pdf.course else 'General'
         ws.cell(row=row_num, column=4).value = pdf.pages or 0
-        ws.cell(row=row_num, column=5).value = pdf.access_level or 'free'
-        ws.cell(row=row_num, column=6).value = pdf.created_at.strftime('%Y-%m-%d') if pdf.created_at else ''
+        ws.cell(row=row_num, column=5).value = float(pdf.price) if pdf.price else 0
+        ws.cell(row=row_num, column=6).value = 'Yes' if pdf.is_free else 'No'
+        ws.cell(row=row_num, column=7).value = pdf.access_level or 'free'
+        ws.cell(row=row_num, column=8).value = pdf.views or 0
+        ws.cell(row=row_num, column=9).value = pdf.created_at.strftime('%Y-%m-%d') if pdf.created_at else ''
     
-    # Auto-adjust column widths
-    for column in ws.columns:
-        max_length = 0
-        column_letter = column[0].column_letter
-        for cell in column:
-            try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
-            except:
-                pass
-        adjusted_width = min(max_length + 2, 50)
-        ws.column_dimensions[column_letter].width = adjusted_width
+    wb.save(response)
+    return response
+
+
+@require_GET
+def export_revenue_report(request):
+    """Export revenue report to Excel"""
+    # Import Sum and Count
+    from django.db.models import Sum, Count
+    
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    # Parse dates
+    if start_date:
+        start = datetime.strptime(start_date, '%Y-%m-%d')
+    else:
+        start = datetime.now() - timedelta(days=30)
+    
+    if end_date:
+        end = datetime.strptime(end_date, '%Y-%m-%d')
+    else:
+        end = datetime.now()
+    
+    # Get completed transactions in date range
+    transactions = PaymentTransaction.objects.filter(
+        created_at__date__gte=start.date(),
+        created_at__date__lte=end.date(),
+        status='completed'
+    ).order_by('created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="revenue_report_{start_date}_to_{end_date}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    
+    # ===== SUMMARY SHEET =====
+    ws_summary = wb.active
+    ws_summary.title = "Summary"
+    
+    # Title
+    ws_summary.cell(row=1, column=1).value = "Revenue Report"
+    ws_summary.cell(row=1, column=1).font = Font(bold=True, size=14)
+    ws_summary.merge_cells('A1:F1')
+    
+    ws_summary.cell(row=2, column=1).value = f"Period: {start_date} to {end_date}"
+    ws_summary.merge_cells('A2:F2')
+    
+    # Stats
+    total_revenue = transactions.aggregate(Sum('amount'))['amount__sum'] or 0
+    total_orders = transactions.count()
+    avg_order = total_revenue / total_orders if total_orders > 0 else 0
+    
+    ws_summary.cell(row=4, column=1).value = "Total Revenue:"
+    ws_summary.cell(row=4, column=1).font = Font(bold=True)
+    ws_summary.cell(row=4, column=2).value = float(total_revenue)
+    ws_summary.cell(row=4, column=2).number_format = '#,##0.00'
+    
+    ws_summary.cell(row=5, column=1).value = "Total Transactions:"
+    ws_summary.cell(row=5, column=1).font = Font(bold=True)
+    ws_summary.cell(row=5, column=2).value = total_orders
+    
+    ws_summary.cell(row=6, column=1).value = "Average Transaction:"
+    ws_summary.cell(row=6, column=1).font = Font(bold=True)
+    ws_summary.cell(row=6, column=2).value = float(avg_order)
+    ws_summary.cell(row=6, column=2).number_format = '#,##0.00'
+    
+    # ===== DAILY BREAKDOWN SHEET =====
+    ws_daily = wb.create_sheet("Daily Breakdown")
+    
+    headers = ['Date', 'Transactions', 'Revenue (KES)', 'Avg Value']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws_daily.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    # Group by date
+    daily_stats = transactions.values('created_at__date').annotate(
+        count=Count('id'),
+        total=Sum('amount')
+    ).order_by('created_at__date')
+    
+    for row_num, stat in enumerate(daily_stats, 2):
+        ws_daily.cell(row=row_num, column=1).value = stat['created_at__date'].strftime('%Y-%m-%d')
+        ws_daily.cell(row=row_num, column=2).value = stat['count']
+        ws_daily.cell(row=row_num, column=3).value = float(stat['total'])
+        if stat['count'] > 0:
+            ws_daily.cell(row=row_num, column=4).value = float(stat['total'] / stat['count'])
+            ws_daily.cell(row=row_num, column=4).number_format = '#,##0.00'
+    
+    # ===== TRANSACTIONS DETAIL SHEET =====
+    ws_detail = wb.create_sheet("Transaction Details")
+    
+    detail_headers = ['Reference', 'Date', 'Customer', 'Email', 'Amount (KES)', 'Payment Type', 'Method', 'Status']
+    for col_num, header in enumerate(detail_headers, 1):
+        cell = ws_detail.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    for row_num, trans in enumerate(transactions, 2):
+        ws_detail.cell(row=row_num, column=1).value = trans.reference
+        ws_detail.cell(row=row_num, column=2).value = trans.created_at.strftime('%Y-%m-%d %H:%M') if trans.created_at else ''
+        ws_detail.cell(row=row_num, column=3).value = trans.user.get_full_name() if trans.user else 'Guest'
+        ws_detail.cell(row=row_num, column=4).value = trans.user.email if trans.user else 'N/A'
+        ws_detail.cell(row=row_num, column=5).value = float(trans.amount)
+        ws_detail.cell(row=row_num, column=5).number_format = '#,##0.00'
+        ws_detail.cell(row=row_num, column=6).value = trans.payment_type or 'N/A'
+        ws_detail.cell(row=row_num, column=7).value = trans.payment_method or 'N/A'
+        ws_detail.cell(row=row_num, column=8).value = trans.status
+    
+    # ===== AUTO-ADJUST COLUMN WIDTHS (FIXED) =====
+    # Process each sheet separately, handling merged cells
+    for sheet in wb.worksheets:
+        # Skip the summary sheet for auto-adjust (has merged cells)
+        if sheet.title == "Summary":
+            # Manually set widths for summary sheet
+            sheet.column_dimensions['A'].width = 20
+            sheet.column_dimensions['B'].width = 20
+            sheet.column_dimensions['C'].width = 15
+            sheet.column_dimensions['D'].width = 15
+            sheet.column_dimensions['E'].width = 15
+            sheet.column_dimensions['F'].width = 15
+            continue
+        
+        # For other sheets without merged cells, auto-adjust
+        for column in sheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            
+            # Skip if this column has merged cells
+            skip = False
+            for cell in column:
+                if isinstance(cell, openpyxl.cell.cell.MergedCell):
+                    skip = True
+                    break
+            
+            if skip:
+                continue
+                
+            for cell in column:
+                try:
+                    if cell.value and len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            sheet.column_dimensions[column_letter].width = adjusted_width
     
     wb.save(response)
     return response
@@ -5408,8 +5490,243 @@ def export_partnerships(request):
 
 
 @require_GET
+def export_users(request):
+    """Export users to Excel or CSV"""
+    format_type = request.GET.get('format', 'excel')
+    
+    # Get users
+    users = MfalmeUsers.objects.all().order_by('-date_joined')
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="users_export_{datetime.now().strftime("%Y%m%d")}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Username', 'Email', 'First Name', 'Last Name', 'Phone', 'Rank', 'Status', 'Date Joined'])
+        
+        for user in users:
+            writer.writerow([
+                user.id,
+                user.username,
+                user.email,
+                user.first_name,
+                user.last_name,
+                user.phone or '',
+                user.elite_rank or 'citizen',  # ✅ FIXED: use elite_rank
+                'Active' if user.is_active else 'Inactive',
+                user.date_joined.strftime('%Y-%m-%d %H:%M') if user.date_joined else '',
+            ])
+        return response
+    
+    # Excel format
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="users_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Users Export"
+    
+    # Headers
+    headers = ['ID', 'Username', 'Email', 'First Name', 'Last Name', 'Phone', 'Rank', 'Status', 'Date Joined']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    # Data
+    for row_num, user in enumerate(users, 2):
+        ws.cell(row=row_num, column=1).value = user.id
+        ws.cell(row=row_num, column=2).value = user.username
+        ws.cell(row=row_num, column=3).value = user.email
+        ws.cell(row=row_num, column=4).value = user.first_name
+        ws.cell(row=row_num, column=5).value = user.last_name
+        ws.cell(row=row_num, column=6).value = user.phone
+        ws.cell(row=row_num, column=7).value = user.elite_rank or 'citizen'  # ✅ FIXED: use elite_rank
+        ws.cell(row=row_num, column=8).value = 'Active' if user.is_active else 'Inactive'
+        ws.cell(row=row_num, column=9).value = user.date_joined.strftime('%Y-%m-%d %H:%M') if user.date_joined else ''
+    
+    wb.save(response)
+    return response
+
+@require_GET
+def export_orders(request):
+    """Export orders/transactions to Excel"""
+    format_type = request.GET.get('format', 'excel')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    # Use PaymentTransaction model (not Order)
+    transactions = PaymentTransaction.objects.all().order_by('-created_at')
+    
+    if start_date:
+        transactions = transactions.filter(created_at__date__gte=start_date)
+    if end_date:
+        transactions = transactions.filter(created_at__date__lte=end_date)
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="transactions_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Transactions Export"
+    
+    # Headers
+    headers = ['Reference', 'User', 'Email', 'Amount (KES)', 'Payment Type', 'Payment Method', 'Status', 'Date']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    # Data
+    total_amount = 0
+    for row_num, trans in enumerate(transactions, 2):
+        ws.cell(row=row_num, column=1).value = trans.reference
+        ws.cell(row=row_num, column=2).value = trans.user.get_full_name() if trans.user else 'Guest'
+        ws.cell(row=row_num, column=3).value = trans.user.email if trans.user else 'guest@example.com'
+        ws.cell(row=row_num, column=4).value = float(trans.amount)
+        ws.cell(row=row_num, column=5).value = trans.payment_type or 'N/A'
+        ws.cell(row=row_num, column=6).value = trans.payment_method or 'N/A'
+        ws.cell(row=row_num, column=7).value = trans.status
+        ws.cell(row=row_num, column=8).value = trans.created_at.strftime('%Y-%m-%d %H:%M') if trans.created_at else ''
+        
+        if trans.status == 'completed':
+            total_amount += float(trans.amount)
+    
+    # Add total row
+    total_row = len(transactions) + 2
+    ws.cell(row=total_row, column=3).value = "TOTAL:"
+    ws.cell(row=total_row, column=3).font = Font(bold=True)
+    ws.cell(row=total_row, column=4).value = total_amount
+    ws.cell(row=total_row, column=4).font = Font(bold=True)
+    ws.cell(row=total_row, column=4).number_format = '#,##0.00'
+    
+    wb.save(response)
+    return response
+
+
+@require_GET
+def export_courses(request):
+    """Export courses to Excel"""
+    courses = Course.objects.all().order_by('-created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="courses_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Courses Export"
+    
+    # Headers
+    headers = ['ID', 'Title', 'Price (USD)', 'Duration (weeks)', 'Videos Count', 'PDFs Count', 'Status', 'Created']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    # Data
+    for row_num, course in enumerate(courses, 2):
+        # Count related videos and PDFs
+        videos_count = TrainingVideo.objects.filter(course=course).count()
+        pdfs_count = PDF.objects.filter(course=course).count()
+        
+        ws.cell(row=row_num, column=1).value = course.id
+        ws.cell(row=row_num, column=2).value = course.title
+        ws.cell(row=row_num, column=3).value = float(course.price) if course.price else 0
+        ws.cell(row=row_num, column=4).value = course.duration_weeks or 0
+        ws.cell(row=row_num, column=5).value = videos_count
+        ws.cell(row=row_num, column=6).value = pdfs_count
+        ws.cell(row=row_num, column=7).value = 'Active' if course.is_active else 'Inactive'
+        ws.cell(row=row_num, column=8).value = course.created_at.strftime('%Y-%m-%d') if course.created_at else ''
+    
+    wb.save(response)
+    return response
+
+
+@require_GET
+def export_videos(request):
+    """Export videos to Excel"""
+    # Use TrainingVideo model (not Video)
+    videos = TrainingVideo.objects.all().order_by('-created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="videos_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Videos Export"
+    
+    headers = ['ID', 'Title', 'Course', 'Duration (min)', 'Price (USD)', 'Views', 'Status', 'Uploaded']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    for row_num, video in enumerate(videos, 2):
+        ws.cell(row=row_num, column=1).value = video.id
+        ws.cell(row=row_num, column=2).value = video.title
+        ws.cell(row=row_num, column=3).value = video.course.title if video.course else 'Uncategorized'
+        ws.cell(row=row_num, column=4).value = video.duration or 0
+        ws.cell(row=row_num, column=5).value = float(video.price) if video.price else 0
+        ws.cell(row=row_num, column=6).value = video.view_count or 0
+        ws.cell(row=row_num, column=7).value = 'Active' if video.is_active else 'Inactive'
+        ws.cell(row=row_num, column=8).value = video.created_at.strftime('%Y-%m-%d') if video.created_at else ''
+    
+    wb.save(response)
+    return response
+
+
+@require_GET
+def export_pdfs(request):
+    """Export PDFs to Excel"""
+    pdfs = PDF.objects.all().order_by('-created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="pdfs_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "PDFs Export"
+    
+    headers = ['ID', 'Title', 'Course', 'Pages', 'Price (USD)', 'Is Free', 'Access Level', 'Views', 'Uploaded']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    for row_num, pdf in enumerate(pdfs, 2):
+        ws.cell(row=row_num, column=1).value = pdf.id
+        ws.cell(row=row_num, column=2).value = pdf.title
+        ws.cell(row=row_num, column=3).value = pdf.course.title if pdf.course else 'General'
+        ws.cell(row=row_num, column=4).value = pdf.pages or 0
+        ws.cell(row=row_num, column=5).value = float(pdf.price) if pdf.price else 0
+        ws.cell(row=row_num, column=6).value = 'Yes' if pdf.is_free else 'No'
+        ws.cell(row=row_num, column=7).value = pdf.access_level or 'free'
+        ws.cell(row=row_num, column=8).value = pdf.views or 0
+        ws.cell(row=row_num, column=9).value = pdf.created_at.strftime('%Y-%m-%d') if pdf.created_at else ''
+    
+    wb.save(response)
+    return response
+
+
+@require_GET
 def export_revenue_report(request):
     """Export revenue report to Excel"""
+    # Import Sum and Count
+    from django.db.models import Sum, Count
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill
+    from openpyxl.utils import get_column_letter
+    
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     
@@ -5424,8 +5741,8 @@ def export_revenue_report(request):
     else:
         end = datetime.now()
     
-    # Get orders in date range
-    orders = Order.objects.filter(
+    # Get completed transactions in date range
+    transactions = PaymentTransaction.objects.filter(
         created_at__date__gte=start.date(),
         created_at__date__lte=end.date(),
         status='completed'
@@ -5436,11 +5753,11 @@ def export_revenue_report(request):
     
     wb = openpyxl.Workbook()
     
-    # Summary sheet
+    # ===== SUMMARY SHEET =====
     ws_summary = wb.active
     ws_summary.title = "Summary"
     
-    # Summary headers
+    # Title
     ws_summary.cell(row=1, column=1).value = "Revenue Report"
     ws_summary.cell(row=1, column=1).font = Font(bold=True, size=14)
     ws_summary.merge_cells('A1:F1')
@@ -5449,8 +5766,8 @@ def export_revenue_report(request):
     ws_summary.merge_cells('A2:F2')
     
     # Stats
-    total_revenue = orders.aggregate(Sum('amount'))['amount__sum'] or 0
-    total_orders = orders.count()
+    total_revenue = transactions.aggregate(Sum('amount'))['amount__sum'] or 0
+    total_orders = transactions.count()
     avg_order = total_revenue / total_orders if total_orders > 0 else 0
     
     ws_summary.cell(row=4, column=1).value = "Total Revenue:"
@@ -5458,19 +5775,19 @@ def export_revenue_report(request):
     ws_summary.cell(row=4, column=2).value = float(total_revenue)
     ws_summary.cell(row=4, column=2).number_format = '#,##0.00'
     
-    ws_summary.cell(row=5, column=1).value = "Total Orders:"
+    ws_summary.cell(row=5, column=1).value = "Total Transactions:"
     ws_summary.cell(row=5, column=1).font = Font(bold=True)
     ws_summary.cell(row=5, column=2).value = total_orders
     
-    ws_summary.cell(row=6, column=1).value = "Average Order Value:"
+    ws_summary.cell(row=6, column=1).value = "Average Transaction:"
     ws_summary.cell(row=6, column=1).font = Font(bold=True)
     ws_summary.cell(row=6, column=2).value = float(avg_order)
     ws_summary.cell(row=6, column=2).number_format = '#,##0.00'
     
-    # Daily breakdown sheet
+    # ===== DAILY BREAKDOWN SHEET =====
     ws_daily = wb.create_sheet("Daily Breakdown")
     
-    headers = ['Date', 'Orders', 'Revenue (KES)', 'Avg Order Value']
+    headers = ['Date', 'Transactions', 'Revenue (KES)', 'Avg Value']
     for col_num, header in enumerate(headers, 1):
         cell = ws_daily.cell(row=1, column=col_num)
         cell.value = header
@@ -5479,8 +5796,7 @@ def export_revenue_report(request):
         cell.font = Font(color="FFFFFF", bold=True)
     
     # Group by date
-    from django.db.models import Count, Sum
-    daily_stats = orders.values('created_at__date').annotate(
+    daily_stats = transactions.values('created_at__date').annotate(
         count=Count('id'),
         total=Sum('amount')
     ).order_by('created_at__date')
@@ -5489,43 +5805,59 @@ def export_revenue_report(request):
         ws_daily.cell(row=row_num, column=1).value = stat['created_at__date'].strftime('%Y-%m-%d')
         ws_daily.cell(row=row_num, column=2).value = stat['count']
         ws_daily.cell(row=row_num, column=3).value = float(stat['total'])
-        ws_daily.cell(row=row_num, column=4).value = float(stat['total'] / stat['count'])
-        ws_daily.cell(row=row_num, column=4).number_format = '#,##0.00'
+        if stat['count'] > 0:
+            ws_daily.cell(row=row_num, column=4).value = float(stat['total'] / stat['count'])
+            ws_daily.cell(row=row_num, column=4).number_format = '#,##0.00'
     
-    # Orders detail sheet
-    ws_orders = wb.create_sheet("Orders Detail")
+    # ===== TRANSACTIONS DETAIL SHEET =====
+    ws_detail = wb.create_sheet("Transaction Details")
     
-    order_headers = ['Order ID', 'Date', 'Customer', 'Package', 'Amount (KES)', 'Payment Method', 'Reference']
-    for col_num, header in enumerate(order_headers, 1):
-        cell = ws_orders.cell(row=1, column=col_num)
+    detail_headers = ['Reference', 'Date', 'Customer', 'Email', 'Amount (KES)', 'Payment Type', 'Method', 'Status']
+    for col_num, header in enumerate(detail_headers, 1):
+        cell = ws_detail.cell(row=1, column=col_num)
         cell.value = header
         cell.font = Font(bold=True)
         cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
         cell.font = Font(color="FFFFFF", bold=True)
     
-    for row_num, order in enumerate(orders, 2):
-        ws_orders.cell(row=row_num, column=1).value = order.id
-        ws_orders.cell(row=row_num, column=2).value = order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else ''
-        ws_orders.cell(row=row_num, column=3).value = order.user.get_full_name() if order.user else 'Guest'
-        ws_orders.cell(row=row_num, column=4).value = order.package.name if order.package else 'N/A'
-        ws_orders.cell(row=row_num, column=5).value = float(order.amount)
-        ws_orders.cell(row=row_num, column=5).number_format = '#,##0.00'
-        ws_orders.cell(row=row_num, column=6).value = order.payment_method or 'N/A'
-        ws_orders.cell(row=row_num, column=7).value = order.reference or ''
+    for row_num, trans in enumerate(transactions, 2):
+        ws_detail.cell(row=row_num, column=1).value = trans.reference
+        ws_detail.cell(row=row_num, column=2).value = trans.created_at.strftime('%Y-%m-%d %H:%M') if trans.created_at else ''
+        ws_detail.cell(row=row_num, column=3).value = trans.user.get_full_name() if trans.user else 'Guest'
+        ws_detail.cell(row=row_num, column=4).value = trans.user.email if trans.user else 'N/A'
+        ws_detail.cell(row=row_num, column=5).value = float(trans.amount)
+        ws_detail.cell(row=row_num, column=5).number_format = '#,##0.00'
+        ws_detail.cell(row=row_num, column=6).value = trans.payment_type or 'N/A'
+        ws_detail.cell(row=row_num, column=7).value = trans.payment_method or 'N/A'
+        ws_detail.cell(row=row_num, column=8).value = trans.status
     
-    # Auto-adjust all sheets
+    # ===== AUTO-ADJUST COLUMN WIDTHS (FIXED) =====
     for sheet in wb.worksheets:
-        for column in sheet.columns:
-            max_length = 0
-            column_letter = column[0].column_letter
-            for cell in column:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except:
-                    pass
-            adjusted_width = min(max_length + 2, 50)
-            sheet.column_dimensions[column_letter].width = adjusted_width
+        if sheet.title == "Summary":
+            # Manual widths for summary sheet (has merged cells)
+            sheet.column_dimensions['A'].width = 20
+            sheet.column_dimensions['B'].width = 20
+            sheet.column_dimensions['C'].width = 15
+            sheet.column_dimensions['D'].width = 15
+            sheet.column_dimensions['E'].width = 15
+            sheet.column_dimensions['F'].width = 15
+        else:
+            # Auto-adjust for other sheets
+            for col in sheet.columns:
+                max_length = 0
+                col_letter = None
+                for cell in col:
+                    if cell and not isinstance(cell, openpyxl.cell.cell.MergedCell):
+                        if col_letter is None:
+                            col_letter = get_column_letter(cell.column)
+                        try:
+                            if cell.value and len(str(cell.value)) > max_length:
+                                max_length = len(str(cell.value))
+                        except:
+                            pass
+                if col_letter and max_length > 0:
+                    adjusted_width = min(max_length + 2, 50)
+                    sheet.column_dimensions[col_letter].width = adjusted_width
     
     wb.save(response)
     return response

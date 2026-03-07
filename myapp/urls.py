@@ -331,6 +331,14 @@ path('payment/', views.payment, name='payment_page'),
     path('sasapay/callback/', views.sasapay_callback, name='sasapay_callback'),
     path('sasapay/verify/', views.sasapay_verify, name='sasapay_verify'),
     path('sasapay/status/<str:reference>/', views.sasapay_status, name='sasapay_status'),
+
+
+    path('admin/api/users/export/', views.export_users, name='export_users'),
+    path('admin/api/orders/export/', views.export_orders, name='export_orders'),  # Uses PaymentTransaction
+    path('admin/api/courses/export/', views.export_courses, name='export_courses'),
+    path('admin/api/videos/export/', views.export_videos, name='export_videos'),  # Uses TrainingVideo
+    path('admin/api/pdfs/export/', views.export_pdfs, name='export_pdfs'),
+    path('admin/api/reports/revenue/export/', views.export_revenue_report, name='export_revenue_report'),
 ]
 
 # ==================== MEDIA FILES SERVING ====================

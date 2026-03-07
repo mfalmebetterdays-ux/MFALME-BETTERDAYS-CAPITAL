@@ -2043,8 +2043,7 @@
                 $('#pageTitle').text(titles[section] || 'Dashboard');
                 $('#pageSubtitle').text(`Manage your ${titles[section]?.toLowerCase() || 'content'}`);
                 
-                // Show loader briefly when switching sections
-                showLoader('Loading', `Loading ${titles[section] || 'section'}...`);
+                
                 
                 try {
                     switch(section) {
