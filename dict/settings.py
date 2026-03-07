@@ -9,7 +9,7 @@ from pathlib import Path
 import dj_database_url
 import ssl
 from datetime import datetime, timedelta
-from dotenv import load_dotenv  # ← ADDED!
+from dotenv import load_dotenv 
 
 try:
     ssl._create_default_https_context = ssl._create_unverified_context
@@ -20,36 +20,10 @@ except:
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ================================================
-# LOAD ENVIRONMENT VARIABLES - CRITICAL!
+# LOAD ENVIRONMENT VARIABLES
 # ================================================
 env_path = BASE_DIR / '.env'
-print("\n" + "="*60)
-print("📁 ENVIRONMENT VARIABLES LOADING")
-print("="*60)
-print(f"📁 Looking for .env at: {env_path}")
-print(f"📁 .env exists: {env_path.exists()}")
-
-if env_path.exists():
-    # Force load with override=True to ensure it takes precedence
-    load_dotenv(dotenv_path=env_path, override=True)
-    print("✅ .env file loaded successfully!")
-    
-    # Debug - print masked values
-    aws_key = os.environ.get('AWS_ACCESS_KEY_ID', '')
-    aws_secret = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
-    print(f"🔑 AWS_ACCESS_KEY_ID: {'✅ Set' if aws_key else '❌ MISSING'}")
-    if aws_key:
-        print(f"   Value: {aws_key[:5]}...{aws_key[-5:]}")
-    print(f"🔑 AWS_SECRET_ACCESS_KEY: {'✅ Set' if aws_secret else '❌ MISSING'}")
-else:
-    print("❌ .env file NOT FOUND!")
-    print(f"   Please create .env file at: {env_path}")
-    print("   With content:")
-    print("   AWS_ACCESS_KEY_ID=AKIA3EQ3LS2YGTKNMLH7")
-    print("   AWS_SECRET_ACCESS_KEY=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")
-    print("   AWS_STORAGE_BUCKET_NAME=aws-filez")
-    print("   AWS_S3_REGION_NAME=eu-north-1")
-print("="*60 + "\n")
+load_dotenv(dotenv_path=env_path, override=True)
 
 # ================================================
 # ENVIRONMENT DETECTION
@@ -57,109 +31,79 @@ print("="*60 + "\n")
 IS_RAILWAY = os.environ.get('RAILWAY', 'false').lower() == 'true' or 'RAILWAY_ENVIRONMENT' in os.environ
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-print("\n" + "="*60)
-print("🚀 MFALME BETTERDAYS CAPITAL - Starting Up")
-print("="*60)
-print(f"📦 Environment: {'Production' if not DEBUG else 'Development'}")
-print(f"🔧 DEBUG: {DEBUG}")
-print(f"🚂 Railway: {'Yes' if IS_RAILWAY else 'No'}")
-
 # ================================================
-# SECRET KEY
+# SECRET KEY - NO FALLBACK IN PRODUCTION!
 # ================================================
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
-# Handle missing SECRET_KEY
+# Handle missing SECRET_KEY safely
 if not SECRET_KEY:
     is_local = 'runserver' in sys.argv or 'manage.py' in sys.argv
     if DEBUG or is_local:
-        print("⚠️ WARNING: Using fallback SECRET_KEY for local development")
-        SECRET_KEY = 'django-insecure-dev-key-do-not-use-in-production-7x9p2m4k8j3h5g1f'
+        SECRET_KEY = 'django-insecure-dev-key-do-not-use-in-production'
+        print("⚠️ WARNING: Using development SECRET_KEY - DO NOT USE IN PRODUCTION")
     else:
         print("❌ CRITICAL: SECRET_KEY environment variable not set in production!")
         raise ValueError("SECRET_KEY must be set in production environment")
 
 # ================================================
-# AWS S3 CONFIGURATION
+# AWS S3 CONFIGURATION - VALIDATED BEFORE USE
 # ================================================
-
-# AWS Credentials - NOW READING FROM ENVIRONMENT (either .env or Railway)
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
-AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'eu-north-1')
+AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME')
 
-# CRITICAL VALIDATION
-if not AWS_ACCESS_KEY_ID:
-    print("❌ CRITICAL: AWS_ACCESS_KEY_ID is not set!")
-    print("   Check your .env file or Railway variables")
+# Determine if we should use S3
+AWS_CREDENTIALS_PRESENT = all([
+    AWS_ACCESS_KEY_ID, 
+    AWS_SECRET_ACCESS_KEY, 
+    AWS_STORAGE_BUCKET_NAME, 
+    AWS_S3_REGION_NAME
+])
+
+USE_S3 = AWS_CREDENTIALS_PRESENT and not (DEBUG and not IS_RAILWAY)
+
+# ================================================
+# STORAGE CONFIGURATION
+# ================================================
+if USE_S3:
+    # S3 Storage Settings
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     
-if not AWS_SECRET_ACCESS_KEY:
-    print("❌ CRITICAL: AWS_SECRET_ACCESS_KEY is not set!")
-    print("   Check your .env file or Railway variables")
-
-# CRITICAL: This tells Django to use S3 for file storage
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-# Make files publicly accessible
-AWS_S3_OBJECT_PARAMETERS = {
-    'CacheControl': 'max-age=86400',  # Cache for 24 hours
-}
-
-# Performance optimizations
-AWS_S3_FILE_OVERWRITE = False
-AWS_S3_SIGNATURE_VERSION = 's3v4'
-AWS_S3_USE_SSL = True
-AWS_S3_VERIFY = True
-
-# Reduce AWS SDK retries for faster failure detection
-AWS_S3_MAX_ATTEMPTS = 3
-
-# Multipart upload settings for large files
-AWS_S3_MULTIPART_THRESHOLD = 100 * 1024 * 1024  # 100MB - use multipart for larger files
-AWS_S3_MULTIPART_CHUNKSIZE = 50 * 1024 * 1024   # 50MB chunks for parallel upload
-
-# Disable query string auth for public URLs (faster access)
-AWS_QUERYSTRING_AUTH = False
-AWS_QUERYSTRING_EXPIRE = 86400  # 24 hours
-
-# Set DEFAULT_ACL based on bucket configuration
-AWS_DEFAULT_ACL = 'public-read'
-
-# Direct S3 URL (no CloudFront)
-AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
-
-# Media URL - use direct S3 URL
-MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
-
-# ================================================
-# LOCAL MEDIA FALLBACK (for development)
-# ================================================
-if DEBUG and not IS_RAILWAY:
-    # For local development, use local storage
+    # Make files publicly accessible
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',  # Cache for 24 hours
+    }
+    
+    # Performance optimizations
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_S3_USE_SSL = True
+    AWS_S3_VERIFY = True
+    AWS_S3_MAX_ATTEMPTS = 3
+    
+    # Multipart upload settings for large files
+    AWS_S3_MULTIPART_THRESHOLD = 100 * 1024 * 1024  # 100MB
+    AWS_S3_MULTIPART_CHUNKSIZE = 50 * 1024 * 1024   # 50MB chunks
+    
+    # Disable query string auth for public URLs
+    AWS_QUERYSTRING_AUTH = False
+    AWS_QUERYSTRING_EXPIRE = 86400  # 24 hours
+    
+    # Set DEFAULT_ACL based on bucket configuration
+    AWS_DEFAULT_ACL = 'public-read'
+    
+    # Direct S3 URL
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
+    
+else:
+    # Local Storage Fallback
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
     MEDIA_URL = '/media/'
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-    
-    # Create media directory
-    try:
-        os.makedirs(MEDIA_ROOT, exist_ok=True)
-        print(f"📁 Local media directory: {MEDIA_ROOT}")
-    except:
-        pass
-
-print("\n" + "="*60)
-print("☁️  AWS S3 CONFIGURATION")
-print("="*60)
-print(f"📦 Bucket: {AWS_STORAGE_BUCKET_NAME}")
-print(f"📍 Region: {AWS_S3_REGION_NAME}")
-print(f"🔑 Access Key: {'✅ Set' if AWS_ACCESS_KEY_ID else '❌ MISSING'}")
-print(f"🔑 Secret Key: {'✅ Set' if AWS_SECRET_ACCESS_KEY else '❌ MISSING'}")
-print(f"📡 Storage Backend: {DEFAULT_FILE_STORAGE}")
-print(f"📡 Media URL: {MEDIA_URL}")
-print(f"🔓 Public Access: {'✅ Enabled' if AWS_DEFAULT_ACL == 'public-read' else '⚠️ Using bucket policy'}")
-print(f"⚡ Multipart threshold: 100MB")
-print("="*60 + "\n")
+    os.makedirs(MEDIA_ROOT, exist_ok=True)
 
 # ================================================
 # HOSTS & SECURITY
@@ -193,7 +137,7 @@ if railway_domain:
     CSRF_TRUSTED_ORIGINS.append(railway_domain)
 
 # Security settings for production
-if not DEBUG and 'runserver' not in sys.argv:
+if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
@@ -205,11 +149,6 @@ if not DEBUG and 'runserver' not in sys.argv:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
     X_FRAME_OPTIONS = 'DENY'
-else:
-    SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
-    print("🔓 Running in HTTP mode (development)")
 
 # ================================================
 # APPLICATION DEFINITION
@@ -261,9 +200,9 @@ TEMPLATES = [
 WSGI_APPLICATION = 'dict.wsgi.application'
 
 # ================================================
-# DATABASE CONFIGURATION
+# DATABASE CONFIGURATION - NO HARDCODED CREDENTIALS!
 # ================================================
-DATABASE_URL = os.environ.get('DATABASE_URL', "postgresql://postgres:LJzpCEAuJalpOHrSxpTrsWkFjkztJhHj@mainline.proxy.rlwy.net:49307/railway")
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
     DATABASES = {
@@ -339,21 +278,26 @@ AUTH_USER_MODEL = 'myapp.MfalmeUsers'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ================================================
-# EMAIL CONFIGURATION
+# EMAIL CONFIGURATION - NO HARDCODED PASSWORDS!
 # ================================================
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'mfalmebetterdays@gmail.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'bccpooxkwxdassxh')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False
-DEFAULT_FROM_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
-SERVER_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
-ADMIN_EMAILS = [EMAIL_HOST_USER, 'support@mfalmebetterdayscapital.com']
-EMAIL_TIMEOUT = 30
-EMAIL_CONNECTION_TIMEOUT = 30
+if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    DEFAULT_FROM_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
+    SERVER_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
+    ADMIN_EMAILS = [EMAIL_HOST_USER, 'support@mfalmebetterdayscapital.com']
+    EMAIL_TIMEOUT = 30
+    EMAIL_CONNECTION_TIMEOUT = 30
+elif DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    print("📧 Using console email backend (development)")
+else:
+    print("⚠️ Email not configured - email functionality will fail!")
 
 # ================================================
 # SESSION CONFIGURATION
@@ -405,10 +349,9 @@ if os.environ.get('REDIS_URL'):
             }
         }
     }
-    print("✅ Redis cache configured")
 
 # ================================================
-# LOGGING
+# LOGGING - DON'T LOG SECRETS!
 # ================================================
 LOGGING = {
     'version': 1,
@@ -440,9 +383,6 @@ LOGGING = {
     'root': {'handlers': ['console', 'file'], 'level': 'DEBUG' if DEBUG else 'INFO'},
 }
 
-log_dir = os.path.join(BASE_DIR, 'logs')
-os.makedirs(log_dir, exist_ok=True)
-
 # ================================================
 # SITE SETTINGS
 # ================================================
@@ -465,9 +405,12 @@ MAX_VERIFICATION_ATTEMPTS = 5
 HEALTH_CHECK_PATHS = ['/', '/health/', '/healthcheck/']
 
 # ================================================
-# SASAPAY CONFIGURATION
+# SASAPAY CONFIGURATION - NO HARDCODED SECRETS!
 # ================================================
 SASAPAY_ENVIRONMENT = os.environ.get('SASAPAY_ENVIRONMENT', 'sandbox' if DEBUG else 'live')
+SASAPAY_CLIENT_ID = os.environ.get('SASAPAY_CLIENT_ID')
+SASAPAY_CLIENT_SECRET = os.environ.get('SASAPAY_CLIENT_SECRET')
+SASAPAY_MERCHANT_CODE = os.environ.get('SASAPAY_MERCHANT_CODE', '600980')
 
 SASAPAY_NETWORK_CODES = {
     'SASAPAY': '0',
@@ -476,58 +419,58 @@ SASAPAY_NETWORK_CODES = {
     'TKASH': '63907',
 }
 
-SASAPAY_CONFIG = {
-    'CLIENT_ID': os.environ.get('SASAPAY_CLIENT_ID', 'I4w49w1vftEVXTkMLwHQLr0DxdeXQYh34tYVFi5A'),
-    'CLIENT_SECRET': os.environ.get('SASAPAY_CLIENT_SECRET', 'AfnotJReSgwaICxM6meV9IPbciQyOzuRLPLFyOmjzRzdXGZcptp5rrurstk8FAi5G8hcXP33tPiikjwEOR3CSrLlkeJs3b8G3feUq8QHKf0sJtiiS65BL6QCPe6AxC1X'),
-    'ENVIRONMENT': SASAPAY_ENVIRONMENT,
-    'MERCHANT_CODE': os.environ.get('SASAPAY_MERCHANT_CODE', '600980'),
-    'CALLBACK_URL': os.environ.get('SASAPAY_CALLBACK_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/sasapay/callback/'),
-    'IPN_URL': os.environ.get('SASAPAY_IPN_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/sasapay/ipn/'),
-    'NETWORK_CODES': SASAPAY_NETWORK_CODES,
-}
+# Only configure SasaPay if credentials exist
+if SASAPAY_CLIENT_ID and SASAPAY_CLIENT_SECRET:
+    SASAPAY_CONFIG = {
+        'CLIENT_ID': SASAPAY_CLIENT_ID,
+        'CLIENT_SECRET': SASAPAY_CLIENT_SECRET,
+        'ENVIRONMENT': SASAPAY_ENVIRONMENT,
+        'MERCHANT_CODE': SASAPAY_MERCHANT_CODE,
+        'CALLBACK_URL': os.environ.get('SASAPAY_CALLBACK_URL', f'{SITE_URL}/sasapay/callback/'),
+        'IPN_URL': os.environ.get('SASAPAY_IPN_URL', f'{SITE_URL}/sasapay/ipn/'),
+        'NETWORK_CODES': SASAPAY_NETWORK_CODES,
+    }
 
-# SasaPay API Endpoints
-if SASAPAY_ENVIRONMENT == 'sandbox':
-    SASAPAY_BASE_URL = 'https://sandbox.sasapay.app'
-    print("🔧 SasaPay: Using SANDBOX environment")
-else:
-    SASAPAY_BASE_URL = os.environ.get('SASAPAY_LIVE_URL', 'https://api.sasapay.app')
-    print("💰 SasaPay: Using LIVE environment")
+    # SasaPay API Endpoints
+    if SASAPAY_ENVIRONMENT == 'sandbox':
+        SASAPAY_BASE_URL = 'https://sandbox.sasapay.app'
+    else:
+        SASAPAY_BASE_URL = os.environ.get('SASAPAY_LIVE_URL', 'https://api.sasapay.app')
 
-SASAPAY_API_URL = f'{SASAPAY_BASE_URL}/api/v1'
-SASAPAY_AUTH_URL = f'{SASAPAY_BASE_URL}/api/v1/auth/token/'
-SASAPAY_PAYMENTS_URL = f'{SASAPAY_BASE_URL}/api/v1/payments'
-SASAPAY_REQUEST_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/request-payment/'
-SASAPAY_PROCESS_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/process-payment/'
-SASAPAY_CHECKOUT_URL = f'{SASAPAY_BASE_URL}/checkout'
+    SASAPAY_API_URL = f'{SASAPAY_BASE_URL}/api/v1'
+    SASAPAY_AUTH_URL = f'{SASAPAY_BASE_URL}/api/v1/auth/token/'
+    SASAPAY_PAYMENTS_URL = f'{SASAPAY_BASE_URL}/api/v1/payments'
+    SASAPAY_REQUEST_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/request-payment/'
+    SASAPAY_PROCESS_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/process-payment/'
+    SASAPAY_CHECKOUT_URL = f'{SASAPAY_BASE_URL}/checkout'
 
-SASAPAY_CONFIG.update({
-    'BASE_URL': SASAPAY_BASE_URL,
-    'API_URL': SASAPAY_API_URL,
-    'AUTH_URL': SASAPAY_AUTH_URL,
-    'PAYMENTS_URL': SASAPAY_PAYMENTS_URL,
-    'REQUEST_PAYMENT_URL': SASAPAY_REQUEST_PAYMENT_URL,
-    'PROCESS_PAYMENT_URL': SASAPAY_PROCESS_PAYMENT_URL,
-    'CHECKOUT_URL': SASAPAY_CHECKOUT_URL,
-})
+    SASAPAY_CONFIG.update({
+        'BASE_URL': SASAPAY_BASE_URL,
+        'API_URL': SASAPAY_API_URL,
+        'AUTH_URL': SASAPAY_AUTH_URL,
+        'PAYMENTS_URL': SASAPAY_PAYMENTS_URL,
+        'REQUEST_PAYMENT_URL': SASAPAY_REQUEST_PAYMENT_URL,
+        'PROCESS_PAYMENT_URL': SASAPAY_PROCESS_PAYMENT_URL,
+        'CHECKOUT_URL': SASAPAY_CHECKOUT_URL,
+    })
 
 USD_TO_KES_RATE = int(os.environ.get('USD_TO_KES_RATE', 129))
 
 # ================================================
 # PAYSTACK CONFIGURATION
 # ================================================
-PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', '')
-PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY', '')
+PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY')
+PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY')
 
 # ================================================
 # PESAPAL CONFIGURATION
 # ================================================
 PESAPAL_CONFIG = {
-    'CONSUMER_KEY': os.environ.get('PESAPAL_CONSUMER_KEY', ''),
-    'CONSUMER_SECRET': os.environ.get('PESAPAL_CONSUMER_SECRET', ''),
+    'CONSUMER_KEY': os.environ.get('PESAPAL_CONSUMER_KEY'),
+    'CONSUMER_SECRET': os.environ.get('PESAPAL_CONSUMER_SECRET'),
     'ENVIRONMENT': os.environ.get('PESAPAL_ENVIRONMENT', 'sandbox'),
-    'CALLBACK_URL': os.environ.get('PESAPAL_CALLBACK_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/pesapal/callback/'),
-    'IPN_URL': os.environ.get('PESAPAL_IPN_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/pesapal/ipn/'),
+    'CALLBACK_URL': os.environ.get('PESAPAL_CALLBACK_URL', f'{SITE_URL}/pesapal/callback/'),
+    'IPN_URL': os.environ.get('PESAPAL_IPN_URL', f'{SITE_URL}/pesapal/ipn/'),
 }
 
 # ================================================
@@ -538,7 +481,6 @@ if IS_RAILWAY:
     FILE_UPLOAD_TEMP_DIR = '/tmp'
     if 'default' in DATABASES:
         DATABASES['default']['CONN_MAX_AGE'] = 180
-    print("🚂 Railway optimizations applied")
 
 # ================================================
 # DEVELOPMENT SETTINGS
@@ -546,59 +488,26 @@ if IS_RAILWAY:
 if DEBUG:
     INTERNAL_IPS = ['127.0.0.1', 'localhost']
     ALLOWED_HOSTS = ['*']
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    print("⚠️ DEBUG MODE: Emails printed to console")
+    
+    # Create necessary directories
+    os.makedirs(os.path.join(BASE_DIR, 'staticfiles'), exist_ok=True)
+    os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
+    os.makedirs(os.path.join(BASE_DIR, 'media'), exist_ok=True)
 
 # ================================================
-# CRITICAL FIX: FORCE STORAGE BACKEND TO USE S3
+# FINAL VERIFICATION (WITHOUT EXPOSING SECRETS!)
 # ================================================
 print("\n" + "="*60)
-print("🔧 APPLYING STORAGE BACKEND FIX")
+print("🚀 MFALME BETTERDAYS CAPITAL - Configuration Loaded")
 print("="*60)
-
-# Force reload the storage module to ensure S3 is used
-if 'django.core.files.storage' in sys.modules:
-    del sys.modules['django.core.files.storage']
-    print("✅ Cleared cached storage module")
-
-# Force S3 storage
-try:
-    from storages.backends.s3boto3 import S3Boto3Storage
-    
-    # Create instance with settings
-    s3_storage = S3Boto3Storage()
-    
-    # Monkey patch the default_storage at module level
-    import django.core.files.storage
-    django.core.files.storage.default_storage = s3_storage
-    
-    # Also update the local reference
-    from django.core.files.storage import default_storage
-    default_storage = s3_storage
-    
-    print(f"✅ Successfully set storage to: {default_storage.__class__.__name__}")
-    if hasattr(default_storage, 'bucket_name'):
-        print(f"📦 Bucket: {default_storage.bucket_name}")
-    
-except Exception as e:
-    print(f"❌ Failed to set S3 storage: {e}")
-    import traceback
-    traceback.print_exc()
-
-print("="*60 + "\n")
-
-# ================================================
-# FINAL STORAGE VERIFICATION
-# ================================================
-print("📊 FINAL STORAGE CONFIGURATION:")
-print(f"   DEFAULT_FILE_STORAGE setting: {DEFAULT_FILE_STORAGE}")
-
-# Re-import to get the current state
-from django.core.files.storage import default_storage as final_storage
-print(f"   Actual storage class: {final_storage.__class__.__name__}")
-print(f"   Actual storage module: {final_storage.__class__.__module__}")
-if hasattr(final_storage, 'bucket_name'):
-    print(f"   Bucket: {final_storage.bucket_name}")
+print(f"📦 Environment: {'PRODUCTION' if not DEBUG else 'DEVELOPMENT'}")
+print(f"📍 Timezone: Africa/Nairobi")
+print(f"☁️  Storage: {'AWS S3' if USE_S3 else 'Local Filesystem'}")
+print(f"📧 Email: {'Configured' if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD else 'Not Configured'}")
+print(f"💰 SasaPay: {'Configured' if SASAPAY_CLIENT_ID and SASAPAY_CLIENT_SECRET else 'Not Configured'}")
+print(f"💳 Paystack: {'Configured' if PAYSTACK_PUBLIC_KEY and PAYSTACK_SECRET_KEY else 'Not Configured'}")
+print(f"💱 USD to KES Rate: {USD_TO_KES_RATE}")
+print(f"🚂 Railway: {'Yes' if IS_RAILWAY else 'No'}")
 print("="*60 + "\n")
 
 # ================================================
@@ -611,5 +520,5 @@ for directory in ['staticfiles', 'logs']:
 # ================================================
 # STARTUP COMPLETE
 # ================================================
-print("✅ Settings loaded successfully with AWS S3 integration!")
+print("✅ Settings loaded successfully!")
 print("="*60 + "\n")
