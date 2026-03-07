@@ -9,6 +9,8 @@ from pathlib import Path
 import dj_database_url
 import ssl
 from datetime import datetime, timedelta
+from dotenv import load_dotenv  # ← ADDED!
+
 try:
     ssl._create_default_https_context = ssl._create_unverified_context
 except:
@@ -16,6 +18,38 @@ except:
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# ================================================
+# LOAD ENVIRONMENT VARIABLES - CRITICAL!
+# ================================================
+env_path = BASE_DIR / '.env'
+print("\n" + "="*60)
+print("📁 ENVIRONMENT VARIABLES LOADING")
+print("="*60)
+print(f"📁 Looking for .env at: {env_path}")
+print(f"📁 .env exists: {env_path.exists()}")
+
+if env_path.exists():
+    # Force load with override=True to ensure it takes precedence
+    load_dotenv(dotenv_path=env_path, override=True)
+    print("✅ .env file loaded successfully!")
+    
+    # Debug - print masked values
+    aws_key = os.environ.get('AWS_ACCESS_KEY_ID', '')
+    aws_secret = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
+    print(f"🔑 AWS_ACCESS_KEY_ID: {'✅ Set' if aws_key else '❌ MISSING'}")
+    if aws_key:
+        print(f"   Value: {aws_key[:5]}...{aws_key[-5:]}")
+    print(f"🔑 AWS_SECRET_ACCESS_KEY: {'✅ Set' if aws_secret else '❌ MISSING'}")
+else:
+    print("❌ .env file NOT FOUND!")
+    print(f"   Please create .env file at: {env_path}")
+    print("   With content:")
+    print("   AWS_ACCESS_KEY_ID=AKIA3EQ3LS2YGTKNMLH7")
+    print("   AWS_SECRET_ACCESS_KEY=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")
+    print("   AWS_STORAGE_BUCKET_NAME=aws-filez")
+    print("   AWS_S3_REGION_NAME=eu-north-1")
+print("="*60 + "\n")
 
 # ================================================
 # ENVIRONMENT DETECTION
@@ -46,14 +80,23 @@ if not SECRET_KEY:
         raise ValueError("SECRET_KEY must be set in production environment")
 
 # ================================================
-# AWS S3 CONFIGURATION - EXACT SAME PATTERN AS LUMENDEO.TV
+# AWS S3 CONFIGURATION
 # ================================================
 
-# AWS Credentials
+# AWS Credentials - NOW READING FROM ENVIRONMENT (either .env or Railway)
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'eu-north-1')
+
+# CRITICAL VALIDATION
+if not AWS_ACCESS_KEY_ID:
+    print("❌ CRITICAL: AWS_ACCESS_KEY_ID is not set!")
+    print("   Check your .env file or Railway variables")
+    
+if not AWS_SECRET_ACCESS_KEY:
+    print("❌ CRITICAL: AWS_SECRET_ACCESS_KEY is not set!")
+    print("   Check your .env file or Railway variables")
 
 # CRITICAL: This tells Django to use S3 for file storage
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
@@ -81,9 +124,7 @@ AWS_QUERYSTRING_AUTH = False
 AWS_QUERYSTRING_EXPIRE = 86400  # 24 hours
 
 # Set DEFAULT_ACL based on bucket configuration
-# If your bucket supports ACLs, use 'public-read'
-# If your bucket doesn't support ACLs, set to None and use bucket policy
-AWS_DEFAULT_ACL = 'public-read'  # Change to None if bucket doesn't support ACLs
+AWS_DEFAULT_ACL = 'public-read'
 
 # Direct S3 URL (no CloudFront)
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
