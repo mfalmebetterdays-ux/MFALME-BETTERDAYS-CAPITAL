@@ -2373,7 +2373,7 @@
                                         <td>${getThumbnailHtml(imageUrl, course.title)}</td>
                                         <td>${course.name || course.title || 'Untitled'}</td>
                                         <td>CRS-${(course.id || '').toString().padStart(4, '0')}</td>
-                                        <td>${formatCurrency(price, 'KES')}</td>
+                                        <td>${formatCurrency(price, 'USD')}</td>
                                         <td>${course.videos || 0}</td>
                                         <td>${course.pdfs || 0}</td>
                                         <td><span class="status-badge status-${status}">${status}</span></td>
