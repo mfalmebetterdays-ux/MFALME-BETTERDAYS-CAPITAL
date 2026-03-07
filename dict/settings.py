@@ -1,6 +1,6 @@
 """
-Django settings for dict project - RAILWAY PRODUCTION FIXED
-Production-ready settings for MFALME BETTERDAYS CAPITAL
+Django settings for dict project - MFALME BETTERDAYS CAPITAL
+Production-ready settings with AWS S3 for media files
 """
 
 import os
@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 import dj_database_url
 import ssl
+from datetime import datetime, timedelta
 try:
     ssl._create_default_https_context = ssl._create_unverified_context
 except:
@@ -16,123 +17,112 @@ except:
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ===== DEBUG SETTING - MUST BE DEFINED FIRST =====
-# SECURITY WARNING: don't run with debug turned on in production!
+# ================================================
+# ENVIRONMENT DETECTION
+# ================================================
+IS_RAILWAY = os.environ.get('RAILWAY', 'false').lower() == 'true' or 'RAILWAY_ENVIRONMENT' in os.environ
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-# ===== SECURITY SETTINGS =====
-# SECURITY WARNING: keep the secret key used in production secret!
+print("\n" + "="*60)
+print("🚀 MFALME BETTERDAYS CAPITAL - Starting Up")
+print("="*60)
+print(f"📦 Environment: {'Production' if not DEBUG else 'Development'}")
+print(f"🔧 DEBUG: {DEBUG}")
+print(f"🚂 Railway: {'Yes' if IS_RAILWAY else 'No'}")
+
+# ================================================
+# SECRET KEY
+# ================================================
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
-# Handle missing SECRET_KEY for both local and production
+# Handle missing SECRET_KEY
 if not SECRET_KEY:
-    # Check if we're running locally (manage.py runserver)
-    import sys
     is_local = 'runserver' in sys.argv or 'manage.py' in sys.argv
-    
     if DEBUG or is_local:
         print("⚠️ WARNING: Using fallback SECRET_KEY for local development")
         SECRET_KEY = 'django-insecure-dev-key-do-not-use-in-production-7x9p2m4k8j3h5g1f'
     else:
         print("❌ CRITICAL: SECRET_KEY environment variable not set in production!")
-        # In production, we should fail if no SECRET_KEY
         raise ValueError("SECRET_KEY must be set in production environment")
 
-# Print mode
-if DEBUG:
-    print("🔧 Running in DEBUG mode")
-else:
-    print("🚀 Running in PRODUCTION mode")
+# ================================================
+# AWS S3 CONFIGURATION - EXACT SAME PATTERN AS LUMENDEO.TV
+# ================================================
 
-# ===== SENSITIVE DATA - MUST BE ENVIRONMENT VARIABLES =====
-# Email Configuration - MOVED TO ENVIRONMENT VARIABLES
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'mfalmebetterdays@gmail.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')  # MUST be set in Railway
-if not EMAIL_HOST_PASSWORD and not DEBUG:
-    print("❌ CRITICAL: EMAIL_HOST_PASSWORD environment variable not set!")
+# AWS Credentials
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', 'AKIA3EQ3LS2YGTKNMLH7')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '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')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'aws-filez')
+AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'eu-north-1')
 
-# ===== SASA PAY CONFIGURATION =====
-# Determine environment - default to 'live' in production, 'sandbox' in debug
-if DEBUG:
-    DEFAULT_SASAPAY_ENV = 'sandbox'
-else:
-    DEFAULT_SASAPAY_ENV = 'live'
+# CRITICAL: This tells Django to use S3 for file storage
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
-SASAPAY_ENVIRONMENT = os.environ.get('SASAPAY_ENVIRONMENT', DEFAULT_SASAPAY_ENV)
-
-# Network codes from SasaPay documentation
-SASAPAY_NETWORK_CODES = {
-    'SASAPAY': '0',
-    'MPESA': '63902',
-    'AIRTEL': '63903',
-    'TKASH': '63907',
+# Make files publicly accessible
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',  # Cache for 24 hours
 }
 
-SASAPAY_CONFIG = {
-    'CLIENT_ID': os.environ.get('SASAPAY_CLIENT_ID', 'I4w49w1vftEVXTkMLwHQLr0DxdeXQYh34tYVFi5A'),
-    'CLIENT_SECRET': os.environ.get('SASAPAY_CLIENT_SECRET', 'AfnotJReSgwaICxM6meV9IPbciQyOzuRLPLFyOmjzRzdXGZcptp5rrurstk8FAi5G8hcXP33tPiikjwEOR3CSrLlkeJs3b8G3feUq8QHKf0sJtiiS65BL6QCPe6AxC1X'),
-    'ENVIRONMENT': SASAPAY_ENVIRONMENT,
-    'MERCHANT_CODE': os.environ.get('SASAPAY_MERCHANT_CODE', '600980'),  # Your merchant code from SasaPay
-    'CALLBACK_URL': os.environ.get('SASAPAY_CALLBACK_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/sasapay/callback/'),
-    'IPN_URL': os.environ.get('SASAPAY_IPN_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/sasapay/ipn/'),
-    'NETWORK_CODES': SASAPAY_NETWORK_CODES,
-}
+# Performance optimizations
+AWS_S3_FILE_OVERWRITE = False
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_S3_USE_SSL = True
+AWS_S3_VERIFY = True
 
-# SasaPay API Endpoints - Using OFFICIAL endpoints from documentation
-if SASAPAY_ENVIRONMENT == 'sandbox':
-    # Sandbox uses .app domain as per documentation
-    SASAPAY_BASE_URL = 'https://sandbox.sasapay.app'
-    SASAPAY_API_URL = f'{SASAPAY_BASE_URL}/api/v1'
-    SASAPAY_AUTH_URL = f'{SASAPAY_BASE_URL}/api/v1/auth/token/'
-    SASAPAY_PAYMENTS_URL = f'{SASAPAY_BASE_URL}/api/v1/payments'
-    SASAPAY_REQUEST_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/request-payment/'
-    SASAPAY_PROCESS_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/process-payment/'
-    SASAPAY_CHECKOUT_URL = f'{SASAPAY_BASE_URL}/checkout'
-    print("🔧 SasaPay: Using SANDBOX environment (.app domain)")
-    print(f"   Auth URL: {SASAPAY_AUTH_URL}")
-    print(f"   Request Payment URL: {SASAPAY_REQUEST_PAYMENT_URL}")
-else:
-    # Live endpoints - based on documentation pattern
-    SASAPAY_BASE_URL = os.environ.get('SASAPAY_LIVE_URL', 'https://api.sasapay.app')
-    SASAPAY_API_URL = f'{SASAPAY_BASE_URL}/api/v1'
-    SASAPAY_AUTH_URL = f'{SASAPAY_BASE_URL}/api/v1/auth/token/'
-    SASAPAY_PAYMENTS_URL = f'{SASAPAY_BASE_URL}/api/v1/payments'
-    SASAPAY_REQUEST_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/request-payment/'
-    SASAPAY_PROCESS_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/process-payment/'
-    SASAPAY_CHECKOUT_URL = os.environ.get('SASAPAY_CHECKOUT_URL', 'https://checkout.sasapay.app')
-    print("💰 SasaPay: Using LIVE environment (.app domain)")
-    print(f"   Auth URL: {SASAPAY_AUTH_URL}")
-    print(f"   Request Payment URL: {SASAPAY_REQUEST_PAYMENT_URL}")
+# Reduce AWS SDK retries for faster failure detection
+AWS_S3_MAX_ATTEMPTS = 3
 
-# Add all URLs to config for easy access in utils
-SASAPAY_CONFIG.update({
-    'BASE_URL': SASAPAY_BASE_URL,
-    'API_URL': SASAPAY_API_URL,
-    'AUTH_URL': SASAPAY_AUTH_URL,
-    'PAYMENTS_URL': SASAPAY_PAYMENTS_URL,
-    'REQUEST_PAYMENT_URL': SASAPAY_REQUEST_PAYMENT_URL,
-    'PROCESS_PAYMENT_URL': SASAPAY_PROCESS_PAYMENT_URL,
-    'CHECKOUT_URL': SASAPAY_CHECKOUT_URL,
-})
+# Multipart upload settings for large files
+AWS_S3_MULTIPART_THRESHOLD = 100 * 1024 * 1024  # 100MB - use multipart for larger files
+AWS_S3_MULTIPART_CHUNKSIZE = 50 * 1024 * 1024   # 50MB chunks for parallel upload
 
-# Also update the USD to KES rate if needed
-USD_TO_KES_RATE = int(os.environ.get('USD_TO_KES_RATE', 129))
+# Disable query string auth for public URLs (faster access)
+AWS_QUERYSTRING_AUTH = False
+AWS_QUERYSTRING_EXPIRE = 86400  # 24 hours
 
+# Set DEFAULT_ACL based on bucket configuration
+# If your bucket supports ACLs, use 'public-read'
+# If your bucket doesn't support ACLs, set to None and use bucket policy
+AWS_DEFAULT_ACL = 'public-read'  # Change to None if bucket doesn't support ACLs
 
-# ===== PAYSTACK CONFIGURATION =====
-PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', '')
-PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY', '')
+# Direct S3 URL (no CloudFront)
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
 
-# ===== PESAPAL CONFIGURATION =====
-PESAPAL_CONFIG = {
-    'CONSUMER_KEY': os.environ.get('PESAPAL_CONSUMER_KEY', ''),
-    'CONSUMER_SECRET': os.environ.get('PESAPAL_CONSUMER_SECRET', ''),
-    'ENVIRONMENT': os.environ.get('PESAPAL_ENVIRONMENT', 'sandbox'),
-    'CALLBACK_URL': os.environ.get('PESAPAL_CALLBACK_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/pesapal/callback/'),
-    'IPN_URL': os.environ.get('PESAPAL_IPN_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/pesapal/ipn/'),
-}
+# Media URL - use direct S3 URL
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
 
-# ===== HOSTS/ORIGINS =====
+# ================================================
+# LOCAL MEDIA FALLBACK (for development)
+# ================================================
+if DEBUG and not IS_RAILWAY:
+    # For local development, use local storage
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    MEDIA_URL = '/media/'
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    
+    # Create media directory
+    try:
+        os.makedirs(MEDIA_ROOT, exist_ok=True)
+        print(f"📁 Local media directory: {MEDIA_ROOT}")
+    except:
+        pass
+
+print("\n" + "="*60)
+print("☁️  AWS S3 CONFIGURATION")
+print("="*60)
+print(f"📦 Bucket: {AWS_STORAGE_BUCKET_NAME}")
+print(f"📍 Region: {AWS_S3_REGION_NAME}")
+print(f"🔑 Access Key: {'✅ Set' if AWS_ACCESS_KEY_ID else '❌ MISSING'}")
+print(f"🔑 Secret Key: {'✅ Set' if AWS_SECRET_ACCESS_KEY else '❌ MISSING'}")
+print(f"📡 Storage Backend: {DEFAULT_FILE_STORAGE}")
+print(f"📡 Media URL: {MEDIA_URL}")
+print(f"🔓 Public Access: {'✅ Enabled' if AWS_DEFAULT_ACL == 'public-read' else '⚠️ Using bucket policy'}")
+print(f"⚡ Multipart threshold: 100MB")
+print("="*60 + "\n")
+
+# ================================================
+# HOSTS & SECURITY
+# ================================================
 ALLOWED_HOSTS = [
     'mfalmebetterdayscapital.com',
     'www.mfalmebetterdayscapital.com',
@@ -143,11 +133,9 @@ ALLOWED_HOSTS = [
     '[::1]',
 ]
 
-# Add Railway public domain if available
 railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
 if railway_domain:
     ALLOWED_HOSTS.append(railway_domain)
-    # Also add without https:// if present
     if railway_domain.startswith('https://'):
         ALLOWED_HOSTS.append(railway_domain.replace('https://', ''))
 
@@ -158,7 +146,6 @@ CSRF_TRUSTED_ORIGINS = [
     'https://www.mfalmebetterdayscapital.com',
 ]
 
-# Add current domain to CSRF trusted origins
 if railway_domain:
     if not railway_domain.startswith('https://'):
         railway_domain = f'https://{railway_domain}'
@@ -171,22 +158,21 @@ if not DEBUG and 'runserver' not in sys.argv:
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    
-    # Additional production security
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
     X_FRAME_OPTIONS = 'DENY'
 else:
-    # Development settings - NO HTTPS redirects
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
     print("🔓 Running in HTTP mode (development)")
 
-# Application definition
+# ================================================
+# APPLICATION DEFINITION
+# ================================================
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -194,15 +180,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'myapp',  # Your custom app
+    'myapp',
     'whitenoise.runserver_nostatic',
+    'storages',  # Required for S3
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Must be after SecurityMiddleware
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -233,41 +219,44 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'dict.wsgi.application'
 
-# ===== DATABASE CONFIGURATION - POSTGRESQL DIRECT CONNECTION =====
-# NEW DATABASE URL - UPDATED
-DATABASE_URL = "postgresql://postgres:LJzpCEAuJalpOHrSxpTrsWkFjkztJhHj@mainline.proxy.rlwy.net:49307/railway"
+# ================================================
+# DATABASE CONFIGURATION
+# ================================================
+DATABASE_URL = os.environ.get('DATABASE_URL', "postgresql://postgres:LJzpCEAuJalpOHrSxpTrsWkFjkztJhHj@mainline.proxy.rlwy.net:49307/railway")
 
-# Parse the database URL
-db_config = dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
-
-# Configure database with proper SSL settings
-DATABASES = {
-    'default': {
-        **db_config,
-        'OPTIONS': {
-            'sslmode': 'require',  # Railway requires SSL
-            'connect_timeout': 10,
-        },
-        'CONN_MAX_AGE': 60,  # Keep connections alive
-        'CONN_HEALTH_CHECKS': True,  # Check connection health
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True
+        )
     }
-}
+    # Add SSL options
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+        'connect_timeout': 10,
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+            'CONN_MAX_AGE': 60,
+        }
+    }
 
-print("✅ PostgreSQL database configured with direct connection")
-print(f"📊 Database Host: mainline.proxy.rlwy.net:49307")
-print(f"📊 Database Name: railway")
-print(f"📊 Database User: postgres")
-
-# Password validation
+# ================================================
+# PASSWORD VALIDATION
+# ================================================
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        'OPTIONS': {
-            'min_length': 6,
-        }
+        'OPTIONS': {'min_length': 6}
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -277,80 +266,87 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Internationalization
+# ================================================
+# INTERNATIONALIZATION
+# ================================================
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Africa/Nairobi'
 USE_I18N = True
 USE_TZ = True
 
-# ===== STATIC FILES CONFIGURATION =====
+# ================================================
+# STATIC FILES (WhiteNoise)
+# ================================================
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ] if os.path.exists(os.path.join(BASE_DIR, 'static')) else []
 
-# WhiteNoise settings
-WHITENOISE_MAX_AGE = 31536000  # 1 year cache
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+WHITENOISE_MAX_AGE = 31536000
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_MANIFEST_STRICT = False
-WHITENOISE_AUTOREFRESH = DEBUG  # Auto-refresh in debug mode
+WHITENOISE_AUTOREFRESH = DEBUG
 
-# Default primary key field type
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# ===== CUSTOM USER MODEL =====
+# ================================================
+# CUSTOM USER MODEL
+# ================================================
 AUTH_USER_MODEL = 'myapp.MfalmeUsers'
 
-# ===== EMAIL CONFIGURATION =====
-# Gmail SMTP Configuration
-EMAIL_HOST_USER = "mfalmebetterdays@gmail.com"
-EMAIL_HOST_PASSWORD = "bccpooxkwxdassxh"
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ================================================
+# EMAIL CONFIGURATION
+# ================================================
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'mfalmebetterdays@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'bccpooxkwxdassxh')
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # Fixed: This should be smtp.gmail.com, not the email address
+EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 DEFAULT_FROM_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
 SERVER_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
-ADMIN_EMAILS = [EMAIL_HOST_USER]
-# Email timeouts
+ADMIN_EMAILS = [EMAIL_HOST_USER, 'support@mfalmebetterdayscapital.com']
 EMAIL_TIMEOUT = 30
 EMAIL_CONNECTION_TIMEOUT = 30
 
-# ===== SESSION CONFIGURATION =====
+# ================================================
+# SESSION CONFIGURATION
+# ================================================
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_COOKIE_AGE = 1209600
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_NAME = 'mfalme_session'
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
-SESSION_SAVE_EVERY_REQUEST = True  # CRITICAL: Ensures session is saved on every request
+SESSION_SAVE_EVERY_REQUEST = True
 
-# ===== AUTHENTICATION BACKENDS =====
+# ================================================
+# AUTHENTICATION
+# ================================================
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',  # Default backend
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
-# ===== LOGIN/LOGOUT URLS =====
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
 
-# ===== MEDIA FILES =====
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# File upload settings
+# ================================================
+# FILE UPLOAD SETTINGS
+# ================================================
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
 FILE_UPLOAD_PERMISSIONS = 0o644
 FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o755
 
-# ===== CACHING =====
+# ================================================
+# CACHING
+# ================================================
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -358,7 +354,21 @@ CACHES = {
     }
 }
 
-# ===== LOGGING CONFIGURATION =====
+if os.environ.get('REDIS_URL'):
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': os.environ.get('REDIS_URL'),
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            }
+        }
+    }
+    print("✅ Redis cache configured")
+
+# ================================================
+# LOGGING
+# ================================================
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -367,10 +377,6 @@ LOGGING = {
             'format': '[{asctime}] {levelname} {module} {message}',
             'style': '{',
             'datefmt': '%Y-%m-%d %H:%M:%S',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
         },
     },
     'handlers': {
@@ -386,185 +392,183 @@ LOGGING = {
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'django.request': {
-            'handlers': ['console', 'file'],
-            'level': 'ERROR',
-            'propagate': False,
-        },
-        'django.db.backends': {
-            'level': 'ERROR',
-            'handlers': ['console'],
-            'propagate': False,
-        },
-        'myapp': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'propagate': True,
-        },
+        'django': {'handlers': ['console', 'file'], 'level': 'INFO'},
+        'myapp': {'handlers': ['console', 'file'], 'level': 'DEBUG' if DEBUG else 'INFO'},
+        'storages': {'handlers': ['console'], 'level': 'INFO'},
     },
-    'root': {
-        'handlers': ['console', 'file'],
-        'level': 'DEBUG' if DEBUG else 'INFO',
-    },
+    'root': {'handlers': ['console', 'file'], 'level': 'DEBUG' if DEBUG else 'INFO'},
 }
 
-# Create logs directory if it doesn't exist
 log_dir = os.path.join(BASE_DIR, 'logs')
 os.makedirs(log_dir, exist_ok=True)
 
-# ===== CUSTOM SETTINGS =====
-# Site settings
+# ================================================
+# SITE SETTINGS
+# ================================================
 SITE_NAME = "MFALME BETTERDAYS CAPITAL"
 SITE_URL = os.environ.get('SITE_URL', 'https://mfalmebetterdayscapital.com')
 SUPPORT_PHONE = os.environ.get('SUPPORT_PHONE', '+254 706 286 667')
 SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'support@mfalmebetterdayscapital.com')
 
-# Application-specific settings
-MAX_FILE_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
+MAX_FILE_UPLOAD_SIZE = 10 * 1024 * 1024
 ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
 ALLOWED_DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt']
 
-# Exchange rate API (fallback)
 EXCHANGE_RATE_API = 'https://api.frankfurter.app/latest?from=USD&to=KES'
 DEFAULT_EXCHANGE_RATE = 160.0
 
-# Verification settings
 VERIFICATION_CODE_EXPIRY_MINUTES = 30
 VERIFICATION_CODE_LENGTH = 6
 MAX_VERIFICATION_ATTEMPTS = 5
 
-# ===== HEALTH CHECK CONFIGURATION =====
 HEALTH_CHECK_PATHS = ['/', '/health/', '/healthcheck/']
 
-# ===== STARTUP CHECKS =====
-def startup_checks():
-    """Perform startup checks and log configuration"""
-    startup_messages = []
-    
-    # Log configuration
-    startup_messages.append("=" * 60)
-    startup_messages.append("🚀 MFALME BETTERDAYS CAPITAL - Starting Up")
-    startup_messages.append("=" * 60)
-    
-    # Environment
-    startup_messages.append(f"📦 Environment: {'Production' if not DEBUG else 'Development'}")
-    startup_messages.append(f"🔧 DEBUG: {DEBUG}")
-    startup_messages.append(f"🌐 ALLOWED_HOSTS: {ALLOWED_HOSTS}")
-    
-    # HTTPS Mode
-    https_mode = SECURE_SSL_REDIRECT
-    startup_messages.append(f"🔒 HTTPS Redirects: {'ENABLED' if https_mode else 'DISABLED'}")
-    
-    # Database
-    startup_messages.append(f"🗄️  Database: PostgreSQL (configured directly)")
-    startup_messages.append(f"   Host: mainline.proxy.rlwy.net:49307")
-    startup_messages.append(f"   Database: railway")
-    startup_messages.append(f"   User: postgres")
-    
-    # Test database connection
-    try:
-        from django.db import connection
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1")
-        startup_messages.append("   ✅ Connection test: SUCCESS")
-    except Exception as e:
-        startup_messages.append(f"   ❌ Connection test: FAILED - {e}")
-    
-    # Email
-    if EMAIL_HOST_PASSWORD:
-        startup_messages.append(f"📧 Email: ✅ Configured ({EMAIL_HOST_USER})")
-    else:
-        startup_messages.append(f"📧 Email: ⚠️ Password missing - emails will fail")
-    
-    # SasaPay
-    sasapay_status = "✅ Configured" if SASAPAY_CONFIG['CLIENT_ID'] and SASAPAY_CONFIG['CLIENT_SECRET'] else "⚠️ Keys missing"
-    startup_messages.append(f"💳 SasaPay: {sasapay_status} ({SASAPAY_ENVIRONMENT})")
-    startup_messages.append(f"   Auth URL: {SASAPAY_AUTH_URL}")
-    
-    # Paystack
-    paystack_status = "✅ Configured" if PAYSTACK_PUBLIC_KEY else "⚠️ Keys missing"
-    startup_messages.append(f"💳 Paystack: {paystack_status}")
-    
-    # Static files
-    static_exists = os.path.exists(os.path.join(BASE_DIR, 'static'))
-    startup_messages.append(f"📁 Static Files: {'✅ Found' if static_exists else 'ℹ️ Not used'}")
-    
-    # Custom User Model
-    startup_messages.append(f"👤 Custom User Model: {AUTH_USER_MODEL}")
-    
-    # Session Settings
-    startup_messages.append(f"🍪 Session Engine: {SESSION_ENGINE}")
-    
-    startup_messages.append("=" * 60)
-    
-    # Print all startup messages
-    for msg in startup_messages:
-        print(msg)
+# ================================================
+# SASAPAY CONFIGURATION
+# ================================================
+SASAPAY_ENVIRONMENT = os.environ.get('SASAPAY_ENVIRONMENT', 'sandbox' if DEBUG else 'live')
 
-# ===== DEPLOYMENT SPECIFIC SETTINGS =====
-# Railway-specific optimizations
-if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RAILWAY_SERVICE_ID'):
-    # Ensure static files are collected
+SASAPAY_NETWORK_CODES = {
+    'SASAPAY': '0',
+    'MPESA': '63902',
+    'AIRTEL': '63903',
+    'TKASH': '63907',
+}
+
+SASAPAY_CONFIG = {
+    'CLIENT_ID': os.environ.get('SASAPAY_CLIENT_ID', 'I4w49w1vftEVXTkMLwHQLr0DxdeXQYh34tYVFi5A'),
+    'CLIENT_SECRET': os.environ.get('SASAPAY_CLIENT_SECRET', 'AfnotJReSgwaICxM6meV9IPbciQyOzuRLPLFyOmjzRzdXGZcptp5rrurstk8FAi5G8hcXP33tPiikjwEOR3CSrLlkeJs3b8G3feUq8QHKf0sJtiiS65BL6QCPe6AxC1X'),
+    'ENVIRONMENT': SASAPAY_ENVIRONMENT,
+    'MERCHANT_CODE': os.environ.get('SASAPAY_MERCHANT_CODE', '600980'),
+    'CALLBACK_URL': os.environ.get('SASAPAY_CALLBACK_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/sasapay/callback/'),
+    'IPN_URL': os.environ.get('SASAPAY_IPN_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/sasapay/ipn/'),
+    'NETWORK_CODES': SASAPAY_NETWORK_CODES,
+}
+
+# SasaPay API Endpoints
+if SASAPAY_ENVIRONMENT == 'sandbox':
+    SASAPAY_BASE_URL = 'https://sandbox.sasapay.app'
+    print("🔧 SasaPay: Using SANDBOX environment")
+else:
+    SASAPAY_BASE_URL = os.environ.get('SASAPAY_LIVE_URL', 'https://api.sasapay.app')
+    print("💰 SasaPay: Using LIVE environment")
+
+SASAPAY_API_URL = f'{SASAPAY_BASE_URL}/api/v1'
+SASAPAY_AUTH_URL = f'{SASAPAY_BASE_URL}/api/v1/auth/token/'
+SASAPAY_PAYMENTS_URL = f'{SASAPAY_BASE_URL}/api/v1/payments'
+SASAPAY_REQUEST_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/request-payment/'
+SASAPAY_PROCESS_PAYMENT_URL = f'{SASAPAY_PAYMENTS_URL}/process-payment/'
+SASAPAY_CHECKOUT_URL = f'{SASAPAY_BASE_URL}/checkout'
+
+SASAPAY_CONFIG.update({
+    'BASE_URL': SASAPAY_BASE_URL,
+    'API_URL': SASAPAY_API_URL,
+    'AUTH_URL': SASAPAY_AUTH_URL,
+    'PAYMENTS_URL': SASAPAY_PAYMENTS_URL,
+    'REQUEST_PAYMENT_URL': SASAPAY_REQUEST_PAYMENT_URL,
+    'PROCESS_PAYMENT_URL': SASAPAY_PROCESS_PAYMENT_URL,
+    'CHECKOUT_URL': SASAPAY_CHECKOUT_URL,
+})
+
+USD_TO_KES_RATE = int(os.environ.get('USD_TO_KES_RATE', 129))
+
+# ================================================
+# PAYSTACK CONFIGURATION
+# ================================================
+PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', '')
+PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY', '')
+
+# ================================================
+# PESAPAL CONFIGURATION
+# ================================================
+PESAPAL_CONFIG = {
+    'CONSUMER_KEY': os.environ.get('PESAPAL_CONSUMER_KEY', ''),
+    'CONSUMER_SECRET': os.environ.get('PESAPAL_CONSUMER_SECRET', ''),
+    'ENVIRONMENT': os.environ.get('PESAPAL_ENVIRONMENT', 'sandbox'),
+    'CALLBACK_URL': os.environ.get('PESAPAL_CALLBACK_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/pesapal/callback/'),
+    'IPN_URL': os.environ.get('PESAPAL_IPN_URL', 'https://mfalme-betterdays-capital-production.up.railway.app/pesapal/ipn/'),
+}
+
+# ================================================
+# RAILWAY OPTIMIZATIONS
+# ================================================
+if IS_RAILWAY:
     WHITENOISE_ROOT = STATIC_ROOT
-    
-    # Optimize for Railway's ephemeral filesystem
     FILE_UPLOAD_TEMP_DIR = '/tmp'
-    
-    # Database connection pooling for Railway
-    DATABASES['default']['CONN_MAX_AGE'] = 180
-    DATABASES['default']['CONN_HEALTH_CHECKS'] = True
-        
-    print("🚂 Railway environment detected - optimizations applied")
+    if 'default' in DATABASES:
+        DATABASES['default']['CONN_MAX_AGE'] = 180
+    print("🚂 Railway optimizations applied")
 
-# ===== DEVELOPMENT SETTINGS =====
+# ================================================
+# DEVELOPMENT SETTINGS
+# ================================================
 if DEBUG:
-    # Development-specific settings
     INTERNAL_IPS = ['127.0.0.1', 'localhost']
-    
-    # Allow all hosts for development
     ALLOWED_HOSTS = ['*']
-    
-    # Debug toolbar (optional)
-    try:
-        import debug_toolbar
-        INSTALLED_APPS.append('debug_toolbar')
-        MIDDLEWARE.insert(1, 'debug_toolbar.middleware.DebugToolbarMiddleware')
-    except ImportError:
-        pass
-    
-    # Show emails in console during development
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    print("⚠️ DEBUG MODE: Emails will be printed to console, not sent")
+    print("⚠️ DEBUG MODE: Emails printed to console")
 
-# ===== FINAL VALIDATION =====
-# Validate critical settings
-if not SECRET_KEY or SECRET_KEY == 'django-insecure-change-this-in-production':
-    if DEBUG:
-        print("⚠️ WARNING: Using fallback SECRET_KEY in development")
-    else:
-        print("⚠️ CRITICAL WARNING: Using default/insecure SECRET_KEY in production!")
+# ================================================
+# CRITICAL FIX: FORCE STORAGE BACKEND TO USE S3
+# ================================================
+print("\n" + "="*60)
+print("🔧 APPLYING STORAGE BACKEND FIX")
+print("="*60)
 
-if not EMAIL_HOST_PASSWORD and not DEBUG:
-    print("⚠️ CRITICAL WARNING: EMAIL_HOST_PASSWORD not set - email features will fail!")
+# Force reload the storage module to ensure S3 is used
+if 'django.core.files.storage' in sys.modules:
+    del sys.modules['django.core.files.storage']
+    print("✅ Cleared cached storage module")
 
-if not SASAPAY_CONFIG['CLIENT_ID'] or not SASAPAY_CONFIG['CLIENT_SECRET']:
-    print("⚠️ WARNING: SasaPay credentials not fully configured!")
+# Force S3 storage
+try:
+    from storages.backends.s3boto3 import S3Boto3Storage
+    
+    # Create instance with settings
+    s3_storage = S3Boto3Storage()
+    
+    # Monkey patch the default_storage at module level
+    import django.core.files.storage
+    django.core.files.storage.default_storage = s3_storage
+    
+    # Also update the local reference
+    from django.core.files.storage import default_storage
+    default_storage = s3_storage
+    
+    print(f"✅ Successfully set storage to: {default_storage.__class__.__name__}")
+    if hasattr(default_storage, 'bucket_name'):
+        print(f"📦 Bucket: {default_storage.bucket_name}")
+    
+except Exception as e:
+    print(f"❌ Failed to set S3 storage: {e}")
+    import traceback
+    traceback.print_exc()
 
-if DEBUG and 'railway' in str(ALLOWED_HOSTS).lower():
-    print("⚠️ WARNING: DEBUG=True in production-like environment!")
+print("="*60 + "\n")
 
-# Ensure critical directories exist
-for directory in ['staticfiles', 'media', 'logs']:
+# ================================================
+# FINAL STORAGE VERIFICATION
+# ================================================
+print("📊 FINAL STORAGE CONFIGURATION:")
+print(f"   DEFAULT_FILE_STORAGE setting: {DEFAULT_FILE_STORAGE}")
+
+# Re-import to get the current state
+from django.core.files.storage import default_storage as final_storage
+print(f"   Actual storage class: {final_storage.__class__.__name__}")
+print(f"   Actual storage module: {final_storage.__class__.__module__}")
+if hasattr(final_storage, 'bucket_name'):
+    print(f"   Bucket: {final_storage.bucket_name}")
+print("="*60 + "\n")
+
+# ================================================
+# ENSURE DIRECTORIES EXIST
+# ================================================
+for directory in ['staticfiles', 'logs']:
     dir_path = os.path.join(BASE_DIR, directory)
     os.makedirs(dir_path, exist_ok=True)
 
-# Run startup checks if this is a web process
-if 'gunicorn' in sys.argv or 'runserver' in sys.argv:
-    startup_checks()
-
-print("✅ Settings loaded successfully!")
+# ================================================
+# STARTUP COMPLETE
+# ================================================
+print("✅ Settings loaded successfully with AWS S3 integration!")
+print("="*60 + "\n")

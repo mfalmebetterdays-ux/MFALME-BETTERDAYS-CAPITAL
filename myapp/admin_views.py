@@ -1374,57 +1374,87 @@ def admin_api_video_detail(request, video_id):
 @admin_required
 @csrf_exempt
 def admin_api_video_create(request):
-    """Create a new video (with thumbnail)"""
+    """Create a new video - DIRECT UPLOAD TO S3 (NO PRESIGNED URLS!)"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
     try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
-    # Create video with thumbnail path if provided
-    video = TrainingVideo(
-        title=data.get('title'),
-        description=data.get('description', ''),
-        category=data.get('category', 'PTM'),
-        duration=int(data.get('duration', 30)),
-        price=Decimal(str(data.get('price', 0))),
-        video_url=data.get('video_url', ''),
-        allow_download=data.get('allow_download', False),
-        disable_screenshots=data.get('disable_screenshots', True),
-        order=data.get('order', 0),
-        is_active=data.get('is_active', True),
-    )
-    
-    # Set thumbnail path if provided from upload
-    if data.get('thumbnail_path'):
-        # This is the path where the thumbnail was saved during upload
-        video.thumbnail = data.get('thumbnail_path')
-    
-    # Set course if provided
-    course_id = data.get('course_id')
-    if course_id:
-        try:
-            video.course = Course.objects.get(id=course_id)
-        except Course.DoesNotExist:
-            pass
-    
-    video.save()
-    
-    # Log activity
-    admin_user = get_admin_user(request)
-    ActivityLog.objects.create(
-        user=admin_user,
-        action='ADMIN_ACTION',
-        description=f'Created video: {video.title}',
-        metadata={
-            'admin_username': request.session.get('admin_username'),
-            'video_id': video.id
-        }
-    )
-    
-    return JsonResponse({'success': True, 'id': video.id})
+        # Get data from form data (not JSON) because we're uploading files
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        category = request.POST.get('category', 'PTM')
+        duration = int(request.POST.get('duration', 30))
+        price = Decimal(str(request.POST.get('price', 0)))
+        video_url = request.POST.get('video_url', '')
+        allow_download = request.POST.get('allow_download') == 'true'
+        disable_screenshots = request.POST.get('disable_screenshots') == 'true'
+        order = int(request.POST.get('order', 0))
+        # FIXED: Default to 'true' when is_active is not provided
+        is_active = request.POST.get('is_active', 'true') == 'true'
+        course_id = request.POST.get('course_id')
+        
+        # Get the actual files from request.FILES
+        video_file = request.FILES.get('video_file')
+        thumbnail_file = request.FILES.get('thumbnail_file')
+        
+        if not title:
+            return JsonResponse({'error': 'Title is required'}, status=400)
+        
+        # Create video instance
+        video = TrainingVideo(
+            title=title,
+            description=description,
+            category=category,
+            duration=duration,
+            price=price,
+            video_url=video_url,
+            allow_download=allow_download,
+            disable_screenshots=disable_screenshots,
+            order=order,
+            is_active=is_active,  # ← Now defaults to True
+        )
+        
+        # DIRECT S3 UPLOAD - Django handles this automatically!
+        if video_file:
+            video.video_file = video_file  # ← Auto-uploads to S3!
+        if thumbnail_file:
+            video.thumbnail = thumbnail_file  # ← Auto-uploads to S3!
+        
+        # Set course if provided
+        if course_id:
+            try:
+                video.course = Course.objects.get(id=course_id)
+            except Course.DoesNotExist:
+                pass
+        
+        video.save()
+        
+        # Log activity
+        admin_user = get_admin_user(request)
+        ActivityLog.objects.create(
+            user=admin_user,
+            action='ADMIN_ACTION',
+            description=f'Created video: {video.title}',
+            metadata={
+                'admin_username': request.session.get('admin_username'),
+                'video_id': video.id,
+                'video_url': video.video_file.url if video.video_file else None,
+                'thumbnail_url': video.thumbnail.url if video.thumbnail else None
+            }
+        )
+        
+        return JsonResponse({
+            'success': True, 
+            'id': video.id,
+            'video_url': video.video_file.url if video.video_file else None,
+            'thumbnail_url': video.thumbnail.url if video.thumbnail else None
+        })
+        
+    except Exception as e:
+        print(f"Error creating video: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 @admin_required
@@ -1483,7 +1513,7 @@ def admin_api_video_update(request, video_id):
                     video.order = new_order
             
             if 'is_active' in request.POST:
-                is_active = request.POST.get('is_active') == 'true'
+                is_active = request.POST.get('is_active', 'true') == 'true'
                 old_status = 'active' if video.is_active else 'inactive'
                 new_status = 'active' if is_active else 'inactive'
                 if old_status != new_status:

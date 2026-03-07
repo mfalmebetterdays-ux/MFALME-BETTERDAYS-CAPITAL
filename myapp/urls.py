@@ -95,6 +95,11 @@ urlpatterns = [
     path('payment/success/<str:reference>/', views.payment_success, name='payment_success'),
     path('sasapay/status/<str:reference>/', views.sasapay_status, name='sasapay_status'),
     path('education/pay/', views.education_payment, name='education_payment'),
+
+    path('admin/api/get-s3-presigned-url/', views.get_s3_presigned_url, name='get_s3_presigned_url'),
+    path('admin/api/initiate-multipart-upload/', views.initiate_multipart_upload, name='initiate_multipart_upload'),
+    path('admin/api/complete-multipart-upload/', views.complete_multipart_upload, name='complete_multipart_upload'),
+    path('admin/api/abort-multipart-upload/', views.abort_multipart_upload, name='abort_multipart_upload'),
     
     # ==================== SUPPORT TICKETS ====================
     path('support/tickets/', views.support_tickets, name='support_tickets'),

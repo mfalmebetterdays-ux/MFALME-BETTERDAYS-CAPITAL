@@ -1651,20 +1651,13 @@
         
         // FIXED: Get thumbnail HTML - SIMPLE AND WORKING
         function getThumbnailHtml(imageUrl, title) {
-            if (imageUrl && imageUrl !== 'null' && imageUrl !== 'undefined' && imageUrl.trim() !== '') {
-                // Make sure URL is absolute if it's relative
-                let url = imageUrl;
-                if (url.startsWith('/')) {
-                    // It's already a relative path from root, keep as is
-                } else if (!url.startsWith('http')) {
-                    // Assume it's a media file
-                    url = '/media/' + url;
-                }
-                return `<img src="${url}" alt="${title || 'Image'}" class="thumbnail-img" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\\'no-thumbnail\\'><i class=\\'fas fa-image\\'></i></div>';">`;
-            } else {
-                return `<div class="no-thumbnail"><i class="fas fa-image"></i></div>`;
-            }
-        }
+    if (imageUrl && imageUrl !== 'null' && imageUrl !== 'undefined' && imageUrl.trim() !== '') {
+        // Use the URL directly - it should be a full HTTP URL from CloudFront or S3
+        return `<img src="${imageUrl}" alt="${title || 'Image'}" class="thumbnail-img" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\\'no-thumbnail\\'><i class=\\'fas fa-image\\'></i></div>';">`;
+    } else {
+        return `<div class="no-thumbnail"><i class="fas fa-image"></i></div>`;
+    }
+}
         
         // Get tier color
         function getTierColor(tier) {
@@ -3207,183 +3200,167 @@ function togglePopular(packageId) {
                 }
             });
         }
-        
+
+        // ========== FIXED VIDEO UPLOAD FUNCTIONS ==========
         function submitVideoForm() {
-            const videoFile = $('#video_file')[0]?.files[0];
-            if (!videoFile) {
-                showToast('Please select a video file', true);
-                return;
-            }
-            
-            showLoader('Uploading video...');
-            
-            const fileData = new FormData();
-            fileData.append('video_file', videoFile);
-            
-            const thumbnailFile = $('#thumbnail')[0]?.files[0];
-            if (thumbnailFile) {
-                fileData.append('thumbnail', thumbnailFile);
-            }
-            
-            $.ajax({
-                url: '/admin/api/videos/upload/',
-                method: 'POST',
-                headers: {'X-CSRFToken': csrftoken},
-                data: fileData,
-                processData: false,
-                contentType: false,
-                success: function(fileResponse) {
-                    console.log("Video file uploaded:", fileResponse);
-                    
-                    const videoData = {
-                        title: $('#title').val(),
-                        course_id: $('#course_id').val(),
-                        module: $('#module').val(),
-                        duration: $('#duration').val(),
-                        price: $('#price').val(),
-                        video_url: fileResponse.url,
-                        video_path: fileResponse.path,
-                        thumbnail_path: fileResponse.thumbnail_path
-                    };
-                    
-                    $.ajax({
-                        url: '/admin/api/videos/create/',
-                        method: 'POST',
-                        headers: {'X-CSRFToken': csrftoken},
-                        data: JSON.stringify(videoData),
-                        success: function() {
-                            hideLoader();
-                            showToast('Video uploaded successfully!');
-                            closeModal();
-                            loadVideos();
-                            loadDashboardData();
-                        },
-                        error: function(xhr) {
-                            console.error("Error creating video record:", xhr.responseText);
-                            hideLoader();
-                            let errorMsg = xhr.responseJSON?.error || 'Error creating video record';
-                            showToast(errorMsg, true);
-                        }
-                    });
-                },
-                error: function(xhr) {
-                    console.error("Error uploading video file:", xhr.responseText);
-                    hideLoader();
-                    let errorMsg = xhr.responseJSON?.error || 'Error uploading video file';
-                    showToast(errorMsg, true);
+    const title = $('#title').val().trim();
+    const videoFile = $('#video_file')[0]?.files[0];
+    const thumbnailFile = $('#thumbnail')[0]?.files[0];
+    const courseId = $('#course_id').val();
+    const module = $('#module').val();
+    const duration = $('#duration').val();
+    const price = $('#price').val();
+    
+    if (!title) {
+        showToast('Please enter a video title', true);
+        return;
+    }
+    
+    if (!videoFile) {
+        showToast('Please select a video file', true);
+        return;
+    }
+    
+    showLoader('Uploading to S3...');
+    
+    // Create FormData and append all fields
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('video_file', videoFile);
+    if (thumbnailFile) formData.append('thumbnail_file', thumbnailFile);
+    if (courseId) formData.append('course_id', courseId);
+    formData.append('module', module || '');
+    formData.append('duration', duration || '30');
+    formData.append('price', price || '0');
+    
+    // Send everything in ONE request
+    $.ajax({
+        url: '/admin/api/videos/create/',
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken
+        },
+        data: formData,
+        processData: false,
+        contentType: false,
+        xhr: function() {
+            const xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    $('#loaderText').text(`Uploading: ${percent}%`);
                 }
             });
+            return xhr;
+        },
+        success: function(response) {
+            console.log("✅ Upload successful:", response);
+            hideLoader();
+            showToast('Video uploaded successfully!');
+            closeModal();
+            loadVideos();
+            loadDashboardData();
+        },
+        error: function(xhr) {
+            console.error("❌ Upload failed:", xhr.responseText);
+            hideLoader();
+            let errorMsg = 'Upload failed';
+            try {
+                const resp = JSON.parse(xhr.responseText);
+                errorMsg = resp.error || resp.message || errorMsg;
+            } catch(e) {
+                errorMsg = xhr.responseText || errorMsg;
+            }
+            showToast(errorMsg, true);
         }
-        
-        function submitPDFForm() {
-            const title = $('#title').val().trim();
-            const pdfFile = $('#pdf_file')[0]?.files[0];
+    });
+}
+
+
+
+      // ========== SIMPLIFIED PDF UPLOAD FUNCTIONS - NO PRESIGNED URLS! ==========
+function submitPDFForm() {
+    const title = $('#title').val().trim();
+    const pdfFile = $('#pdf_file')[0]?.files[0];
+    const coverFile = $('#cover_image')[0]?.files[0];
+    const courseId = $('#course_id').val();
+    const pages = $('#pages').val();
+    const price = $('#price').val();
+    const accessLevel = $('#access_level').val();
+    const description = $('#description').val();
+    
+    if (!title) {
+        showToast('Please enter a PDF title', true);
+        return;
+    }
+    
+    if (!pdfFile) {
+        showToast('Please select a PDF file', true);
+        return;
+    }
+    
+    showLoader('Uploading PDF to S3...');
+    
+    // Create FormData and append all fields
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('pdf_file', pdfFile);
+    if (coverFile) formData.append('cover_image', coverFile);
+    if (courseId) formData.append('course_id', courseId);
+    formData.append('pages', pages || '0');
+    formData.append('price', price || '0');
+    formData.append('access_level', accessLevel || 'free');
+    formData.append('description', description || '');
+    
+    // Send everything in ONE request - Django handles S3 upload automatically!
+    $.ajax({
+        url: '/admin/api/pdfs/create/',
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken
+        },
+        data: formData,
+        processData: false,
+        contentType: false,
+        xhr: function() {
+            const xhr = new window.XMLHttpRequest();
             
-            if (!title) {
-                showToast('Please enter a PDF title', true);
-                return;
-            }
-            
-            if (!pdfFile) {
-                showToast('Please select a PDF file', true);
-                return;
-            }
-            
-            if (pdfFile.type !== 'application/pdf') {
-                showToast('Please upload a valid PDF file', true);
-                return;
-            }
-            
-            const maxSize = 50 * 1024 * 1024;
-            if (pdfFile.size > maxSize) {
-                showToast('PDF file is too large. Maximum size is 50MB', true);
-                return;
-            }
-            
-            showLoader('Uploading PDF file...');
-            
-            const fileData = new FormData();
-            fileData.append('pdf_file', pdfFile);
-            
-            const coverFile = $('#cover_image')[0]?.files[0];
-            if (coverFile) {
-                fileData.append('cover_image', coverFile);
-            }
-            
-            $.ajax({
-                url: '/admin/api/pdfs/upload/',
-                method: 'POST',
-                headers: {'X-CSRFToken': csrftoken},
-                data: fileData,
-                processData: false,
-                contentType: false,
-                success: function(fileResponse) {
-                    console.log("✅ PDF file uploaded successfully:", fileResponse);
-                    
-                    const pdfData = {
-                        title: title,
-                        description: $('#description').val() || '',
-                        course_id: $('#course_id').val() || null,
-                        pages: parseInt($('#pages').val()) || 0,
-                        price: parseFloat($('#price').val()) || 0,
-                        access_level: $('#access_level').val() || 'free',
-                        pdf_path: fileResponse.path,
-                        pdf_url: fileResponse.url,
-                        cover_image_path: fileResponse.cover_path || null,
-                        file_size: fileResponse.size || null,
-                        is_active: true
-                    };
-                    
-                    showLoader('Creating PDF record...');
-                    
-                    $.ajax({
-                        url: '/admin/api/pdfs/create/',
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': csrftoken,
-                            'Content-Type': 'application/json'
-                        },
-                        data: JSON.stringify(pdfData),
-                        success: function(response) {
-                            console.log("✅ PDF record created:", response);
-                            hideLoader();
-                            showToast('PDF uploaded successfully!');
-                            closeModal();
-                            loadPDFs();
-                            loadDashboardData();
-                        },
-                        error: function(xhr) {
-                            console.error("❌ Error creating PDF record:", xhr.responseText);
-                            hideLoader();
-                            
-                            let errorMsg = 'Error creating PDF record';
-                            try {
-                                const resp = JSON.parse(xhr.responseText);
-                                errorMsg = resp.error || resp.message || errorMsg;
-                            } catch(e) {
-                                errorMsg = xhr.responseText || errorMsg;
-                            }
-                            
-                            showToast(errorMsg, true);
-                        }
-                    });
-                },
-                error: function(xhr) {
-                    console.error("❌ Error uploading PDF file:", xhr.responseText);
-                    hideLoader();
-                    
-                    let errorMsg = 'Error uploading PDF file';
-                    try {
-                        const resp = JSON.parse(xhr.responseText);
-                        errorMsg = resp.error || resp.message || errorMsg;
-                    } catch(e) {
-                        errorMsg = xhr.status === 413 ? 'File too large' : (xhr.responseText || errorMsg);
-                    }
-                    
-                    showToast(errorMsg, true);
+            // Track upload progress
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    $('#loaderText').text(`Uploading: ${percent}%`);
                 }
             });
+            
+            return xhr;
+        },
+        success: function(response) {
+            console.log("✅ PDF uploaded successfully:", response);
+            hideLoader();
+            showToast('PDF uploaded successfully!');
+            closeModal();
+            loadPDFs();
+            loadDashboardData();
+        },
+        error: function(xhr) {
+            console.error("❌ PDF upload failed:", xhr.responseText);
+            hideLoader();
+            
+            let errorMsg = 'Upload failed';
+            try {
+                const resp = JSON.parse(xhr.responseText);
+                errorMsg = resp.error || resp.message || errorMsg;
+            } catch(e) {
+                errorMsg = xhr.responseText || errorMsg;
+            }
+            
+            showToast(errorMsg, true);
         }
+    });
+}
+
+
         
         function submitBlogForm() {
             const formData = new FormData();

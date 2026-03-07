@@ -17,6 +17,15 @@ from django.template import Library
 from django.db import connection
 from django.http import HttpResponse
 from django.conf import settings
+import boto3
+from botocore.client import Config
+from botocore.exceptions import ClientError
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import json
+import uuid
+from datetime import datetime, timedelta
+import mimetypes
 import csv
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
@@ -1224,18 +1233,17 @@ def logout_user(request):
 
 # ==================== USER DASHBOARD ====================
 
-@login_required
 def dashboard(request):
     """User dashboard - accessible to all authenticated users"""
     print("\n" + "="*60)
-    print("ðŸ” DASHBOARD ACCESSED")
+    print(" DASHBOARD ACCESSED")
     
     if not request.user.is_authenticated:
-        print("âŒ User not authenticated")
+        print("User not authenticated")
         return redirect('login_page')
     
     user = request.user
-    print(f"âœ… Dashboard accessed by: {user.username}")
+    print(f"Dashboard accessed by: {user.username}")
     
     context = {
         'user': user,
@@ -1255,12 +1263,12 @@ def dashboard(request):
     
     return render(request, 'dashboard.html', context)
 
-@login_required
+
 def profile_view(request):
     """User profile page"""
     return render(request, 'profile.html', {'user': request.user})
 
-@login_required
+
 def profile_update(request):
     """Update user profile"""
     if request.method == 'POST':
@@ -1288,7 +1296,7 @@ def profile_update(request):
     
     return redirect('profile')
 
-@login_required
+
 def change_password(request):
     """Change user password"""
     if request.method == 'POST':
@@ -1319,7 +1327,7 @@ def change_password(request):
 
 # ==================== CONTENT VIEWING ====================
 
-@login_required
+
 def my_videos(request):
     """List user's videos"""
     user = request.user
@@ -1336,7 +1344,7 @@ def my_videos(request):
     }
     return render(request, 'my_videos.html', context)
 
-@login_required
+
 def my_pdfs(request):
     """List user's PDFs"""
     user = request.user
@@ -1353,7 +1361,7 @@ def my_pdfs(request):
     }
     return render(request, 'my_pdfs.html', context)
 
-@login_required
+
 def my_courses(request):
     """List user's courses - WITH EXPIRATION CHECK"""
     user = request.user
@@ -1376,7 +1384,7 @@ def my_courses(request):
     }
     return render(request, 'view_course.html', context)
 
-@login_required
+
 def transaction_history(request):
     """User transaction history"""
     user = request.user
@@ -1395,7 +1403,7 @@ def transaction_history(request):
 
 # ==================== WATCH VIDEO VIEW ====================
 
-@login_required
+
 def watch_video(request, video_id):
     """Watch a specific video - DOWNLOAD DISABLED"""
     try:
@@ -1426,24 +1434,19 @@ def watch_video(request, video_id):
         is_active=True
     ).exclude(id=video.id)[:5]
     
-    # Prepare video URLs and check if files exist
-    video_file_url = None
+    # Prepare video URLs - Django's storage system handles S3 URLs automatically
+    video_file_url = video.video_file.url if video.video_file else None
+    thumbnail_url = video.thumbnail.url if video.thumbnail else None
+    
+    # Check if files exist (optional)
     if video.video_file:
         try:
-            if video.video_file.storage.exists(video.video_file.name):
-                video_file_url = video.video_file.url
-            else:
-                print(f"Video file missing: {video.video_file.name}")
+            # This will check if the file exists in S3
+            if not video.video_file.storage.exists(video.video_file.name):
+                print(f"⚠️ Video file missing from S3: {video.video_file.name}")
+                video_file_url = None
         except Exception as e:
-            print(f"Error accessing video file: {e}")
-    
-    thumbnail_url = None
-    if video.thumbnail:
-        try:
-            if video.thumbnail.storage.exists(video.thumbnail.name):
-                thumbnail_url = video.thumbnail.url
-        except:
-            pass
+            print(f"⚠️ Error checking video file: {e}")
     
     # Get embed URL for YouTube/Vimeo
     embed_url = None
@@ -1464,14 +1467,14 @@ def watch_video(request, video_id):
         'vimeo_id': getattr(video, 'vimeo_id', ''),
         'video_type': getattr(video, 'video_type', ''),
         'embed_url': embed_url or '',
-        'disable_downloads': True,  # Flag for template to hide download buttons
+        'disable_downloads': True,
     }
     
     return render(request, 'watch_video.html', context)
 
 # ==================== VIEW PDF (VIEW INSTEAD OF DOWNLOAD) ====================
 
-@login_required
+
 def view_pdf(request, pdf_id):
     """View PDF in browser instead of downloading"""
     try:
@@ -1489,13 +1492,18 @@ def view_pdf(request, pdf_id):
         messages.error(request, 'You do not have access to this PDF')
         return redirect('my_pdfs')
     
-    # Check if file exists
+    # Check if file exists in S3
     if not pdf.pdf_file:
-        messages.error(request, 'PDF file not found on server')
+        messages.error(request, 'PDF file not found')
         return redirect('my_pdfs')
     
     try:
-        # Update access record - track views instead of downloads
+        # Check if file exists in S3
+        if not pdf.pdf_file.storage.exists(pdf.pdf_file.name):
+            messages.error(request, 'PDF file not found in storage')
+            return redirect('my_pdfs')
+        
+        # Update access record
         access, created = UserPDFAccess.objects.get_or_create(user=user, pdf=pdf)
         access.viewed = True
         access.view_count += 1
@@ -1509,19 +1517,20 @@ def view_pdf(request, pdf_id):
         # Log activity
         log_activity(user, 'PDF_VIEWED', f'Viewed PDF: {pdf.title}', request)
         
-        # Return the file for viewing (inline, not attachment)
+        # Return the file for viewing - Django's storage handles S3 streaming
         response = FileResponse(pdf.pdf_file.open('rb'), content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="{pdf.pdf_file.name.split("/")[-1]}"'
+        response['Content-Disposition'] = f'inline; filename="{pdf.title}.pdf"'
         response['X-Content-Type-Options'] = 'nosniff'
         return response
         
     except Exception as e:
+        print(f"❌ Error viewing PDF: {e}")
         messages.error(request, f'Error viewing PDF: {str(e)}')
         return redirect('my_pdfs')
 
 # ==================== DEPRECATED DOWNLOAD PDF ====================
 
-@login_required
+
 def download_pdf(request, pdf_id):
     """DEPRECATED: Redirect to view instead of download"""
     messages.info(request, 'PDFs are now viewed in browser instead of downloaded.')
@@ -1529,7 +1538,7 @@ def download_pdf(request, pdf_id):
 
 # ==================== VIEW COURSE WITH EXPIRATION ====================
 
-@login_required
+
 def view_course(request, course_id):
     """View course details and content - WITH EXPIRATION CHECK"""
     course = get_object_or_404(Course, id=course_id, is_active=True)
@@ -1561,7 +1570,7 @@ def view_course(request, course_id):
     }
     return render(request, 'view_course.html', context)
 
-@login_required
+
 def mark_lesson_complete(request, course_id, lesson_type, lesson_id):
     """Mark a lesson as complete"""
     if request.method != 'POST':
@@ -1600,7 +1609,7 @@ def mark_lesson_complete(request, course_id, lesson_type, lesson_id):
 
 # ==================== SUPPORT TICKETS ====================
 
-@login_required
+
 def support_tickets(request):
     """User support tickets"""
     user = request.user
@@ -1613,7 +1622,7 @@ def support_tickets(request):
     }
     return render(request, 'support_tickets.html', context)
 
-@login_required
+
 def create_ticket(request):
     """Create a support ticket"""
     if request.method == 'POST':
@@ -1634,7 +1643,7 @@ def create_ticket(request):
     
     return render(request, 'create_ticket.html')
 
-@login_required
+
 def view_ticket(request, ticket_id):
     """View a specific ticket"""
     ticket = get_object_or_404(SupportTicket, id=ticket_id, user=request.user)
@@ -1659,7 +1668,7 @@ def view_ticket(request, ticket_id):
     }
     return render(request, 'view_ticket.html', context)
 
-@login_required
+
 def close_ticket(request, ticket_id):
     """Close a ticket"""
     if request.method == 'POST':
@@ -1672,7 +1681,7 @@ def close_ticket(request, ticket_id):
 
 # ==================== API ENDPOINTS ====================
 
-@login_required
+
 def api_user_profile(request):
     """Get user profile (JSON)"""
     user = request.user
@@ -1703,7 +1712,7 @@ def api_user_profile(request):
         'success_rate': user.success_rate,
     })
 
-@login_required
+
 def api_user_stats(request):
     """Get user statistics (JSON)"""
     user = request.user
@@ -1727,7 +1736,7 @@ def api_user_stats(request):
         'community_memberships': UserCommunityMembership.objects.filter(user=user, status='active').count(),
     })
 
-@login_required
+
 def api_user_activities(request):
     """Get user activities (JSON)"""
     limit = int(request.GET.get('limit', 10))
@@ -1745,9 +1754,13 @@ def api_user_activities(request):
     
     return JsonResponse(data, safe=False)
 
-@login_required
+
 def api_user_notifications(request):
     """Get user notifications (JSON)"""
+    # Check if user is authenticated via your custom system or Django
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+    
     unread_only = request.GET.get('unread_only') == 'true'
     
     notifications = Notification.objects.filter(user=request.user)
@@ -1774,8 +1787,8 @@ def api_user_notifications(request):
         'notifications': data,
         'unread_count': Notification.objects.filter(user=request.user, is_read=False).count(),
     })
+    
 
-@login_required
 def api_mark_notification_read(request, notification_id):
     """Mark notification as read"""
     if request.method != 'POST':
@@ -1788,7 +1801,28 @@ def api_mark_notification_read(request, notification_id):
     
     return JsonResponse({'success': True})
 
-@login_required
+
+def api_mark_notification_read(request, notification_id):
+    """Mark notification as read"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification.is_read = True
+    notification.read_at = timezone.now()
+    notification.save(update_fields=['is_read', 'read_at'])
+    
+    return JsonResponse({'success': True})
+
+def some_admin_api(request):
+    """Your admin API function"""
+    if not request.session.get('admin_authenticated'):
+        return JsonResponse({'error': 'Not authenticated'}, status=401)
+    
+    # Your logic here
+    return JsonResponse({'success': True})    
+
+
 def api_mark_all_notifications_read(request):
     """Mark all notifications as read"""
     if request.method != 'POST':
@@ -1803,7 +1837,7 @@ def api_mark_all_notifications_read(request):
 
 # ==================== NEW API ENDPOINTS FOR DASHBOARD ====================
 
-@login_required
+
 def api_user_courses(request):
     """Get user's enrolled courses - WITH EXPIRATION"""
     user = request.user
@@ -1837,7 +1871,7 @@ def api_user_courses(request):
     
     return JsonResponse(data, safe=False)
 
-@login_required
+
 def api_user_videos(request):
     """Get user's videos"""
     user = request.user
@@ -1887,7 +1921,7 @@ def api_user_videos(request):
         'free': free_data,
     })
 
-@login_required
+
 def api_user_pdfs(request):
     """Get user's PDFs - FOR VIEWING"""
     user = request.user
@@ -1940,7 +1974,7 @@ def api_user_pdfs(request):
         'free': free_data,
     })
 
-@login_required
+
 @csrf_exempt
 def api_course_enroll(request):
     """Enroll in a course"""
@@ -2020,14 +2054,13 @@ def api_course_enroll(request):
             'redirect_url': f'/payment/initiate/?type=course&id={course.id}'
         }, status=400)
 
-@login_required
+
 def api_watchlist_count(request):
     """Get watchlist count"""
     user = request.user
     count = Watchlist.objects.filter(user=user).count()
     return JsonResponse({'count': count})
 
-@login_required
 @csrf_exempt
 def api_watchlist_check(request):
     """Check if item is in watchlist"""
@@ -2054,7 +2087,7 @@ def api_watchlist_check(request):
     
     return JsonResponse({'in_watchlist': exists})
 
-@login_required
+
 @csrf_exempt
 def api_watchlist_add(request):
     """Add item to watchlist"""
@@ -2118,7 +2151,7 @@ def api_watchlist_add(request):
         'message': 'Added to watchlist'
     })
 
-@login_required
+
 @csrf_exempt
 def api_watchlist_remove(request):
     """Remove item from watchlist"""
@@ -2147,7 +2180,7 @@ def api_watchlist_remove(request):
     else:
         return JsonResponse({'error': 'Item not found in watchlist'}, status=404)
 
-@login_required
+
 def api_watchlist(request):
     """Get user's watchlist with item details"""
     user = request.user
@@ -2168,7 +2201,7 @@ def api_watchlist(request):
     
     return JsonResponse(data, safe=False)
 
-@login_required
+
 def api_user_communities(request):
     """Get user's community memberships"""
     user = request.user
@@ -2190,7 +2223,7 @@ def api_user_communities(request):
     
     return JsonResponse(data, safe=False)
 
-@login_required
+
 @csrf_exempt
 def api_community_join(request):
     """Request to join a community tier"""
@@ -2274,7 +2307,7 @@ def api_community_join(request):
             'message': 'Your request has been submitted for review'
         })
 
-@login_required
+
 def api_institute_eligibility(request):
     """Check user's eligibility for Institute account"""
     user = request.user
@@ -2310,7 +2343,7 @@ def api_institute_eligibility(request):
     
     return JsonResponse(data)
 
-@login_required
+
 @csrf_exempt
 def api_institute_apply(request):
     """Submit institute application"""
@@ -2374,7 +2407,7 @@ def api_institute_apply(request):
         'message': 'Application submitted successfully'
     })
 
-@login_required
+
 def api_get_packages(request):
     """Get available packages (JSON)"""
     packages = Package.objects.filter(is_active=True).order_by('order')
@@ -2397,7 +2430,7 @@ def api_get_packages(request):
         })
     return JsonResponse(data, safe=False)
 
-@login_required
+
 def api_unlock_video(request):
     """API to unlock/purchase video"""
     if request.method != 'POST':
@@ -2569,6 +2602,7 @@ def api_create_order(request):
     
     # Handle other methods
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
 @csrf_exempt
 def education_payment(request):
     """Simple GET endpoint for education payments"""
@@ -2613,7 +2647,7 @@ def education_payment(request):
         messages.error(request, f'Error: {str(e)}')
         return redirect('index')
     
-@login_required
+
 def api_send_support(request):
     """API to send support message"""
     if request.method != 'POST':
@@ -2638,7 +2672,7 @@ def api_send_support(request):
         'ticket_number': ticket.ticket_number
     })
 
-@login_required
+
 def api_update_settings(request):
     """API to update user settings"""
     if request.method != 'POST':
@@ -2661,7 +2695,7 @@ def api_update_settings(request):
     
     return JsonResponse({'success': True})
 
-@login_required
+
 def api_user_orders(request):
     """Get user orders (JSON)"""
     user = request.user
@@ -2681,8 +2715,6 @@ def api_user_orders(request):
         })
     
     return JsonResponse(data, safe=False)
-
-@login_required
 def api_user_tickets(request):
     """Get user support tickets (JSON)"""
     user = request.user
@@ -2703,7 +2735,7 @@ def api_user_tickets(request):
     
     return JsonResponse(data, safe=False)
 
-@login_required
+
 def api_create_order(request):
     """Create a new order (JSON)"""
     if request.method != 'POST':
@@ -2743,7 +2775,6 @@ def api_create_order(request):
         'authorization_url': f"/payment/verify/{transaction.reference}/",
     })
 
-@login_required
 def api_create_ticket(request):
     """Create support ticket (JSON)"""
     if request.method != 'POST':
@@ -2773,21 +2804,20 @@ def api_create_ticket(request):
         'ticket_number': ticket.ticket_number,
     })
 
-@login_required
 def api_check_email(request):
     """Check if email exists (for registration)"""
     email = request.GET.get('email', '')
     exists = MfalmeUsers.objects.filter(email=email).exists()
     return JsonResponse({'exists': exists})
 
-@login_required
+
 def api_check_username(request):
     """Check if username exists"""
     username = request.GET.get('username', '')
     exists = MfalmeUsers.objects.filter(username=username).exists()
     return JsonResponse({'exists': exists})
 
-@login_required
+
 @csrf_exempt
 def api_profile_update(request):
     """Update user profile (JSON)"""
@@ -2823,7 +2853,7 @@ def api_profile_update(request):
         'updated_fields': changes
     })
 
-@login_required
+
 @csrf_exempt
 def api_password_change(request):
     """Change user password (JSON)"""
@@ -2861,7 +2891,7 @@ def api_password_change(request):
     
     return JsonResponse({'success': True})
 
-@login_required
+
 def api_ticket_detail(request, ticket_id):
     """Get ticket details with replies"""
     ticket = get_object_or_404(SupportTicket, id=ticket_id, user=request.user)
@@ -2891,7 +2921,7 @@ def api_ticket_detail(request, ticket_id):
     
     return JsonResponse(data)
 
-@login_required
+
 @csrf_exempt
 def api_ticket_reply(request, ticket_id):
     """Reply to a ticket"""
@@ -2942,17 +2972,27 @@ def api_public_videos(request):
             'id': v.id,
             'title': v.title,
             'description': v.description,
-            'thumbnail': v.thumbnail.url if v.thumbnail else None,
+            'thumbnail': v.thumbnail.url if v.thumbnail else None,  # Auto S3 URL
             'category': v.category,
             'duration': v.duration,
             'price': float(v.price),
             'view_count': v.view_count,
             'course_id': v.course.id if v.course else None,
             'course_name': v.course.title if v.course else 'Standalone Video',
-            'allow_download': v.allow_download,  # Add this flag
+            'allow_download': v.allow_download,
         })
     
     return JsonResponse(data, safe=False)
+ 
+def verify_s3_file(file_field):
+    """Helper to verify file exists in S3"""
+    try:
+        if file_field and file_field.name:
+            return file_field.storage.exists(file_field.name)
+    except Exception as e:
+        print(f"⚠️ Error checking S3 file: {e}")
+    return False
+
 
 def api_public_pdfs(request):
     """Get all public PDFs with course information"""
@@ -3106,7 +3146,7 @@ def api_blog_detail(request, blog_id):
 
 # ==================== PDF VIEWING API ENDPOINT ====================
 
-@login_required
+
 def api_pdf_view(request, pdf_id):
     """API endpoint to get PDF viewing URL - FOR VIEWING ONLY"""
     try:
@@ -3159,7 +3199,7 @@ def api_pdf_view(request, pdf_id):
 
 # ==================== FIXED PAYMENT VIEWS ====================
 
-@login_required
+
 def initiate_payment(request):
     """Initiate payment page - NOW WITH USD -> KES CONVERSION"""
     package_type = request.GET.get('type')
@@ -3241,7 +3281,7 @@ def initiate_payment(request):
     
     return render(request, 'payment/initiate_payment.html', context)
 
-@login_required
+
 def process_payment(request):
     """Process payment (AJAX) - NOW WITH USD -> KES CONVERSION"""
     if request.method != 'POST':
@@ -3993,7 +4033,7 @@ def initiate_mentorship_payment(request):
 
 # ==================== COURSE PROGRESS APIS ====================
 
-@login_required
+
 @csrf_exempt
 def api_mark_lesson_complete(request):
     """Mark lesson complete (API version) - WITH EXPIRATION CHECK"""
@@ -4043,7 +4083,7 @@ def api_mark_lesson_complete(request):
         'expires_in': enrollment.time_until_expiry()
     })
 
-@login_required
+
 def api_course_progress(request, course_id):
     """Get detailed progress for a course - WITH EXPIRATION"""
     has_access, enrollment = check_course_access(request.user, course_id)
@@ -4066,7 +4106,7 @@ def api_course_progress(request, course_id):
     
     return JsonResponse(data)
 
-@login_required
+
 def api_course_next_lesson(request, course_id):
     """Get next lesson for a course - WITH EXPIRATION"""
     has_access, enrollment = check_course_access(request.user, course_id)
@@ -4090,7 +4130,7 @@ def api_course_next_lesson(request, course_id):
             'message': 'Course completed!'
         })
 
-@login_required
+
 def api_course_reset_progress(request, course_id):
     """Reset progress for a course (admin only)"""
     if not request.user.is_staff:
@@ -4108,7 +4148,7 @@ def api_course_reset_progress(request, course_id):
     
     return JsonResponse({'success': True})
 
-@login_required
+
 def pesapal_initiate_payment(request):
     """Initiate payment with Pesapal"""
     package_type = request.GET.get('type')
@@ -4363,7 +4403,7 @@ def payment_pending(request, reference):
     return render(request, 'payment/pending.html', context)
 
 
-@login_required
+
 @csrf_exempt
 def sasapay_process_payment(request):
     """Process payment with SasaPay"""
@@ -4699,7 +4739,7 @@ def sasapay_status(request, reference):
 
 # ==================== SASAPAY PAYMENT VIEWS ====================
 
-@login_required
+
 @csrf_exempt
 def sasapay_process_payment(request):
     """Process payment with SasaPay"""
@@ -5191,7 +5231,8 @@ def export_pdfs(request):
     ws = wb.active
     ws.title = "PDFs Export"
     
-    headers = ['ID', 'Title', 'Course', 'Pages', 'Size', 'Downloads', 'Access Level', 'Uploaded']
+    # REMOVED 'Size' and 'Downloads' columns - these cause issues with S3
+    headers = ['ID', 'Title', 'Course', 'Pages', 'Access Level', 'Uploaded']
     for col_num, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col_num)
         cell.value = header
@@ -5204,11 +5245,10 @@ def export_pdfs(request):
         ws.cell(row=row_num, column=2).value = pdf.title
         ws.cell(row=row_num, column=3).value = pdf.course.title if pdf.course else 'General'
         ws.cell(row=row_num, column=4).value = pdf.pages or 0
-        ws.cell(row=row_num, column=5).value = pdf.file_size or 'N/A'
-        ws.cell(row=row_num, column=6).value = pdf.downloads or 0
-        ws.cell(row=row_num, column=7).value = pdf.access_level or 'free'
-        ws.cell(row=row_num, column=8).value = pdf.created_at.strftime('%Y-%m-%d') if pdf.created_at else ''
+        ws.cell(row=row_num, column=5).value = pdf.access_level or 'free'
+        ws.cell(row=row_num, column=6).value = pdf.created_at.strftime('%Y-%m-%d') if pdf.created_at else ''
     
+    # Auto-adjust column widths
     for column in ws.columns:
         max_length = 0
         column_letter = column[0].column_letter
@@ -5223,7 +5263,6 @@ def export_pdfs(request):
     
     wb.save(response)
     return response
-
 
 @require_GET
 def export_blogs(request):
@@ -5492,7 +5531,7 @@ def export_revenue_report(request):
     return response
 
 
-@login_required
+
 @csrf_exempt
 def api_community_join(request):
     """Handle community join requests with email notifications"""
@@ -5686,3 +5725,302 @@ def custom_404(request, exception):
 
 def custom_500(request):
     return render(request, '500.html', status=500)
+
+
+def get_s3_presigned_url(request):
+    """
+    Generate a presigned URL for direct browser-to-S3 upload
+    Uses direct S3 URLs (no CloudFront)
+    """
+    print("\n" + "="*60)
+    print("🔐 S3 PRESIGNED URL REQUEST")
+    print("="*60)
+    
+    # CHECK YOUR CUSTOM SESSION
+    if not request.session.get('admin_authenticated'):
+        print("❌ Custom admin authentication failed")
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+    
+    admin_username = request.session.get('admin_username', 'Unknown')
+    print(f"✅ Admin {admin_username} authenticated")
+    
+    file_name = request.GET.get('file_name')
+    file_type = request.GET.get('file_type')
+    content_type = request.GET.get('content_type', 'application/octet-stream')
+    
+    if not file_name or not file_type:
+        return JsonResponse({'error': 'file_name and file_type required'}, status=400)
+    
+    print(f"📁 File: {file_name}")
+    print(f"📂 Type: {file_type}")
+    print(f"📄 Content-Type: {content_type}")
+    
+    try:
+        from datetime import datetime
+        import uuid
+        import os
+        
+        # Map file types to folders
+        folder_mapping = {
+            'video': f"videos/{datetime.now().strftime('%Y/%m')}",
+            'pdf': f"pdfs/{datetime.now().strftime('%Y/%m')}",
+            'thumbnail': "thumbnails",
+            'course_thumbnail': "course_thumbnails",
+            'pdf_cover': "pdf_covers",
+            'blog_image': "blog_images",
+            'profile_image': "profile_images",
+        }
+        
+        folder = folder_mapping.get(file_type, "media")
+        
+        # Generate unique filename
+        ext = file_name.split('.')[-1].lower() if '.' in file_name else 'bin'
+        unique_id = uuid.uuid4().hex[:8]
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        base_name = os.path.splitext(file_name)[0]
+        base_name = ''.join(c for c in base_name if c.isalnum() or c in ' _-').strip()
+        base_name = base_name.replace(' ', '_')[:50]
+        
+        key = f"{folder}/{timestamp}_{unique_id}_{base_name}.{ext}"
+        
+        print(f"🔑 S3 Key: {key}")
+        
+        # Verify AWS credentials are set
+        if not settings.AWS_ACCESS_KEY_ID or not settings.AWS_SECRET_ACCESS_KEY:
+            print("❌ AWS credentials not configured")
+            return JsonResponse({'error': 'AWS credentials not configured'}, status=500)
+        
+        # IMPORTANT: Create S3 client with the correct endpoint configuration
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_S3_REGION_NAME,
+            endpoint_url=f'https://s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com',
+            config=Config(
+                signature_version='s3v4',
+                s3={'addressing_style': 'virtual'}
+            )
+        )
+        
+        # Determine ACL based on file type
+        acl = 'private'
+        public_url = None
+        
+        # Public files (images, thumbnails) - use public-read
+        if file_type in ['thumbnail', 'course_thumbnail', 'pdf_cover', 'blog_image', 'profile_image']:
+            acl = 'public-read'
+            # Generate public URL for display
+            public_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{key}"
+            print(f"📎 Public S3 URL: {public_url}")
+        
+        # Generate presigned URL (only needed for PUT operation)
+        presigned_url = s3_client.generate_presigned_url(
+            'put_object',
+            Params={
+                'Bucket': settings.AWS_STORAGE_BUCKET_NAME,
+                'Key': key,
+                'ContentType': content_type,
+                'ACL': acl,
+                'CacheControl': 'max-age=31536000',
+            },
+            ExpiresIn=3600,
+            HttpMethod='PUT'
+        )
+        
+        print(f"✅ Presigned URL generated successfully")
+        print(f"📎 ACL: {acl}")
+        
+        # Prepare response
+        response_data = {
+            'success': True,
+            'presigned_url': presigned_url,
+            'key': key,
+            'file_url': f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{key}",
+            'bucket': settings.AWS_STORAGE_BUCKET_NAME,
+            'region': settings.AWS_S3_REGION_NAME,
+            'acl': acl
+        }
+        
+        # Add public URL for image types
+        if public_url:
+            response_data['public_url'] = public_url
+            
+        return JsonResponse(response_data)
+        
+    except ClientError as e:
+        error_code = e.response['Error']['Code']
+        error_message = e.response['Error']['Message']
+        print(f"❌ AWS ClientError: {error_code} - {error_message}")
+        return JsonResponse({'error': f'AWS Error: {error_message}'}, status=500)
+    except Exception as e:
+        print(f"❌ Unexpected error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
+    
+@csrf_exempt
+def initiate_multipart_upload(request):
+    """
+    Initiate multipart upload for large files (>100MB)
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    file_name = data.get('file_name')
+    file_type = data.get('file_type')
+    total_parts = data.get('total_parts', 1)
+    
+    if not file_name or not file_type:
+        return JsonResponse({'error': 'Missing required fields'}, status=400)
+    
+    try:
+        # Determine folder
+        if file_type == 'video':
+            folder = f"videos/{datetime.now().strftime('%Y/%m')}"
+        elif file_type == 'pdf':
+            folder = f"pdfs/{datetime.now().strftime('%Y/%m')}"
+        else:
+            folder = "media"
+        
+        # Generate key
+        ext = file_name.split('.')[-1]
+        unique_id = uuid.uuid4().hex[:8]
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        key = f"{folder}/{timestamp}_{unique_id}.{ext}"
+        
+        # Create S3 client
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_S3_REGION_NAME
+        )
+        
+        # Create multipart upload
+        response = s3_client.create_multipart_upload(
+            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+            Key=key,
+            ACL='private'
+        )
+        
+        upload_id = response['UploadId']
+        
+        # Generate presigned URLs for each part
+        part_urls = []
+        for part_number in range(1, total_parts + 1):
+            part_url = s3_client.generate_presigned_url(
+                'upload_part',
+                Params={
+                    'Bucket': settings.AWS_STORAGE_BUCKET_NAME,
+                    'Key': key,
+                    'UploadId': upload_id,
+                    'PartNumber': part_number
+                },
+                ExpiresIn=3600
+            )
+            part_urls.append({
+                'part_number': part_number,
+                'url': part_url
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'upload_id': upload_id,
+            'key': key,
+            'part_urls': part_urls,
+            'file_url': f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{key}"
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+def complete_multipart_upload(request):
+    """
+    Complete multipart upload after all parts are uploaded
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    key = data.get('key')
+    upload_id = data.get('upload_id')
+    parts = data.get('parts')  # List of {'ETag': '...', 'PartNumber': 1}
+    
+    if not key or not upload_id or not parts:
+        return JsonResponse({'error': 'Missing required fields'}, status=400)
+    
+    try:
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_S3_REGION_NAME
+        )
+        
+        # Complete multipart upload
+        response = s3_client.complete_multipart_upload(
+            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+            Key=key,
+            UploadId=upload_id,
+            MultipartUpload={'Parts': parts}
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'location': response['Location'],
+            'key': key,
+            'file_url': f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{key}"
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt
+def abort_multipart_upload(request):
+    """
+    Abort multipart upload if something goes wrong
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    key = data.get('key')
+    upload_id = data.get('upload_id')
+    
+    if not key or not upload_id:
+        return JsonResponse({'error': 'Missing required fields'}, status=400)
+    
+    try:
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_S3_REGION_NAME
+        )
+        
+        s3_client.abort_multipart_upload(
+            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+            Key=key,
+            UploadId=upload_id
+        )
+        
+        return JsonResponse({'success': True})
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

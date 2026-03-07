@@ -1774,10 +1774,10 @@ class Logo(models.Model):
 # ==================== TRAINING VIDEO ====================
 class TrainingVideo(models.Model):
     """Training videos managed by admin - DISABLE DOWNLOADS BY DEFAULT"""
-    title = models.CharField(max_length=200)
+    title = models.TextField() 
     description = models.TextField(blank=True)
     
-    # Option 1: Upload video file directly
+    # Option 1: Upload video file directly to S3 (stores path only)
     video_file = models.FileField(
         upload_to='videos/', 
         blank=True, 
@@ -1787,6 +1787,7 @@ class TrainingVideo(models.Model):
     
     # Option 2: External URL (YouTube, Vimeo, etc.)
     video_url = models.URLField(
+        max_length=500,  # CHANGE from 200 to 500
         blank=True, 
         null=True,
         help_text="URL to video (Vimeo, YouTube, etc.) - leave empty if uploading file"
@@ -1799,7 +1800,7 @@ class TrainingVideo(models.Model):
         help_text="Custom embed code for video player"
     )
     
-    # Thumbnail
+    # Thumbnail - also stores path only
     thumbnail = models.ImageField(
         upload_to='video_thumbnails/', 
         blank=True, 
@@ -1813,21 +1814,18 @@ class TrainingVideo(models.Model):
         ('Webinars', 'Webinars'),
     ], default='PTM')
     
-    # Link video to a course (ForeignKey)
     course = models.ForeignKey(
         'Course', 
         on_delete=models.CASCADE, 
         related_name='videos', 
         null=True, 
-        blank=True, 
-        help_text="Select which course this video belongs to"
+        blank=True
     )
     
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     duration = models.IntegerField(default=30, help_text="Duration in minutes")
     
-    # IMPORTANT: DISABLE DOWNLOADS BY DEFAULT
-    allow_download = models.BooleanField(default=False, help_text="Allow users to download this video")
+    allow_download = models.BooleanField(default=False)
     disable_screenshots = models.BooleanField(default=True)
     
     order = models.IntegerField(default=0)
@@ -2675,14 +2673,12 @@ class PDF(models.Model):
                 self.slug = f"{original_slug}-{counter}"
                 counter += 1
         
+        # FIX: Don't try to access pdf_file.size directly for S3
+        # Instead, set file_size manually or leave it empty
         if self.pdf_file and not self.file_size:
-            size = self.pdf_file.size
-            if size < 1024:
-                self.file_size = f"{size} B"
-            elif size < 1024 * 1024:
-                self.file_size = f"{size / 1024:.1f} KB"
-            else:
-                self.file_size = f"{size / (1024 * 1024):.1f} MB"
+            # For S3, we can't easily get file size without making a request
+            # Either set a default or leave empty
+            self.file_size = "N/A"  # or calculate from metadata if available
         
         self.is_free = (self.price == 0)
         
