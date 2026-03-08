@@ -1374,84 +1374,139 @@ def admin_api_video_detail(request, video_id):
 @admin_required
 @csrf_exempt
 def admin_api_video_create(request):
-    """Create a new video - DIRECT UPLOAD TO S3 (NO PRESIGNED URLS!)"""
+    """Create a new video - HANDLES BOTH JSON AND FORM DATA"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
     try:
-        # Get data from form data (not JSON) because we're uploading files
-        title = request.POST.get('title')
-        description = request.POST.get('description', '')
-        category = request.POST.get('category', 'PTM')
-        duration = int(request.POST.get('duration', 30))
-        price = Decimal(str(request.POST.get('price', 0)))
-        video_url = request.POST.get('video_url', '')
-        allow_download = request.POST.get('allow_download') == 'true'
-        disable_screenshots = request.POST.get('disable_screenshots') == 'true'
-        order = int(request.POST.get('order', 0))
-        # FIXED: Default to 'true' when is_active is not provided
-        is_active = request.POST.get('is_active', 'true') == 'true'
-        course_id = request.POST.get('course_id')
-        
-        # Get the actual files from request.FILES
-        video_file = request.FILES.get('video_file')
-        thumbnail_file = request.FILES.get('thumbnail_file')
-        
-        if not title:
-            return JsonResponse({'error': 'Title is required'}, status=400)
-        
-        # Create video instance
-        video = TrainingVideo(
-            title=title,
-            description=description,
-            category=category,
-            duration=duration,
-            price=price,
-            video_url=video_url,
-            allow_download=allow_download,
-            disable_screenshots=disable_screenshots,
-            order=order,
-            is_active=is_active,  # ← Now defaults to True
-        )
-        
-        # DIRECT S3 UPLOAD - Django handles this automatically!
-        if video_file:
-            video.video_file = video_file  # ← Auto-uploads to S3!
-        if thumbnail_file:
-            video.thumbnail = thumbnail_file  # ← Auto-uploads to S3!
-        
-        # Set course if provided
-        if course_id:
-            try:
-                video.course = Course.objects.get(id=course_id)
-            except Course.DoesNotExist:
-                pass
-        
-        video.save()
-        
-        # Log activity
-        admin_user = get_admin_user(request)
-        ActivityLog.objects.create(
-            user=admin_user,
-            action='ADMIN_ACTION',
-            description=f'Created video: {video.title}',
-            metadata={
-                'admin_username': request.session.get('admin_username'),
-                'video_id': video.id,
-                'video_url': video.video_file.url if video.video_file else None,
-                'thumbnail_url': video.thumbnail.url if video.thumbnail else None
-            }
-        )
-        
-        return JsonResponse({
-            'success': True, 
-            'id': video.id,
-            'video_url': video.video_file.url if video.video_file else None,
-            'thumbnail_url': video.thumbnail.url if video.thumbnail else None
-        })
-        
+        # Check if this is JSON data (from S3 upload) or form data (direct upload)
+        if request.content_type and 'application/json' in request.content_type:
+            # Handle JSON data (from S3 upload)
+            data = json.loads(request.body)
+            print(f"📹 Creating video from JSON: {data}")
+            
+            title = data.get('title')
+            course_id = data.get('course_id')
+            module = data.get('module', '')
+            duration = data.get('duration', 30)
+            price = Decimal(str(data.get('price', 0)))
+            video_url = data.get('video_url') or data.get('video_file')
+            is_active = data.get('is_active', True)
+            
+            if not title:
+                return JsonResponse({'error': 'Title is required'}, status=400)
+            
+            if not video_url:
+                return JsonResponse({'error': 'Video URL is required'}, status=400)
+            
+            # Create video instance
+            video = TrainingVideo(
+                title=title,
+                module=module,
+                duration=duration,
+                price=price,
+                video_url=video_url,  # This is the S3 key/URL
+                is_active=is_active,
+            )
+            
+            # Set course if provided
+            if course_id:
+                try:
+                    video.course = Course.objects.get(id=course_id)
+                except Course.DoesNotExist:
+                    pass
+            
+            # IMPORTANT: Skip validation that requires file
+            video.save()
+            
+            # Log activity
+            admin_user = get_admin_user(request)
+            ActivityLog.objects.create(
+                user=admin_user,
+                action='ADMIN_ACTION',
+                description=f'Created video: {video.title}',
+                metadata={
+                    'admin_username': request.session.get('admin_username'),
+                    'video_id': video.id,
+                    'video_url': video_url
+                }
+            )
+            
+            return JsonResponse({
+                'success': True, 
+                'id': video.id,
+                'message': 'Video created successfully'
+            })
+            
+        else:
+            # Handle multipart/form-data (original direct upload)
+            print(f"📹 Creating video from form data: {request.POST}")
+            
+            title = request.POST.get('title')
+            description = request.POST.get('description', '')
+            category = request.POST.get('category', 'PTM')
+            duration = int(request.POST.get('duration', 30))
+            price = Decimal(str(request.POST.get('price', 0)))
+            allow_download = request.POST.get('allow_download') == 'true'
+            disable_screenshots = request.POST.get('disable_screenshots') == 'true'
+            order = int(request.POST.get('order', 0))
+            is_active = request.POST.get('is_active', 'true') == 'true'
+            course_id = request.POST.get('course_id')
+            
+            video_file = request.FILES.get('video_file')
+            thumbnail_file = request.FILES.get('thumbnail_file')
+            
+            if not title:
+                return JsonResponse({'error': 'Title is required'}, status=400)
+            
+            # Create video instance
+            video = TrainingVideo(
+                title=title,
+                description=description,
+                category=category,
+                duration=duration,
+                price=price,
+                allow_download=allow_download,
+                disable_screenshots=disable_screenshots,
+                order=order,
+                is_active=is_active,
+            )
+            
+            # Handle file uploads
+            if video_file:
+                video.video_file = video_file
+            if thumbnail_file:
+                video.thumbnail = thumbnail_file
+            
+            # Set course if provided
+            if course_id:
+                try:
+                    video.course = Course.objects.get(id=course_id)
+                except Course.DoesNotExist:
+                    pass
+            
+            video.save()
+            
+            # Log activity
+            admin_user = get_admin_user(request)
+            ActivityLog.objects.create(
+                user=admin_user,
+                action='ADMIN_ACTION',
+                description=f'Created video: {video.title}',
+                metadata={
+                    'admin_username': request.session.get('admin_username'),
+                    'video_id': video.id
+                }
+            )
+            
+            return JsonResponse({
+                'success': True, 
+                'id': video.id,
+                'message': 'Video created successfully'
+            })
+            
     except Exception as e:
-        print(f"Error creating video: {e}")
+        print(f"❌ Error creating video: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)

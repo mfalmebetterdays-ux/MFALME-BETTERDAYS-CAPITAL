@@ -3673,17 +3673,17 @@ function submitVideoForm() {
                         return xhr;
                     },
                     success: function() {
-                        // Step 3: Create video record in database
+                        // Step 3: Create video record in database with S3 key
                         updateLoaderProgress(100, 'Saving video info...');
                         
                         const videoData = {
                             title: title,
-                            course_id: courseId,
-                            module: module,
-                            duration: duration,
-                            price: price,
-                            video_url: response.key,
-                            video_file: response.key,
+                            course_id: courseId || null,
+                            module: module || '',
+                            duration: duration || 30,
+                            price: price || 0,
+                            s3_key: response.key,  // Use the new s3_key field
+                            video_url: response.key, // Keep for backward compatibility
                             is_active: true
                         };
                         
@@ -3707,33 +3707,68 @@ function submitVideoForm() {
                             error: function(xhr) {
                                 console.error("Error saving video:", xhr.responseText);
                                 hideLoader();
-                                showToast('Error saving video info', true);
+                                let errorMsg = 'Error saving video info';
+                                try {
+                                    const resp = JSON.parse(xhr.responseText);
+                                    errorMsg = resp.error || resp.message || errorMsg;
+                                } catch(e) {}
+                                showToast(errorMsg, true);
                             }
                         });
                     },
                     error: function(xhr) {
                         console.error("S3 upload failed:", xhr.responseText);
                         hideLoader();
-                        showToast('Upload to S3 failed', true);
+                        
+                        let errorMsg = 'Upload to S3 failed';
+                        try {
+                            if (xhr.responseXML) {
+                                // Parse XML error from S3
+                                const parser = new DOMParser();
+                                const xmlDoc = parser.parseFromString(xhr.responseText, "text/xml");
+                                const code = xmlDoc.getElementsByTagName("Code")[0]?.textContent;
+                                const message = xmlDoc.getElementsByTagName("Message")[0]?.textContent;
+                                if (message) errorMsg = `S3 Error: ${message}`;
+                            } else {
+                                const resp = JSON.parse(xhr.responseText);
+                                errorMsg = resp.error || resp.message || errorMsg;
+                            }
+                        } catch(e) {}
+                        
+                        showToast(errorMsg, true);
                     }
                 });
             },
             error: function(xhr) {
                 console.error("Error getting presigned URL:", xhr.responseText);
                 hideLoader();
-                showToast('Failed to get upload URL', true);
+                
+                let errorMsg = 'Failed to get upload URL';
+                try {
+                    const resp = JSON.parse(xhr.responseText);
+                    errorMsg = resp.error || resp.message || errorMsg;
+                } catch(e) {}
+                showToast(errorMsg, true);
             }
         });
     } catch(e) {
         console.error('Error in submitVideoForm:', e);
         hideLoader();
-        showToast('Error uploading video', true);
+        showToast('Error uploading video: ' + e.message, true);
     }
 }
 
 // ========== THUMBNAIL UPLOAD HELPER ==========
 function uploadThumbnail(file, videoId) {
     updateLoaderProgress(0, 'Uploading thumbnail...');
+    
+    // Validate image type
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validImageTypes.includes(file.type)) {
+        showToast('Please upload a valid image file (JPEG, PNG, GIF, WebP)', true);
+        hideLoader();
+        return;
+    }
     
     $.ajax({
         url: '/admin/api/get-s3-presigned-url/',
@@ -3767,13 +3802,14 @@ function uploadThumbnail(file, videoId) {
                     return xhr;
                 },
                 success: function() {
-                    // Update video with thumbnail
+                    // Update video with thumbnail S3 key
                     $.ajax({
                         url: `/admin/api/videos/${videoId}/update/`,
                         method: 'POST',
                         headers: {'X-CSRFToken': csrftoken},
                         data: JSON.stringify({
-                            thumbnail_key: response.key
+                            thumbnail_s3_key: response.key,  // Use new field
+                            thumbnail_key: response.key      // Keep for backward compatibility
                         }),
                         success: function() {
                             hideLoader();
@@ -3782,27 +3818,34 @@ function uploadThumbnail(file, videoId) {
                             loadVideos();
                             loadDashboardData();
                         },
-                        error: function() {
+                        error: function(xhr) {
+                            console.error("Error updating thumbnail:", xhr.responseText);
                             hideLoader();
-                            showToast('Video uploaded but thumbnail failed', true);
+                            showToast('Video uploaded but thumbnail save failed', true);
                             closeModal();
                             loadVideos();
                             loadDashboardData();
                         }
                     });
                 },
-                error: function() {
+                error: function(xhr) {
+                    console.error("Thumbnail S3 upload failed:", xhr.responseText);
                     hideLoader();
-                    showToast('Thumbnail upload failed', true);
+                    
+                    // Still close modal and show videos - video uploaded, just thumbnail failed
+                    showToast('Video uploaded but thumbnail failed', true);
                     closeModal();
                     loadVideos();
                     loadDashboardData();
                 }
             });
         },
-        error: function() {
+        error: function(xhr) {
+            console.error("Error getting thumbnail presigned URL:", xhr.responseText);
             hideLoader();
-            showToast('Failed to get thumbnail upload URL', true);
+            
+            // Still close modal and show videos
+            showToast('Video uploaded but thumbnail URL failed', true);
             closeModal();
             loadVideos();
             loadDashboardData();
@@ -3829,6 +3872,12 @@ function submitPDFForm() {
         
         if (!pdfFile) {
             showToast('Please select a PDF file', true);
+            return;
+        }
+        
+        // Validate PDF type
+        if (pdfFile.type !== 'application/pdf') {
+            showToast('Please upload a valid PDF file', true);
             return;
         }
         
@@ -3889,12 +3938,13 @@ function submitPDFForm() {
                             
                             const pdfData = {
                                 title: title,
-                                course_id: courseId,
-                                pages: pages,
-                                price: price,
-                                access_level: accessLevel,
-                                description: description,
+                                course_id: courseId || null,
+                                pages: pages || 0,
+                                price: price || 0,
+                                access_level: accessLevel || 'free',
+                                description: description || '',
                                 pdf_path: response.key,
+                                pdf_s3_key: response.key,
                                 is_free: price == 0
                             };
                             
@@ -3913,7 +3963,12 @@ function submitPDFForm() {
                                 error: function(xhr) {
                                     console.error("Error saving PDF:", xhr.responseText);
                                     hideLoader();
-                                    showToast('Error saving PDF info', true);
+                                    let errorMsg = 'Error saving PDF info';
+                                    try {
+                                        const resp = JSON.parse(xhr.responseText);
+                                        errorMsg = resp.error || resp.message || errorMsg;
+                                    } catch(e) {}
+                                    showToast(errorMsg, true);
                                 }
                             });
                         }
@@ -3921,26 +3976,54 @@ function submitPDFForm() {
                     error: function(xhr) {
                         console.error("PDF S3 upload failed:", xhr.responseText);
                         hideLoader();
-                        showToast('PDF upload to S3 failed', true);
+                        
+                        let errorMsg = 'PDF upload to S3 failed';
+                        try {
+                            if (xhr.responseXML) {
+                                const parser = new DOMParser();
+                                const xmlDoc = parser.parseFromString(xhr.responseText, "text/xml");
+                                const message = xmlDoc.getElementsByTagName("Message")[0]?.textContent;
+                                if (message) errorMsg = `S3 Error: ${message}`;
+                            } else {
+                                const resp = JSON.parse(xhr.responseText);
+                                errorMsg = resp.error || resp.message || errorMsg;
+                            }
+                        } catch(e) {}
+                        
+                        showToast(errorMsg, true);
                     }
                 });
             },
             error: function(xhr) {
                 console.error("Error getting PDF presigned URL:", xhr.responseText);
                 hideLoader();
-                showToast('Failed to get upload URL', true);
+                
+                let errorMsg = 'Failed to get upload URL';
+                try {
+                    const resp = JSON.parse(xhr.responseText);
+                    errorMsg = resp.error || resp.message || errorMsg;
+                } catch(e) {}
+                showToast(errorMsg, true);
             }
         });
     } catch(e) {
         console.error('Error in submitPDFForm:', e);
         hideLoader();
-        showToast('Error uploading PDF', true);
+        showToast('Error uploading PDF: ' + e.message, true);
     }
 }
 
 // ========== PDF COVER UPLOAD HELPER ==========
 function uploadPDFCover(file, pdfData) {
     updateLoaderProgress(0, 'Uploading cover image...');
+    
+    // Validate image type
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validImageTypes.includes(file.type)) {
+        // Still try to save PDF without cover
+        savePDFWithoutCover(pdfData, 'Cover image skipped - invalid type');
+        return;
+    }
     
     $.ajax({
         url: '/admin/api/get-s3-presigned-url/',
@@ -3979,13 +4062,15 @@ function uploadPDFCover(file, pdfData) {
                     // Create PDF record with cover
                     const finalPdfData = {
                         title: pdfData.title,
-                        course_id: pdfData.course_id,
-                        pages: pdfData.pages,
-                        price: pdfData.price,
-                        access_level: pdfData.access_level,
-                        description: pdfData.description,
+                        course_id: pdfData.course_id || null,
+                        pages: pdfData.pages || 0,
+                        price: pdfData.price || 0,
+                        access_level: pdfData.access_level || 'free',
+                        description: pdfData.description || '',
                         pdf_path: pdfData.pdf_key,
+                        pdf_s3_key: pdfData.pdf_key,
                         cover_image_path: response.key,
+                        cover_s3_key: response.key,
                         is_free: pdfData.price == 0
                     };
                     
@@ -4004,25 +4089,67 @@ function uploadPDFCover(file, pdfData) {
                         error: function(xhr) {
                             console.error("Error saving PDF:", xhr.responseText);
                             hideLoader();
-                            showToast('PDF uploaded but save failed', true);
+                            let errorMsg = 'PDF uploaded but save failed';
+                            try {
+                                const resp = JSON.parse(xhr.responseText);
+                                errorMsg = resp.error || resp.message || errorMsg;
+                            } catch(e) {}
+                            showToast(errorMsg, true);
                         }
                     });
                 },
-                error: function() {
-                    hideLoader();
-                    showToast('Cover upload failed', true);
-                    closeModal();
-                    loadPDFs();
-                    loadDashboardData();
+                error: function(xhr) {
+                    console.error("Cover S3 upload failed:", xhr.responseText);
+                    // Still try to save PDF without cover
+                    savePDFWithoutCover(pdfData, 'Cover upload failed, PDF saved without cover');
                 }
             });
         },
-        error: function() {
+        error: function(xhr) {
+            console.error("Error getting cover presigned URL:", xhr.responseText);
+            // Still try to save PDF without cover
+            savePDFWithoutCover(pdfData, 'Cover URL failed, PDF saved without cover');
+        }
+    });
+}
+
+// ========== HELPER: Save PDF without cover ==========
+function savePDFWithoutCover(pdfData, message) {
+    updateLoaderProgress(100, 'Saving PDF info (no cover)...');
+    
+    const finalPdfData = {
+        title: pdfData.title,
+        course_id: pdfData.course_id || null,
+        pages: pdfData.pages || 0,
+        price: pdfData.price || 0,
+        access_level: pdfData.access_level || 'free',
+        description: pdfData.description || '',
+        pdf_path: pdfData.pdf_key,
+        pdf_s3_key: pdfData.pdf_key,
+        is_free: pdfData.price == 0
+    };
+    
+    $.ajax({
+        url: '/admin/api/pdfs/create/',
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken},
+        data: JSON.stringify(finalPdfData),
+        success: function() {
             hideLoader();
-            showToast('Failed to get cover upload URL', true);
+            showToast(message || '✅ PDF uploaded without cover');
             closeModal();
             loadPDFs();
             loadDashboardData();
+        },
+        error: function(xhr) {
+            console.error("Error saving PDF:", xhr.responseText);
+            hideLoader();
+            let errorMsg = 'Error saving PDF';
+            try {
+                const resp = JSON.parse(xhr.responseText);
+                errorMsg = resp.error || resp.message || errorMsg;
+            } catch(e) {}
+            showToast(errorMsg, true);
         }
     });
 }
@@ -4030,15 +4157,34 @@ function uploadPDFCover(file, pdfData) {
 // ========== BLOG POST UPLOAD (unchanged - works with small files) ==========
 function submitBlogForm() {
     try {
+        const title = $('#title').val().trim();
+        const content = $('#content').val().trim();
+        
+        if (!title) {
+            showToast('Please enter a blog title', true);
+            return;
+        }
+        
+        if (!content) {
+            showToast('Please enter blog content', true);
+            return;
+        }
+        
         const formData = new FormData();
-        formData.append('title', $('#title').val());
-        formData.append('content', $('#content').val());
+        formData.append('title', title);
+        formData.append('content', content);
         formData.append('category', $('#category').val());
         formData.append('status', $('#status').val());
         formData.append('tags', $('#tags').val());
         
         const imageFile = $('#featured_image')[0]?.files[0];
         if (imageFile) {
+            // Validate image type
+            const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!validImageTypes.includes(imageFile.type)) {
+                showToast('Please upload a valid image file (JPEG, PNG, GIF, WebP)', true);
+                return;
+            }
             formData.append('featured_image', imageFile);
         }
         
@@ -4051,9 +4197,9 @@ function submitBlogForm() {
             data: formData,
             processData: false,
             contentType: false,
-            success: function() {
+            success: function(response) {
                 hideLoader();
-                showToast('Blog post created successfully!');
+                showToast('✅ Blog post created successfully!');
                 closeModal();
                 loadBlogs();
                 loadDashboardData();
@@ -4063,28 +4209,51 @@ function submitBlogForm() {
                 hideLoader();
                 let errorMsg = 'Error creating blog post';
                 try {
-                    let resp = JSON.parse(xhr.responseText);
+                    const resp = JSON.parse(xhr.responseText);
                     errorMsg = resp.error || resp.message || errorMsg;
-                } catch(e) {}
+                } catch(e) {
+                    errorMsg = xhr.responseText || errorMsg;
+                }
                 showToast(errorMsg, true);
             }
         });
     } catch(e) {
         console.error('Error in submitBlogForm:', e);
         hideLoader();
-        showToast('Error creating blog', true);
+        showToast('Error creating blog: ' + e.message, true);
     }
 }
 
 // ========== PACKAGE FORM (unchanged - no files) ==========
 function submitPackageForm() {
     try {
+        const name = $('#name').val().trim();
+        const description = $('#description').val().trim();
+        const price = $('#price').val();
+        const packageType = $('#package_type').val();
+        const features = $('#features').val();
+        
+        if (!name) {
+            showToast('Please enter a package name', true);
+            return;
+        }
+        
+        if (!description) {
+            showToast('Please enter a package description', true);
+            return;
+        }
+        
+        if (!price || price <= 0) {
+            showToast('Please enter a valid price', true);
+            return;
+        }
+        
         const data = {
-            name: $('#name').val(),
-            description: $('#description').val(),
-            price: $('#price').val(),
-            package_type: $('#package_type').val(),
-            features: $('#features').val().split('\n').filter(f => f.trim())
+            name: name,
+            description: description,
+            price: price,
+            package_type: packageType,
+            features: features.split('\n').filter(f => f.trim())
         };
         
         showLoader('Creating Package', 'Please wait...');
@@ -4094,9 +4263,9 @@ function submitPackageForm() {
             method: 'POST',
             headers: {'X-CSRFToken': csrftoken},
             data: JSON.stringify(data),
-            success: function() {
+            success: function(response) {
                 hideLoader();
-                showToast('Package created successfully!');
+                showToast('✅ Package created successfully!');
                 closeModal();
                 loadPackages();
                 loadDashboardData();
@@ -4106,16 +4275,18 @@ function submitPackageForm() {
                 hideLoader();
                 let errorMsg = 'Error creating package';
                 try {
-                    let resp = JSON.parse(xhr.responseText);
+                    const resp = JSON.parse(xhr.responseText);
                     errorMsg = resp.error || resp.message || errorMsg;
-                } catch(e) {}
+                } catch(e) {
+                    errorMsg = xhr.responseText || errorMsg;
+                }
                 showToast(errorMsg, true);
             }
         });
     } catch(e) {
         console.error('Error in submitPackageForm:', e);
         hideLoader();
-        showToast('Error creating package', true);
+        showToast('Error creating package: ' + e.message, true);
     }
 }
         // ========== EDIT ITEM FUNCTION ==========

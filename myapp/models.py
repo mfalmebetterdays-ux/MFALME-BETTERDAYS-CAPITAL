@@ -1785,15 +1785,23 @@ class TrainingVideo(models.Model):
         help_text="Upload video file (MP4, WebM, etc.)"
     )
     
-    # Option 2: External URL (YouTube, Vimeo, etc.)
+    # Option 2: External URL (YouTube, Vimeo, etc.) or S3 key
     video_url = models.URLField(
-        max_length=500,  # CHANGE from 200 to 500
+        max_length=1000,  # INCREASED to 1000 for long S3 URLs
         blank=True, 
         null=True,
-        help_text="URL to video (Vimeo, YouTube, etc.) - leave empty if uploading file"
+        help_text="URL to video (Vimeo, YouTube, etc.) OR S3 key from direct upload"
     )
     
-    # Option 3: Embed code for custom players
+    # Option 3: S3 Key for direct uploads (new field)
+    s3_key = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="S3 key for videos uploaded directly to S3"
+    )
+    
+    # Option 4: Embed code for custom players
     embed_code = models.TextField(
         blank=True, 
         null=True,
@@ -1805,6 +1813,14 @@ class TrainingVideo(models.Model):
         upload_to='video_thumbnails/', 
         blank=True, 
         null=True
+    )
+    
+    # Thumbnail S3 key for direct uploads
+    thumbnail_s3_key = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="S3 key for thumbnails uploaded directly to S3"
     )
     
     category = models.CharField(max_length=20, choices=[
@@ -1854,6 +1870,10 @@ class TrainingVideo(models.Model):
                     return self.video_file.url
             except Exception as e:
                 print(f"Error accessing video file: {e}")
+        # Return S3 URL if we have s3_key
+        elif self.s3_key:
+            from django.conf import settings
+            return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.s3_key}"
         return None
     
     @property
@@ -1864,6 +1884,9 @@ class TrainingVideo(models.Model):
                 return self.video_file.storage.exists(self.video_file.name)
             except:
                 return False
+        # S3 key is considered valid if it exists
+        elif self.s3_key:
+            return True
         return False
     
     @property
@@ -1871,11 +1894,15 @@ class TrainingVideo(models.Model):
         """Determine video type for template"""
         if self.video_file and self.has_valid_file:
             return 'file'
+        elif self.s3_key:
+            return 's3'
         elif self.video_url:
             if 'youtube.com' in self.video_url or 'youtu.be' in self.video_url:
                 return 'youtube'
             elif 'vimeo.com' in self.video_url:
                 return 'vimeo'
+            elif 's3.amazonaws.com' in self.video_url or self.video_url.startswith('https://'):
+                return 's3'
             else:
                 return 'url'
         elif self.embed_code:
@@ -1909,6 +1936,8 @@ class TrainingVideo(models.Model):
         elif self.video_type == 'vimeo':
             vid = self.vimeo_id
             return f"https://player.vimeo.com/video/{vid}" if vid else None
+        elif self.video_type == 's3':
+            return self.get_absolute_url()
         return None
     
     @property
@@ -1920,18 +1949,52 @@ class TrainingVideo(models.Model):
                     return self.thumbnail.url
             except:
                 pass
+        # Check for S3 thumbnail key
+        elif self.thumbnail_s3_key:
+            from django.conf import settings
+            return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.thumbnail_s3_key}"
         # Fallback to YouTube thumbnail if available
         elif self.video_type == 'youtube' and self.youtube_id:
             return f"https://img.youtube.com/vi/{self.youtube_id}/0.jpg"
         return None
     
+    def get_absolute_url(self):
+        """Get the full URL for the video"""
+        if self.video_type == 's3' and self.s3_key:
+            from django.conf import settings
+            return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.s3_key}"
+        elif self.video_file_url:
+            return self.video_file_url
+        elif self.video_url:
+            return self.video_url
+        return None
+    
     def clean(self):
         """Validate that at least one video source is provided"""
         from django.core.exceptions import ValidationError
-        if not self.video_file and not self.video_url and not self.embed_code:
-            raise ValidationError("You must provide either a video file, URL, or embed code.")
+        
+        # Check for ANY video source
+        has_file = bool(self.video_file and hasattr(self.video_file, 'name'))
+        has_s3_key = bool(self.s3_key)
+        has_url = bool(self.video_url and self.video_url.strip())
+        has_embed = bool(self.embed_code and self.embed_code.strip())
+        
+        # Special case: If video_url contains an S3 path, treat it as valid
+        if self.video_url and ('s3.amazonaws.com' in self.video_url or 
+                               self.video_url.startswith('videos/') or
+                               self.video_url.startswith('https://')):
+            has_url = True
+        
+        if not (has_file or has_s3_key or has_url or has_embed):
+            raise ValidationError("You must provide either a video file, S3 key, URL, or embed code.")
     
     def save(self, *args, **kwargs):
+        # If video_url is an S3 key, store it in s3_key field as well
+        if self.video_url and 's3.amazonaws.com' not in self.video_url and not self.video_url.startswith('http'):
+            # This is likely an S3 key (not a full URL)
+            if not self.s3_key:
+                self.s3_key = self.video_url
+        
         self.clean()
         super().save(*args, **kwargs)
 
