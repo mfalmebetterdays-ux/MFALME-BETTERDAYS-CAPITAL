@@ -3,7 +3,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
 from . import views
-from . import admin_views  # <-- ADD THIS LINE (it was missing)
+from . import admin_views  
+from . import s3_views 
 from .views import (
     api_mark_lesson_complete,
     api_course_progress,
@@ -96,10 +97,10 @@ urlpatterns = [
     path('sasapay/status/<str:reference>/', views.sasapay_status, name='sasapay_status'),
     path('education/pay/', views.education_payment, name='education_payment'),
 
-    path('admin/api/get-s3-presigned-url/', views.get_s3_presigned_url, name='get_s3_presigned_url'),
-    path('admin/api/initiate-multipart-upload/', views.initiate_multipart_upload, name='initiate_multipart_upload'),
-    path('admin/api/complete-multipart-upload/', views.complete_multipart_upload, name='complete_multipart_upload'),
-    path('admin/api/abort-multipart-upload/', views.abort_multipart_upload, name='abort_multipart_upload'),
+    path('admin/api/get-s3-presigned-url/', s3_views.get_s3_presigned_url, name='get_s3_presigned_url'),
+path('admin/api/initiate-multipart-upload/', s3_views.initiate_multipart_upload, name='initiate_multipart_upload'),
+path('admin/api/complete-multipart-upload/', s3_views.complete_multipart_upload, name='complete_multipart_upload'),
+path('admin/api/abort-multipart-upload/', s3_views.abort_multipart_upload, name='abort_multipart_upload'),
     
     # ==================== SUPPORT TICKETS ====================
     path('support/tickets/', views.support_tickets, name='support_tickets'),

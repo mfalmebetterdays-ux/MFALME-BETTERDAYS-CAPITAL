@@ -3609,44 +3609,56 @@
             }
         }
 
-        // ========== FIXED VIDEO UPLOAD FUNCTIONS ==========
-        function submitVideoForm() {
-            try {
-                const title = $('#title').val().trim();
-                const videoFile = $('#video_file')[0]?.files[0];
-                const thumbnailFile = $('#thumbnail')[0]?.files[0];
-                const courseId = $('#course_id').val();
-                const module = $('#module').val();
-                const duration = $('#duration').val();
-                const price = $('#price').val();
+        // ========== UPDATED VIDEO UPLOAD - DIRECT TO S3 ==========
+function submitVideoForm() {
+    try {
+        const title = $('#title').val().trim();
+        const videoFile = $('#video_file')[0]?.files[0];
+        const thumbnailFile = $('#thumbnail')[0]?.files[0];
+        const courseId = $('#course_id').val();
+        const module = $('#module').val();
+        const duration = $('#duration').val();
+        const price = $('#price').val();
+        
+        if (!title) {
+            showToast('Please enter a video title', true);
+            return;
+        }
+        
+        if (!videoFile) {
+            showToast('Please select a video file', true);
+            return;
+        }
+        
+        showLoader('Preparing Upload', 'Getting upload URL...', true);
+        
+        // Step 1: Get presigned URL from server
+        $.ajax({
+            url: '/admin/api/get-s3-presigned-url/',
+            method: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            data: JSON.stringify({
+                filename: videoFile.name,
+                filetype: videoFile.type || 'video/mp4'
+            }),
+            success: function(response) {
+                console.log("✅ Got presigned URL:", response);
                 
-                if (!title) {
-                    showToast('Please enter a video title', true);
-                    return;
-                }
-                
-                if (!videoFile) {
-                    showToast('Please select a video file', true);
-                    return;
-                }
-                
-                showLoader('Uploading Video', 'Uploading to server...', true); // true = show progress
-                
+                // Step 2: Upload directly to S3 using the presigned URL
                 const formData = new FormData();
-                formData.append('title', title);
-                formData.append('video_file', videoFile);
-                if (thumbnailFile) formData.append('thumbnail_file', thumbnailFile);
-                if (courseId) formData.append('course_id', courseId);
-                formData.append('module', module || '');
-                formData.append('duration', duration || '30');
-                formData.append('price', price || '0');
+                
+                // Add all the fields from the presigned URL response
+                Object.keys(response.fields).forEach(key => {
+                    formData.append(key, response.fields[key]);
+                });
+                formData.append('file', videoFile);
+                
+                // Update loader message
+                updateLoaderProgress(0, 'Uploading to S3...');
                 
                 $.ajax({
-                    url: '/admin/api/videos/create/',
+                    url: response.url,
                     method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrftoken
-                    },
                     data: formData,
                     processData: false,
                     contentType: false,
@@ -3655,85 +3667,197 @@
                         xhr.upload.addEventListener('progress', function(e) {
                             if (e.lengthComputable) {
                                 const percent = Math.round((e.loaded / e.total) * 100);
-                                updateLoaderProgress(percent, `Uploading ${percent}%`);
+                                updateLoaderProgress(percent, `Uploading to S3: ${percent}%`);
                             }
                         });
                         return xhr;
                     },
-                    success: function(response) {
-                        try {
-                            console.log("✅ Upload successful:", response);
+                    success: function() {
+                        // Step 3: Create video record in database
+                        updateLoaderProgress(100, 'Saving video info...');
+                        
+                        const videoData = {
+                            title: title,
+                            course_id: courseId,
+                            module: module,
+                            duration: duration,
+                            price: price,
+                            video_url: response.key,
+                            video_file: response.key,
+                            is_active: true
+                        };
+                        
+                        $.ajax({
+                            url: '/admin/api/videos/create/',
+                            method: 'POST',
+                            headers: {'X-CSRFToken': csrftoken},
+                            data: JSON.stringify(videoData),
+                            success: function(videoResponse) {
+                                // Step 4: Upload thumbnail if present
+                                if (thumbnailFile) {
+                                    uploadThumbnail(thumbnailFile, videoResponse.id);
+                                } else {
+                                    hideLoader();
+                                    showToast('✅ Video uploaded successfully!');
+                                    closeModal();
+                                    loadVideos();
+                                    loadDashboardData();
+                                }
+                            },
+                            error: function(xhr) {
+                                console.error("Error saving video:", xhr.responseText);
+                                hideLoader();
+                                showToast('Error saving video info', true);
+                            }
+                        });
+                    },
+                    error: function(xhr) {
+                        console.error("S3 upload failed:", xhr.responseText);
+                        hideLoader();
+                        showToast('Upload to S3 failed', true);
+                    }
+                });
+            },
+            error: function(xhr) {
+                console.error("Error getting presigned URL:", xhr.responseText);
+                hideLoader();
+                showToast('Failed to get upload URL', true);
+            }
+        });
+    } catch(e) {
+        console.error('Error in submitVideoForm:', e);
+        hideLoader();
+        showToast('Error uploading video', true);
+    }
+}
+
+// ========== THUMBNAIL UPLOAD HELPER ==========
+function uploadThumbnail(file, videoId) {
+    updateLoaderProgress(0, 'Uploading thumbnail...');
+    
+    $.ajax({
+        url: '/admin/api/get-s3-presigned-url/',
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken},
+        data: JSON.stringify({
+            filename: file.name,
+            filetype: file.type
+        }),
+        success: function(response) {
+            const formData = new FormData();
+            Object.keys(response.fields).forEach(key => {
+                formData.append(key, response.fields[key]);
+            });
+            formData.append('file', file);
+            
+            $.ajax({
+                url: response.url,
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhr: function() {
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            updateLoaderProgress(percent, `Uploading thumbnail: ${percent}%`);
+                        }
+                    });
+                    return xhr;
+                },
+                success: function() {
+                    // Update video with thumbnail
+                    $.ajax({
+                        url: `/admin/api/videos/${videoId}/update/`,
+                        method: 'POST',
+                        headers: {'X-CSRFToken': csrftoken},
+                        data: JSON.stringify({
+                            thumbnail_key: response.key
+                        }),
+                        success: function() {
                             hideLoader();
-                            showToast('Video uploaded successfully!');
+                            showToast('✅ Video and thumbnail uploaded!');
                             closeModal();
                             loadVideos();
                             loadDashboardData();
-                        } catch(e) {
-                            console.error('Error processing response:', e);
+                        },
+                        error: function() {
                             hideLoader();
-                            showToast('Error processing response', true);
+                            showToast('Video uploaded but thumbnail failed', true);
+                            closeModal();
+                            loadVideos();
+                            loadDashboardData();
                         }
-                    },
-                    error: function(xhr) {
-                        console.error("❌ Upload failed:", xhr.responseText);
-                        hideLoader();
-                        let errorMsg = 'Upload failed';
-                        try {
-                            const resp = JSON.parse(xhr.responseText);
-                            errorMsg = resp.error || resp.message || errorMsg;
-                        } catch(e) {
-                            errorMsg = xhr.responseText || errorMsg;
-                        }
-                        showToast(errorMsg, true);
-                    }
-                });
-            } catch(e) {
-                console.error('Error in submitVideoForm:', e);
-                hideLoader();
-                showToast('Error uploading video', true);
-            }
+                    });
+                },
+                error: function() {
+                    hideLoader();
+                    showToast('Thumbnail upload failed', true);
+                    closeModal();
+                    loadVideos();
+                    loadDashboardData();
+                }
+            });
+        },
+        error: function() {
+            hideLoader();
+            showToast('Failed to get thumbnail upload URL', true);
+            closeModal();
+            loadVideos();
+            loadDashboardData();
         }
+    });
+}
 
-        // ========== SIMPLIFIED PDF UPLOAD FUNCTIONS ==========
-        function submitPDFForm() {
-            try {
-                const title = $('#title').val().trim();
-                const pdfFile = $('#pdf_file')[0]?.files[0];
-                const coverFile = $('#cover_image')[0]?.files[0];
-                const courseId = $('#course_id').val();
-                const pages = $('#pages').val();
-                const price = $('#price').val();
-                const accessLevel = $('#access_level').val();
-                const description = $('#description').val();
+// ========== UPDATED PDF UPLOAD - DIRECT TO S3 ==========
+function submitPDFForm() {
+    try {
+        const title = $('#title').val().trim();
+        const pdfFile = $('#pdf_file')[0]?.files[0];
+        const coverFile = $('#cover_image')[0]?.files[0];
+        const courseId = $('#course_id').val();
+        const pages = $('#pages').val();
+        const price = $('#price').val();
+        const accessLevel = $('#access_level').val();
+        const description = $('#description').val();
+        
+        if (!title) {
+            showToast('Please enter a PDF title', true);
+            return;
+        }
+        
+        if (!pdfFile) {
+            showToast('Please select a PDF file', true);
+            return;
+        }
+        
+        showLoader('Preparing Upload', 'Getting upload URL...', true);
+        
+        // Step 1: Get presigned URL for PDF
+        $.ajax({
+            url: '/admin/api/get-s3-presigned-url/',
+            method: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            data: JSON.stringify({
+                filename: pdfFile.name,
+                filetype: 'application/pdf'
+            }),
+            success: function(response) {
+                console.log("✅ Got PDF presigned URL:", response);
                 
-                if (!title) {
-                    showToast('Please enter a PDF title', true);
-                    return;
-                }
-                
-                if (!pdfFile) {
-                    showToast('Please select a PDF file', true);
-                    return;
-                }
-                
-                showLoader('Uploading PDF', 'Uploading to server...', true);
-                
+                // Step 2: Upload PDF directly to S3
                 const formData = new FormData();
-                formData.append('title', title);
-                formData.append('pdf_file', pdfFile);
-                if (coverFile) formData.append('cover_image', coverFile);
-                if (courseId) formData.append('course_id', courseId);
-                formData.append('pages', pages || '0');
-                formData.append('price', price || '0');
-                formData.append('access_level', accessLevel || 'free');
-                formData.append('description', description || '');
+                Object.keys(response.fields).forEach(key => {
+                    formData.append(key, response.fields[key]);
+                });
+                formData.append('file', pdfFile);
+                
+                updateLoaderProgress(0, 'Uploading PDF to S3...');
                 
                 $.ajax({
-                    url: '/admin/api/pdfs/create/',
+                    url: response.url,
                     method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrftoken
-                    },
                     data: formData,
                     processData: false,
                     contentType: false,
@@ -3742,137 +3866,258 @@
                         xhr.upload.addEventListener('progress', function(e) {
                             if (e.lengthComputable) {
                                 const percent = Math.round((e.loaded / e.total) * 100);
-                                updateLoaderProgress(percent, `Uploading ${percent}%`);
+                                updateLoaderProgress(percent, `Uploading PDF: ${percent}%`);
                             }
                         });
                         return xhr;
                     },
-                    success: function(response) {
-                        try {
-                            console.log("✅ PDF uploaded successfully:", response);
+                    success: function() {
+                        // Step 3: Handle cover image if present
+                        if (coverFile) {
+                            uploadPDFCover(coverFile, {
+                                title: title,
+                                course_id: courseId,
+                                pages: pages,
+                                price: price,
+                                access_level: accessLevel,
+                                description: description,
+                                pdf_key: response.key
+                            });
+                        } else {
+                            // Step 4: Create PDF record without cover
+                            updateLoaderProgress(100, 'Saving PDF info...');
+                            
+                            const pdfData = {
+                                title: title,
+                                course_id: courseId,
+                                pages: pages,
+                                price: price,
+                                access_level: accessLevel,
+                                description: description,
+                                pdf_path: response.key,
+                                is_free: price == 0
+                            };
+                            
+                            $.ajax({
+                                url: '/admin/api/pdfs/create/',
+                                method: 'POST',
+                                headers: {'X-CSRFToken': csrftoken},
+                                data: JSON.stringify(pdfData),
+                                success: function() {
+                                    hideLoader();
+                                    showToast('✅ PDF uploaded successfully!');
+                                    closeModal();
+                                    loadPDFs();
+                                    loadDashboardData();
+                                },
+                                error: function(xhr) {
+                                    console.error("Error saving PDF:", xhr.responseText);
+                                    hideLoader();
+                                    showToast('Error saving PDF info', true);
+                                }
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error("PDF S3 upload failed:", xhr.responseText);
+                        hideLoader();
+                        showToast('PDF upload to S3 failed', true);
+                    }
+                });
+            },
+            error: function(xhr) {
+                console.error("Error getting PDF presigned URL:", xhr.responseText);
+                hideLoader();
+                showToast('Failed to get upload URL', true);
+            }
+        });
+    } catch(e) {
+        console.error('Error in submitPDFForm:', e);
+        hideLoader();
+        showToast('Error uploading PDF', true);
+    }
+}
+
+// ========== PDF COVER UPLOAD HELPER ==========
+function uploadPDFCover(file, pdfData) {
+    updateLoaderProgress(0, 'Uploading cover image...');
+    
+    $.ajax({
+        url: '/admin/api/get-s3-presigned-url/',
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken},
+        data: JSON.stringify({
+            filename: file.name,
+            filetype: file.type
+        }),
+        success: function(response) {
+            const formData = new FormData();
+            Object.keys(response.fields).forEach(key => {
+                formData.append(key, response.fields[key]);
+            });
+            formData.append('file', file);
+            
+            $.ajax({
+                url: response.url,
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhr: function() {
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            updateLoaderProgress(percent, `Uploading cover: ${percent}%`);
+                        }
+                    });
+                    return xhr;
+                },
+                success: function() {
+                    updateLoaderProgress(100, 'Saving PDF info...');
+                    
+                    // Create PDF record with cover
+                    const finalPdfData = {
+                        title: pdfData.title,
+                        course_id: pdfData.course_id,
+                        pages: pdfData.pages,
+                        price: pdfData.price,
+                        access_level: pdfData.access_level,
+                        description: pdfData.description,
+                        pdf_path: pdfData.pdf_key,
+                        cover_image_path: response.key,
+                        is_free: pdfData.price == 0
+                    };
+                    
+                    $.ajax({
+                        url: '/admin/api/pdfs/create/',
+                        method: 'POST',
+                        headers: {'X-CSRFToken': csrftoken},
+                        data: JSON.stringify(finalPdfData),
+                        success: function() {
                             hideLoader();
-                            showToast('PDF uploaded successfully!');
+                            showToast('✅ PDF and cover uploaded!');
                             closeModal();
                             loadPDFs();
                             loadDashboardData();
-                        } catch(e) {
-                            console.error('Error processing response:', e);
+                        },
+                        error: function(xhr) {
+                            console.error("Error saving PDF:", xhr.responseText);
                             hideLoader();
-                            showToast('Error processing response', true);
+                            showToast('PDF uploaded but save failed', true);
                         }
-                    },
-                    error: function(xhr) {
-                        console.error("❌ PDF upload failed:", xhr.responseText);
-                        hideLoader();
-                        
-                        let errorMsg = 'Upload failed';
-                        try {
-                            const resp = JSON.parse(xhr.responseText);
-                            errorMsg = resp.error || resp.message || errorMsg;
-                        } catch(e) {
-                            errorMsg = xhr.responseText || errorMsg;
-                        }
-                        
-                        showToast(errorMsg, true);
-                    }
-                });
-            } catch(e) {
-                console.error('Error in submitPDFForm:', e);
-                hideLoader();
-                showToast('Error uploading PDF', true);
-            }
-        }
-        
-        function submitBlogForm() {
-            try {
-                const formData = new FormData();
-                formData.append('title', $('#title').val());
-                formData.append('content', $('#content').val());
-                formData.append('category', $('#category').val());
-                formData.append('status', $('#status').val());
-                formData.append('tags', $('#tags').val());
-                
-                const imageFile = $('#featured_image')[0]?.files[0];
-                if (imageFile) {
-                    formData.append('featured_image', imageFile);
+                    });
+                },
+                error: function() {
+                    hideLoader();
+                    showToast('Cover upload failed', true);
+                    closeModal();
+                    loadPDFs();
+                    loadDashboardData();
                 }
-                
-                showLoader('Creating Blog Post', 'Please wait...');
-                
-                $.ajax({
-                    url: '/admin/api/blogs/create/',
-                    method: 'POST',
-                    headers: {'X-CSRFToken': csrftoken},
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function() {
-                        hideLoader();
-                        showToast('Blog post created successfully!');
-                        closeModal();
-                        loadBlogs();
-                        loadDashboardData();
-                    },
-                    error: function(xhr) {
-                        console.error("Error creating blog post:", xhr.responseText);
-                        hideLoader();
-                        let errorMsg = 'Error creating blog post';
-                        try {
-                            let resp = JSON.parse(xhr.responseText);
-                            errorMsg = resp.error || resp.message || errorMsg;
-                        } catch(e) {}
-                        showToast(errorMsg, true);
-                    }
-                });
-            } catch(e) {
-                console.error('Error in submitBlogForm:', e);
-                hideLoader();
-                showToast('Error creating blog', true);
-            }
+            });
+        },
+        error: function() {
+            hideLoader();
+            showToast('Failed to get cover upload URL', true);
+            closeModal();
+            loadPDFs();
+            loadDashboardData();
+        }
+    });
+}
+
+// ========== BLOG POST UPLOAD (unchanged - works with small files) ==========
+function submitBlogForm() {
+    try {
+        const formData = new FormData();
+        formData.append('title', $('#title').val());
+        formData.append('content', $('#content').val());
+        formData.append('category', $('#category').val());
+        formData.append('status', $('#status').val());
+        formData.append('tags', $('#tags').val());
+        
+        const imageFile = $('#featured_image')[0]?.files[0];
+        if (imageFile) {
+            formData.append('featured_image', imageFile);
         }
         
-        function submitPackageForm() {
-            try {
-                const data = {
-                    name: $('#name').val(),
-                    description: $('#description').val(),
-                    price: $('#price').val(),
-                    package_type: $('#package_type').val(),
-                    features: $('#features').val().split('\n').filter(f => f.trim())
-                };
-                
-                showLoader('Creating Package', 'Please wait...');
-                
-                $.ajax({
-                    url: '/admin/api/packages/create/',
-                    method: 'POST',
-                    headers: {'X-CSRFToken': csrftoken},
-                    data: JSON.stringify(data),
-                    success: function() {
-                        hideLoader();
-                        showToast('Package created successfully!');
-                        closeModal();
-                        loadPackages();
-                        loadDashboardData();
-                    },
-                    error: function(xhr) {
-                        console.error("Error creating package:", xhr.responseText);
-                        hideLoader();
-                        let errorMsg = 'Error creating package';
-                        try {
-                            let resp = JSON.parse(xhr.responseText);
-                            errorMsg = resp.error || resp.message || errorMsg;
-                        } catch(e) {}
-                        showToast(errorMsg, true);
-                    }
-                });
-            } catch(e) {
-                console.error('Error in submitPackageForm:', e);
-                hideLoader();
-                showToast('Error creating package', true);
-            }
-        }
+        showLoader('Creating Blog Post', 'Please wait...');
         
+        $.ajax({
+            url: '/admin/api/blogs/create/',
+            method: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function() {
+                hideLoader();
+                showToast('Blog post created successfully!');
+                closeModal();
+                loadBlogs();
+                loadDashboardData();
+            },
+            error: function(xhr) {
+                console.error("Error creating blog post:", xhr.responseText);
+                hideLoader();
+                let errorMsg = 'Error creating blog post';
+                try {
+                    let resp = JSON.parse(xhr.responseText);
+                    errorMsg = resp.error || resp.message || errorMsg;
+                } catch(e) {}
+                showToast(errorMsg, true);
+            }
+        });
+    } catch(e) {
+        console.error('Error in submitBlogForm:', e);
+        hideLoader();
+        showToast('Error creating blog', true);
+    }
+}
+
+// ========== PACKAGE FORM (unchanged - no files) ==========
+function submitPackageForm() {
+    try {
+        const data = {
+            name: $('#name').val(),
+            description: $('#description').val(),
+            price: $('#price').val(),
+            package_type: $('#package_type').val(),
+            features: $('#features').val().split('\n').filter(f => f.trim())
+        };
+        
+        showLoader('Creating Package', 'Please wait...');
+        
+        $.ajax({
+            url: '/admin/api/packages/create/',
+            method: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            data: JSON.stringify(data),
+            success: function() {
+                hideLoader();
+                showToast('Package created successfully!');
+                closeModal();
+                loadPackages();
+                loadDashboardData();
+            },
+            error: function(xhr) {
+                console.error("Error creating package:", xhr.responseText);
+                hideLoader();
+                let errorMsg = 'Error creating package';
+                try {
+                    let resp = JSON.parse(xhr.responseText);
+                    errorMsg = resp.error || resp.message || errorMsg;
+                } catch(e) {}
+                showToast(errorMsg, true);
+            }
+        });
+    } catch(e) {
+        console.error('Error in submitPackageForm:', e);
+        hideLoader();
+        showToast('Error creating package', true);
+    }
+}
         // ========== EDIT ITEM FUNCTION ==========
         function editItem(type, id) {
             showLoader('Loading', `Loading ${type} data...`);
