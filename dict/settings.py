@@ -1,10 +1,12 @@
 """
 Django settings for dict project - MFALME BETTERDAYS CAPITAL
-Production-ready settings with AWS S3 for media files
+Production-ready settings with AWS S3 for media files and automatic database failover
 """
 
 import os
 import sys
+import time
+import urllib.parse
 from pathlib import Path
 import dj_database_url
 import ssl
@@ -47,14 +49,20 @@ if not SECRET_KEY:
         raise ValueError("SECRET_KEY must be set in production environment")
 
 # ================================================
-# AWS S3 CONFIGURATION - VALIDATED BEFORE USE
+# AWS S3 CONFIGURATION - ALWAYS DEFINED
 # ================================================
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME')
 
-# Determine if we should use S3
+# Define these OUTSIDE any condition so they're always available
+if AWS_STORAGE_BUCKET_NAME and AWS_S3_REGION_NAME:
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
+else:
+    AWS_S3_CUSTOM_DOMAIN = None
+
+# Determine if we should use S3 for Django storage
 AWS_CREDENTIALS_PRESENT = all([
     AWS_ACCESS_KEY_ID, 
     AWS_SECRET_ACCESS_KEY, 
@@ -94,8 +102,7 @@ if USE_S3:
     # Set DEFAULT_ACL based on bucket configuration
     AWS_DEFAULT_ACL = 'public-read'
     
-    # Direct S3 URL
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
+    # Media URL
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
     
 else:
@@ -200,32 +207,98 @@ TEMPLATES = [
 WSGI_APPLICATION = 'dict.wsgi.application'
 
 # ================================================
-# DATABASE CONFIGURATION - NO HARDCODED CREDENTIALS!
+# DATABASE CONFIGURATION - WITH AUTOMATIC FAILOVER
 # ================================================
-DATABASE_URL = os.environ.get('DATABASE_URL')
 
-if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            conn_health_checks=True,
-            ssl_require=True
-        )
-    }
-    # Add SSL options
-    DATABASES['default']['OPTIONS'] = {
-        'sslmode': 'require',
-        'connect_timeout': 10,
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-            'CONN_MAX_AGE': 60,
+# Primary Database (Railway PostgreSQL)
+PRIMARY_DATABASE_URL = os.environ.get('DATABASE_URL')
+
+# Configure databases with a primary and fallback
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        'CONN_MAX_AGE': 60,
+        'OPTIONS': {
+            'timeout': 20,  # SQLite timeout
         }
     }
+}
+
+# Try to configure PostgreSQL as primary if URL exists
+if PRIMARY_DATABASE_URL:
+    try:
+        # Parse the database URL
+        parsed_url = urllib.parse.urlparse(PRIMARY_DATABASE_URL)
+        
+        # Extract connection details
+        db_config = {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': parsed_url.path[1:],  # Remove leading slash
+            'USER': parsed_url.username,
+            'PASSWORD': parsed_url.password,
+            'HOST': parsed_url.hostname,
+            'PORT': parsed_url.port or '5432',
+            'CONN_MAX_AGE': 180 if IS_RAILWAY else 60,
+            'CONN_HEALTH_CHECKS': True,
+            'OPTIONS': {
+                'connect_timeout': 5,  # Quick timeout for failover
+                'sslmode': 'require' if IS_RAILWAY else 'prefer',
+            }
+        }
+        
+        # Test the connection briefly
+        import psycopg2
+        try:
+            conn = psycopg2.connect(
+                dbname=db_config['NAME'],
+                user=db_config['USER'],
+                password=db_config['PASSWORD'],
+                host=db_config['HOST'],
+                port=db_config['PORT'],
+                connect_timeout=3
+            )
+            conn.close()
+            
+            # Connection successful - use PostgreSQL
+            DATABASES['default'] = db_config
+            print("✅ PostgreSQL database configured and connected")
+            
+        except Exception as e:
+            print(f"⚠️ PostgreSQL connection failed: {e}")
+            print("✅ Falling back to SQLite database")
+            # Keep SQLite as default
+            
+    except Exception as e:
+        print(f"⚠️ Error parsing DATABASE_URL: {e}")
+        print("✅ Using SQLite database")
+
+# For Railway production, we can also add a replica configuration
+if IS_RAILWAY and PRIMARY_DATABASE_URL:
+    # Add SQLite as a read replica fallback (optional)
+    DATABASES['sqlite_fallback'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        'CONN_MAX_AGE': 60,
+        'TEST': {
+            'MIRROR': 'default',  # Use for tests
+        }
+    }
+
+# ================================================
+# DATABASE CONNECTION POOLING & RETRY LOGIC
+# ================================================
+
+# Add connection pooling for PostgreSQL
+if 'default' in DATABASES and DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
+    DATABASES['default']['CONN_MAX_AGE'] = 180  # 3 minutes for Railway
+    DATABASES['default']['OPTIONS'].update({
+        'connect_timeout': 5,
+        'keepalives': 1,
+        'keepalives_idle': 30,
+        'keepalives_interval': 10,
+        'keepalives_count': 5,
+    })
 
 # ================================================
 # PASSWORD VALIDATION
@@ -495,6 +568,63 @@ if DEBUG:
     os.makedirs(os.path.join(BASE_DIR, 'media'), exist_ok=True)
 
 # ================================================
+# DATABASE INITIALIZATION WITH RETRY
+# ================================================
+
+def initialize_database():
+    """Initialize database connection with retry logic"""
+    if 'default' not in DATABASES:
+        return
+    
+    # If using PostgreSQL, try to connect with retries
+    if DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
+        max_retries = 3
+        retry_delay = 2
+        
+        for attempt in range(max_retries):
+            try:
+                from django.db import connections
+                connections['default'].ensure_connection()
+                print(f"✅ PostgreSQL connected (attempt {attempt + 1})")
+                return
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    print(f"⚠️ PostgreSQL connection attempt {attempt + 1} failed: {e}")
+                    print(f"⏳ Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                else:
+                    print(f"❌ PostgreSQL failed after {max_retries} attempts: {e}")
+                    print("✅ Falling back to SQLite")
+                    # Switch to SQLite
+                    DATABASES['default'] = {
+                        'ENGINE': 'django.db.backends.sqlite3',
+                        'NAME': BASE_DIR / 'db.sqlite3',
+                        'CONN_MAX_AGE': 60,
+                    }
+
+# ================================================
+# DATABASE HEALTH CHECK FUNCTION
+# ================================================
+
+def get_active_database():
+    """Return which database is currently active"""
+    if 'default' in DATABASES:
+        if DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
+            try:
+                from django.db import connections
+                connections['default'].ensure_connection()
+                return "PostgreSQL (Primary)"
+            except:
+                return "SQLite (Failover)"
+        else:
+            return "SQLite"
+    return "Unknown"
+
+# Run database initialization
+if 'runserver' in sys.argv or 'gunicorn' in sys.argv:
+    initialize_database()
+
+# ================================================
 # FINAL VERIFICATION (WITHOUT EXPOSING SECRETS!)
 # ================================================
 print("\n" + "="*60)
@@ -508,6 +638,7 @@ print(f"💰 SasaPay: {'Configured' if SASAPAY_CLIENT_ID and SASAPAY_CLIENT_SECR
 print(f"💳 Paystack: {'Configured' if PAYSTACK_PUBLIC_KEY and PAYSTACK_SECRET_KEY else 'Not Configured'}")
 print(f"💱 USD to KES Rate: {USD_TO_KES_RATE}")
 print(f"🚂 Railway: {'Yes' if IS_RAILWAY else 'No'}")
+print(f"🗄️  Database: {get_active_database()}")
 print("="*60 + "\n")
 
 # ================================================

@@ -98,9 +98,10 @@ urlpatterns = [
     path('education/pay/', views.education_payment, name='education_payment'),
 
     path('admin/api/get-s3-presigned-url/', s3_views.get_s3_presigned_url, name='get_s3_presigned_url'),
-path('admin/api/initiate-multipart-upload/', s3_views.initiate_multipart_upload, name='initiate_multipart_upload'),
-path('admin/api/complete-multipart-upload/', s3_views.complete_multipart_upload, name='complete_multipart_upload'),
-path('admin/api/abort-multipart-upload/', s3_views.abort_multipart_upload, name='abort_multipart_upload'),
+    path('admin/api/initiate-multipart-upload/', s3_views.initiate_multipart_upload, name='initiate_multipart_upload'),
+    path('admin/api/complete-multipart-upload/', s3_views.complete_multipart_upload, name='complete_multipart_upload'),
+    path('admin/api/abort-multipart-upload/', s3_views.abort_multipart_upload, name='abort_multipart_upload'),
+    path('admin/api/test-s3-upload/', s3_views.test_s3_upload_direct, name='test_s3_upload'),
     
     # ==================== SUPPORT TICKETS ====================
     path('support/tickets/', views.support_tickets, name='support_tickets'),
@@ -204,6 +205,10 @@ path('admin/api/abort-multipart-upload/', s3_views.abort_multipart_upload, name=
     path('admin/dashboard/', admin_views.admin_dashboard_view, name='admin_dashboard_alt'),
     path('admin/debug-courses-api/', admin_views.debug_courses_api, name='debug_courses_api'),
     path('admin/test-course-simple/', admin_views.test_course_simple, name='test_course_simple'),
+    path('admin/debug-session/', admin_views.debug_session, name='debug_session'),
+    path('admin/clear-session/', admin_views.clear_session, name='clear_session'),
+    path('admin/test-access/', admin_views.test_admin_access, name='test_admin_access'),
+    path('admin/debug-media/', admin_views.debug_media, name='debug_media'),
     
     # ==================== ADMIN API - DASHBOARD ====================
     path('admin/api/dashboard-stats/', admin_views.admin_api_dashboard_stats, 
@@ -223,6 +228,25 @@ path('admin/api/abort-multipart-upload/', s3_views.abort_multipart_upload, name=
          name='admin_api_user_delete'),
     path('admin/api/users/<int:user_id>/activate/', admin_views.admin_api_user_activate, 
          name='admin_api_user_activate'),
+    path('admin/api/users/export/', admin_views.admin_api_users_export, 
+         name='admin_api_users_export'),
+    
+    # ==================== ADMIN API - COURSE MANAGEMENT ====================
+    path('admin/api/courses/', admin_views.admin_api_courses, name='admin_api_courses'),
+    path('admin/api/courses/<int:course_id>/', admin_views.admin_api_course_detail, 
+         name='admin_api_course_detail'),
+    path('admin/api/courses/create/', admin_views.admin_api_course_create, 
+         name='admin_api_course_create'),
+    path('admin/api/courses/<int:course_id>/update/', admin_views.admin_api_course_update, 
+         name='admin_api_course_update'),
+    path('admin/api/courses/<int:course_id>/delete/', admin_views.admin_api_course_delete, 
+         name='admin_api_course_delete'),
+    path('admin/api/courses/<int:course_id>/stats/', admin_views.admin_api_course_stats, 
+         name='admin_api_course_stats'),
+    path('admin/api/courses/<int:course_id>/enrollments/', admin_views.admin_api_course_enrollments, 
+         name='admin_api_course_enrollments'),
+    path('admin/api/courses/export/', admin_views.admin_api_courses_export, 
+         name='admin_api_courses_export'),
     
     # ==================== ADMIN API - VIDEO MANAGEMENT ====================
     path('admin/api/videos/', admin_views.admin_api_videos, name='admin_api_videos'),
@@ -236,6 +260,8 @@ path('admin/api/abort-multipart-upload/', s3_views.abort_multipart_upload, name=
          name='admin_api_video_delete'),
     path('admin/api/videos/upload/', admin_views.admin_api_video_upload, 
          name='admin_api_video_upload'),
+    path('admin/api/videos/export/', admin_views.admin_api_videos_export, 
+         name='admin_api_videos_export'),
     
     # ==================== ADMIN API - PDF MANAGEMENT ====================
     path('admin/api/pdfs/', admin_views.admin_api_pdfs, name='admin_api_pdfs'),
@@ -253,27 +279,30 @@ path('admin/api/abort-multipart-upload/', s3_views.abort_multipart_upload, name=
          name='admin_api_pdf_fix_file'),
     path('admin/api/pdfs/<int:pdf_id>/debug/', admin_views.admin_api_pdf_debug, 
          name='admin_api_pdf_debug'),
-    
-    # ==================== ADMIN API - COURSE MANAGEMENT ====================
-    path('admin/api/courses/', admin_views.admin_api_courses, name='admin_api_courses'),
-    path('admin/api/courses/<int:course_id>/', admin_views.admin_api_course_detail, 
-         name='admin_api_course_detail'),
-    path('admin/api/courses/create/', admin_views.admin_api_course_create, 
-         name='admin_api_course_create'),
-    path('admin/api/courses/<int:course_id>/update/', admin_views.admin_api_course_update, 
-         name='admin_api_course_update'),
-    path('admin/api/courses/<int:course_id>/delete/', admin_views.admin_api_course_delete, 
-         name='admin_api_course_delete'),
+    path('admin/api/pdfs/export/', admin_views.admin_api_pdfs_export, 
+         name='admin_api_pdfs_export'),
     
     # ==================== ADMIN API - PACKAGE MANAGEMENT ====================
     path('admin/api/packages/', admin_views.admin_api_packages, name='admin_api_packages'),
+    path('admin/api/packages/<int:package_id>/', admin_views.admin_api_package_detail, 
+         name='admin_api_package_detail'),
     path('admin/api/packages/create/', admin_views.admin_api_package_create, 
          name='admin_api_package_create'),
     path('admin/api/packages/<int:package_id>/update/', admin_views.admin_api_package_update, 
          name='admin_api_package_update'),
+    path('admin/api/packages/<int:package_id>/delete/', admin_views.admin_api_package_delete, 
+         name='admin_api_package_delete'),
+    path('admin/api/packages/<int:package_id>/toggle-popular/', admin_views.admin_api_package_toggle_popular, 
+         name='admin_api_package_toggle_popular'),
+    path('admin/api/packages/export/', admin_views.admin_api_packages_export, 
+         name='admin_api_packages_export'),
     
     # ==================== ADMIN API - ORDER MANAGEMENT ====================
     path('admin/api/orders/', admin_views.admin_api_orders, name='admin_api_orders'),
+    path('admin/api/orders/<str:order_id>/', admin_views.admin_api_order_detail, 
+         name='admin_api_order_detail'),
+    path('admin/api/orders/export/', admin_views.admin_api_orders_export, 
+         name='admin_api_orders_export'),
     
     # ==================== ADMIN API - PARTNERSHIP MANAGEMENT ====================
     path('admin/api/partnerships/', admin_views.admin_api_partnerships, 
@@ -281,6 +310,8 @@ path('admin/api/abort-multipart-upload/', s3_views.abort_multipart_upload, name=
     path('admin/api/partnerships/<int:partnership_id>/update-status/', 
          admin_views.admin_api_update_partnership_status, 
          name='admin_api_update_partnership_status'),
+    path('admin/api/partnerships/export/', admin_views.admin_api_partnerships_export, 
+         name='admin_api_partnerships_export'),
     
     # ==================== ADMIN API - SUPPORT TICKETS ====================
     path('admin/api/support/tickets/', admin_views.admin_api_support_tickets, 
@@ -294,16 +325,24 @@ path('admin/api/abort-multipart-upload/', s3_views.abort_multipart_upload, name=
     
     # ==================== ADMIN API - BLOG MANAGEMENT ====================
     path('admin/api/blogs/', admin_views.admin_api_blogs, name='admin_api_blogs'),
+    path('admin/api/blogs/<int:blog_id>/', admin_views.admin_api_blog_detail, 
+         name='admin_api_blog_detail'),
     path('admin/api/blogs/create/', admin_views.admin_api_blog_create, 
          name='admin_api_blog_create'),
     path('admin/api/blogs/<int:blog_id>/update/', admin_views.admin_api_blog_update, 
          name='admin_api_blog_update'),
+    path('admin/api/blogs/<int:blog_id>/delete/', admin_views.admin_api_blog_delete, 
+         name='admin_api_blog_delete'),
+    path('admin/api/blogs/export/', admin_views.admin_api_blogs_export, 
+         name='admin_api_blogs_export'),
     
     # ==================== ADMIN API - REPORTS ====================
     path('admin/api/reports/revenue/', admin_views.admin_api_revenue_report, 
          name='admin_api_revenue_report'),
     path('admin/api/reports/users/', admin_views.admin_api_users_report, 
          name='admin_api_users_report'),
+    path('admin/api/reports/revenue/export/', admin_views.admin_api_revenue_export, 
+         name='admin_api_revenue_export'),
     
     # ==================== ADMIN API - DELETE ITEM ====================
     path('admin/api/<str:item_type>/<int:item_id>/delete/', 
@@ -322,24 +361,26 @@ path('admin/api/abort-multipart-upload/', s3_views.abort_multipart_upload, name=
 
 
     path('pesapal/initiate/', pesapal_initiate_payment, name='pesapal_initiate_payment'),
-path('pesapal/callback/', pesapal_callback, name='pesapal_callback'),
-path('pesapal/ipn/', pesapal_ipn, name='pesapal_ipn'),
-path('payment/', views.payment, name='payment_page'),
+    path('pesapal/callback/', pesapal_callback, name='pesapal_callback'),
+    path('pesapal/ipn/', pesapal_ipn, name='pesapal_ipn'),
+    path('payment/', views.payment, name='payment_page'),
 
 
- # SasaPay URLs - use views. prefix
+    # SasaPay URLs - use views. prefix
     path('sasapay/process/', views.sasapay_process_payment, name='sasapay_process_payment'),
     path('sasapay/callback/', views.sasapay_callback, name='sasapay_callback'),
     path('sasapay/verify/', views.sasapay_verify, name='sasapay_verify'),
     path('sasapay/status/<str:reference>/', views.sasapay_status, name='sasapay_status'),
 
 
-    path('admin/api/users/export/', views.export_users, name='export_users'),
-    path('admin/api/orders/export/', views.export_orders, name='export_orders'),  # Uses PaymentTransaction
-    path('admin/api/courses/export/', views.export_courses, name='export_courses'),
-    path('admin/api/videos/export/', views.export_videos, name='export_videos'),  # Uses TrainingVideo
-    path('admin/api/pdfs/export/', views.export_pdfs, name='export_pdfs'),
-    path('admin/api/reports/revenue/export/', views.export_revenue_report, name='export_revenue_report'),
+    # ==================== ADMIN API - VIDEO MANAGEMENT ====================
+path('admin/api/videos/', admin_views.admin_api_videos, name='admin_api_videos'),
+path('admin/api/videos/<int:video_id>/', admin_views.admin_api_video_detail, name='admin_api_video_detail'),
+path('admin/api/videos/create/', admin_views.admin_api_video_create, name='admin_api_video_create'),  # ← ADD THIS LINE
+path('admin/api/videos/<int:video_id>/update/', admin_views.admin_api_video_update, name='admin_api_video_update'),
+path('admin/api/videos/<int:video_id>/delete/', admin_views.admin_api_video_delete, name='admin_api_video_delete'),
+path('admin/api/videos/upload/', admin_views.admin_api_video_upload, name='admin_api_video_upload'),
+path('admin/api/videos/export/', admin_views.admin_api_videos_export, name='admin_api_videos_export'),
 ]
 
 # ==================== MEDIA FILES SERVING ====================

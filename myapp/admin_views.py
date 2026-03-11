@@ -83,7 +83,7 @@ def get_admin_user(request):
                 email_verified=True,
                 elite_rank='General'
             )
-            print(f"âœ… Created new admin user: {admin_user.email}")
+            print(f"✅ Created new admin user: {admin_user.email}")
     
     return admin_user
 
@@ -158,9 +158,9 @@ def admin_login_view(request):
             request.session['admin_login_time'] = str(timezone.now())
             request.session.save()
             
-            print(f"âœ… Admin {username} logged in successfully via hardcoded credentials")
-            print(f"âœ… Session ID: {request.session.session_key}")
-            print(f"âœ… Session data: {dict(request.session.items())}")
+            print(f"✅ Admin {username} logged in successfully via hardcoded credentials")
+            print(f"✅ Session ID: {request.session.session_key}")
+            print(f"✅ Session data: {dict(request.session.items())}")
             
             if is_ajax:
                 return JsonResponse({
@@ -185,7 +185,7 @@ def admin_logout_view(request):
     """Admin logout - clear custom session"""
     if is_admin_authenticated(request):
         username = request.session.get('admin_username')
-        print(f"âœ… Admin {username} logged out")
+        print(f"✅ Admin {username} logged out")
         request.session.flush()  # Clear the session completely
         messages.success(request, 'Logged out successfully')
     return redirect('admin_login')
@@ -203,11 +203,11 @@ def admin_dashboard_view(request):
     
     # Check custom authentication
     if not is_admin_authenticated(request):
-        print("âŒ Not authenticated via custom method", file=sys.stderr)
+        print("❌ Not authenticated via custom method", file=sys.stderr)
         return redirect('admin_login')
     
     admin_username = request.session.get('admin_username')
-    print(f"âœ… Admin {admin_username} authenticated via custom session", file=sys.stderr)
+    print(f"✅ Admin {admin_username} authenticated via custom session", file=sys.stderr)
     print("="*50 + "\n", file=sys.stderr)
     
     # Get statistics
@@ -738,60 +738,46 @@ def admin_api_user_activate(request, user_id):
 
 @admin_required
 def admin_api_courses(request):
-    """Get all courses - ONE PRICE version with thumbnails - FIXED URL GENERATION"""
+    """Get all courses with proper thumbnail URLs"""
     try:
         courses = Course.objects.all().order_by('-created_at')
-        
         data = []
+        
         for course in courses:
             try:
-                # Get price (just one price)
-                price = float(course.price) if course.price is not None else 0
+                # Get thumbnail URL - use the property that returns full S3 URL
+                thumbnail_url = course.thumbnail_url if hasattr(course, 'thumbnail_url') else None
                 
-                # Get video and PDF counts
-                try:
-                    videos_count = course.video_count()
-                except:
-                    videos_count = 0
-                    
-                try:
-                    pdfs_count = course.pdf_count()
-                except:
-                    pdfs_count = 0
-                
-                # Get thumbnail URL if exists
-                thumbnail_url = None
-                if hasattr(course, 'thumbnail') and course.thumbnail:
-                    try:
-                        thumbnail_url = course.thumbnail.url
-                        print(f"Course {course.id} thumbnail URL: {thumbnail_url}")  # Debug
-                    except Exception as e:
-                        print(f"Error getting thumbnail URL for course {course.id}: {e}")
-                        thumbnail_url = None
+                # If thumbnail_url is None but thumbnail exists, construct S3 URL manually
+                if not thumbnail_url and course.thumbnail and course.thumbnail.name:
+                    from django.conf import settings
+                    if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
+                        thumbnail_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{course.thumbnail.name}"
+                    else:
+                        thumbnail_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{course.thumbnail.name}"
                 
                 data.append({
                     'id': course.id,
-                    'name': str(course.title) if course.title else "Untitled",
-                    'title': str(course.title) if course.title else "Untitled",
-                    'code': f"CRS-{course.id:04d}",
-                    'price': price,
-                    'price_formatted': f"${price:,.2f}",
-                    'videos': videos_count,
-                    'pdfs': pdfs_count,
+                    'name': str(course.title),
+                    'title': str(course.title),
+                    'code': f"CRS-{str(course.id).zfill(4)}",
+                    'price': float(course.price),
+                    'price_formatted': f"${float(course.price):,.2f}",
+                    'videos': course.video_count(),
+                    'pdfs': course.pdf_count(),
                     'status': 'active' if course.is_active else 'inactive',
                     'description': course.description or "",
                     'created_at': course.created_at.strftime('%Y-%m-%d') if course.created_at else "",
                     'duration_weeks': course.duration_weeks or 4,
-                    'thumbnail': thumbnail_url,
+                    'thumbnail': thumbnail_url,  # ← This should now be full URL
                 })
             except Exception as e:
-                print(f"Error processing course {course.id}: {e}")
+                print(f"⚠️ Error processing course {course.id}: {e}")
                 continue
         
         return JsonResponse(data, safe=False)
-        
     except Exception as e:
-        print(f"Error in admin_api_courses: {e}")
+        print(f"❌ Error: {e}")
         return JsonResponse([], safe=False)
 
 
@@ -870,22 +856,100 @@ def admin_api_course_detail(request, course_id):
 @admin_required
 @csrf_exempt
 def admin_api_course_create(request):
-    """Create a new course with one price and optional thumbnail"""
+    """Create a new course - OPTIMIZED FOR S3 DIRECT UPLOADS"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
     print("\n=== COURSE CREATE DEBUG ===")
     print(f"Content type: {request.content_type}")
-    print(f"POST data: {request.POST}")
-    print(f"FILES: {request.FILES}")
     
     try:
-        # Handle FormData (from your AJAX request)
-        if request.content_type and 'multipart/form-data' in request.content_type:
+        # ========== HANDLE JSON DATA WITH S3 KEYS (NEW FLOW - PREFERRED) ==========
+        if request.content_type and 'application/json' in request.content_type:
+            data = json.loads(request.body)
+            print(f"📦 JSON data received: {data}")
+            
+            # Get data from JSON
+            title = data.get('title') or data.get('name', '')
+            description = data.get('description', '')
+            price = data.get('price', '0')
+            duration_weeks = data.get('duration_weeks', 4)
+            thumbnail_key = data.get('thumbnail_key')  # S3 key from direct upload
+            
+            print(f"Title: {title}")
+            print(f"Price: {price}")
+            print(f"Thumbnail S3 key: {thumbnail_key}")
+            
+            # Validate required fields
+            if not title:
+                return JsonResponse({'error': 'Course title is required'}, status=400)
+            
+            if not thumbnail_key:
+                return JsonResponse({'error': 'Thumbnail S3 key is required'}, status=400)
+            
+            # Create course instance
+            course = Course(
+                title=title,
+                description=description,
+                price=Decimal(str(price)) if price else Decimal('0'),
+                duration_weeks=int(duration_weeks) if duration_weeks else 4,
+                is_active=True,
+            )
+            
+            # CRITICAL: Store the S3 key in both fields for compatibility
+            # 1. Set thumbnail_s3_key (if your model has this field - RECOMMENDED)
+            if hasattr(course, 'thumbnail_s3_key'):
+                course.thumbnail_s3_key = thumbnail_key
+                print(f"✅ Set thumbnail_s3_key: {thumbnail_key}")
+            
+            # 2. Set thumbnail.name for Django's FileField (backward compatibility)
+            course.thumbnail.name = thumbnail_key
+            print(f"✅ Set thumbnail.name: {course.thumbnail.name}")
+            
+            # Save the course with bypass_validation
+            # This prevents Django from trying to validate the file existence
+            course.save(bypass_validation=True)
+            print(f"✅ Course saved with ID: {course.id}")
+            
+            # Log activity
+            admin_user = get_admin_user(request)
+            ActivityLog.objects.create(
+                user=admin_user,
+                action='ADMIN_ACTION',
+                description=f'Created course: {course.title} (S3 upload)',
+                metadata={
+                    'admin_username': request.session.get('admin_username'),
+                    'course_id': course.id,
+                    'thumbnail_key': thumbnail_key
+                }
+            )
+            
+            # Generate thumbnail URL for response
+            from django.conf import settings
+            if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
+                thumbnail_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{thumbnail_key}"
+            else:
+                thumbnail_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{thumbnail_key}"
+            
+            return JsonResponse({
+                'success': True, 
+                'id': course.id,
+                'title': course.title,
+                'message': 'Course created successfully with S3 thumbnail',
+                'thumbnail_url': thumbnail_url,
+                'thumbnail_key': thumbnail_key
+            })
+        
+        # ========== HANDLE MULTIPART/FORM-DATA (LEGACY FLOW) ==========
+        elif request.content_type and 'multipart/form-data' in request.content_type:
+            print(f"📦 Form data received: {request.POST}")
+            print(f"FILES: {request.FILES}")
+            
             # Get data from FormData
             title = request.POST.get('name', request.POST.get('title', ''))
             description = request.POST.get('description', '')
             price = request.POST.get('price', '0')
+            duration_weeks = request.POST.get('duration_weeks', 4)
             
             print(f"Title: {title}")
             print(f"Price: {price}")
@@ -899,7 +963,7 @@ def admin_api_course_create(request):
                 title=title,
                 description=description,
                 price=Decimal(str(price)) if price else Decimal('0'),
-                duration_weeks=4,
+                duration_weeks=int(duration_weeks),
                 is_active=True,
             )
             
@@ -913,25 +977,19 @@ def admin_api_course_create(request):
                 # Sanitize filename
                 thumbnail.name = sanitize_filename(thumbnail.name)
                 
-                # Save the thumbnail
+                # Save the thumbnail (this will use Django's storage)
                 course.thumbnail = thumbnail
                 print(f"Thumbnail saved with name: {thumbnail.name}")
             
             course.save()
-            print(f"âœ… Course saved with ID: {course.id}")
-            
-            # Check if thumbnail was saved
-            if course.thumbnail:
-                print(f"Thumbnail path: {course.thumbnail.path}")
-                print(f"Thumbnail URL: {course.thumbnail.url}")
-                print(f"Does file exist? {os.path.exists(course.thumbnail.path)}")
+            print(f"✅ Course saved with ID: {course.id}")
             
             # Log activity
             admin_user = get_admin_user(request)
             ActivityLog.objects.create(
                 user=admin_user,
                 action='ADMIN_ACTION',
-                description=f'Created course: {course.title}',
+                description=f'Created course: {course.title} (form upload)',
                 metadata={
                     'admin_username': request.session.get('admin_username'),
                     'course_id': course.id
@@ -949,23 +1007,32 @@ def admin_api_course_create(request):
             return JsonResponse({
                 'success': True, 
                 'id': course.id,
+                'title': course.title,
                 'message': 'Course created successfully',
                 'thumbnail_url': thumbnail_url
             })
+        
+        # ========== UNSUPPORTED CONTENT TYPE ==========
         else:
-            return JsonResponse({'error': 'Expected multipart/form-data'}, status=400)
+            return JsonResponse({
+                'error': f'Unsupported content type: {request.content_type}. Expected application/json or multipart/form-data'
+            }, status=400)
             
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON decode error: {e}")
+        return JsonResponse({'error': f'Invalid JSON: {str(e)}'}, status=400)
     except Exception as e:
-        print(f"âŒ Error: {e}")
+        print(f"❌ Error: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
-
-
+    
+@admin_required
 def debug_courses_api(request):
     """Debug endpoint to see raw course data"""
     from django.http import HttpResponse
     import traceback
+    from .models import Course
     
     output = "<h1>Courses API Debug</h1>"
     
@@ -976,31 +1043,41 @@ def debug_courses_api(request):
         for course in courses:
             output += f"<h3>Course ID: {course.id}</h3>"
             output += f"<p>Title: {course.title}</p>"
-            output += f"<p>price: {course.price}</p>"
+            output += f"<p>Price: {course.price}</p>"
             
             # Test thumbnail
             if hasattr(course, 'thumbnail') and course.thumbnail:
                 try:
                     thumbnail_url = course.thumbnail.url
-                    output += f"<p>thumbnail: {thumbnail_url} âœ…</p>"
+                    output += f"<p>thumbnail: {thumbnail_url} ✅</p>"
                 except Exception as e:
-                    output += f"<p>thumbnail URL error: {str(e)} âŒ</p>"
+                    output += f"<p>thumbnail URL error: {str(e)} ❌</p>"
+            elif hasattr(course, 'thumbnail_s3_key') and course.thumbnail_s3_key:
+                output += f"<p>thumbnail_s3_key: {course.thumbnail_s3_key} ✅</p>"
             else:
                 output += f"<p>thumbnail: None</p>"
+            
+            # Test thumbnail_url property
+            if hasattr(course, 'thumbnail_url'):
+                try:
+                    thumb_url = course.thumbnail_url
+                    output += f"<p>thumbnail_url property: {thumb_url}</p>"
+                except Exception as e:
+                    output += f"<p>thumbnail_url property error: {str(e)} ❌</p>"
             
             # Test video_count
             try:
                 v_count = course.video_count()
-                output += f"<p>video_count(): {v_count} âœ…</p>"
+                output += f"<p>video_count(): {v_count} ✅</p>"
             except Exception as e:
-                output += f"<p>video_count() ERROR: {str(e)} âŒ</p>"
+                output += f"<p>video_count() ERROR: {str(e)} ❌</p>"
             
             # Test pdf_count
             try:
                 p_count = course.pdf_count()
-                output += f"<p>pdf_count(): {p_count} âœ…</p>"
+                output += f"<p>pdf_count(): {p_count} ✅</p>"
             except Exception as e:
-                output += f"<p>pdf_count() ERROR: {str(e)} âŒ</p>"
+                output += f"<p>pdf_count() ERROR: {str(e)} ❌</p>"
             
             output += "<hr>"
         
@@ -1008,7 +1085,7 @@ def debug_courses_api(request):
         output += f"<p>FATAL ERROR: {str(e)}</p>"
         output += f"<pre>{traceback.format_exc()}</pre>"
     
-    return HttpResponse(output)
+    return HttpResponse(output)    
 
 
 @admin_required
@@ -1026,18 +1103,18 @@ def admin_api_course_update(request, course_id):
     try:
         # Handle multipart/form-data (for file uploads)
         if request.content_type and 'multipart/form-data' in request.content_type:
-            print(f"ðŸ”¹ Handling multipart form data update for course {course_id}")
+            print(f"🔵 Handling multipart form data update for course {course_id}")
             
             # Update fields from POST data
             if 'title' in request.POST:
                 new_title = request.POST.get('title')
                 if new_title and new_title != course.title:
-                    changes.append(f'title: {course.title} â†’ {new_title}')
+                    changes.append(f'title: {course.title} → {new_title}')
                     course.title = new_title
             elif 'name' in request.POST:
                 new_title = request.POST.get('name')
                 if new_title and new_title != course.title:
-                    changes.append(f'title: {course.title} â†’ {new_title}')
+                    changes.append(f'title: {course.title} → {new_title}')
                     course.title = new_title
             
             if 'description' in request.POST:
@@ -1047,7 +1124,7 @@ def admin_api_course_update(request, course_id):
                 old_price = float(course.price)
                 new_price = float(request.POST.get('price', 0))
                 if old_price != new_price:
-                    changes.append(f'price: ${old_price} â†’ ${new_price}')
+                    changes.append(f'price: ${old_price} → ${new_price}')
                 course.price = Decimal(str(request.POST.get('price', 0)))
             
             if 'duration_weeks' in request.POST:
@@ -1058,7 +1135,7 @@ def admin_api_course_update(request, course_id):
                 old_status = 'active' if course.is_active else 'inactive'
                 new_status = 'active' if is_active else 'inactive'
                 if old_status != new_status:
-                    changes.append(f'status: {old_status} â†’ {new_status}')
+                    changes.append(f'status: {old_status} → {new_status}')
                 course.is_active = is_active
             
             # Handle thumbnail upload if present
@@ -1068,7 +1145,7 @@ def admin_api_course_update(request, course_id):
                 thumbnail.name = sanitize_filename(thumbnail.name)
                 course.thumbnail = thumbnail
                 changes.append('thumbnail: updated')
-                print(f"âœ… Thumbnail uploaded: {thumbnail.name}")
+                print(f"✅ Thumbnail uploaded: {thumbnail.name}")
             
             course.save()
             
@@ -1076,11 +1153,11 @@ def admin_api_course_update(request, course_id):
             # Handle JSON data
             try:
                 data = json.loads(request.body)
-                print(f"ðŸ”¹ Handling JSON update for course {course_id}: {data}")
+                print(f"🔵 Handling JSON update for course {course_id}: {data}")
                 
                 # Update fields if provided
                 if 'title' in data and data['title'] != course.title:
-                    changes.append(f'title: {course.title} â†’ {data["title"]}')
+                    changes.append(f'title: {course.title} → {data["title"]}')
                     course.title = data['title']
                 
                 if 'description' in data:
@@ -1090,7 +1167,7 @@ def admin_api_course_update(request, course_id):
                     old_price = float(course.price)
                     new_price = float(data['price'])
                     if old_price != new_price:
-                        changes.append(f'price: ${old_price} â†’ ${new_price}')
+                        changes.append(f'price: ${old_price} → ${new_price}')
                     course.price = Decimal(str(data['price']))
                 
                 if 'duration_weeks' in data:
@@ -1100,7 +1177,7 @@ def admin_api_course_update(request, course_id):
                     old_status = 'active' if course.is_active else 'inactive'
                     new_status = 'active' if data['is_active'] else 'inactive'
                     if old_status != new_status:
-                        changes.append(f'status: {old_status} â†’ {new_status}')
+                        changes.append(f'status: {old_status} → {new_status}')
                     course.is_active = data['is_active']
                 
                 if 'materials' in data:
@@ -1124,9 +1201,9 @@ def admin_api_course_update(request, course_id):
                     'admin_username': request.session.get('admin_username')
                 }
             )
-            print(f"âœ… Course updated with changes: {changes}")
+            print(f"✅ Course updated with changes: {changes}")
         else:
-            print("â„¹ï¸ No changes detected")
+            print("ℹ️ No changes detected")
         
         # Get thumbnail URL
         thumbnail_url = None
@@ -1150,7 +1227,7 @@ def admin_api_course_update(request, course_id):
         })
         
     except Exception as e:
-        print(f"âŒ Error updating course: {e}")
+        print(f"❌ Error updating course: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
@@ -1296,46 +1373,30 @@ def admin_api_course_enrollments(request, course_id):
 
 @admin_required
 def admin_api_videos(request):
-    """Get all videos with thumbnails - FIXED URL GENERATION"""
+    """Get all videos with thumbnails"""
     videos = TrainingVideo.objects.select_related('course').order_by('-created_at')
     
     data = []
     for video in videos:
-        thumbnail_url = None
-        if video.thumbnail and hasattr(video.thumbnail, 'url'):
-            try:
-                thumbnail_url = video.thumbnail.url
-                print(f"Video {video.id} thumbnail URL: {thumbnail_url}")  # Debug
-            except Exception as e:
-                print(f"Error getting thumbnail URL for video {video.id}: {e}")
-        
-        # Get course name safely
-        course_name = 'Uncategorized'
-        if video.course:
-            course_name = video.course.title
-        
         data.append({
             'id': video.id,
             'title': video.title,
             'description': video.description[:100] + '...' if len(video.description) > 100 else video.description,
             'course_id': video.course.id if video.course else None,
-            'course_name': course_name,
+            'course_name': video.course.title if video.course else 'Uncategorized',
             'category': video.category,
             'duration': f"{video.duration} min",
             'price': float(video.price),
             'view_count': video.view_count,
-            'thumbnail': thumbnail_url,
-            'video_url': video.video_url,
+            'thumbnail': video.thumbnail_url,  # Use the property
             'is_active': video.is_active,
             'order': video.order,
             'created_at': video.created_at.strftime('%Y-%m-%d'),
             'uploaded': video.created_at.strftime('%Y-%m-%d'),
             'status': 'published' if video.is_active else 'draft',
-            'module': f'Module {video.order}' if video.order else 'N/A',
         })
     
     return JsonResponse(data, safe=False)
-
 
 @admin_required
 def admin_api_video_detail(request, video_id):
@@ -1374,75 +1435,125 @@ def admin_api_video_detail(request, video_id):
 @admin_required
 @csrf_exempt
 def admin_api_video_create(request):
-    """Create a new video - HANDLES BOTH JSON AND FORM DATA"""
+    """Create a new video - OPTIMIZED FOR S3 DIRECT UPLOADS"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
     try:
-        # Check if this is JSON data (from S3 upload) or form data (direct upload)
+        # ==================== HANDLE JSON DATA (S3 DIRECT UPLOADS) ====================
         if request.content_type and 'application/json' in request.content_type:
-            # Handle JSON data (from S3 upload)
             data = json.loads(request.body)
-            print(f"📹 Creating video from JSON: {data}")
+            print(f"📹 Creating video from JSON (S3 direct upload): {data}")
             
+            # ===== REQUIRED FIELDS =====
             title = data.get('title')
-            course_id = data.get('course_id')
-            module = data.get('module', '')
-            duration = data.get('duration', 30)
-            price = Decimal(str(data.get('price', 0)))
-            video_url = data.get('video_url') or data.get('video_file')
-            is_active = data.get('is_active', True)
+            s3_key = data.get('s3_key') or data.get('video_key')  # Consistent naming
             
             if not title:
                 return JsonResponse({'error': 'Title is required'}, status=400)
             
-            if not video_url:
-                return JsonResponse({'error': 'Video URL is required'}, status=400)
+            if not s3_key:
+                return JsonResponse({'error': 'Video S3 key is required (s3_key)'}, status=400)
             
-            # Create video instance
+            # ===== OPTIONAL FIELDS =====
+            course_id = data.get('course_id')
+            duration = data.get('duration', 30)
+            price = Decimal(str(data.get('price', 0)))
+            category = data.get('category', 'PTM')
+            description = data.get('description', '')
+            module = data.get('module', '')
+            order = data.get('order', 0)
+            is_active = data.get('is_active', True)
+            
+            # ===== THUMBNAIL HANDLING =====
+            thumbnail_key = data.get('thumbnail_key') or data.get('thumbnail_s3_key')
+            
+            # ===== CREATE VIDEO INSTANCE =====
             video = TrainingVideo(
                 title=title,
-                module=module,
-                duration=duration,
+                description=description,
+                category=category,
+                duration=int(duration),
                 price=price,
-                video_url=video_url,  # This is the S3 key/URL
+                order=int(order),
                 is_active=is_active,
             )
             
+            # CRITICAL: Store S3 keys - ONLY set s3_key, NOT video_url (it's a property)
+            video.s3_key = s3_key
+            # ❌ REMOVED: video.video_url = s3_key  ← This line caused the AttributeError
+            
+            # Handle thumbnail S3 key
+            if thumbnail_key:
+                video.thumbnail_s3_key = thumbnail_key
+                # Also set the thumbnail field for Django compatibility
+                video.thumbnail.name = thumbnail_key
+            
+            # Set module if provided (assuming your model has this field)
+            if hasattr(video, 'module') and module:
+                video.module = module
+            
             # Set course if provided
-            if course_id:
+            if course_id and course_id != 'null' and course_id != '':
                 try:
-                    video.course = Course.objects.get(id=course_id)
-                except Course.DoesNotExist:
-                    pass
+                    video.course = Course.objects.get(id=int(course_id))
+                    print(f"📚 Linked to course: {video.course.title}")
+                except (Course.DoesNotExist, ValueError) as e:
+                    print(f"⚠️ Course not found: {e}")
             
-            # IMPORTANT: Skip validation that requires file
-            video.save()
+            # Save with bypass_validation=True for S3 uploads
+            # This prevents Django from trying to validate the file existence
+            video.save(bypass_validation=True)
             
-            # Log activity
+            print(f"✅ Video created successfully with ID: {video.id}")
+            print(f"   S3 Key: {s3_key}")
+            print(f"   Thumbnail Key: {thumbnail_key}")
+            
+            # ===== LOG ACTIVITY =====
             admin_user = get_admin_user(request)
             ActivityLog.objects.create(
                 user=admin_user,
                 action='ADMIN_ACTION',
-                description=f'Created video: {video.title}',
+                description=f'Created video: {video.title} (S3 direct upload)',
                 metadata={
                     'admin_username': request.session.get('admin_username'),
                     'video_id': video.id,
-                    'video_url': video_url
+                    's3_key': s3_key,
+                    'thumbnail_key': thumbnail_key
                 }
             )
             
+            # ===== GENERATE VIDEO URL FOR RESPONSE =====
+            from django.conf import settings
+            if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
+                video_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{s3_key}"
+                thumbnail_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{thumbnail_key}" if thumbnail_key else None
+            else:
+                video_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{s3_key}"
+                thumbnail_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{thumbnail_key}" if thumbnail_key else None
+            
             return JsonResponse({
-                'success': True, 
+                'success': True,
                 'id': video.id,
-                'message': 'Video created successfully'
+                'title': video.title,
+                'message': 'Video created successfully from S3 upload',
+                'video_url': video_url,
+                'thumbnail_url': thumbnail_url,
+                's3_key': s3_key,
+                'thumbnail_key': thumbnail_key
             })
+        
+        # ==================== HANDLE MULTIPART/FORM-DATA (LEGACY DIRECT UPLOADS) ====================
+        elif request.content_type and 'multipart/form-data' in request.content_type:
+            print(f"📹 Creating video from form data (legacy upload): {request.POST}")
             
-        else:
-            # Handle multipart/form-data (original direct upload)
-            print(f"📹 Creating video from form data: {request.POST}")
-            
+            # ===== REQUIRED FIELDS =====
             title = request.POST.get('title')
+            
+            if not title:
+                return JsonResponse({'error': 'Title is required'}, status=400)
+            
+            # ===== OPTIONAL FIELDS =====
             description = request.POST.get('description', '')
             category = request.POST.get('category', 'PTM')
             duration = int(request.POST.get('duration', 30))
@@ -1452,14 +1563,17 @@ def admin_api_video_create(request):
             order = int(request.POST.get('order', 0))
             is_active = request.POST.get('is_active', 'true') == 'true'
             course_id = request.POST.get('course_id')
+            module = request.POST.get('module', '')
             
+            # Get uploaded files
             video_file = request.FILES.get('video_file')
             thumbnail_file = request.FILES.get('thumbnail_file')
             
-            if not title:
-                return JsonResponse({'error': 'Title is required'}, status=400)
+            # Validate files
+            if not video_file and not request.POST.get('video_url'):
+                return JsonResponse({'error': 'Either video file or video URL is required'}, status=400)
             
-            # Create video instance
+            # ===== CREATE VIDEO INSTANCE =====
             video = TrainingVideo(
                 title=title,
                 description=description,
@@ -1472,45 +1586,86 @@ def admin_api_video_create(request):
                 is_active=is_active,
             )
             
-            # Handle file uploads
+            # Set module if field exists
+            if hasattr(video, 'module') and module:
+                video.module = module
+            
+            # ===== HANDLE VIDEO FILE/UPLOAD =====
             if video_file:
+                # For direct uploads, Django will handle the file
                 video.video_file = video_file
+                print(f"📁 Video file attached: {video_file.name}")
+            elif request.POST.get('video_url'):
+                # For external URLs (YouTube, etc.)
+                video.video_url = request.POST.get('video_url')
+            
+            # ===== HANDLE THUMBNAIL =====
             if thumbnail_file:
                 video.thumbnail = thumbnail_file
+                print(f"🖼️ Thumbnail file attached: {thumbnail_file.name}")
             
-            # Set course if provided
-            if course_id:
+            # ===== SET COURSE =====
+            if course_id and course_id != 'null' and course_id != '':
                 try:
-                    video.course = Course.objects.get(id=course_id)
-                except Course.DoesNotExist:
-                    pass
+                    video.course = Course.objects.get(id=int(course_id))
+                    print(f"📚 Linked to course: {video.course.title}")
+                except (Course.DoesNotExist, ValueError) as e:
+                    print(f"⚠️ Course not found: {e}")
             
-            video.save()
+            # ===== SAVE VIDEO =====
+            video.save()  # Normal save with validation
+            print(f"✅ Video created successfully with ID: {video.id}")
             
-            # Log activity
+            # ===== LOG ACTIVITY =====
             admin_user = get_admin_user(request)
             ActivityLog.objects.create(
                 user=admin_user,
                 action='ADMIN_ACTION',
-                description=f'Created video: {video.title}',
+                description=f'Created video: {video.title} (form upload)',
                 metadata={
                     'admin_username': request.session.get('admin_username'),
-                    'video_id': video.id
+                    'video_id': video.id,
+                    'has_video_file': bool(video_file),
+                    'has_thumbnail': bool(thumbnail_file)
                 }
             )
             
-            return JsonResponse({
-                'success': True, 
+            # ===== GENERATE RESPONSE URLS =====
+            response_data = {
+                'success': True,
                 'id': video.id,
-                'message': 'Video created successfully'
-            })
+                'title': video.title,
+                'message': 'Video created successfully',
+            }
             
+            # Add video URL if available
+            if video.video_url:
+                response_data['video_url'] = video.video_url
+            
+            # Add thumbnail URL if available
+            if video.thumbnail and hasattr(video.thumbnail, 'url'):
+                try:
+                    response_data['thumbnail_url'] = video.thumbnail.url
+                except:
+                    pass
+            
+            return JsonResponse(response_data)
+        
+        # ==================== UNSUPPORTED CONTENT TYPE ====================
+        else:
+            return JsonResponse({
+                'error': f'Unsupported content type: {request.content_type}. Expected application/json or multipart/form-data'
+            }, status=400)
+    
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON decode error: {e}")
+        return JsonResponse({'error': f'Invalid JSON: {str(e)}'}, status=400)
+    
     except Exception as e:
         print(f"❌ Error creating video: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
-
 
 @admin_required
 @csrf_exempt
@@ -1527,13 +1682,13 @@ def admin_api_video_update(request, video_id):
     try:
         # Handle multipart/form-data (for file uploads)
         if request.content_type and 'multipart/form-data' in request.content_type:
-            print(f"ðŸ”¹ Handling multipart form data update for video {video_id}")
+            print(f"🔵 Handling multipart form data update for video {video_id}")
             
             # Update fields from POST data
             if 'title' in request.POST:
                 new_title = request.POST.get('title')
                 if new_title != video.title:
-                    changes.append(f'title: {video.title} â†’ {new_title}')
+                    changes.append(f'title: {video.title} → {new_title}')
                     video.title = new_title
             
             if 'description' in request.POST:
@@ -1542,20 +1697,20 @@ def admin_api_video_update(request, video_id):
             if 'category' in request.POST:
                 new_category = request.POST.get('category')
                 if new_category != video.category:
-                    changes.append(f'category: {video.category} â†’ {new_category}')
+                    changes.append(f'category: {video.category} → {new_category}')
                     video.category = new_category
             
             if 'duration' in request.POST:
                 new_duration = int(request.POST.get('duration', video.duration))
                 if new_duration != video.duration:
-                    changes.append(f'duration: {video.duration} â†’ {new_duration}')
+                    changes.append(f'duration: {video.duration} → {new_duration}')
                     video.duration = new_duration
             
             if 'price' in request.POST:
                 old_price = float(video.price)
                 new_price = float(request.POST.get('price', old_price))
                 if old_price != new_price:
-                    changes.append(f'price: ${old_price} â†’ ${new_price}')
+                    changes.append(f'price: ${old_price} → ${new_price}')
                 video.price = Decimal(str(new_price))
             
             if 'video_url' in request.POST:
@@ -1564,7 +1719,7 @@ def admin_api_video_update(request, video_id):
             if 'order' in request.POST:
                 new_order = int(request.POST.get('order', video.order))
                 if new_order != video.order:
-                    changes.append(f'order: {video.order} â†’ {new_order}')
+                    changes.append(f'order: {video.order} → {new_order}')
                     video.order = new_order
             
             if 'is_active' in request.POST:
@@ -1572,7 +1727,7 @@ def admin_api_video_update(request, video_id):
                 old_status = 'active' if video.is_active else 'inactive'
                 new_status = 'active' if is_active else 'inactive'
                 if old_status != new_status:
-                    changes.append(f'status: {old_status} â†’ {new_status}')
+                    changes.append(f'status: {old_status} → {new_status}')
                 video.is_active = is_active
             
             if 'allow_download' in request.POST:
@@ -1591,12 +1746,12 @@ def admin_api_video_update(request, video_id):
                     try:
                         new_course = Course.objects.get(id=course_id)
                         video.course = new_course
-                        changes.append(f'course: {old_course} â†’ {new_course.title}')
+                        changes.append(f'course: {old_course} → {new_course.title}')
                     except Course.DoesNotExist:
                         pass
                 else:
                     video.course = None
-                    changes.append(f'course: {old_course} â†’ None')
+                    changes.append(f'course: {old_course} → None')
             
             # Handle thumbnail upload if present
             if 'thumbnail' in request.FILES:
@@ -1604,51 +1759,79 @@ def admin_api_video_update(request, video_id):
                 thumbnail.name = sanitize_filename(thumbnail.name)
                 video.thumbnail = thumbnail
                 changes.append('thumbnail: updated')
-                print(f"âœ… Thumbnail uploaded: {thumbnail.name}")
+                print(f"✅ Thumbnail uploaded: {thumbnail.name}")
             
             video.save()
             
         else:
-            # Handle JSON data
+            # Handle JSON data (for S3 updates)
             try:
                 data = json.loads(request.body)
-                print(f"ðŸ”¹ Handling JSON update for video {video_id}")
+                print(f"🔵 Handling JSON update for video {video_id}")
+                print(f"📦 Update data: {data}")
                 
                 changes_list = []
                 
+                # Handle S3 thumbnail key update
+                if 'thumbnail_key' in data or 'thumbnail_s3_key' in data:
+                    thumbnail_key = data.get('thumbnail_key') or data.get('thumbnail_s3_key')
+                    if thumbnail_key and thumbnail_key != video.thumbnail_s3_key:
+                        video.thumbnail_s3_key = thumbnail_key
+                        changes_list.append('thumbnail_s3_key: updated')
+                        print(f"✅ Thumbnail S3 key updated: {thumbnail_key}")
+                
+                # Handle S3 video key update
+                if 's3_key' in data and data['s3_key'] != video.s3_key:
+                    video.s3_key = data['s3_key']
+                    video.video_url = data['s3_key']  # Keep in sync
+                    changes_list.append(f's3_key: updated')
+                    print(f"✅ Video S3 key updated: {data['s3_key']}")
+                
+                # Handle video_url update (could be S3 key or external URL)
+                if 'video_url' in data and data['video_url'] != video.video_url:
+                    old_url = video.video_url
+                    video.video_url = data['video_url']
+                    # If it looks like an S3 key, also update s3_key
+                    if 's3.amazonaws.com' not in data['video_url'] and not data['video_url'].startswith('http'):
+                        video.s3_key = data['video_url']
+                    changes_list.append(f'video_url: {old_url} → {data["video_url"]}')
+                
+                # Handle other field updates
                 if 'title' in data and data['title'] != video.title:
-                    changes_list.append(f'title: {video.title} â†’ {data["title"]}')
+                    changes_list.append(f'title: {video.title} → {data["title"]}')
                     video.title = data['title']
                 
                 if 'description' in data:
                     video.description = data['description']
+                    changes_list.append('description: updated')
                 
                 if 'category' in data and data['category'] != video.category:
-                    changes_list.append(f'category: {video.category} â†’ {data["category"]}')
+                    changes_list.append(f'category: {video.category} → {data["category"]}')
                     video.category = data['category']
                 
+                if 'module' in data and data['module'] != getattr(video, 'module', ''):
+                    video.module = data['module']
+                    changes_list.append('module: updated')
+                
                 if 'duration' in data and int(data['duration']) != video.duration:
-                    changes_list.append(f'duration: {video.duration} â†’ {data["duration"]}')
+                    changes_list.append(f'duration: {video.duration} → {data["duration"]}')
                     video.duration = int(data['duration'])
                 
                 if 'price' in data:
                     old_price = float(video.price)
                     new_price = float(data['price'])
                     if old_price != new_price:
-                        changes_list.append(f'price: ${old_price} â†’ ${new_price}')
+                        changes_list.append(f'price: ${old_price} → ${new_price}')
                     video.price = Decimal(str(data['price']))
                 
-                if 'video_url' in data:
-                    video.video_url = data['video_url']
-                
                 if 'order' in data and int(data['order']) != video.order:
-                    changes_list.append(f'order: {video.order} â†’ {data["order"]}')
+                    changes_list.append(f'order: {video.order} → {data["order"]}')
                     video.order = int(data['order'])
                 
                 if 'is_active' in data and data['is_active'] != video.is_active:
                     old_status = 'active' if video.is_active else 'inactive'
                     new_status = 'active' if data['is_active'] else 'inactive'
-                    changes_list.append(f'status: {old_status} â†’ {new_status}')
+                    changes_list.append(f'status: {old_status} → {new_status}')
                     video.is_active = data['is_active']
                 
                 if 'allow_download' in data:
@@ -1662,22 +1845,26 @@ def admin_api_video_update(request, video_id):
                     old_course = video.course.title if video.course else 'None'
                     if data['course_id']:
                         try:
-                            new_course = Course.objects.get(id=data['course_id'])
+                            new_course = Course.objects.get(id=int(data['course_id']))
                             video.course = new_course
-                            changes_list.append(f'course: {old_course} â†’ {new_course.title}')
-                        except Course.DoesNotExist:
-                            pass
+                            changes_list.append(f'course: {old_course} → {new_course.title}')
+                        except (Course.DoesNotExist, ValueError) as e:
+                            print(f"Course not found: {e}")
                     else:
                         video.course = None
-                        changes_list.append(f'course: {old_course} â†’ None')
+                        changes_list.append(f'course: {old_course} → None')
                 
-                video.save()
-                changes.extend(changes_list)
+                # Save with bypass_validation for S3 updates
+                if changes_list:
+                    video.save(bypass_validation=True)
+                    changes.extend(changes_list)
+                else:
+                    print("ℹ️ No changes detected")
                 
             except json.JSONDecodeError as e:
                 return JsonResponse({'error': f'Invalid JSON: {str(e)}'}, status=400)
         
-        # Log activity
+        # Log activity if there were changes
         admin_user = get_admin_user(request)
         if changes:
             ActivityLog.objects.create(
@@ -1690,15 +1877,33 @@ def admin_api_video_update(request, video_id):
                     'changes': changes
                 }
             )
-            print(f"âœ… Video updated with changes: {changes}")
+            print(f"✅ Video updated with changes: {changes}")
+        else:
+            print("ℹ️ No changes to log")
         
-        # Get thumbnail URL
+        # Get thumbnail URL (prioritize S3 thumbnail if available)
         thumbnail_url = None
-        if video.thumbnail:
+        if video.thumbnail_s3_key:
+            from django.conf import settings
+            thumbnail_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{video.thumbnail_s3_key}"
+        elif video.thumbnail and hasattr(video.thumbnail, 'url'):
             try:
                 thumbnail_url = video.thumbnail.url
             except:
                 thumbnail_url = None
+        
+        # Get video URL
+        video_url = None
+        if video.s3_key:
+            from django.conf import settings
+            video_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{video.s3_key}"
+        elif video.video_url:
+            video_url = video.video_url
+        elif video.video_file and hasattr(video.video_file, 'url'):
+            try:
+                video_url = video.video_file.url
+            except:
+                video_url = None
         
         return JsonResponse({
             'success': True,
@@ -1707,12 +1912,15 @@ def admin_api_video_update(request, video_id):
             'video': {
                 'id': video.id,
                 'title': video.title,
-                'thumbnail': thumbnail_url
+                'thumbnail_url': thumbnail_url,
+                'video_url': video_url,
+                's3_key': video.s3_key,
+                'thumbnail_s3_key': video.thumbnail_s3_key
             }
         })
         
     except Exception as e:
-        print(f"âŒ Error updating video: {e}")
+        print(f"❌ Error updating video: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
@@ -1792,9 +2000,9 @@ def admin_api_video_upload(request):
             # Save thumbnail file
             thumbnail_path = default_storage.save(thumb_filename, thumbnail_file)
             thumbnail_url = default_storage.url(thumbnail_path)
-            print(f"âœ… Thumbnail uploaded: {thumbnail_url}")
+            print(f"✅ Thumbnail uploaded: {thumbnail_url}")
         else:
-            print(f"âš ï¸ Invalid thumbnail type: {thumbnail_file.content_type}")
+            print(f"⚠️ Invalid thumbnail type: {thumbnail_file.content_type}")
     
     # Log activity
     admin_user = get_admin_user(request)
@@ -1825,71 +2033,36 @@ def admin_api_video_upload(request):
 
 @admin_required
 def admin_api_pdfs(request):
-    """Get all PDFs with cover images - FIXED URL GENERATION AND FILE STATUS"""
+    """Get all PDFs with proper S3 URLs"""
     pdfs = PDF.objects.select_related('course').order_by('-created_at')
     
     data = []
     for pdf in pdfs:
-        cover_url = None
-        if pdf.cover_image and hasattr(pdf.cover_image, 'url'):
-            try:
-                cover_url = pdf.cover_image.url
-                print(f"PDF {pdf.id} cover URL: {cover_url}")
-            except Exception as e:
-                print(f"Error getting cover URL for PDF {pdf.id}: {e}")
-        
-        # Get course name safely
-        course_name = 'General'
-        if pdf.course:
-            course_name = pdf.course.title
-        
-        # Check if PDF file exists
-        pdf_file_url = None
-        pdf_file_exists = False
-        pdf_file_path = None
-        
-        if pdf.pdf_file and hasattr(pdf.pdf_file, 'url'):
-            try:
-                pdf_file_url = pdf.pdf_file.url
-                pdf_file_path = pdf.pdf_file.path if hasattr(pdf.pdf_file, 'path') else None
-                
-                # Check if file exists on disk
-                if pdf_file_path and os.path.exists(pdf_file_path):
-                    pdf_file_exists = True
-                else:
-                    # Try storage exists method
-                    try:
-                        pdf_file_exists = pdf.pdf_file.storage.exists(pdf.pdf_file.name)
-                    except:
-                        pdf_file_exists = False
-                        
-                print(f"PDF {pdf.id} file URL: {pdf_file_url}")
-                print(f"PDF {pdf.id} file exists: {pdf_file_exists}")
-                
-            except Exception as e:
-                print(f"Error getting PDF file for PDF {pdf.id}: {e}")
-                pdf_file_exists = False
-        
         data.append({
             'id': pdf.id,
             'title': pdf.title,
             'description': pdf.description[:100] + '...' if len(pdf.description) > 100 else pdf.description,
             'course_id': pdf.course.id if pdf.course else None,
-            'course_name': course_name,
+            'course_name': pdf.course.title if pdf.course else 'General',
             'category': pdf.category,
             'pages': pdf.pages,
             'file_size': pdf.file_size,
             'price': float(pdf.price),
             'is_free': pdf.is_free,
             'access_level': pdf.access_level,
+            'views': pdf.views,
             'downloads': pdf.downloads,
-            'cover_image': cover_url,
-            'pdf_file': pdf_file_url,
-            'has_file': pdf_file_exists,  # Add this flag
+            'cover_url': pdf.cover_url,
+            'pdf_url': pdf.file_url,
             'is_active': pdf.is_active,
+            'is_featured': pdf.is_featured,
             'created_at': pdf.created_at.strftime('%Y-%m-%d'),
             'uploaded': pdf.created_at.strftime('%Y-%m-%d'),
             'size': pdf.file_size,
+            'has_file': bool(pdf.pdf_s3_key or pdf.pdf_file),
+            'pdf_s3_key': pdf.pdf_s3_key,
+            'cover_s3_key': pdf.cover_s3_key,
+            'is_s3_pdf': pdf.is_s3_pdf,
         })
     
     return JsonResponse(data, safe=False)
@@ -1943,27 +2116,29 @@ def admin_api_pdf_detail(request, pdf_id):
 @admin_required
 @csrf_exempt
 def admin_api_pdf_create(request):
-    """Create a new PDF record with file paths from upload"""
+    """Create a new PDF record with S3 keys from direct upload"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
     try:
         data = json.loads(request.body)
-        print(f"ðŸ“ Creating PDF with data: {data}")
+        print(f"📝 Creating PDF with S3 data: {data}")
     except json.JSONDecodeError as e:
         return JsonResponse({'error': f'Invalid JSON: {str(e)}'}, status=400)
     
     # Validate required fields
-    if not data.get('title'):
+    title = data.get('title')
+    if not title:
         return JsonResponse({'error': 'Title is required'}, status=400)
     
-    if not data.get('pdf_path'):
-        return JsonResponse({'error': 'PDF file path is required'}, status=400)
+    pdf_key = data.get('pdf_key') or data.get('pdf_s3_key')
+    if not pdf_key:
+        return JsonResponse({'error': 'PDF S3 key is required'}, status=400)
     
     try:
         # Create PDF instance
         pdf = PDF(
-            title=data.get('title'),
+            title=title,
             description=data.get('description', ''),
             category=data.get('category', 'other'),
             pages=int(data.get('pages', 0)),
@@ -1978,65 +2153,36 @@ def admin_api_pdf_create(request):
         # Set is_free based on price
         pdf.is_free = (pdf.price == 0)
         
-        # CRITICAL: Set the PDF file from the uploaded path
-        # This assigns the saved file to the FileField
-        if data.get('pdf_path'):
-            pdf.pdf_file.name = data.get('pdf_path')
-            print(f"ðŸ“ Setting PDF file to: {pdf.pdf_file.name}")
-            
-            # Verify the file exists
-            try:
-                if pdf.pdf_file.storage.exists(pdf.pdf_file.name):
-                    print(f"âœ… PDF file exists in storage")
-                    
-                    # Set file size if not provided
-                    if not data.get('file_size') and not pdf.file_size:
-                        try:
-                            file_size = pdf.pdf_file.size
-                            if file_size < 1024:
-                                pdf.file_size = f"{file_size} B"
-                            elif file_size < 1024 * 1024:
-                                pdf.file_size = f"{file_size / 1024:.1f} KB"
-                            else:
-                                pdf.file_size = f"{file_size / (1024 * 1024):.1f} MB"
-                            print(f"ðŸ“Š Set file size: {pdf.file_size}")
-                        except Exception as e:
-                            print(f"âš ï¸ Could not get file size: {e}")
-                else:
-                    print(f"âš ï¸ PDF file does not exist in storage: {pdf.pdf_file.name}")
-            except Exception as e:
-                print(f"âš ï¸ Error checking file existence: {e}")
-        else:
-            return JsonResponse({'error': 'PDF path is required'}, status=400)
+        # CRITICAL: Store PDF S3 key
+        pdf.pdf_s3_key = pdf_key
+        if hasattr(pdf, 'pdf_file'):
+            pdf.pdf_file.name = pdf_key  # For backward compatibility
         
-        # Set cover image if provided
-        if data.get('cover_image_path'):
-            pdf.cover_image.name = data.get('cover_image_path')
-            print(f"ðŸ–¼ï¸ Setting cover image to: {pdf.cover_image.name}")
-            
-            # Verify cover image exists
-            try:
-                if pdf.cover_image.storage.exists(pdf.cover_image.name):
-                    print(f"âœ… Cover image exists in storage")
-            except Exception as e:
-                print(f"âš ï¸ Error checking cover image: {e}")
+        # Set file size if provided
+        if data.get('size_display'):
+            pdf.file_size = data.get('size_display')
         
-        # Set file size from data if provided
-        if data.get('file_size_display'):
-            pdf.file_size = data.get('file_size_display')
+        # Store cover image S3 key if provided
+        cover_key = data.get('cover_key') or data.get('cover_s3_key')
+        if cover_key:
+            pdf.cover_s3_key = cover_key
+            if hasattr(pdf, 'cover_image'):
+                pdf.cover_image.name = cover_key  # For backward compatibility
         
         # Set course if provided
         course_id = data.get('course_id')
-        if course_id:
+        if course_id and course_id != 'null' and course_id != '':
             try:
-                pdf.course = Course.objects.get(id=course_id)
-                print(f"ðŸ“š Linked to course: {pdf.course.title}")
-            except Course.DoesNotExist:
-                print(f"âš ï¸ Course {course_id} not found")
+                pdf.course = Course.objects.get(id=int(course_id))
+                print(f"📚 Linked to course: {pdf.course.title}")
+            except (Course.DoesNotExist, ValueError) as e:
+                print(f"⚠️ Course not found: {e}")
         
-        # Save the PDF record
-        pdf.save()
-        print(f"âœ… PDF created with ID: {pdf.id}")
+        # Save with bypass_validation=True for S3 uploads
+        pdf.save(bypass_validation=True)
+        print(f"✅ PDF created with ID: {pdf.id}")
+        print(f"   PDF S3 key: {pdf_key}")
+        print(f"   Cover S3 key: {cover_key if cover_key else 'None'}")
         
         # Log activity
         admin_user = get_admin_user(request)
@@ -2048,19 +2194,33 @@ def admin_api_pdf_create(request):
                 'admin_username': request.session.get('admin_username'),
                 'pdf_id': pdf.id,
                 'pdf_title': pdf.title,
-                'file_path': data.get('pdf_path')
+                'pdf_key': pdf_key,
+                'cover_key': cover_key
             }
         )
+        
+        # Generate URLs for response
+        from django.conf import settings
+        if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
+            pdf_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{pdf_key}"
+            cover_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{cover_key}" if cover_key else None
+        else:
+            pdf_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{pdf_key}"
+            cover_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{cover_key}" if cover_key else None
         
         return JsonResponse({
             'success': True,
             'id': pdf.id,
             'title': pdf.title,
-            'message': 'PDF created successfully'
+            'message': 'PDF created successfully',
+            'pdf_url': pdf_url,
+            'cover_url': cover_url,
+            'pdf_key': pdf_key,
+            'cover_key': cover_key
         })
         
     except Exception as e:
-        print(f"âŒ Error creating PDF: {e}")
+        print(f"❌ Error creating PDF: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
@@ -2080,12 +2240,12 @@ def admin_api_pdf_update(request, pdf_id):
     try:
         # Handle multipart/form-data (for file uploads)
         if request.content_type and 'multipart/form-data' in request.content_type:
-            print(f"ðŸ”¹ Handling multipart form data update for PDF {pdf_id}")
+            print(f"🔵 Handling multipart form data update for PDF {pdf_id}")
             
             if 'title' in request.POST:
                 new_title = request.POST.get('title')
                 if new_title != pdf.title:
-                    changes.append(f'title: {pdf.title} â†’ {new_title}')
+                    changes.append(f'title: {pdf.title} → {new_title}')
                     pdf.title = new_title
             
             if 'description' in request.POST:
@@ -2094,27 +2254,27 @@ def admin_api_pdf_update(request, pdf_id):
             if 'category' in request.POST:
                 new_category = request.POST.get('category')
                 if new_category != pdf.category:
-                    changes.append(f'category: {pdf.category} â†’ {new_category}')
+                    changes.append(f'category: {pdf.category} → {new_category}')
                     pdf.category = new_category
             
             if 'pages' in request.POST:
                 new_pages = int(request.POST.get('pages', pdf.pages))
                 if new_pages != pdf.pages:
-                    changes.append(f'pages: {pdf.pages} â†’ {new_pages}')
+                    changes.append(f'pages: {pdf.pages} → {new_pages}')
                     pdf.pages = new_pages
             
             if 'price' in request.POST:
                 old_price = float(pdf.price)
                 new_price = float(request.POST.get('price', old_price))
                 if old_price != new_price:
-                    changes.append(f'price: ${old_price} â†’ ${new_price}')
+                    changes.append(f'price: ${old_price} → ${new_price}')
                 pdf.price = Decimal(str(new_price))
                 pdf.is_free = (pdf.price == 0)
             
             if 'access_level' in request.POST:
                 new_level = request.POST.get('access_level')
                 if new_level != pdf.access_level:
-                    changes.append(f'access_level: {pdf.access_level} â†’ {new_level}')
+                    changes.append(f'access_level: {pdf.access_level} → {new_level}')
                     pdf.access_level = new_level
             
             if 'tags' in request.POST:
@@ -2125,7 +2285,7 @@ def admin_api_pdf_update(request, pdf_id):
                 old_status = 'active' if pdf.is_active else 'inactive'
                 new_status = 'active' if is_active else 'inactive'
                 if old_status != new_status:
-                    changes.append(f'status: {old_status} â†’ {new_status}')
+                    changes.append(f'status: {old_status} → {new_status}')
                 pdf.is_active = is_active
             
             if 'is_featured' in request.POST:
@@ -2133,13 +2293,13 @@ def admin_api_pdf_update(request, pdf_id):
                 old_featured = 'featured' if pdf.is_featured else 'not featured'
                 new_featured = 'featured' if is_featured else 'not featured'
                 if old_featured != new_featured:
-                    changes.append(f'featured: {old_featured} â†’ {new_featured}')
+                    changes.append(f'featured: {old_featured} → {new_featured}')
                 pdf.is_featured = is_featured
             
             if 'order' in request.POST:
                 new_order = int(request.POST.get('order', pdf.order))
                 if new_order != pdf.order:
-                    changes.append(f'order: {pdf.order} â†’ {new_order}')
+                    changes.append(f'order: {pdf.order} → {new_order}')
                     pdf.order = new_order
             
             # Handle cover image upload if present
@@ -2157,12 +2317,12 @@ def admin_api_pdf_update(request, pdf_id):
                     try:
                         new_course = Course.objects.get(id=course_id)
                         pdf.course = new_course
-                        changes.append(f'course: {old_course} â†’ {new_course.title}')
+                        changes.append(f'course: {old_course} → {new_course.title}')
                     except Course.DoesNotExist:
                         pass
                 else:
                     pdf.course = None
-                    changes.append(f'course: {old_course} â†’ None')
+                    changes.append(f'course: {old_course} → None')
             
             pdf.save()
             
@@ -2170,33 +2330,33 @@ def admin_api_pdf_update(request, pdf_id):
             # Handle JSON data
             try:
                 data = json.loads(request.body)
-                print(f"ðŸ”¹ Handling JSON update for PDF {pdf_id}")
+                print(f"🔵 Handling JSON update for PDF {pdf_id}")
                 
                 if 'title' in data and data['title'] != pdf.title:
-                    changes.append(f'title: {pdf.title} â†’ {data["title"]}')
+                    changes.append(f'title: {pdf.title} → {data["title"]}')
                     pdf.title = data['title']
                 
                 if 'description' in data:
                     pdf.description = data['description']
                 
                 if 'category' in data and data['category'] != pdf.category:
-                    changes.append(f'category: {pdf.category} â†’ {data["category"]}')
+                    changes.append(f'category: {pdf.category} → {data["category"]}')
                     pdf.category = data['category']
                 
                 if 'pages' in data and int(data['pages']) != pdf.pages:
-                    changes.append(f'pages: {pdf.pages} â†’ {data["pages"]}')
+                    changes.append(f'pages: {pdf.pages} → {data["pages"]}')
                     pdf.pages = int(data['pages'])
                 
                 if 'price' in data:
                     old_price = float(pdf.price)
                     new_price = float(data['price'])
                     if old_price != new_price:
-                        changes.append(f'price: ${old_price} â†’ ${new_price}')
+                        changes.append(f'price: ${old_price} → ${new_price}')
                     pdf.price = Decimal(str(data['price']))
                     pdf.is_free = (pdf.price == 0)
                 
                 if 'access_level' in data and data['access_level'] != pdf.access_level:
-                    changes.append(f'access_level: {pdf.access_level} â†’ {data["access_level"]}')
+                    changes.append(f'access_level: {pdf.access_level} → {data["access_level"]}')
                     pdf.access_level = data['access_level']
                 
                 if 'tags' in data:
@@ -2205,17 +2365,17 @@ def admin_api_pdf_update(request, pdf_id):
                 if 'is_active' in data and data['is_active'] != pdf.is_active:
                     old_status = 'active' if pdf.is_active else 'inactive'
                     new_status = 'active' if data['is_active'] else 'inactive'
-                    changes.append(f'status: {old_status} â†’ {new_status}')
+                    changes.append(f'status: {old_status} → {new_status}')
                     pdf.is_active = data['is_active']
                 
                 if 'is_featured' in data and data['is_featured'] != pdf.is_featured:
                     old_featured = 'featured' if pdf.is_featured else 'not featured'
                     new_featured = 'featured' if data['is_featured'] else 'not featured'
-                    changes.append(f'featured: {old_featured} â†’ {new_featured}')
+                    changes.append(f'featured: {old_featured} → {new_featured}')
                     pdf.is_featured = data['is_featured']
                 
                 if 'order' in data and int(data['order']) != pdf.order:
-                    changes.append(f'order: {pdf.order} â†’ {data["order"]}')
+                    changes.append(f'order: {pdf.order} → {data["order"]}')
                     pdf.order = int(data['order'])
                 
                 # Update course
@@ -2225,12 +2385,12 @@ def admin_api_pdf_update(request, pdf_id):
                         try:
                             new_course = Course.objects.get(id=data['course_id'])
                             pdf.course = new_course
-                            changes.append(f'course: {old_course} â†’ {new_course.title}')
+                            changes.append(f'course: {old_course} → {new_course.title}')
                         except Course.DoesNotExist:
                             pass
                     else:
                         pdf.course = None
-                        changes.append(f'course: {old_course} â†’ None')
+                        changes.append(f'course: {old_course} → None')
                 
                 pdf.save()
                 
@@ -2250,7 +2410,7 @@ def admin_api_pdf_update(request, pdf_id):
                     'changes': changes
                 }
             )
-            print(f"âœ… PDF updated with changes: {changes}")
+            print(f"✅ PDF updated with changes: {changes}")
         
         # Get cover image URL
         cover_url = None
@@ -2272,7 +2432,7 @@ def admin_api_pdf_update(request, pdf_id):
         })
         
     except Exception as e:
-        print(f"âŒ Error updating PDF: {e}")
+        print(f"❌ Error updating PDF: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
@@ -2359,13 +2519,13 @@ def admin_api_pdf_upload(request):
         full_path = os.path.join(settings.MEDIA_ROOT, pdf_path)
         if os.path.exists(full_path):
             saved_size = os.path.getsize(full_path)
-            print(f"âœ… PDF saved successfully: {full_path}")
-            print(f"ðŸ“ File size: {saved_size} bytes ({file_size_display})")
+            print(f"✅ PDF saved successfully: {full_path}")
+            print(f"📁 File size: {saved_size} bytes ({file_size_display})")
         else:
-            print(f"âš ï¸ PDF file not found after save: {full_path}")
+            print(f"⚠️ PDF file not found after save: {full_path}")
             # Try to check if storage exists method works
             if default_storage.exists(pdf_path):
-                print(f"âœ… File exists in storage: {pdf_path}")
+                print(f"✅ File exists in storage: {pdf_path}")
             else:
                 return JsonResponse({'error': 'File was not saved properly'}, status=500)
         
@@ -2411,9 +2571,9 @@ def admin_api_pdf_upload(request):
                 else:
                     cover_size_display = f"{cover_file.size / (1024 * 1024):.1f} MB"
                 
-                print(f"âœ… Cover image uploaded: {cover_url} ({cover_size_display})")
+                print(f"✅ Cover image uploaded: {cover_url} ({cover_size_display})")
             else:
-                print(f"âš ï¸ Invalid cover image type: {cover_file.content_type}")
+                print(f"⚠️ Invalid cover image type: {cover_file.content_type}")
                 return JsonResponse({
                     'warning': 'Cover image skipped - invalid file type (use JPEG, PNG, GIF, or WebP)',
                     'path': pdf_path,
@@ -2451,7 +2611,7 @@ def admin_api_pdf_upload(request):
         })
         
     except Exception as e:
-        print(f"âŒ Error uploading PDF: {str(e)}")
+        print(f"❌ Error uploading PDF: {str(e)}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': f'Upload failed: {str(e)}'}, status=500)
@@ -2501,7 +2661,7 @@ Please upload the actual PDF file through the admin interface.
         pdf.file_size = f"{len(placeholder_content)} bytes"
         pdf.save()
         
-        print(f"âœ… Created placeholder file for PDF {pdf_id}: {file_path}")
+        print(f"✅ Created placeholder file for PDF {pdf_id}: {file_path}")
         
         # Log activity
         admin_user = get_admin_user(request)
@@ -2525,7 +2685,7 @@ Please upload the actual PDF file through the admin interface.
     except PDF.DoesNotExist:
         return JsonResponse({'error': 'PDF not found'}, status=404)
     except Exception as e:
-        print(f"âŒ Error fixing PDF: {str(e)}")
+        print(f"❌ Error fixing PDF: {str(e)}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
@@ -2572,6 +2732,7 @@ def admin_api_pdf_debug(request, pdf_id):
 
 # ==================== ADMIN API - PACKAGE MANAGEMENT ====================
 
+@admin_required
 def admin_api_packages(request):
     """API endpoint for packages in admin"""
     if request.method == 'GET':
@@ -2622,6 +2783,72 @@ def admin_api_packages(request):
         
         return JsonResponse(data, safe=False)
     
+
+@admin_required
+@csrf_exempt
+def admin_api_package_detail(request, package_id):
+    """Get single package details"""
+    package = get_object_or_404(Package, id=package_id)
+    
+    # Get image URL properly
+    image_url = None
+    if package.image:
+        try:
+            image_url = package.image.url
+        except Exception as e:
+            print(f"Error getting image for package {package.id}: {e}")
+            image_url = None
+    
+    # Get features as list
+    features = []
+    if package.features:
+        if isinstance(package.features, list):
+            features = package.features
+        elif isinstance(package.features, str):
+            try:
+                import json
+                features = json.loads(package.features)
+            except:
+                features = [f.strip() for f in package.features.split('\n') if f.strip()]
+    
+    # Get benefits as list
+    benefits = []
+    if package.benefits:
+        if isinstance(package.benefits, list):
+            benefits = package.benefits
+        elif isinstance(package.benefits, str):
+            try:
+                import json
+                benefits = json.loads(package.benefits)
+            except:
+                benefits = [f.strip() for f in package.benefits.split('\n') if f.strip()]
+    
+    data = {
+        'id': package.id,
+        'name': package.name,
+        'short_description': package.short_description,
+        'full_description': package.full_description,
+        'price': float(package.price) if package.price else 0,
+        'original_price': float(package.original_price) if package.original_price else None,
+        'discount_percentage': package.discount_percentage,
+        'package_type': package.package_type,
+        'duration_days': package.duration_days,
+        'is_recurring': package.is_recurring,
+        'is_featured': package.is_featured,
+        'is_popular': package.is_popular,
+        'is_active': package.is_active,
+        'order': package.order,
+        'features': features,
+        'benefits': benefits,
+        'image': image_url,
+        'total_sales': package.total_sales,
+        'total_revenue': float(package.total_revenue) if package.total_revenue else 0,
+        'created_at': package.created_at.strftime('%Y-%m-%d %H:%M') if package.created_at else None,
+        'updated_at': package.updated_at.strftime('%Y-%m-%d %H:%M') if package.updated_at else None,
+    }
+    
+    return JsonResponse(data)
+
 
 @admin_required
 @csrf_exempt
@@ -2687,12 +2914,12 @@ def admin_api_package_update(request, package_id):
     try:
         # Handle multipart/form-data (for file uploads)
         if request.content_type and 'multipart/form-data' in request.content_type:
-            print(f"ðŸ”¹ Handling multipart form data update for package {package_id}")
+            print(f"🔵 Handling multipart form data update for package {package_id}")
             
             if 'name' in request.POST:
                 new_name = request.POST.get('name')
                 if new_name != package.name:
-                    changes.append(f'name: {package.name} â†’ {new_name}')
+                    changes.append(f'name: {package.name} → {new_name}')
                     package.name = new_name
             
             if 'short_description' in request.POST:
@@ -2705,7 +2932,7 @@ def admin_api_package_update(request, package_id):
                 old_price = float(package.price)
                 new_price = float(request.POST.get('price', old_price))
                 if old_price != new_price:
-                    changes.append(f'price: ${old_price} â†’ ${new_price}')
+                    changes.append(f'price: ${old_price} → ${new_price}')
                     # Update discount percentage if original_price exists
                     if package.original_price and package.original_price > 0:
                         package.discount_percentage = int(((package.original_price - Decimal(str(new_price))) / package.original_price) * 100)
@@ -2714,7 +2941,7 @@ def admin_api_package_update(request, package_id):
             if 'duration_days' in request.POST:
                 new_duration = int(request.POST.get('duration_days', package.duration_days))
                 if new_duration != package.duration_days:
-                    changes.append(f'duration: {package.duration_days} â†’ {new_duration}')
+                    changes.append(f'duration: {package.duration_days} → {new_duration}')
                     package.duration_days = new_duration
             
             if 'is_recurring' in request.POST:
@@ -2722,7 +2949,7 @@ def admin_api_package_update(request, package_id):
                 old_recurring = 'recurring' if package.is_recurring else 'one-time'
                 new_recurring = 'recurring' if is_recurring else 'one-time'
                 if old_recurring != new_recurring:
-                    changes.append(f'billing: {old_recurring} â†’ {new_recurring}')
+                    changes.append(f'billing: {old_recurring} → {new_recurring}')
                 package.is_recurring = is_recurring
             
             if 'is_featured' in request.POST:
@@ -2730,7 +2957,7 @@ def admin_api_package_update(request, package_id):
                 old_featured = 'featured' if package.is_featured else 'not featured'
                 new_featured = 'featured' if is_featured else 'not featured'
                 if old_featured != new_featured:
-                    changes.append(f'featured: {old_featured} â†’ {new_featured}')
+                    changes.append(f'featured: {old_featured} → {new_featured}')
                 package.is_featured = is_featured
             
             if 'is_popular' in request.POST:
@@ -2738,7 +2965,7 @@ def admin_api_package_update(request, package_id):
                 old_popular = 'popular' if package.is_popular else 'not popular'
                 new_popular = 'popular' if is_popular else 'not popular'
                 if old_popular != new_popular:
-                    changes.append(f'popular: {old_popular} â†’ {new_popular}')
+                    changes.append(f'popular: {old_popular} → {new_popular}')
                 package.is_popular = is_popular
             
             if 'is_active' in request.POST:
@@ -2746,13 +2973,13 @@ def admin_api_package_update(request, package_id):
                 old_status = 'active' if package.is_active else 'inactive'
                 new_status = 'active' if is_active else 'inactive'
                 if old_status != new_status:
-                    changes.append(f'status: {old_status} â†’ {new_status}')
+                    changes.append(f'status: {old_status} → {new_status}')
                 package.is_active = is_active
             
             if 'order' in request.POST:
                 new_order = int(request.POST.get('order', package.order))
                 if new_order != package.order:
-                    changes.append(f'order: {package.order} â†’ {new_order}')
+                    changes.append(f'order: {package.order} → {new_order}')
                     package.order = new_order
             
             if 'features' in request.POST:
@@ -2784,10 +3011,10 @@ def admin_api_package_update(request, package_id):
             # Handle JSON data
             try:
                 data = json.loads(request.body)
-                print(f"ðŸ”¹ Handling JSON update for package {package_id}")
+                print(f"🔵 Handling JSON update for package {package_id}")
                 
                 if 'name' in data and data['name'] != package.name:
-                    changes.append(f'name: {package.name} â†’ {data["name"]}')
+                    changes.append(f'name: {package.name} → {data["name"]}')
                     package.name = data['name']
                 
                 if 'short_description' in data:
@@ -2800,7 +3027,7 @@ def admin_api_package_update(request, package_id):
                     old_price = float(package.price)
                     new_price = float(data['price'])
                     if old_price != new_price:
-                        changes.append(f'price: ${old_price} â†’ ${new_price}')
+                        changes.append(f'price: ${old_price} → ${new_price}')
                         # Update discount percentage if original_price exists
                         if package.original_price and package.original_price > 0:
                             package.discount_percentage = int(((package.original_price - Decimal(str(new_price))) / package.original_price) * 100)
@@ -2812,35 +3039,35 @@ def admin_api_package_update(request, package_id):
                         package.discount_percentage = int(((package.original_price - package.price) / package.original_price) * 100)
                 
                 if 'duration_days' in data and int(data['duration_days']) != package.duration_days:
-                    changes.append(f'duration: {package.duration_days} â†’ {data["duration_days"]}')
+                    changes.append(f'duration: {package.duration_days} → {data["duration_days"]}')
                     package.duration_days = int(data['duration_days'])
                 
                 if 'is_recurring' in data and data['is_recurring'] != package.is_recurring:
                     old_recurring = 'recurring' if package.is_recurring else 'one-time'
                     new_recurring = 'recurring' if data['is_recurring'] else 'one-time'
-                    changes.append(f'billing: {old_recurring} â†’ {new_recurring}')
+                    changes.append(f'billing: {old_recurring} → {new_recurring}')
                     package.is_recurring = data['is_recurring']
                 
                 if 'is_featured' in data and data['is_featured'] != package.is_featured:
                     old_featured = 'featured' if package.is_featured else 'not featured'
                     new_featured = 'featured' if data['is_featured'] else 'not featured'
-                    changes.append(f'featured: {old_featured} â†’ {new_featured}')
+                    changes.append(f'featured: {old_featured} → {new_featured}')
                     package.is_featured = data['is_featured']
                 
                 if 'is_popular' in data and data['is_popular'] != package.is_popular:
                     old_popular = 'popular' if package.is_popular else 'not popular'
                     new_popular = 'popular' if data['is_popular'] else 'not popular'
-                    changes.append(f'popular: {old_popular} â†’ {new_popular}')
+                    changes.append(f'popular: {old_popular} → {new_popular}')
                     package.is_popular = data['is_popular']
                 
                 if 'is_active' in data and data['is_active'] != package.is_active:
                     old_status = 'active' if package.is_active else 'inactive'
                     new_status = 'active' if data['is_active'] else 'inactive'
-                    changes.append(f'status: {old_status} â†’ {new_status}')
+                    changes.append(f'status: {old_status} → {new_status}')
                     package.is_active = data['is_active']
                 
                 if 'order' in data and int(data['order']) != package.order:
-                    changes.append(f'order: {package.order} â†’ {data["order"]}')
+                    changes.append(f'order: {package.order} → {data["order"]}')
                     package.order = int(data['order'])
                 
                 if 'features' in data:
@@ -2869,7 +3096,7 @@ def admin_api_package_update(request, package_id):
                     'changes': changes
                 }
             )
-            print(f"âœ… Package updated with changes: {changes}")
+            print(f"✅ Package updated with changes: {changes}")
         
         # Get image URL
         image_url = None
@@ -2892,10 +3119,73 @@ def admin_api_package_update(request, package_id):
         })
         
     except Exception as e:
-        print(f"âŒ Error updating package: {e}")
+        print(f"❌ Error updating package: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
+
+
+@admin_required
+@require_POST
+def admin_api_package_delete(request, package_id):
+    """Delete package"""
+    package = get_object_or_404(Package, id=package_id)
+    name = package.name
+    
+    # Check if package has orders
+    orders_count = PaymentTransaction.objects.filter(package_name=name).count()
+    if orders_count > 0:
+        return JsonResponse({
+            'error': f'Cannot delete package with {orders_count} orders'
+        }, status=400)
+    
+    # Get admin user
+    admin_user = get_admin_user(request)
+    
+    package.delete()
+    
+    ActivityLog.objects.create(
+        user=admin_user,
+        action='ADMIN_ACTION',
+        description=f'Deleted package: {name}',
+        metadata={
+            'admin_username': request.session.get('admin_username')
+        }
+    )
+    
+    return JsonResponse({'success': True})
+
+
+@admin_required
+@csrf_exempt
+def admin_api_package_toggle_popular(request, package_id):
+    """Toggle popular status of a package"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    package = get_object_or_404(Package, id=package_id)
+    
+    # Toggle popular status
+    package.is_popular = not package.is_popular
+    package.save()
+    
+    # Log activity
+    admin_user = get_admin_user(request)
+    ActivityLog.objects.create(
+        user=admin_user,
+        action='ADMIN_ACTION',
+        description=f"{'Set' if package.is_popular else 'Removed'} popular status for package: {package.name}",
+        metadata={
+            'admin_username': request.session.get('admin_username'),
+            'package_id': package.id,
+            'is_popular': package.is_popular
+        }
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'is_popular': package.is_popular
+    })
 
 
 # ==================== ADMIN API - ORDER MANAGEMENT ====================
@@ -2931,6 +3221,52 @@ def admin_api_orders(request):
         })
     
     return JsonResponse(data, safe=False)
+
+
+@admin_required
+def admin_api_order_detail(request, order_id):
+    """Get single order details"""
+    # Try to find by ID or reference
+    try:
+        if order_id.isdigit():
+            order = get_object_or_404(PaymentTransaction, id=int(order_id))
+        else:
+            order = get_object_or_404(PaymentTransaction, reference=order_id)
+    except:
+        return JsonResponse({'error': 'Order not found'}, status=404)
+    
+    # Determine item name
+    item_name = 'Unknown'
+    if order.course:
+        item_name = order.course.title
+    elif order.package_name:
+        item_name = order.package_name
+    elif order.program_name:
+        item_name = order.program_name
+    elif order.partnership_name:
+        item_name = order.partnership_name
+    
+    data = {
+        'id': order.id,
+        'reference': order.reference,
+        'user_id': order.user.id if order.user else None,
+        'user_name': order.user.get_full_name() or order.user.username if order.user else 'Guest',
+        'user_email': order.user.email if order.user else order.email or 'Unknown',
+        'user_phone': order.user.phone if order.user else order.phone or 'Unknown',
+        'amount': float(order.amount),
+        'amount_formatted': f"${float(order.amount):,.2f}",
+        'payment_type': order.get_payment_type_display(),
+        'payment_method': order.payment_method,
+        'status': order.status,
+        'item_name': item_name,
+        'course_id': order.course.id if order.course else None,
+        'created_at': order.created_at.strftime('%Y-%m-%d %H:%M'),
+        'paid_at': order.paid_at.strftime('%Y-%m-%d %H:%M') if order.paid_at else None,
+        'metadata': order.metadata,
+    }
+    
+    return JsonResponse(data)
+
 
 # ==================== ADMIN API - PARTNERSHIP MANAGEMENT ====================
 
@@ -2991,7 +3327,7 @@ def admin_api_update_partnership_status(request, partnership_id):
     ActivityLog.objects.create(
         user=admin_user,
         action='ADMIN_ACTION',
-        description=f'Updated partnership status for {partnership.user.username}: {old_status} â†’ {partnership.status}',
+        description=f'Updated partnership status for {partnership.user.username}: {old_status} → {partnership.status}',
         metadata={
             'admin_username': request.session.get('admin_username'),
             'partnership_id': partnership.id
@@ -3183,6 +3519,45 @@ def admin_api_blogs(request):
 
 @admin_required
 @csrf_exempt
+def admin_api_blog_detail(request, blog_id):
+    """Get single blog details"""
+    blog = get_object_or_404(Blog, id=blog_id)
+    
+    featured_image_url = None
+    if blog.featured_image:
+        try:
+            featured_image_url = blog.featured_image.url
+        except:
+            featured_image_url = None
+    
+    data = {
+        'id': blog.id,
+        'title': blog.title,
+        'slug': blog.slug,
+        'content': blog.content,
+        'excerpt': blog.excerpt,
+        'author_id': blog.author.id if blog.author else None,
+        'author_name': blog.author.username if blog.author else 'Admin',
+        'category': blog.category,
+        'category_display': blog.get_category_display(),
+        'tags': blog.tags,
+        'views': blog.views,
+        'status': blog.status,
+        'is_featured': blog.is_featured,
+        'featured_image': featured_image_url,
+        'meta_title': blog.meta_title,
+        'meta_description': blog.meta_description,
+        'meta_keywords': blog.meta_keywords,
+        'published_at': blog.published_at.strftime('%Y-%m-%d %H:%M') if blog.published_at else None,
+        'created_at': blog.created_at.strftime('%Y-%m-%d %H:%M'),
+        'updated_at': blog.updated_at.strftime('%Y-%m-%d %H:%M') if blog.updated_at else None,
+    }
+    
+    return JsonResponse(data)
+
+
+@admin_required
+@csrf_exempt
 def admin_api_blog_create(request):
     """Create a new blog post"""
     if request.method != 'POST':
@@ -3295,12 +3670,12 @@ def admin_api_blog_update(request, blog_id):
     try:
         # Handle multipart/form-data (for file uploads)
         if request.content_type and 'multipart/form-data' in request.content_type:
-            print(f"ðŸ”¹ Handling multipart form data update for blog {blog_id}")
+            print(f"🔵 Handling multipart form data update for blog {blog_id}")
             
             if 'title' in request.POST:
                 new_title = request.POST.get('title')
                 if new_title != blog.title:
-                    changes.append(f'title: {blog.title} â†’ {new_title}')
+                    changes.append(f'title: {blog.title} → {new_title}')
                     blog.title = new_title
             
             if 'content' in request.POST:
@@ -3312,7 +3687,7 @@ def admin_api_blog_update(request, blog_id):
             if 'category' in request.POST:
                 new_category = request.POST.get('category')
                 if new_category != blog.category:
-                    changes.append(f'category: {blog.category} â†’ {new_category}')
+                    changes.append(f'category: {blog.category} → {new_category}')
                     blog.category = new_category
             
             if 'tags' in request.POST:
@@ -3321,7 +3696,7 @@ def admin_api_blog_update(request, blog_id):
             if 'status' in request.POST:
                 new_status = request.POST.get('status')
                 if new_status != blog.status:
-                    changes.append(f'status: {blog.status} â†’ {new_status}')
+                    changes.append(f'status: {blog.status} → {new_status}')
                     blog.status = new_status
                     if blog.status == 'published' and not blog.published_at:
                         blog.published_at = timezone.now()
@@ -3331,7 +3706,7 @@ def admin_api_blog_update(request, blog_id):
                 old_featured = 'featured' if blog.is_featured else 'not featured'
                 new_featured = 'featured' if is_featured else 'not featured'
                 if old_featured != new_featured:
-                    changes.append(f'featured: {old_featured} â†’ {new_featured}')
+                    changes.append(f'featured: {old_featured} → {new_featured}')
                 blog.is_featured = is_featured
             
             # Handle featured image upload if present
@@ -3347,10 +3722,10 @@ def admin_api_blog_update(request, blog_id):
             # Handle JSON data
             try:
                 data = json.loads(request.body)
-                print(f"ðŸ”¹ Handling JSON update for blog {blog_id}")
+                print(f"🔵 Handling JSON update for blog {blog_id}")
                 
                 if 'title' in data and data['title'] != blog.title:
-                    changes.append(f'title: {blog.title} â†’ {data["title"]}')
+                    changes.append(f'title: {blog.title} → {data["title"]}')
                     blog.title = data['title']
                 
                 if 'content' in data:
@@ -3360,14 +3735,14 @@ def admin_api_blog_update(request, blog_id):
                     blog.excerpt = data['excerpt']
                 
                 if 'category' in data and data['category'] != blog.category:
-                    changes.append(f'category: {blog.category} â†’ {data["category"]}')
+                    changes.append(f'category: {blog.category} → {data["category"]}')
                     blog.category = data['category']
                 
                 if 'tags' in data:
                     blog.tags = data['tags']
                 
                 if 'status' in data and data['status'] != blog.status:
-                    changes.append(f'status: {blog.status} â†’ {data["status"]}')
+                    changes.append(f'status: {blog.status} → {data["status"]}')
                     blog.status = data['status']
                     if blog.status == 'published' and not blog.published_at:
                         blog.published_at = timezone.now()
@@ -3375,7 +3750,7 @@ def admin_api_blog_update(request, blog_id):
                 if 'is_featured' in data and data['is_featured'] != blog.is_featured:
                     old_featured = 'featured' if blog.is_featured else 'not featured'
                     new_featured = 'featured' if data['is_featured'] else 'not featured'
-                    changes.append(f'featured: {old_featured} â†’ {new_featured}')
+                    changes.append(f'featured: {old_featured} → {new_featured}')
                     blog.is_featured = data['is_featured']
                 
                 if 'meta_title' in data:
@@ -3405,7 +3780,7 @@ def admin_api_blog_update(request, blog_id):
                     'changes': changes
                 }
             )
-            print(f"âœ… Blog updated with changes: {changes}")
+            print(f"✅ Blog updated with changes: {changes}")
         
         # Get featured image URL
         featured_image_url = None
@@ -3427,10 +3802,33 @@ def admin_api_blog_update(request, blog_id):
         })
         
     except Exception as e:
-        print(f"âŒ Error updating blog: {e}")
+        print(f"❌ Error updating blog: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
+
+
+@admin_required
+@require_POST
+def admin_api_blog_delete(request, blog_id):
+    """Delete blog post"""
+    blog = get_object_or_404(Blog, id=blog_id)
+    title = blog.title
+    
+    admin_user = get_admin_user(request)
+    
+    blog.delete()
+    
+    ActivityLog.objects.create(
+        user=admin_user,
+        action='ADMIN_ACTION',
+        description=f'Deleted blog: {title}',
+        metadata={
+            'admin_username': request.session.get('admin_username')
+        }
+    )
+    
+    return JsonResponse({'success': True})
 
 
 # ==================== ADMIN API - REPORTS ====================
@@ -3634,6 +4032,745 @@ def admin_api_delete_item(request, item_type, item_id):
     except model_class.DoesNotExist:
         return JsonResponse({'error': 'Item not found'}, status=404)
 
+# ==================== ADMIN API - EXPORT FUNCTIONS ====================
+
+@admin_required
+def admin_api_users_export(request):
+    """Export users to Excel/CSV"""
+    import csv
+    from django.http import HttpResponse
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    
+    format_type = request.GET.get('format', 'excel')
+    
+    # Get users
+    users = MfalmeUsers.objects.all().order_by('-date_joined')
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="users_export_{datetime.now().strftime("%Y%m%d")}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Username', 'Email', 'Phone', 'Full Name', 'Rank', 'Status', 'Date Joined'])
+        
+        for user in users:
+            writer.writerow([
+                user.id,
+                user.username,
+                user.email,
+                user.phone,
+                user.get_full_name(),
+                user.elite_rank,
+                user.account_status,
+                user.date_joined.strftime('%Y-%m-%d')
+            ])
+        
+        return response
+    
+    else:  # Excel
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Users Export"
+        
+        # Headers
+        headers = ['ID', 'Username', 'Email', 'Phone', 'Full Name', 'Rank', 'Status', 'Date Joined']
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
+            cell.alignment = Alignment(horizontal='center')
+        
+        # Data
+        for row_num, user in enumerate(users, 2):
+            ws.cell(row=row_num, column=1, value=user.id)
+            ws.cell(row=row_num, column=2, value=user.username)
+            ws.cell(row=row_num, column=3, value=user.email)
+            ws.cell(row=row_num, column=4, value=user.phone)
+            ws.cell(row=row_num, column=5, value=user.get_full_name())
+            ws.cell(row=row_num, column=6, value=user.elite_rank)
+            ws.cell(row=row_num, column=7, value=user.account_status)
+            ws.cell(row=row_num, column=8, value=user.date_joined.strftime('%Y-%m-%d'))
+        
+        # Auto-adjust column widths
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column].width = adjusted_width
+        
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="users_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        wb.save(response)
+        return response
+
+
+@admin_required
+def admin_api_orders_export(request):
+    """Export orders to Excel/CSV"""
+    import csv
+    from django.http import HttpResponse
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    
+    format_type = request.GET.get('format', 'excel')
+    
+    # Get orders
+    orders = PaymentTransaction.objects.select_related('user').order_by('-created_at')
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="orders_export_{datetime.now().strftime("%Y%m%d")}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Reference', 'Customer', 'Email', 'Amount', 'Status', 'Payment Method', 'Date'])
+        
+        for order in orders:
+            writer.writerow([
+                order.id,
+                order.reference,
+                order.user.get_full_name() or order.user.username if order.user else 'Guest',
+                order.user.email if order.user else order.email or 'N/A',
+                float(order.amount),
+                order.status,
+                order.payment_method,
+                order.created_at.strftime('%Y-%m-%d %H:%M')
+            ])
+        
+        return response
+    
+    else:  # Excel
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Orders Export"
+        
+        # Headers
+        headers = ['ID', 'Reference', 'Customer', 'Email', 'Amount', 'Status', 'Payment Method', 'Date']
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
+            cell.alignment = Alignment(horizontal='center')
+        
+        # Data
+        for row_num, order in enumerate(orders, 2):
+            ws.cell(row=row_num, column=1, value=order.id)
+            ws.cell(row=row_num, column=2, value=order.reference)
+            ws.cell(row=row_num, column=3, value=order.user.get_full_name() or order.user.username if order.user else 'Guest')
+            ws.cell(row=row_num, column=4, value=order.user.email if order.user else order.email or 'N/A')
+            ws.cell(row=row_num, column=5, value=float(order.amount))
+            ws.cell(row=row_num, column=6, value=order.status)
+            ws.cell(row=row_num, column=7, value=order.payment_method)
+            ws.cell(row=row_num, column=8, value=order.created_at.strftime('%Y-%m-%d %H:%M'))
+        
+        # Auto-adjust column widths
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column].width = adjusted_width
+        
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="orders_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        wb.save(response)
+        return response
+
+
+@admin_required
+def admin_api_courses_export(request):
+    """Export courses to Excel/CSV"""
+    import csv
+    from django.http import HttpResponse
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    
+    format_type = request.GET.get('format', 'excel')
+    
+    # Get courses
+    courses = Course.objects.all().order_by('-created_at')
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="courses_export_{datetime.now().strftime("%Y%m%d")}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Title', 'Price', 'Duration (weeks)', 'Videos', 'PDFs', 'Status', 'Created'])
+        
+        for course in courses:
+            writer.writerow([
+                course.id,
+                course.title,
+                float(course.price),
+                course.duration_weeks,
+                course.video_count(),
+                course.pdf_count(),
+                'Active' if course.is_active else 'Inactive',
+                course.created_at.strftime('%Y-%m-%d')
+            ])
+        
+        return response
+    
+    else:  # Excel
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Courses Export"
+        
+        # Headers
+        headers = ['ID', 'Title', 'Price', 'Duration (weeks)', 'Videos', 'PDFs', 'Status', 'Created']
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
+            cell.alignment = Alignment(horizontal='center')
+        
+        # Data
+        for row_num, course in enumerate(courses, 2):
+            ws.cell(row=row_num, column=1, value=course.id)
+            ws.cell(row=row_num, column=2, value=course.title)
+            ws.cell(row=row_num, column=3, value=float(course.price))
+            ws.cell(row=row_num, column=4, value=course.duration_weeks)
+            ws.cell(row=row_num, column=5, value=course.video_count())
+            ws.cell(row=row_num, column=6, value=course.pdf_count())
+            ws.cell(row=row_num, column=7, value='Active' if course.is_active else 'Inactive')
+            ws.cell(row=row_num, column=8, value=course.created_at.strftime('%Y-%m-%d'))
+        
+        # Auto-adjust column widths
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column].width = adjusted_width
+        
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="courses_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        wb.save(response)
+        return response
+
+
+@admin_required
+def admin_api_videos_export(request):
+    """Export videos to Excel/CSV"""
+    import csv
+    from django.http import HttpResponse
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    
+    format_type = request.GET.get('format', 'excel')
+    
+    # Get videos
+    videos = TrainingVideo.objects.select_related('course').order_by('-created_at')
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="videos_export_{datetime.now().strftime("%Y%m%d")}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Title', 'Course', 'Duration (min)', 'Price', 'Views', 'Status', 'Created'])
+        
+        for video in videos:
+            writer.writerow([
+                video.id,
+                video.title,
+                video.course.title if video.course else 'Uncategorized',
+                video.duration,
+                float(video.price),
+                video.view_count,
+                'Active' if video.is_active else 'Inactive',
+                video.created_at.strftime('%Y-%m-%d')
+            ])
+        
+        return response
+    
+    else:  # Excel
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Videos Export"
+        
+        # Headers
+        headers = ['ID', 'Title', 'Course', 'Duration (min)', 'Price', 'Views', 'Status', 'Created']
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
+            cell.alignment = Alignment(horizontal='center')
+        
+        # Data
+        for row_num, video in enumerate(videos, 2):
+            ws.cell(row=row_num, column=1, value=video.id)
+            ws.cell(row=row_num, column=2, value=video.title)
+            ws.cell(row=row_num, column=3, value=video.course.title if video.course else 'Uncategorized')
+            ws.cell(row=row_num, column=4, value=video.duration)
+            ws.cell(row=row_num, column=5, value=float(video.price))
+            ws.cell(row=row_num, column=6, value=video.view_count)
+            ws.cell(row=row_num, column=7, value='Active' if video.is_active else 'Inactive')
+            ws.cell(row=row_num, column=8, value=video.created_at.strftime('%Y-%m-%d'))
+        
+        # Auto-adjust column widths
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column].width = adjusted_width
+        
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="videos_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        wb.save(response)
+        return response
+
+
+@admin_required
+def admin_api_pdfs_export(request):
+    """Export PDFs to Excel/CSV"""
+    import csv
+    from django.http import HttpResponse
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    
+    format_type = request.GET.get('format', 'excel')
+    
+    # Get PDFs
+    pdfs = PDF.objects.select_related('course').order_by('-created_at')
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="pdfs_export_{datetime.now().strftime("%Y%m%d")}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Title', 'Course', 'Pages', 'Price', 'Downloads', 'Status', 'Created'])
+        
+        for pdf in pdfs:
+            writer.writerow([
+                pdf.id,
+                pdf.title,
+                pdf.course.title if pdf.course else 'General',
+                pdf.pages,
+                float(pdf.price),
+                pdf.downloads,
+                'Active' if pdf.is_active else 'Inactive',
+                pdf.created_at.strftime('%Y-%m-%d')
+            ])
+        
+        return response
+    
+    else:  # Excel
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "PDFs Export"
+        
+        # Headers
+        headers = ['ID', 'Title', 'Course', 'Pages', 'Price', 'Downloads', 'Status', 'Created']
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
+            cell.alignment = Alignment(horizontal='center')
+        
+        # Data
+        for row_num, pdf in enumerate(pdfs, 2):
+            ws.cell(row=row_num, column=1, value=pdf.id)
+            ws.cell(row=row_num, column=2, value=pdf.title)
+            ws.cell(row=row_num, column=3, value=pdf.course.title if pdf.course else 'General')
+            ws.cell(row=row_num, column=4, value=pdf.pages)
+            ws.cell(row=row_num, column=5, value=float(pdf.price))
+            ws.cell(row=row_num, column=6, value=pdf.downloads)
+            ws.cell(row=row_num, column=7, value='Active' if pdf.is_active else 'Inactive')
+            ws.cell(row=row_num, column=8, value=pdf.created_at.strftime('%Y-%m-%d'))
+        
+        # Auto-adjust column widths
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column].width = adjusted_width
+        
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="pdfs_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        wb.save(response)
+        return response
+
+
+@admin_required
+def admin_api_packages_export(request):
+    """Export packages to Excel/CSV"""
+    import csv
+    from django.http import HttpResponse
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    
+    format_type = request.GET.get('format', 'excel')
+    
+    # Get packages
+    packages = Package.objects.all().order_by('-created_at')
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="packages_export_{datetime.now().strftime("%Y%m%d")}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Name', 'Type', 'Price', 'Duration (days)', 'Recurring', 'Sales', 'Revenue', 'Status'])
+        
+        for pkg in packages:
+            writer.writerow([
+                pkg.id,
+                pkg.name,
+                pkg.package_type,
+                float(pkg.price),
+                pkg.duration_days,
+                'Yes' if pkg.is_recurring else 'No',
+                pkg.total_sales,
+                float(pkg.total_revenue) if pkg.total_revenue else 0,
+                'Active' if pkg.is_active else 'Inactive'
+            ])
+        
+        return response
+    
+    else:  # Excel
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Packages Export"
+        
+        # Headers
+        headers = ['ID', 'Name', 'Type', 'Price', 'Duration (days)', 'Recurring', 'Sales', 'Revenue', 'Status']
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
+            cell.alignment = Alignment(horizontal='center')
+        
+        # Data
+        for row_num, pkg in enumerate(packages, 2):
+            ws.cell(row=row_num, column=1, value=pkg.id)
+            ws.cell(row=row_num, column=2, value=pkg.name)
+            ws.cell(row=row_num, column=3, value=pkg.package_type)
+            ws.cell(row=row_num, column=4, value=float(pkg.price))
+            ws.cell(row=row_num, column=5, value=pkg.duration_days)
+            ws.cell(row=row_num, column=6, value='Yes' if pkg.is_recurring else 'No')
+            ws.cell(row=row_num, column=7, value=pkg.total_sales)
+            ws.cell(row=row_num, column=8, value=float(pkg.total_revenue) if pkg.total_revenue else 0)
+            ws.cell(row=row_num, column=9, value='Active' if pkg.is_active else 'Inactive')
+        
+        # Auto-adjust column widths
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column].width = adjusted_width
+        
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="packages_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        wb.save(response)
+        return response
+
+
+@admin_required
+def admin_api_partnerships_export(request):
+    """Export partnerships to Excel/CSV"""
+    import csv
+    from django.http import HttpResponse
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    
+    format_type = request.GET.get('format', 'excel')
+    
+    # Get partnerships
+    partnerships = UserPartnership.objects.select_related('user', 'program').order_by('-created_at')
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="partnerships_export_{datetime.now().strftime("%Y%m%d")}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'User', 'Email', 'Program', 'Tier', 'Investment', 'Status', 'Created'])
+        
+        for p in partnerships:
+            writer.writerow([
+                p.id,
+                p.user.get_full_name() or p.user.username,
+                p.user.email,
+                p.program.name if p.program else 'N/A',
+                p.program.get_tier_display() if p.program else 'N/A',
+                float(p.investment_amount),
+                p.status,
+                p.created_at.strftime('%Y-%m-%d')
+            ])
+        
+        return response
+    
+    else:  # Excel
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Partnerships Export"
+        
+        # Headers
+        headers = ['ID', 'User', 'Email', 'Program', 'Tier', 'Investment', 'Status', 'Created']
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
+            cell.alignment = Alignment(horizontal='center')
+        
+        # Data
+        for row_num, p in enumerate(partnerships, 2):
+            ws.cell(row=row_num, column=1, value=p.id)
+            ws.cell(row=row_num, column=2, value=p.user.get_full_name() or p.user.username)
+            ws.cell(row=row_num, column=3, value=p.user.email)
+            ws.cell(row=row_num, column=4, value=p.program.name if p.program else 'N/A')
+            ws.cell(row=row_num, column=5, value=p.program.get_tier_display() if p.program else 'N/A')
+            ws.cell(row=row_num, column=6, value=float(p.investment_amount))
+            ws.cell(row=row_num, column=7, value=p.status)
+            ws.cell(row=row_num, column=8, value=p.created_at.strftime('%Y-%m-%d'))
+        
+        # Auto-adjust column widths
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column].width = adjusted_width
+        
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="partnerships_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        wb.save(response)
+        return response
+
+
+@admin_required
+def admin_api_blogs_export(request):
+    """Export blogs to Excel/CSV"""
+    import csv
+    from django.http import HttpResponse
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    
+    format_type = request.GET.get('format', 'excel')
+    
+    # Get blogs
+    blogs = Blog.objects.all().order_by('-created_at')
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="blogs_export_{datetime.now().strftime("%Y%m%d")}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Title', 'Author', 'Category', 'Views', 'Status', 'Published', 'Created'])
+        
+        for blog in blogs:
+            writer.writerow([
+                blog.id,
+                blog.title,
+                blog.author.username if blog.author else 'Admin',
+                blog.get_category_display(),
+                blog.views,
+                blog.status,
+                blog.published_at.strftime('%Y-%m-%d') if blog.published_at else 'Not published',
+                blog.created_at.strftime('%Y-%m-%d')
+            ])
+        
+        return response
+    
+    else:  # Excel
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Blogs Export"
+        
+        # Headers
+        headers = ['ID', 'Title', 'Author', 'Category', 'Views', 'Status', 'Published', 'Created']
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
+            cell.alignment = Alignment(horizontal='center')
+        
+        # Data
+        for row_num, blog in enumerate(blogs, 2):
+            ws.cell(row=row_num, column=1, value=blog.id)
+            ws.cell(row=row_num, column=2, value=blog.title)
+            ws.cell(row=row_num, column=3, value=blog.author.username if blog.author else 'Admin')
+            ws.cell(row=row_num, column=4, value=blog.get_category_display())
+            ws.cell(row=row_num, column=5, value=blog.views)
+            ws.cell(row=row_num, column=6, value=blog.status)
+            ws.cell(row=row_num, column=7, value=blog.published_at.strftime('%Y-%m-%d') if blog.published_at else 'Not published')
+            ws.cell(row=row_num, column=8, value=blog.created_at.strftime('%Y-%m-%d'))
+        
+        # Auto-adjust column widths
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column].width = adjusted_width
+        
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="blogs_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+        wb.save(response)
+        return response
+
+
+@admin_required
+def admin_api_revenue_export(request):
+    """Export revenue report to Excel/CSV"""
+    import csv
+    from django.http import HttpResponse
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    
+    format_type = request.GET.get('format', 'excel')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    # Parse dates
+    if start_date:
+        start = datetime.strptime(start_date, '%Y-%m-%d')
+    else:
+        start = timezone.now() - timedelta(days=30)
+    
+    if end_date:
+        end = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+    else:
+        end = timezone.now()
+    
+    # Get transactions in date range
+    transactions = PaymentTransaction.objects.filter(
+        status='completed',
+        created_at__range=[start, end]
+    ).order_by('-created_at')
+    
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="revenue_report_{start_date}_to_{end_date}.csv"'
+        
+        writer = csv.writer(response)
+        writer.writerow(['Date', 'Reference', 'Customer', 'Item', 'Amount', 'Payment Method'])
+        
+        total = 0
+        for t in transactions:
+            item_name = t.course.title if t.course else t.package_name or t.program_name or 'N/A'
+            writer.writerow([
+                t.created_at.strftime('%Y-%m-%d %H:%M'),
+                t.reference,
+                t.user.get_full_name() or t.user.username if t.user else 'Guest',
+                item_name,
+                float(t.amount),
+                t.payment_method
+            ])
+            total += float(t.amount)
+        
+        writer.writerow([])
+        writer.writerow(['TOTAL', '', '', '', total, ''])
+        
+        return response
+    
+    else:  # Excel
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Revenue Report"
+        
+        # Title
+        ws.merge_cells('A1:F1')
+        title_cell = ws.cell(row=1, column=1)
+        title_cell.value = f"Revenue Report: {start_date} to {end_date}"
+        title_cell.font = Font(bold=True, size=14)
+        title_cell.alignment = Alignment(horizontal='center')
+        
+        # Headers
+        headers = ['Date', 'Reference', 'Customer', 'Item', 'Amount', 'Payment Method']
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=2, column=col_num)
+            cell.value = header
+            cell.font = Font(bold=True)
+            cell.fill = PatternFill(start_color="FFD700", end_color="FFD700", fill_type="solid")
+            cell.alignment = Alignment(horizontal='center')
+        
+        # Data
+        total = 0
+        for row_num, t in enumerate(transactions, 3):
+            item_name = t.course.title if t.course else t.package_name or t.program_name or 'N/A'
+            ws.cell(row=row_num, column=1, value=t.created_at.strftime('%Y-%m-%d %H:%M'))
+            ws.cell(row=row_num, column=2, value=t.reference)
+            ws.cell(row=row_num, column=3, value=t.user.get_full_name() or t.user.username if t.user else 'Guest')
+            ws.cell(row=row_num, column=4, value=item_name)
+            ws.cell(row=row_num, column=5, value=float(t.amount))
+            ws.cell(row=row_num, column=6, value=t.payment_method)
+            total += float(t.amount)
+        
+        # Total row
+        total_row = len(transactions) + 3
+        ws.cell(row=total_row, column=4, value="TOTAL:").font = Font(bold=True)
+        ws.cell(row=total_row, column=5, value=total).font = Font(bold=True)
+        
+        # Auto-adjust column widths
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if cell.value and len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column].width = adjusted_width
+        
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="revenue_report_{start_date}_to_{end_date}.xlsx"'
+        wb.save(response)
+        return response
+
+
 # ==================== DEBUG MEDIA VIEW ====================
 
 def debug_media(request):
@@ -3660,7 +4797,7 @@ def debug_media(request):
                 html += f"<li>{rel_path}/{file} - {os.path.getsize(full_path)} bytes</li>"
         html += "</ul>"
     else:
-        html += "<p>âŒ Media directory does not exist!</p>"
+        html += "<p>❌ Media directory does not exist!</p>"
     
     # Check video thumbnails
     from .models import TrainingVideo
@@ -3675,7 +4812,7 @@ def debug_media(request):
             except Exception as e:
                 html += f"<li>Video {video.id}: ERROR - {str(e)}</li>"
         else:
-            html += f"<li>Video {video.id}: {video.title} - âŒ No thumbnail</li>"
+            html += f"<li>Video {video.id}: {video.title} - ❌ No thumbnail</li>"
     html += "</ul>"
     
     # Check PDF covers
@@ -3691,7 +4828,7 @@ def debug_media(request):
             except Exception as e:
                 html += f"<li>PDF {pdf.id}: ERROR - {str(e)}</li>"
         else:
-            html += f"<li>PDF {pdf.id}: {pdf.title} - âŒ No cover</li>"
+            html += f"<li>PDF {pdf.id}: {pdf.title} - ❌ No cover</li>"
     html += "</ul>"
     
     return HttpResponse(html)
@@ -3716,7 +4853,7 @@ def test_course_simple(request):
             course.save()
             
             return HttpResponse(f"""
-            <h1>âœ… Course Created Successfully!</h1>
+            <h1>✅ Course Created Successfully!</h1>
             <p>ID: {course.id}</p>
             <p>Title: {course.title}</p>
             <p>Price: ${course.price}</p>
@@ -3725,7 +4862,7 @@ def test_course_simple(request):
             """)
         except Exception as e:
             return HttpResponse(f"""
-            <h1>âŒ Error</h1>
+            <h1>❌ Error</h1>
             <pre>{e}</pre>
             <p><a href="/admin/test-course-simple/">Try Again</a></p>
             """)

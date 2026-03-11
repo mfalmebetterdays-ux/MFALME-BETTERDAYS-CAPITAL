@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BENBEN SMARTCARS | Kenya's Premier Motor Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-inner">
+    <div class="loader-logo">BB</div>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+    <p>LOADING KENYA'S FINEST MOTORS...</p>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <div class="nav-logo">
+    <span class="logo-bb">BEN</span><span class="logo-ben">BEN</span>
+    <span class="logo-tag">SMARTCARS</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#home">Home</a></li>
+    <li><a href="#gallery">Gallery</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#finance">Finance</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <div class="nav-actions">
+    <span class="nav-phone">📞 +254 700 123 456</span>
+    <button class="btn-sell" onclick="openAdminPanel()">Admin ⚙</button>
+    <div class="hamburger" onclick="toggleMobileMenu()">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <ul>
+    <li><a href="#home" onclick="toggleMobileMenu()">Home</a></li>
+    <li><a href="#gallery" onclick="toggleMobileMenu()">Gallery</a></li>
+    <li><a href="#services" onclick="toggleMobileMenu()">Services</a></li>
+    <li><a href="#finance" onclick="toggleMobileMenu()">Finance</a></li>
+    <li><a href="#about" onclick="toggleMobileMenu()">About</a></li>
+    <li><a href="#contact" onclick="toggleMobileMenu()">Contact</a></li>
+    <li><a href="#" onclick="openAdminPanel()">Admin Panel</a></li>
+  </ul>
+</div>
+
+<!-- HERO -->
+<section id="home" class="hero">
+  <div class="hero-bg-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge">🇰🇪 NAIROBI'S NO.1 MOTOR HUB</div>
+    <h1 class="hero-title">
+      <span class="line1">DRIVE YOUR</span>
+      <span class="line2">DREAM.</span>
+      <span class="line3">OWN IT.</span>
+    </h1>
+    <p class="hero-sub">Premium imported & locally sourced vehicles. <br/>Financing. Trade-ins. Delivery across Kenya.</p>
+    <div class="hero-cta">
+      <button class="btn-primary" onclick="scrollToSection('gallery')">Browse Cars →</button>
+      <button class="btn-outline" onclick="scrollToSection('finance')">Get Financing</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">1,200+</span><span class="stat-label">Cars Sold</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">8 Yrs</span><span class="stat-label">Experience</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">47</span><span class="stat-label">Counties Served</span></div>
+    </div>
+  </div>
+  <div class="hero-car-showcase">
+    <div class="hero-car-frame">
+      <img id="heroCar" src="https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80" alt="Featured Car"/>
+      <div class="hero-car-badge">FEATURED</div>
+    </div>
+    <div class="hero-car-thumb-row">
+      <img src="https://images.unsplash.com/photo-1555215695-3004980ad54e?w=200&q=60" onclick="changeHeroCar(this)" class="thumb active" alt="Car 1"/>
+      <img src="https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=200&q=60" onclick="changeHeroCar(this)" class="thumb" alt="Car 2"/>
+      <img src="https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=200&q=60" onclick="changeHeroCar(this)" class="thumb" alt="Car 3"/>
+      <img src="https://images.unsplash.com/photo-1617788138017-80ad40651399?w=200&q=60" onclick="changeHeroCar(this)" class="thumb" alt="Car 4"/>
+    </div>
+  </div>
+  <div class="hero-ticker">
+    <div class="ticker-inner">
+      <span>🔥 HOT DEALS THIS WEEK</span>
+      <span>•</span>
+      <span>2022 Toyota Land Cruiser V8 — KSH 12.5M</span>
+      <span>•</span>
+      <span>2021 Subaru Forester XT — KSH 3.2M</span>
+      <span>•</span>
+      <span>2023 Mercedes-Benz GLE — KSH 9.8M</span>
+      <span>•</span>
+      <span>2020 Mazda CX-5 — KSH 2.9M</span>
+      <span>•</span>
+      <span>2022 BMW X5 — KSH 8.1M</span>
+      <span>•</span>
+      <span>FREE DELIVERY TO MOMBASA, KISUMU & ELDORET</span>
+      <span>•</span>
+    </div>
+  </div>
+</section>
+
+<!-- SEARCH / FILTER BAR -->
+<section class="search-bar-section">
+  <div class="search-card">
+    <h3>🔍 FIND YOUR CAR</h3>
+    <div class="search-row">
+      <select id="filterMake"><option value="">All Makes</option><option>Toyota</option><option>Subaru</option><option>Mercedes-Benz</option><option>BMW</option><option>Mazda</option><option>Nissan</option><option>Honda</option><option>Mitsubishi</option><option>Land Rover</option></select>
+      <select id="filterBody"><option value="">Body Type</option><option>SUV</option><option>Sedan</option><option>Hatchback</option><option>Pickup</option><option>Van</option><option>Coupe</option></select>
+      <select id="filterPrice"><option value="">Price Range</option><option value="0-1000000">Under KSH 1M</option><option value="1000000-3000000">KSH 1M – 3M</option><option value="3000000-7000000">KSH 3M – 7M</option><option value="7000000-99999999">Above KSH 7M</option></select>
+      <select id="filterYear"><option value="">Year</option><option>2024</option><option>2023</option><option>2022</option><option>2021</option><option>2020</option><option>2019</option><option>2018</option></select>
+      <button class="btn-search" onclick="filterCars()">SEARCH</button>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY SECTION -->
+<section id="gallery" class="gallery-section">
+  <div class="section-header">
+    <div class="section-tag">OUR FLEET</div>
+    <h2>BROWSE <span class="accent">VEHICLES</span></h2>
+    <p>Hand-picked, thoroughly inspected, and ready to drive</p>
+  </div>
+
+  <div class="filter-tabs">
+    <button class="tab active" onclick="filterByTab(this, 'all')">All</button>
+    <button class="tab" onclick="filterByTab(this, 'suv')">SUVs</button>
+    <button class="tab" onclick="filterByTab(this, 'sedan')">Sedans</button>
+    <button class="tab" onclick="filterByTab(this, 'pickup')">Pickups</button>
+    <button class="tab" onclick="filterByTab(this, 'luxury')">Luxury</button>
+    <button class="tab" onclick="filterByTab(this, 'hatchback')">Hatchbacks</button>
+  </div>
+
+  <div class="cars-grid" id="carsGrid">
+    <!-- Generated by JS -->
+  </div>
+
+  <div class="load-more-wrap">
+    <button class="btn-load-more" onclick="loadMoreCars()">LOAD MORE CARS ↓</button>
+  </div>
+</section>
+
+<!-- CAR DETAIL MODAL -->
+<div class="modal-overlay" id="carModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-gallery">
+      <img id="modalMainImg" src="" alt="Car"/>
+      <div class="modal-thumbs" id="modalThumbs"></div>
+    </div>
+    <div class="modal-info">
+      <div class="modal-badges" id="modalBadges"></div>
+      <h2 id="modalTitle"></h2>
+      <div class="modal-price" id="modalPrice"></div>
+      <div class="modal-specs" id="modalSpecs"></div>
+      <div class="modal-desc" id="modalDesc"></div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="openPurchaseModal()">BUY THIS CAR 🚗</button>
+        <button class="btn-outline" onclick="openEnquiryModal()">Enquire Now</button>
+        <button class="btn-whatsapp" onclick="whatsappEnquiry()">💬 WhatsApp</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PURCHASE MODAL -->
+<div class="modal-overlay" id="purchaseModal">
+  <div class="modal-card modal-purchase">
+    <button class="modal-close" onclick="closePurchaseModal()">✕</button>
+    <div class="purchase-steps">
+      <div class="step-indicator">
+        <div class="step active" id="step1ind">1. Details</div>
+        <div class="step-line"></div>
+        <div class="step" id="step2ind">2. Payment</div>
+        <div class="step-line"></div>
+        <div class="step" id="step3ind">3. Confirm</div>
+      </div>
+
+      <div class="purchase-step" id="purchaseStep1">
+        <h3>YOUR DETAILS</h3>
+        <input type="text" id="buyerName" placeholder="Full Name *"/>
+        <input type="tel" id="buyerPhone" placeholder="Phone Number * (e.g. 0712345678)"/>
+        <input type="email" id="buyerEmail" placeholder="Email Address *"/>
+        <input type="text" id="buyerID" placeholder="National ID / Passport No *"/>
+        <select id="deliveryOption">
+          <option value="">Delivery Option</option>
+          <option>Pick-up from Yard (Nairobi)</option>
+          <option>Delivery - Nairobi (+KSH 5,000)</option>
+          <option>Delivery - Mombasa (+KSH 25,000)</option>
+          <option>Delivery - Kisumu (+KSH 20,000)</option>
+          <option>Delivery - Eldoret (+KSH 18,000)</option>
+          <option>Delivery - Other (Quote)</option>
+        </select>
+        <button class="btn-primary" onclick="purchaseStep2()">Continue →</button>
+      </div>
+
+      <div class="purchase-step hidden" id="purchaseStep2">
+        <h3>PAYMENT METHOD</h3>
+        <div class="payment-options">
+          <label class="payment-opt">
+            <input type="radio" name="payment" value="mpesa"/> 
+            <div class="pay-card">
+              <span class="pay-icon">📱</span>
+              <span>M-PESA</span>
+            </div>
+          </label>
+          <label class="payment-opt">
+            <input type="radio" name="payment" value="bank"/>
+            <div class="pay-card">
+              <span class="pay-icon">🏦</span>
+              <span>Bank Transfer</span>
+            </div>
+          </label>
+          <label class="payment-opt">
+            <input type="radio" name="payment" value="finance"/>
+            <div class="pay-card">
+              <span class="pay-icon">📋</span>
+              <span>Financing</span>
+            </div>
+          </label>
+          <label class="payment-opt">
+            <input type="radio" name="payment" value="cash"/>
+            <div class="pay-card">
+              <span class="pay-icon">💵</span>
+              <span>Cash</span>
+            </div>
+          </label>
+        </div>
+        <div id="mpesaDetails" class="pay-detail hidden">
+          <p>Pay to: <strong>BENBEN SMARTCARS</strong></p>
+          <p>Paybill: <strong>123456</strong> | Account: <strong>Your Phone No.</strong></p>
+          <input type="text" id="mpesaRef" placeholder="M-PESA Transaction Code *"/>
+        </div>
+        <div id="bankDetails" class="pay-detail hidden">
+          <p>Bank: <strong>Equity Bank Kenya</strong></p>
+          <p>Account: <strong>0123456789012</strong></p>
+          <p>Branch: <strong>Westlands, Nairobi</strong></p>
+          <input type="text" id="bankRef" placeholder="Bank Reference No *"/>
+        </div>
+        <div id="financeDetails" class="pay-detail hidden">
+          <p>A financing officer will contact you within 24 hours.</p>
+          <p>Have: ID, 3 months payslip, KRA PIN ready.</p>
+        </div>
+        <button class="btn-primary" onclick="purchaseStep3()">Confirm Order →</button>
+        <button class="btn-outline" onclick="backToStep1()">← Back</button>
+      </div>
+
+      <div class="purchase-step hidden" id="purchaseStep3">
+        <div class="success-animation">
+          <div class="success-icon">✅</div>
+          <h3>ORDER PLACED!</h3>
+          <p id="confirmMessage"></p>
+          <div class="order-ref" id="orderRef"></div>
+          <p class="small-note">Our team will call you within 30 minutes to confirm.<br/>Check WhatsApp for your order receipt.</p>
+          <button class="btn-primary" onclick="closePurchaseModal()">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ENQUIRY MODAL -->
+<div class="modal-overlay" id="enquiryModal">
+  <div class="modal-card modal-enquiry">
+    <button class="modal-close" onclick="closeEnquiryModal()">✕</button>
+    <h3>SEND AN ENQUIRY</h3>
+    <p id="enquiryCar"></p>
+    <input type="text" id="enqName" placeholder="Your Name *"/>
+    <input type="tel" id="enqPhone" placeholder="Phone Number *"/>
+    <input type="email" id="enqEmail" placeholder="Email (optional)"/>
+    <textarea id="enqMessage" placeholder="Your message or question..." rows="4"></textarea>
+    <button class="btn-primary" onclick="submitEnquiry()">Send Message 📨</button>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<section id="services" class="services-section">
+  <div class="section-header">
+    <div class="section-tag">WHAT WE OFFER</div>
+    <h2>OUR <span class="accent">SERVICES</span></h2>
+  </div>
+  <div class="services-grid">
+    <div class="service-card">
+      <div class="service-icon">🚗</div>
+      <h4>Car Sales</h4>
+      <p>Thousands of quality vehicles — imported & local. All inspected, documented, and road-ready.</p>
+    </div>
+    <div class="service-card featured-service">
+      <div class="service-icon">💳</div>
+      <h4>Auto Financing</h4>
+      <p>Up to 90% financing. Flexible repayment 12–60 months. Quick approvals via top Kenya banks.</p>
+    </div>
+    <div class="service-card">
+      <div class="service-icon">🔄</div>
+      <h4>Trade-In</h4>
+      <p>Trade your old car for a new one. We offer competitive valuations — no hassle, no delay.</p>
+    </div>
+    <div class="service-card">
+      <div class="service-icon">🛡</div>
+      <h4>Insurance</h4>
+      <p>Comprehensive motor insurance. Partnerships with Jubilee, AAR, GA Insurance & more.</p>
+    </div>
+    <div class="service-card">
+      <div class="service-icon">🔧</div>
+      <h4>After-Sales Service</h4>
+      <p>Free 3-month warranty on all cars. Service center referrals & maintenance packages.</p>
+    </div>
+    <div class="service-card">
+      <div class="service-icon">🚚</div>
+      <h4>Nationwide Delivery</h4>
+      <p>We deliver across all 47 counties in Kenya. Safe, tracked, and insured transit.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FINANCE CALCULATOR -->
+<section id="finance" class="finance-section">
+  <div class="section-header">
+    <div class="section-tag">PLAN YOUR PURCHASE</div>
+    <h2>FINANCE <span class="accent">CALCULATOR</span></h2>
+    <p>Estimate your monthly repayments in seconds</p>
+  </div>
+  <div class="calc-container">
+    <div class="calc-inputs">
+      <div class="calc-field">
+        <label>Car Price (KSH)</label>
+        <input type="number" id="carPrice" placeholder="e.g. 3500000" oninput="calculateLoan()"/>
+      </div>
+      <div class="calc-field">
+        <label>Deposit / Down Payment (KSH)</label>
+        <input type="number" id="deposit" placeholder="e.g. 700000" oninput="calculateLoan()"/>
+      </div>
+      <div class="calc-field">
+        <label>Loan Term</label>
+        <select id="loanTerm" onchange="calculateLoan()">
+          <option value="12">12 Months</option>
+          <option value="24">24 Months</option>
+          <option value="36" selected>36 Months</option>
+          <option value="48">48 Months</option>
+          <option value="60">60 Months</option>
+        </select>
+      </div>
+      <div class="calc-field">
+        <label>Interest Rate (%)</label>
+        <input type="number" id="interestRate" value="14" oninput="calculateLoan()"/>
+      </div>
+    </div>
+    <div class="calc-results">
+      <div class="result-box">
+        <span class="result-label">Loan Amount</span>
+        <span class="result-value" id="loanAmount">KSH 0</span>
+      </div>
+      <div class="result-box highlight">
+        <span class="result-label">Monthly Payment</span>
+        <span class="result-value" id="monthlyPayment">KSH 0</span>
+      </div>
+      <div class="result-box">
+        <span class="result-label">Total Interest</span>
+        <span class="result-value" id="totalInterest">KSH 0</span>
+      </div>
+      <div class="result-box">
+        <span class="result-label">Total Repayable</span>
+        <span class="result-value" id="totalRepayable">KSH 0</span>
+      </div>
+      <button class="btn-primary" onclick="scrollToSection('gallery')">Browse Cars & Apply</button>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials-section">
+  <div class="section-header">
+    <div class="section-tag">HAPPY CLIENTS</div>
+    <h2>WHAT KENYANS <span class="accent">SAY</span></h2>
+  </div>
+  <div class="testimonials-grid">
+    <div class="testimonial-card">
+      <div class="stars">★★★★★</div>
+      <p>"Bought my Toyota Land Cruiser from BenBen. Process was smooth — paid via M-PESA, got my car in 2 days. Very professional team!"</p>
+      <div class="reviewer"><span class="reviewer-init">JM</span><div><strong>James Mwangi</strong><small>Nairobi</small></div></div>
+    </div>
+    <div class="testimonial-card featured-testimonial">
+      <div class="stars">★★★★★</div>
+      <p>"Got 90% financing for my Subaru Forester. The monthly payments are comfortable and the car is in perfect condition. Highly recommend BenBen SmartCars!"</p>
+      <div class="reviewer"><span class="reviewer-init">AW</span><div><strong>Amina Wanjiku</strong><small>Mombasa</small></div></div>
+    </div>
+    <div class="testimonial-card">
+      <div class="stars">★★★★★</div>
+      <p>"Trade-in process was excellent. Got a great price for my old car and topped up for a 2022 Mazda CX-5. Delivered to Eldoret — amazing service!"</p>
+      <div class="reviewer"><span class="reviewer-init">PO</span><div><strong>Peter Otieno</strong><small>Eldoret</small></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="about-section">
+  <div class="about-img-col">
+    <img src="https://images.unsplash.com/photo-1562519776-42a7e2a7a0d3?w=700&q=80" alt="BenBen Yard"/>
+    <div class="about-badge-float">
+      <span>EST. 2016</span>
+      <span>NAIROBI, KENYA</span>
+    </div>
+  </div>
+  <div class="about-content">
+    <div class="section-tag">WHO WE ARE</div>
+    <h2>BENBEN <span class="accent">SMARTCARS</span></h2>
+    <p>Founded in 2016, BenBen SmartCars is one of Nairobi's most trusted motor dealers. Located at Industrial Area, Nairobi, we've grown from a small lot of 20 vehicles to Kenya's most comprehensive automotive hub.</p>
+    <p>We specialize in quality imported vehicles from Japan, UK, and UAE — all thoroughly inspected, NTSA-compliant, and ready for Kenyan roads. Our financing partnerships with Equity, KCB, Co-op Bank and Stanbic make car ownership accessible to every Kenyan.</p>
+    <div class="about-features">
+      <div class="feat">✅ NTSA Compliant</div>
+      <div class="feat">✅ Logbook Ready</div>
+      <div class="feat">✅ Fully Inspected</div>
+      <div class="feat">✅ Warranty Included</div>
+      <div class="feat">✅ KRA Cleared</div>
+      <div class="feat">✅ Insurance Ready</div>
+    </div>
+    <button class="btn-primary" onclick="scrollToSection('contact')">Visit Our Yard →</button>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="contact-section">
+  <div class="section-header">
+    <div class="section-tag">REACH US</div>
+    <h2>CONTACT <span class="accent">US</span></h2>
+  </div>
+  <div class="contact-grid">
+    <div class="contact-info">
+      <div class="contact-item">
+        <span class="c-icon">📍</span>
+        <div>
+          <strong>Location</strong>
+          <p>Industrial Area, Nairobi<br/>Along Enterprise Road</p>
+        </div>
+      </div>
+      <div class="contact-item">
+        <span class="c-icon">📞</span>
+        <div>
+          <strong>Phone / WhatsApp</strong>
+          <p>+254 700 123 456<br/>+254 733 987 654</p>
+        </div>
+      </div>
+      <div class="contact-item">
+        <span class="c-icon">📧</span>
+        <div>
+          <strong>Email</strong>
+          <p>info@benbensmartcars.co.ke<br/>sales@benbensmartcars.co.ke</p>
+        </div>
+      </div>
+      <div class="contact-item">
+        <span class="c-icon">🕐</span>
+        <div>
+          <strong>Working Hours</strong>
+          <p>Mon–Sat: 8:00 AM – 6:00 PM<br/>Sunday: 10:00 AM – 4:00 PM</p>
+        </div>
+      </div>
+      <div class="social-row">
+        <a href="#" class="soc">FB</a>
+        <a href="#" class="soc">IG</a>
+        <a href="#" class="soc">YT</a>
+        <a href="#" class="soc">TW</a>
+        <a href="#" class="soc">TK</a>
+      </div>
+    </div>
+    <div class="contact-form">
+      <h4>SEND US A MESSAGE</h4>
+      <input type="text" id="cName" placeholder="Your Name *"/>
+      <input type="tel" id="cPhone" placeholder="Phone Number *"/>
+      <input type="email" id="cEmail" placeholder="Email Address"/>
+      <select id="cSubject">
+        <option value="">Subject</option>
+        <option>Car Inquiry</option>
+        <option>Financing Questions</option>
+        <option>Trade-In Valuation</option>
+        <option>Test Drive Request</option>
+        <option>After-Sales Service</option>
+        <option>Other</option>
+      </select>
+      <textarea id="cMessage" rows="4" placeholder="Your message..."></textarea>
+      <button class="btn-primary" onclick="submitContact()">SEND MESSAGE →</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="footer-logo"><span>BEN</span><span class="acc">BEN</span> SMARTCARS</div>
+      <p>Kenya's Premier Motor Hub.<br/>Quality. Trust. Speed.</p>
+      <div class="footer-cert">🇰🇪 NTSA Certified Dealer</div>
+    </div>
+    <div class="footer-links-col">
+      <h5>Quick Links</h5>
+      <a href="#gallery">Browse Cars</a>
+      <a href="#finance">Financing</a>
+      <a href="#services">Services</a>
+      <a href="#about">About Us</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <div class="footer-links-col">
+      <h5>Car Types</h5>
+      <a href="#">SUVs</a>
+      <a href="#">Sedans</a>
+      <a href="#">Pickups</a>
+      <a href="#">Luxury Cars</a>
+      <a href="#">Hatchbacks</a>
+    </div>
+    <div class="footer-links-col">
+      <h5>Support</h5>
+      <a href="#">How to Buy</a>
+      <a href="#">Financing Guide</a>
+      <a href="#">Trade-In</a>
+      <a href="#">Insurance</a>
+      <a href="#">FAQs</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2025 BenBen SmartCars. All Rights Reserved. | Nairobi, Kenya</p>
+    <p>Powered by SmartDealer Technology</p>
+  </div>
+</footer>
+
+<!-- ADMIN PANEL -->
+<div class="modal-overlay" id="adminModal">
+  <div class="admin-panel">
+    <div class="admin-sidebar">
+      <div class="admin-logo">BB ADMIN</div>
+      <nav class="admin-nav">
+        <button class="admin-nav-btn active" onclick="showAdminTab('dashboard', this)">📊 Dashboard</button>
+        <button class="admin-nav-btn" onclick="showAdminTab('inventory', this)">🚗 Inventory</button>
+        <button class="admin-nav-btn" onclick="showAdminTab('orders', this)">📦 Orders</button>
+        <button class="admin-nav-btn" onclick="showAdminTab('enquiries', this)">✉ Enquiries</button>
+        <button class="admin-nav-btn" onclick="showAdminTab('addcar', this)">➕ Add Car</button>
+      </nav>
+      <button class="admin-logout" onclick="closeAdminPanel()">✕ Close</button>
+    </div>
+    <div class="admin-content">
+      <!-- Dashboard -->
+      <div class="admin-tab" id="tab-dashboard">
+        <h2>Dashboard</h2>
+        <div class="dash-cards">
+          <div class="dash-card red"><span class="dc-num" id="dc-inventory">0</span><span class="dc-label">Cars in Stock</span></div>
+          <div class="dash-card yellow"><span class="dc-num" id="dc-orders">0</span><span class="dc-label">Orders Today</span></div>
+          <div class="dash-card green"><span class="dc-num" id="dc-enquiries">0</span><span class="dc-label">New Enquiries</span></div>
+          <div class="dash-card white"><span class="dc-num" id="dc-revenue">KSH 0</span><span class="dc-label">Revenue This Month</span></div>
+        </div>
+        <div class="recent-activity">
+          <h4>Recent Activity</h4>
+          <div id="recentActivity">No activity yet.</div>
+        </div>
+      </div>
+
+      <!-- Inventory -->
+      <div class="admin-tab hidden" id="tab-inventory">
+        <h2>Car Inventory</h2>
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="inventoryTable">
+            <thead><tr><th>ID</th><th>Make & Model</th><th>Year</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="inventoryBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Orders -->
+      <div class="admin-tab hidden" id="tab-orders">
+        <h2>Orders</h2>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Ref</th><th>Customer</th><th>Car</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody id="ordersBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Enquiries -->
+      <div class="admin-tab hidden" id="tab-enquiries">
+        <h2>Customer Enquiries</h2>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Name</th><th>Phone</th><th>Car</th><th>Message</th><th>Date</th></tr></thead>
+            <tbody id="enquiriesBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Add Car -->
+      <div class="admin-tab hidden" id="tab-addcar">
+        <h2>Add New Car</h2>
+        <div class="add-car-form">
+          <div class="form-row">
+            <div class="form-group"><label>Make *</label><input type="text" id="acMake" placeholder="e.g. Toyota"/></div>
+            <div class="form-group"><label>Model *</label><input type="text" id="acModel" placeholder="e.g. Land Cruiser"/></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Year *</label><input type="number" id="acYear" placeholder="e.g. 2022"/></div>
+            <div class="form-group"><label>Price (KSH) *</label><input type="number" id="acPrice" placeholder="e.g. 5500000"/></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Body Type *</label>
+              <select id="acBody"><option>SUV</option><option>Sedan</option><option>Pickup</option><option>Hatchback</option><option>Van</option><option>Coupe</option></select>
+            </div>
+            <div class="form-group"><label>Fuel Type</label>
+              <select id="acFuel"><option>Petrol</option><option>Diesel</option><option>Hybrid</option><option>Electric</option></select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Mileage (km)</label><input type="number" id="acMileage" placeholder="e.g. 45000"/></div>
+            <div class="form-group"><label>Transmission</label>
+              <select id="acTransmission"><option>Automatic</option><option>Manual</option></select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Engine CC</label><input type="text" id="acEngine" placeholder="e.g. 2500cc"/></div>
+            <div class="form-group"><label>Color</label><input type="text" id="acColor" placeholder="e.g. Pearl White"/></div>
+          </div>
+          <div class="form-group full"><label>Category Tags</label>
+            <select id="acCategory">
+              <option>suv</option><option>sedan</option><option>pickup</option><option>luxury</option><option>hatchback</option>
+            </select>
+          </div>
+          <div class="form-group full"><label>Image URL</label><input type="text" id="acImage" placeholder="Paste image URL..."/></div>
+          <div class="form-group full"><label>Description</label><textarea id="acDesc" rows="3" placeholder="Brief description of the vehicle..."></textarea></div>
+          <div class="form-group full"><label>Status</label>
+            <select id="acStatus"><option>Available</option><option>Reserved</option><option>Sold</option></select>
+          </div>
+          <button class="btn-primary" onclick="addCarToInventory()">➕ ADD CAR TO INVENTORY</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FLOATING WHATSAPP -->
+<a href="https://wa.me/254700123456" class="fab-whatsapp" target="_blank">
+  <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.38 1.26 4.79L2 22l5.46-1.37c1.35.71 2.89 1.11 4.54 1.11 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.52 14.13c-.23.63-1.35 1.23-1.84 1.27-.48.05-.94.22-3.18-.67-2.67-1.07-4.37-3.77-4.5-3.95-.14-.18-1.1-1.47-1.1-2.81s.7-1.99.95-2.27c.23-.26.5-.33.67-.33.17 0 .33.01.48.02.15.01.36-.06.56.43.21.5.7 1.72.76 1.84.06.13.1.28.02.45-.08.17-.12.28-.24.43-.12.15-.25.33-.36.44-.12.12-.24.25-.1.49.14.24.62 1.02 1.33 1.65.91.81 1.68 1.06 1.92 1.18.24.12.38.1.52-.06.14-.17.6-.7.76-.94.16-.24.32-.2.54-.12.22.08 1.4.66 1.64.78.24.12.4.18.46.28.06.1.06.58-.17 1.2z"/>
+  </svg>
+</a>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

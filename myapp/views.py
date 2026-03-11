@@ -5862,7 +5862,8 @@ def export_revenue_report(request):
     wb.save(response)
     return response
 
-
+def s3_test_page(request):
+    return render(request, 's3_test.html')
 
 @csrf_exempt
 def api_community_join(request):

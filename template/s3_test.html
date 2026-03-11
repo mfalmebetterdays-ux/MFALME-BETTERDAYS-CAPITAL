@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>S3 Upload Test</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+    <h1>S3 Upload Test</h1>
+    
+    <input type="file" id="fileInput">
+    <button onclick="testUpload()">Upload to S3</button>
+    
+    <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+    
+    <script>
+        const csrftoken = document.querySelector('[name=csrf-token]').getAttribute('content');
+        
+        function testUpload() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+            
+            document.getElementById('result').innerHTML = 'Uploading...';
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            $.ajax({
+                url: '/admin/api/test-s3-upload/',
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    document.getElementById('result').innerHTML = 
+                        '<h3>✅ Success!</h3>' +
+                        '<p>Key: ' + response.key + '</p>' +
+                        '<p>URL: <a href="' + response.url + '" target="_blank">' + response.url + '</a></p>';
+                },
+                error: function(xhr) {
+                    document.getElementById('result').innerHTML = 
+                        '<h3>❌ Failed</h3>' +
+                        '<p>Status: ' + xhr.status + '</p>' +
+                        '<p>Response: ' + xhr.responseText + '</p>';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

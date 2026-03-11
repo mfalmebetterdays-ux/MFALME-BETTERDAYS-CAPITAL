@@ -39,7 +39,8 @@ class MfalmeUserManager(BaseUserManager):
         
         return self.create_user(email, password, **extra_fields)
     
-# Add these methods to the MfalmeUsers class
+
+# ==================== USER ACCESS METHODS ====================
 
 def has_pdf_access(self, pdf_id):
     """Check if user has access to a PDF"""
@@ -299,6 +300,17 @@ class MfalmeUsers(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         """Return the short name for the user"""
         return self.username
+    
+    @property
+    def profile_image_url(self):
+        """Get profile image URL"""
+        if not self.profile_image or not self.profile_image.name:
+            return None
+        try:
+            return self.profile_image.url
+        except Exception as e:
+            print(f"❌ Error getting profile image URL for user {self.id}: {e}")
+            return None
 
 
 # ==================== VERIFICATION CODE MODEL ====================
@@ -623,6 +635,17 @@ class Package(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+    
+    @property
+    def image_url(self):
+        """Get package image URL"""
+        if not self.image or not self.image.name:
+            return None
+        try:
+            return self.image.url
+        except Exception as e:
+            print(f"❌ Error getting image URL for package {self.id}: {e}")
+            return None
 
 
 # ==================== EDUCATION PROGRAM MODEL ====================
@@ -649,7 +672,7 @@ class EducationProgram(models.Model):
     price_1_month = models.DecimalField(max_digits=10, decimal_places=2)
     price_12_months = models.DecimalField(max_digits=10, decimal_places=2)
     original_price_1_month = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    original_price_12_months = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # FIXED: removed underscore
+    original_price_12_months = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     
     total_hours = models.IntegerField(default=40)
     total_lessons = models.IntegerField(default=20)
@@ -689,6 +712,18 @@ class EducationProgram(models.Model):
         if not self.slug:
             self.slug = slugify(f"{self.program_type}-{self.name}")
         super().save(*args, **kwargs)
+    
+    @property
+    def thumbnail_url(self):
+        """Get program thumbnail URL"""
+        if not self.thumbnail or not self.thumbnail.name:
+            return None
+        try:
+            return self.thumbnail.url
+        except Exception as e:
+            print(f"❌ Error getting thumbnail URL for education program {self.id}: {e}")
+            return None
+
 
 # ==================== USER EDUCATION ENROLLMENT ====================
 
@@ -789,6 +824,12 @@ class PartnershipProgram(models.Model):
     
     def __str__(self):
         return f"{self.get_tier_display()} - {self.name}"
+    
+    @property
+    def image_url(self):
+        """Get program image URL (if any)"""
+        # You can add an image field if needed
+        return None
 
 
 # ==================== USER PARTNERSHIP ====================
@@ -945,6 +986,26 @@ class InstituteApplication(models.Model):
     
     def get_status_display(self):
         return dict(self.STATUS_CHOICES).get(self.status, self.status)
+    
+    @property
+    def proof_url(self):
+        """Get proof of funds file URL"""
+        if not self.proof_of_funds or not self.proof_of_funds.name:
+            return None
+        try:
+            return self.proof_of_funds.url
+        except:
+            return None
+    
+    @property
+    def history_url(self):
+        """Get trading history file URL"""
+        if not self.trading_history or not self.trading_history.name:
+            return None
+        try:
+            return self.trading_history.url
+        except:
+            return None
 
 
 # ==================== COMMUNITY JOIN REQUEST MODEL ====================
@@ -1046,6 +1107,16 @@ class Testimonial(models.Model):
     
     def __str__(self):
         return f"Testimonial by {self.name}"
+    
+    @property
+    def image_url(self):
+        """Get testimonial image URL"""
+        if not self.image or not self.image.name:
+            return None
+        try:
+            return self.image.url
+        except:
+            return None
 
 
 # ==================== FAQ MODEL ====================
@@ -1241,6 +1312,26 @@ class Brokerage(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.get_region_display()}"
+    
+    @property
+    def logo_url(self):
+        """Get logo URL"""
+        if not self.logo or not self.logo.name:
+            return None
+        try:
+            return self.logo.url
+        except:
+            return None
+    
+    @property
+    def featured_image_url(self):
+        """Get featured image URL"""
+        if not self.featured_image or not self.featured_image.name:
+            return None
+        try:
+            return self.featured_image.url
+        except:
+            return None
 
 
 # ==================== CONTACT SUBMISSION ====================
@@ -1340,6 +1431,16 @@ class SiteContent(models.Model):
     
     def __str__(self):
         return self.get_section_display()
+    
+    @property
+    def image_url(self):
+        """Get content image URL"""
+        if not self.image or not self.image.name:
+            return None
+        try:
+            return self.image.url
+        except:
+            return None
 
 
 # ==================== SITE CONTENT VERSION ====================
@@ -1463,7 +1564,7 @@ class ActivityLog(models.Model):
         ('ADMIN_ACTION', 'Admin Action'),
         ('SECURITY_EVENT', 'Security Event'),
         ('COURSE_ACCESS_EXPIRED', 'Course Access Expired'),
-        ('PDF_VIEWED', 'PDF Viewed'),  # Add this
+        ('PDF_VIEWED', 'PDF Viewed'),
         ('VIDEO_WATCHED', 'Video Watched'),
     ]
     
@@ -1713,6 +1814,16 @@ class HeroSlider(models.Model):
     
     def __str__(self):
         return self.title
+    
+    @property
+    def image_url(self):
+        """Get slider image URL"""
+        if not self.image or not self.image.name:
+            return None
+        try:
+            return self.image.url
+        except:
+            return None
 
 
 # ==================== ABOUT SECTION ====================
@@ -1731,6 +1842,16 @@ class AboutSection(models.Model):
     
     def __str__(self):
         return self.title
+    
+    @property
+    def image_url(self):
+        """Get about section image URL"""
+        if not self.image or not self.image.name:
+            return None
+        try:
+            return self.image.url
+        except:
+            return None
 
 
 # ==================== PAYMENT METHOD ====================
@@ -1770,52 +1891,53 @@ class Logo(models.Model):
     
     def __str__(self):
         return self.name
+    
+    @property
+    def image_url(self):
+        """Get logo image URL"""
+        if not self.image or not self.image.name:
+            return None
+        try:
+            return self.image.url
+        except:
+            return None
+
 
 # ==================== TRAINING VIDEO ====================
 class TrainingVideo(models.Model):
-    """Training videos managed by admin - DISABLE DOWNLOADS BY DEFAULT"""
-    title = models.TextField() 
+    """Training videos managed by admin - OPTIMIZED FOR S3 DIRECT UPLOADS"""
+    
+    # ===== BASIC INFORMATION =====
+    title = models.TextField()
     description = models.TextField(blank=True)
     
-    # Option 1: Upload video file directly to S3 (stores path only)
-    video_file = models.FileField(
-        upload_to='videos/', 
-        blank=True, 
-        null=True,
-        help_text="Upload video file (MP4, WebM, etc.)"
-    )
-    
-    # Option 2: External URL (YouTube, Vimeo, etc.) or S3 key
-    video_url = models.URLField(
-        max_length=1000,  # INCREASED to 1000 for long S3 URLs
-        blank=True, 
-        null=True,
-        help_text="URL to video (Vimeo, YouTube, etc.) OR S3 key from direct upload"
-    )
-    
-    # Option 3: S3 Key for direct uploads (new field)
+    # ===== VIDEO SOURCES =====
+    # PRIMARY: S3 Key for direct uploads (RECOMMENDED)
     s3_key = models.CharField(
         max_length=500,
         blank=True,
         null=True,
-        help_text="S3 key for videos uploaded directly to S3"
+        help_text="S3 key for videos uploaded directly to S3 (e.g., videos/20260310_123456_test.mp4)"
     )
     
-    # Option 4: Embed code for custom players
-    embed_code = models.TextField(
+    # SECONDARY: External URL (YouTube, Vimeo, etc.)
+    external_url = models.URLField(
+        max_length=1000,
+        blank=True,
+        null=True,
+        help_text="External URL (YouTube, Vimeo, etc.)"
+    )
+    
+    # LEGACY: Uploaded file (kept for backward compatibility)
+    video_file = models.FileField(
+        upload_to='videos/', 
         blank=True, 
         null=True,
-        help_text="Custom embed code for video player"
+        help_text="Upload video file directly (not recommended for large files)"
     )
     
-    # Thumbnail - also stores path only
-    thumbnail = models.ImageField(
-        upload_to='video_thumbnails/', 
-        blank=True, 
-        null=True
-    )
-    
-    # Thumbnail S3 key for direct uploads
+    # ===== THUMBNAIL SOURCES =====
+    # PRIMARY: S3 key for thumbnails
     thumbnail_s3_key = models.CharField(
         max_length=500,
         blank=True,
@@ -1823,12 +1945,32 @@ class TrainingVideo(models.Model):
         help_text="S3 key for thumbnails uploaded directly to S3"
     )
     
-    category = models.CharField(max_length=20, choices=[
-        ('PTM', 'PTM Series'),
-        ('POTM', 'POTM Series'),
-        ('PFTM', 'PFTM Series'),
-        ('Webinars', 'Webinars'),
-    ], default='PTM')
+    # LEGACY: Uploaded thumbnail file
+    thumbnail = models.ImageField(
+        upload_to='video_thumbnails/', 
+        blank=True, 
+        null=True
+    )
+    
+    # ===== MODULE/CHAPTER INFORMATION =====
+    module = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Module or chapter name (e.g., 'Chapter 1', 'Module 3')"
+    )
+    
+    # ===== CATEGORIZATION =====
+    category = models.CharField(
+        max_length=20, 
+        choices=[
+            ('PTM', 'PTM Series'),
+            ('POTM', 'POTM Series'),
+            ('PFTM', 'PFTM Series'),
+            ('Webinars', 'Webinars'),
+        ], 
+        default='PTM'
+    )
     
     course = models.ForeignKey(
         'Course', 
@@ -1838,165 +1980,200 @@ class TrainingVideo(models.Model):
         blank=True
     )
     
+    # ===== PRICING & ACCESS =====
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    duration = models.IntegerField(default=30, help_text="Duration in minutes")
+    is_free = models.BooleanField(
+        default=False,
+        help_text="If checked, video is free for everyone"
+    )
     
+    # ===== DURATION & ORDERING =====
+    duration = models.IntegerField(
+        default=30, 
+        help_text="Duration in minutes"
+    )
+    order = models.IntegerField(default=0)
+    
+    # ===== SECURITY SETTINGS =====
     allow_download = models.BooleanField(default=False)
     disable_screenshots = models.BooleanField(default=True)
     
-    order = models.IntegerField(default=0)
+    # ===== STATUS =====
     is_active = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
     
+    # ===== STATISTICS =====
     view_count = models.IntegerField(default=0)
+    
+    # ===== TIMESTAMPS =====
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['order', '-created_at']
         indexes = [
-            models.Index(fields=['course', 'is_active']),
-            models.Index(fields=['category']),
+            models.Index(fields=['course', 'order']),
+            models.Index(fields=['category', 'is_active']),
+            models.Index(fields=['s3_key']),
         ]
     
     def __str__(self):
         return self.title
     
+    def save(self, *args, **kwargs):
+        """Override save to handle S3 keys and auto-set is_free"""
+        # Auto-set is_free based on price
+        if self.price == 0:
+            self.is_free = True
+        
+        # If bypass_validation is passed, skip file validation
+        bypass_validation = kwargs.pop('bypass_validation', False)
+        
+        if bypass_validation:
+            # For S3 uploads, we don't want Django to validate file existence
+            # Temporarily remove file fields from validation
+            self._state.adding = not self.pk
+            super().save(*args, **kwargs)
+        else:
+            # Normal save with validation
+            super().save(*args, **kwargs)
+    
     @property
-    def video_file_url(self):
-        """Get video file URL safely"""
+    def video_url(self):
+        """
+        Get the video URL with priority:
+        1. S3 Key (primary for direct uploads)
+        2. External URL (YouTube/Vimeo)
+        3. Uploaded file (legacy)
+        """
+        from django.conf import settings
+        
+        # PRIMARY: S3 Key
+        if self.s3_key:
+            try:
+                if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
+                    return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{self.s3_key}"
+                else:
+                    return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.s3_key}"
+            except Exception as e:
+                print(f"⚠️ Error generating S3 URL: {e}")
+        
+        # SECONDARY: External URL
+        if self.external_url:
+            return self.external_url
+        
+        # LEGACY: Uploaded file
         if self.video_file and hasattr(self.video_file, 'url'):
             try:
-                if self.video_file.storage.exists(self.video_file.name):
-                    return self.video_file.url
+                return self.video_file.url
             except Exception as e:
-                print(f"Error accessing video file: {e}")
-        # Return S3 URL if we have s3_key
-        elif self.s3_key:
-            from django.conf import settings
-            return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.s3_key}"
-        return None
-    
-    @property
-    def has_valid_file(self):
-        """Check if video file exists"""
-        if self.video_file and hasattr(self.video_file, 'storage'):
-            try:
-                return self.video_file.storage.exists(self.video_file.name)
-            except:
-                return False
-        # S3 key is considered valid if it exists
-        elif self.s3_key:
-            return True
-        return False
-    
-    @property
-    def video_type(self):
-        """Determine video type for template"""
-        if self.video_file and self.has_valid_file:
-            return 'file'
-        elif self.s3_key:
-            return 's3'
-        elif self.video_url:
-            if 'youtube.com' in self.video_url or 'youtu.be' in self.video_url:
-                return 'youtube'
-            elif 'vimeo.com' in self.video_url:
-                return 'vimeo'
-            elif 's3.amazonaws.com' in self.video_url or self.video_url.startswith('https://'):
-                return 's3'
-            else:
-                return 'url'
-        elif self.embed_code:
-            return 'embed'
-        return None
-    
-    @property
-    def youtube_id(self):
-        """Extract YouTube video ID from URL"""
-        if not self.video_url:
-            return None
-        if 'youtube.com/watch?v=' in self.video_url:
-            return self.video_url.split('watch?v=')[-1].split('&')[0]
-        elif 'youtu.be/' in self.video_url:
-            return self.video_url.split('youtu.be/')[-1].split('?')[0]
-        return None
-    
-    @property
-    def vimeo_id(self):
-        """Extract Vimeo video ID from URL"""
-        if not self.video_url or 'vimeo.com' not in self.video_url:
-            return None
-        return self.video_url.split('vimeo.com/')[-1].split('?')[0]
-    
-    @property
-    def embed_url(self):
-        """Get embed URL for YouTube/Vimeo"""
-        if self.video_type == 'youtube':
-            vid = self.youtube_id
-            return f"https://www.youtube.com/embed/{vid}" if vid else None
-        elif self.video_type == 'vimeo':
-            vid = self.vimeo_id
-            return f"https://player.vimeo.com/video/{vid}" if vid else None
-        elif self.video_type == 's3':
-            return self.get_absolute_url()
+                print(f"⚠️ Error getting video_file URL: {e}")
+        
         return None
     
     @property
     def thumbnail_url(self):
-        """Get thumbnail URL"""
+        """
+        Get the thumbnail URL with priority:
+        1. S3 Key (primary for direct uploads)
+        2. Uploaded thumbnail (legacy)
+        """
+        from django.conf import settings
+        
+        # PRIMARY: S3 Key
+        if self.thumbnail_s3_key:
+            try:
+                if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
+                    return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{self.thumbnail_s3_key}"
+                else:
+                    return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.thumbnail_s3_key}"
+            except Exception as e:
+                print(f"⚠️ Error generating thumbnail URL: {e}")
+        
+        # LEGACY: Uploaded thumbnail
         if self.thumbnail and hasattr(self.thumbnail, 'url'):
             try:
-                if self.thumbnail.storage.exists(self.thumbnail.name):
-                    return self.thumbnail.url
-            except:
-                pass
-        # Check for S3 thumbnail key
-        elif self.thumbnail_s3_key:
-            from django.conf import settings
-            return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.thumbnail_s3_key}"
-        # Fallback to YouTube thumbnail if available
-        elif self.video_type == 'youtube' and self.youtube_id:
-            return f"https://img.youtube.com/vi/{self.youtube_id}/0.jpg"
+                return self.thumbnail.url
+            except Exception as e:
+                print(f"⚠️ Error getting thumbnail URL: {e}")
+        
         return None
     
-    def get_absolute_url(self):
-        """Get the full URL for the video"""
-        if self.video_type == 's3' and self.s3_key:
-            from django.conf import settings
-            return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.s3_key}"
-        elif self.video_file_url:
-            return self.video_file_url
-        elif self.video_url:
-            return self.video_url
-        return None
+    @property
+    def is_s3_video(self):
+        """Check if video is stored in S3"""
+        return bool(self.s3_key)
     
-    def clean(self):
-        """Validate that at least one video source is provided"""
-        from django.core.exceptions import ValidationError
-        
-        # Check for ANY video source
-        has_file = bool(self.video_file and hasattr(self.video_file, 'name'))
-        has_s3_key = bool(self.s3_key)
-        has_url = bool(self.video_url and self.video_url.strip())
-        has_embed = bool(self.embed_code and self.embed_code.strip())
-        
-        # Special case: If video_url contains an S3 path, treat it as valid
-        if self.video_url and ('s3.amazonaws.com' in self.video_url or 
-                               self.video_url.startswith('videos/') or
-                               self.video_url.startswith('https://')):
-            has_url = True
-        
-        if not (has_file or has_s3_key or has_url or has_embed):
-            raise ValidationError("You must provide either a video file, S3 key, URL, or embed code.")
+    @property
+    def is_external_video(self):
+        """Check if video is from external source"""
+        return bool(self.external_url)
     
-    def save(self, *args, **kwargs):
-        # If video_url is an S3 key, store it in s3_key field as well
-        if self.video_url and 's3.amazonaws.com' not in self.video_url and not self.video_url.startswith('http'):
-            # This is likely an S3 key (not a full URL)
-            if not self.s3_key:
-                self.s3_key = self.video_url
-        
-        self.clean()
-        super().save(*args, **kwargs)
+    @property
+    def video_type(self):
+        """Get video type for display"""
+        if self.s3_key:
+            return "S3"
+        elif self.external_url:
+            return "External"
+        elif self.video_file:
+            return "Uploaded"
+        return "None"
+    
+    def increment_view_count(self):
+        """Increment view count safely"""
+        self.view_count += 1
+        self.save(update_fields=['view_count'])
+    
+    def get_duration_display(self):
+        """Get formatted duration (e.g., '45 min' or '1h 30m')"""
+        if self.duration < 60:
+            return f"{self.duration} min"
+        else:
+            hours = self.duration // 60
+            minutes = self.duration % 60
+            if minutes == 0:
+                return f"{hours}h"
+            else:
+                return f"{hours}h {minutes}m"
+    
+    def get_module_display(self):
+        """Get module display name"""
+        if self.module:
+            return self.module
+        return f"Module {self.order}"
+    
+    def get_course_name(self):
+        """Get course name safely"""
+        if self.course:
+            return self.course.title
+        return "Uncategorized"
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses"""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'video_url': self.video_url,
+            'thumbnail_url': self.thumbnail_url,
+            'course_id': self.course.id if self.course else None,
+            'course_name': self.get_course_name(),
+            'category': self.category,
+            'module': self.module,
+            'duration': self.duration,
+            'duration_display': self.get_duration_display(),
+            'price': float(self.price),
+            'is_free': self.is_free,
+            'order': self.order,
+            'is_active': self.is_active,
+            'is_featured': self.is_featured,
+            'view_count': self.view_count,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'video_type': self.video_type,
+            's3_key': self.s3_key,
+            'thumbnail_s3_key': self.thumbnail_s3_key,
+        }
 
 # ==================== USER VIDEO ACCESS ====================
 
@@ -2056,7 +2233,8 @@ class UserPDFAccess(models.Model):
 # ==================== COURSE ====================
 
 class Course(models.Model):
-    """Courses managed by admin - ONE PRICE"""
+    """Courses managed by admin - OPTIMIZED FOR S3 DIRECT UPLOADS"""
+    
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     
@@ -2070,8 +2248,21 @@ class Course(models.Model):
     materials = models.JSONField(default=list, blank=True)
     duration_weeks = models.IntegerField(default=4)
     
-    # ADD THIS for course thumbnails
-    thumbnail = models.ImageField(upload_to='course_thumbnails/', blank=True, null=True)
+    # ===== THUMBNAIL HANDLING - DUAL APPROACH =====
+    # PRIMARY: S3 key for direct uploads (RECOMMENDED)
+    thumbnail_s3_key = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="S3 key for thumbnail uploaded directly to S3 (e.g., course_thumbnails/20260311_123456_abc123_image.jpg)"
+    )
+    
+    # LEGACY: Uploaded thumbnail file (kept for backward compatibility)
+    thumbnail = models.ImageField(
+        upload_to='course_thumbnails/', 
+        blank=True, 
+        null=True
+    )
     
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -2079,22 +2270,95 @@ class Course(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=['is_active', 'created_at']),
+            models.Index(fields=['thumbnail_s3_key']),
         ]
     
     def __str__(self):
         return self.title
     
-    def video_count(self):
-        return self.videos.count()
-    
-    def pdf_count(self):
-        return self.pdf_resources.count()
-    
     def save(self, *args, **kwargs):
         # Keep price_1_month in sync with price for backward compatibility
         self.price_1_month = self.price
-        super().save(*args, **kwargs)
-
+        
+        # Check if we should bypass validation (for S3 uploads)
+        bypass_validation = kwargs.pop('bypass_validation', False)
+        
+        if bypass_validation:
+            # For S3 uploads, we don't want Django to validate file existence
+            self._state.adding = not self.pk
+            super().save(*args, **kwargs)
+        else:
+            # Normal save with validation
+            super().save(*args, **kwargs)
+    
+    @property
+    def thumbnail_url(self):
+        """
+        Get the thumbnail URL with priority:
+        1. S3 Key (primary for direct uploads)
+        2. Uploaded thumbnail (legacy)
+        """
+        from django.conf import settings
+        
+        # PRIMARY: S3 Key
+        if self.thumbnail_s3_key:
+            try:
+                if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
+                    return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{self.thumbnail_s3_key}"
+                else:
+                    return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.thumbnail_s3_key}"
+            except Exception as e:
+                print(f"⚠️ Error generating S3 thumbnail URL for course {self.id}: {e}")
+        
+        # LEGACY: Uploaded thumbnail
+        if self.thumbnail and self.thumbnail.name:
+            try:
+                # Let Django's storage system return the correct URL
+                return self.thumbnail.url
+            except Exception as e:
+                print(f"⚠️ Error getting legacy thumbnail URL for course {self.id}: {e}")
+        
+        return None
+    
+    @property
+    def is_s3_thumbnail(self):
+        """Check if thumbnail is stored in S3"""
+        return bool(self.thumbnail_s3_key)
+    
+    def video_count(self):
+        """Get count of videos in this course"""
+        return self.videos.count() if hasattr(self, 'videos') else 0
+    
+    def pdf_count(self):
+        """Get count of PDFs in this course"""
+        return self.pdf_resources.count() if hasattr(self, 'pdf_resources') else 0
+    
+    def get_thumbnail_filename(self):
+        """Get just the filename from the thumbnail path"""
+        if self.thumbnail_s3_key:
+            return self.thumbnail_s3_key.split('/')[-1]
+        elif self.thumbnail and self.thumbnail.name:
+            return self.thumbnail.name.split('/')[-1]
+        return None
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses"""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'price': float(self.price),
+            'price_formatted': f"${float(self.price):,.2f}",
+            'duration_weeks': self.duration_weeks,
+            'thumbnail_url': self.thumbnail_url,
+            'thumbnail_s3_key': self.thumbnail_s3_key,
+            'is_s3_thumbnail': self.is_s3_thumbnail,
+            'is_active': self.is_active,
+            'videos_count': self.video_count(),
+            'pdfs_count': self.pdf_count(),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+    
 
 # ==================== USER COURSE ====================
 class UserCourse(models.Model):
@@ -2135,13 +2399,6 @@ class UserCourse(models.Model):
         if not self.access_expires_at:
             # 1 YEAR ACCESS (365 days) for all purchases
             self.access_expires_at = timezone.now() + timedelta(days=365)
-            
-            # Note: We're giving 1 year regardless of purchase_type
-            # If you want different durations, uncomment below:
-            # if self.purchase_type == '1_month':
-            #     self.access_expires_at = timezone.now() + timedelta(days=365)  # 1 year
-            # elif self.purchase_type == '12_months':
-            #     self.access_expires_at = timezone.now() + timedelta(days=365 * 12)  # 12 years? That's too long
         
         # Auto-update is_active based on expiration
         if self.access_expires_at and timezone.now() > self.access_expires_at:
@@ -2344,7 +2601,7 @@ class UserCourse(models.Model):
         # Create achievement notification
         Notification.objects.create(
             user=self.user,
-            title='Course Completed! ðŸŽ‰',
+            title='Course Completed! 🎉',
             message=f'Congratulations! You have completed {self.course.title}',
             notification_type='SUCCESS',
             related_object_type='course',
@@ -2363,165 +2620,6 @@ class UserCourse(models.Model):
         self.completed_lessons = []
         self.progress = 0
         self.save(update_fields=['completed_lessons', 'progress'])
-
-    
-    def get_video_access(self):
-        """Grant access to all videos in this course"""
-        videos = self.course.videos.filter(is_active=True)
-        for video in videos:
-            UserVideoAccess.objects.get_or_create(
-                user=self.user,
-                video=video,
-                defaults={'payment': self.payment}
-            )
-    
-    def get_pdf_access(self):
-        """Grant access to all PDFs in this course"""
-        pdfs = self.course.pdf_resources.filter(is_active=True)
-        for pdf in pdfs:
-            UserPDFAccess.objects.get_or_create(
-                user=self.user,
-                pdf=pdf,
-                defaults={'payment': self.payment}
-            )
-    
-    def is_access_expired(self):
-        """Check if access has expired"""
-        if not self.access_expires_at:
-            return False
-        return timezone.now() > self.access_expires_at
-    
-    def time_until_expiry(self):
-        """Get time until access expires (for testing)"""
-        if not self.access_expires_at:
-            return None
-        delta = self.access_expires_at - timezone.now()
-        if delta.total_seconds() < 0:
-            return "Expired"
-        
-        minutes = int(delta.total_seconds() / 60)
-        seconds = int(delta.total_seconds() % 60)
-        
-        if minutes > 0:
-            return f"{minutes}m {seconds}s"
-        else:
-            return f"{seconds}s"
-    
-    def days_until_expiry(self):
-        """Get days until access expires"""
-        if not self.access_expires_at:
-            return None
-        delta = self.access_expires_at - timezone.now()
-        return max(0, delta.days)
-    
-    def mark_lesson_complete(self, lesson_type, lesson_id):
-        """Mark a lesson as complete and update progress"""
-        lesson_key = f"{lesson_type}_{lesson_id}"
-        
-        # Initialize if empty
-        if not self.completed_lessons:
-            self.completed_lessons = []
-        
-        # Don't add if already completed
-        if lesson_key in self.completed_lessons:
-            return False
-        
-        # Add to completed list
-        self.completed_lessons.append(lesson_key)
-        
-        # Recalculate progress
-        self.update_progress()
-        
-        # Save changes
-        self.save(update_fields=['completed_lessons', 'progress'])
-        
-        # Check if course is now complete
-        if self.progress == 100:
-            self.on_course_complete()
-        
-        return True
-    
-    def update_progress(self):
-        """Calculate progress percentage based on completed lessons"""
-        # Get total lessons in course
-        total_videos = self.course.videos.count()
-        total_pdfs = self.course.pdf_resources.count()
-        total_lessons = total_videos + total_pdfs
-        
-        if total_lessons == 0:
-            self.progress = 0
-            return
-        
-        completed_count = len(self.completed_lessons) if self.completed_lessons else 0
-        self.progress = int((completed_count / total_lessons) * 100)
-    
-    def get_completed_count(self):
-        """Get number of completed lessons"""
-        return len(self.completed_lessons) if self.completed_lessons else 0
-    
-    def get_total_lessons(self):
-        """Get total number of lessons in course"""
-        return self.course.videos.count() + self.course.pdf_resources.count()
-    
-    def is_lesson_completed(self, lesson_type, lesson_id):
-        """Check if a specific lesson is completed"""
-        lesson_key = f"{lesson_type}_{lesson_id}"
-        return self.completed_lessons and lesson_key in self.completed_lessons
-    
-    def get_next_lesson(self):
-        """Get the next incomplete lesson"""
-        from .models import TrainingVideo, PDF
-        
-        # Get all lessons ordered
-        videos = list(TrainingVideo.objects.filter(course=self.course).order_by('order'))
-        pdfs = list(PDF.objects.filter(course=self.course).order_by('order'))
-        
-        # Combine and sort by order
-        all_lessons = []
-        for v in videos:
-            all_lessons.append({'type': 'video', 'id': v.id, 'title': v.title, 'order': v.order})
-        for p in pdfs:
-            all_lessons.append({'type': 'pdf', 'id': p.id, 'title': p.title, 'order': p.order})
-        
-        all_lessons.sort(key=lambda x: x['order'])
-        
-        # If no completed lessons, return first lesson
-        if not self.completed_lessons:
-            return all_lessons[0] if all_lessons else None
-        
-        # Find first incomplete lesson
-        for lesson in all_lessons:
-            lesson_key = f"{lesson['type']}_{lesson['id']}"
-            if lesson_key not in self.completed_lessons:
-                return lesson
-        
-        return None  # All completed
-    
-    def on_course_complete(self):
-        """Called when course reaches 100% completion"""
-        from .models import Notification
-        
-        # Create achievement notification
-        Notification.objects.create(
-            user=self.user,
-            title='Course Completed! ðŸŽ‰',
-            message=f'Congratulations! You have completed {self.course.title}',
-            notification_type='SUCCESS',
-            related_object_type='course',
-            related_object_id=self.course.id
-        )
-        
-        # Check if certificate is available
-        if self.course.has_certificate:
-            # You could auto-generate certificate here
-            pass
-        
-        # Log activity
-        ActivityLog.objects.create(
-            user=self.user,
-            action='COURSE_COMPLETED',
-            description=f'Completed course: {self.course.title}'
-        )
 
 
 # ==================== MENTORSHIP PROGRAM ====================
@@ -2543,6 +2641,12 @@ class MentorshipProgram(models.Model):
     
     def __str__(self):
         return f"{self.mentor_name} - {self.title}"
+    
+    @property
+    def image_url(self):
+        """Get program image URL (if any)"""
+        # You can add an image field if needed
+        return None
 
 
 # ==================== USER ACTIVITY ====================
@@ -2656,12 +2760,23 @@ class Blog(models.Model):
     def increment_views(self):
         self.views += 1
         self.save(update_fields=['views'])
+    
+    @property
+    def featured_image_url(self):
+        """Get featured image URL"""
+        if not self.featured_image or not self.featured_image.name:
+            return None
+        try:
+            return self.featured_image.url
+        except:
+            return None
 
 
 # ==================== PDF MODEL ====================
 
 class PDF(models.Model):
-    """PDF resources for VIEWING (not downloading)"""
+    """PDF resources for VIEWING (not downloading) - OPTIMIZED FOR S3 DIRECT UPLOADS"""
+    
     CATEGORY_CHOICES = [
         ('course_material', 'Course Material'),
         ('ebook', 'E-Book'),
@@ -2684,7 +2799,28 @@ class PDF(models.Model):
     slug = models.SlugField(max_length=200, unique=True, blank=True)
     description = models.TextField(blank=True)
     
-    pdf_file = models.FileField(upload_to='pdfs/')
+    # ===== PDF FILE HANDLING - DUAL APPROACH =====
+    # PRIMARY: S3 key for direct uploads (RECOMMENDED)
+    pdf_s3_key = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="S3 key for PDF uploaded directly to S3 (e.g., pdfs/20260311_123456_abc123_document.pdf)"
+    )
+    
+    # LEGACY: Uploaded PDF file (kept for backward compatibility)
+    pdf_file = models.FileField(upload_to='pdfs/', blank=True, null=True)
+    
+    # ===== COVER IMAGE HANDLING - DUAL APPROACH =====
+    # PRIMARY: S3 key for cover image
+    cover_s3_key = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="S3 key for cover image uploaded directly to S3"
+    )
+    
+    # LEGACY: Uploaded cover image
     cover_image = models.ImageField(upload_to='pdfs/covers/', blank=True, null=True)
     
     pages = models.IntegerField(default=0)
@@ -2694,7 +2830,7 @@ class PDF(models.Model):
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
     tags = models.CharField(max_length=500, blank=True)
     
-    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True, related_name='pdf_resources')
+    course = models.ForeignKey('Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='pdf_resources')
     
     access_level = models.CharField(max_length=20, choices=ACCESS_LEVEL_CHOICES, default='free')
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -2722,6 +2858,8 @@ class PDF(models.Model):
             models.Index(fields=['is_active', 'created_at']),
             models.Index(fields=['access_level', 'is_active']),
             models.Index(fields=['course', 'is_active']),
+            models.Index(fields=['pdf_s3_key']),
+            models.Index(fields=['cover_s3_key']),
         ]
     
     def __str__(self):
@@ -2736,19 +2874,79 @@ class PDF(models.Model):
                 self.slug = f"{original_slug}-{counter}"
                 counter += 1
         
-        # FIX: Don't try to access pdf_file.size directly for S3
-        # Instead, set file_size manually or leave it empty
-        if self.pdf_file and not self.file_size:
-            # For S3, we can't easily get file size without making a request
-            # Either set a default or leave empty
-            self.file_size = "N/A"  # or calculate from metadata if available
-        
         self.is_free = (self.price == 0)
         
         if not self.published_at:
             self.published_at = timezone.now()
         
-        super().save(*args, **kwargs)
+        # Check if we should bypass validation (for S3 uploads)
+        bypass_validation = kwargs.pop('bypass_validation', False)
+        
+        if bypass_validation:
+            # For S3 uploads, we don't want Django to validate file existence
+            self._state.adding = not self.pk
+            super().save(*args, **kwargs)
+        else:
+            # Normal save with validation
+            super().save(*args, **kwargs)
+    
+    @property
+    def file_url(self):
+        """Get PDF file URL with priority: S3 key first, then legacy file"""
+        from django.conf import settings
+        
+        # PRIMARY: S3 Key
+        if self.pdf_s3_key:
+            try:
+                if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
+                    return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{self.pdf_s3_key}"
+                else:
+                    return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.pdf_s3_key}"
+            except Exception as e:
+                print(f"⚠️ Error generating S3 PDF URL for {self.id}: {e}")
+        
+        # LEGACY: Uploaded file
+        if self.pdf_file and hasattr(self.pdf_file, 'url'):
+            try:
+                return self.pdf_file.url
+            except Exception as e:
+                print(f"⚠️ Error getting legacy PDF URL for {self.id}: {e}")
+        
+        return None
+    
+    @property
+    def cover_url(self):
+        """Get cover image URL with priority: S3 key first, then legacy file"""
+        from django.conf import settings
+        
+        # PRIMARY: S3 Key
+        if self.cover_s3_key:
+            try:
+                if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
+                    return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{self.cover_s3_key}"
+                else:
+                    return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.cover_s3_key}"
+            except Exception as e:
+                print(f"⚠️ Error generating S3 cover URL for {self.id}: {e}")
+        
+        # LEGACY: Uploaded cover
+        if self.cover_image and hasattr(self.cover_image, 'url'):
+            try:
+                return self.cover_image.url
+            except Exception as e:
+                print(f"⚠️ Error getting legacy cover URL for {self.id}: {e}")
+        
+        return None
+    
+    @property
+    def is_s3_pdf(self):
+        """Check if PDF is stored in S3"""
+        return bool(self.pdf_s3_key)
+    
+    @property
+    def is_s3_cover(self):
+        """Check if cover is stored in S3"""
+        return bool(self.cover_s3_key)
     
     def increment_views(self):
         """Increment view count when PDF is viewed"""
@@ -2759,6 +2957,40 @@ class PDF(models.Model):
         """Increment unique viewers count"""
         self.unique_viewers += 1
         self.save(update_fields=['unique_viewers'])
+    
+    def get_filename(self):
+        """Get just the filename from the PDF path"""
+        if self.pdf_s3_key:
+            return self.pdf_s3_key.split('/')[-1]
+        elif self.pdf_file and self.pdf_file.name:
+            return self.pdf_file.name.split('/')[-1]
+        return None
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses"""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'file_url': self.file_url,
+            'cover_url': self.cover_url,
+            'course_id': self.course.id if self.course else None,
+            'course_name': self.course.title if self.course else 'General',
+            'category': self.category,
+            'pages': self.pages,
+            'file_size': self.file_size,
+            'price': float(self.price),
+            'is_free': self.is_free,
+            'access_level': self.access_level,
+            'views': self.views,
+            'is_active': self.is_active,
+            'is_featured': self.is_featured,
+            'order': self.order,
+            'created_at': self.created_at.strftime('%Y-%m-%d') if self.created_at else None,
+            'pdf_s3_key': self.pdf_s3_key,
+            'cover_s3_key': self.cover_s3_key,
+            'is_s3_pdf': self.is_s3_pdf,
+        }
 
 
 # ==================== SIGNALS ====================
