@@ -2972,7 +2972,7 @@ def api_public_videos(request):
             'id': v.id,
             'title': v.title,
             'description': v.description,
-            'thumbnail': v.thumbnail.url if v.thumbnail else None,  # Auto S3 URL
+            'thumbnail': request.build_absolute_uri(v.thumbnail.url) if v.thumbnail else None,  # ← FIXED
             'category': v.category,
             'duration': v.duration,
             'price': float(v.price),
@@ -3004,7 +3004,7 @@ def api_public_pdfs(request):
             'id': p.id,
             'title': p.title,
             'description': p.description,
-            'cover_image': p.cover_image.url if p.cover_image else None,
+            'cover_image': request.build_absolute_uri(p.cover_image.url) if p.cover_image else None,  # ← FIXED
             'pages': p.pages,
             'file_size': p.file_size,
             'category': p.category,
@@ -3087,7 +3087,7 @@ def api_public_courses(request):
             'title': course.title,
             'description': course.description,
             'price': float(course.price),
-            'thumbnail': course.thumbnail.url if course.thumbnail else None,
+            'thumbnail': request.build_absolute_uri(course.thumbnail.url) if course.thumbnail else None,  # ← FIXED
             'duration_weeks': course.duration_weeks,
             'videos_count': course.video_count(),
             'pdfs_count': course.pdf_count(),
