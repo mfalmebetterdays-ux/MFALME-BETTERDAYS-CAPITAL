@@ -89,8 +89,6 @@ urlpatterns = [
     path('course/<int:course_id>/', views.view_course, name='view_course'),
     path('course/<int:course_id>/complete/<str:lesson_type>/<int:lesson_id>/', 
          views.mark_lesson_complete, name='mark_lesson_complete'),
-      path('api/initialize-payment/', views.initialize_package_payment, name='initialize_payment'),
-       path('api/create-order/', views.api_create_order, name='api_create_order'),
     path('api/initialize-payment/', views.initialize_package_payment, name='initialize_payment'),
     path('api/create-order/', views.api_create_order, name='api_create_order'),
     path('payment/success/<str:reference>/', views.payment_success, name='payment_success'),
@@ -374,13 +372,40 @@ urlpatterns = [
 
 
     # ==================== ADMIN API - VIDEO MANAGEMENT ====================
-path('admin/api/videos/', admin_views.admin_api_videos, name='admin_api_videos'),
-path('admin/api/videos/<int:video_id>/', admin_views.admin_api_video_detail, name='admin_api_video_detail'),
-path('admin/api/videos/create/', admin_views.admin_api_video_create, name='admin_api_video_create'),  # ← ADD THIS LINE
-path('admin/api/videos/<int:video_id>/update/', admin_views.admin_api_video_update, name='admin_api_video_update'),
-path('admin/api/videos/<int:video_id>/delete/', admin_views.admin_api_video_delete, name='admin_api_video_delete'),
-path('admin/api/videos/upload/', admin_views.admin_api_video_upload, name='admin_api_video_upload'),
-path('admin/api/videos/export/', admin_views.admin_api_videos_export, name='admin_api_videos_export'),
+    path('admin/api/videos/', admin_views.admin_api_videos, name='admin_api_videos'),
+    path('admin/api/videos/<int:video_id>/', admin_views.admin_api_video_detail, name='admin_api_video_detail'),
+    path('admin/api/videos/create/', admin_views.admin_api_video_create, name='admin_api_video_create'),
+    path('admin/api/videos/<int:video_id>/update/', admin_views.admin_api_video_update, name='admin_api_video_update'),
+    path('admin/api/videos/<int:video_id>/delete/', admin_views.admin_api_video_delete, name='admin_api_video_delete'),
+    path('admin/api/videos/upload/', admin_views.admin_api_video_upload, name='admin_api_video_upload'),
+    path('admin/api/videos/export/', admin_views.admin_api_videos_export, name='admin_api_videos_export'),
+    # Merchandise URLs
+path('api/merchandise/', views.get_merchandise, name='get_merchandise'),
+path('api/merchandise/create/', views.create_merchandise, name='create_merchandise'),
+path('api/merchandise/<int:id>/update/', views.update_merchandise, name='update_merchandise'),
+path('api/merchandise/<int:id>/delete/', views.delete_merchandise, name='delete_merchandise'),
+
+# Merchandise Orders
+path('api/merchandise-orders/', views.get_merchandise_orders, name='get_merchandise_orders'),
+path('api/merchandise-orders/<int:id>/update-status/', views.update_merchandise_order_status, name='update_merchandise_order_status'),
+
+# Event URLs
+path('api/events/', views.get_events, name='get_events'),
+path('api/events/<int:id>/', views.get_event_detail, name='get_event_detail'),
+path('api/events/update/<int:id>/', views.update_event, name='update_event'),
+
+# Ticket URLs
+path('api/tickets/', views.get_tickets, name='get_tickets'),
+path('api/tickets/<int:id>/', views.get_ticket_detail, name='get_ticket_detail'),
+path('api/tickets/<int:id>/resend/', views.resend_ticket_email, name='resend_ticket_email'),
+path('api/tickets/<int:id>/checkin/', views.mark_ticket_checked_in, name='mark_ticket_checked_in'),
+
+# Order URLs (for payments)
+path('api/create-order/', views.create_order, name='create_order'),
+
+# SasaPay URLs
+path('api/sasapay/stk-push/', views.sasapay_stk_push, name='sasapay_stk_push'),
+path('api/sasapay/status/<str:checkout_id>/', views.sasapay_check_status, name='sasapay_check_status'),
 ]
 
 # ==================== MEDIA FILES SERVING ====================

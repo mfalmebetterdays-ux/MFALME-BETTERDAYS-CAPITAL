@@ -54,6 +54,7 @@ import ssl
 import base64
 import urllib.parse
 from .pesapal_utils import get_pesapal_iframe_url, query_pesapal_status
+from django.views.decorators.http import require_http_methods
 
 from .models import (
     MfalmeUsers, PaymentTransaction, Package,
@@ -62,7 +63,11 @@ from .models import (
     PartnershipProgram, UserPartnership, ContactSubmission, Notification,
     FAQ, Testimonial, CommunityTier, UserCommunityMembership, Statistic,
     EducationProgram, UserPDFAccess, Watchlist, InstituteApplication,
-    CommunityJoinRequest
+    CommunityJoinRequest, Merchandise,
+    MerchandiseOrder,
+    Event,
+    EventTicket,
+    Order
 )
 
 # ==================== TEMPLATE FILTERS ====================
@@ -2512,96 +2517,6 @@ def initialize_package_payment(request):
     
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-@csrf_exempt
-def api_create_order(request):
-    """Create a new order - Handles both POST (JSON) and GET (URL parameters)"""
-    
-    # Handle GET requests from education section links
-    if request.method == 'GET':
-        program = request.GET.get('program')
-        name = request.GET.get('name')
-        amount = request.GET.get('amount')
-        payment_type = request.GET.get('type', 'education_purchase')
-        
-        # Validate required parameters
-        if not all([program, name, amount]):
-            return JsonResponse({
-                'success': False, 
-                'error': 'Missing required parameters: program, name, amount'
-            }, status=400)
-        
-        try:
-            # Convert amount to Decimal
-            amount_usd = Decimal(str(amount))
-            amount_kes = amount_usd * Decimal('129')
-            
-            # Create transaction
-            transaction = PaymentTransaction.objects.create(
-                user=request.user if request.user.is_authenticated else None,
-                reference=generate_reference(),
-                amount=amount_kes,
-                currency='KES',
-                payment_type=payment_type,
-                payment_method='sasapay',
-                description=name,
-                metadata={
-                    'program_code': program,
-                    'program_name': name,
-                    'amount_usd': float(amount_usd),
-                    'source': 'education_section'
-                },
-                status='initiated',
-                ip_address=get_client_ip(request),
-                user_agent=request.META.get('HTTP_USER_AGENT', ''),
-            )
-            
-            # Redirect to payment page
-            from django.shortcuts import redirect
-            return redirect(f'/payment/?ref={transaction.reference}')
-            
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            }, status=400)
-    
-    # Handle POST requests from packages section (JSON)
-    elif request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
-        
-        # Get USD amount and convert to KES
-        amount_usd = Decimal(str(data.get('amount', 0)))
-        amount_kes = amount_usd * Decimal('129')
-        
-        transaction = PaymentTransaction.objects.create(
-            user=request.user if request.user.is_authenticated else None,
-            reference=generate_reference(),
-            amount=amount_kes,  # Store KES
-            currency='KES',
-            payment_type=data.get('payment_type', 'other'),
-            payment_method='sasapay',
-            description=data.get('description', ''),
-            metadata={
-                **data.get('metadata', {}),
-                'amount_usd': float(amount_usd)
-            },
-            status='initiated',
-            ip_address=get_client_ip(request),
-            user_agent=request.META.get('HTTP_USER_AGENT', ''),
-        )
-        
-        return JsonResponse({
-            'success': True,
-            'reference': transaction.reference,
-            'amount': float(amount_kes),
-            'currency': 'KES'
-        })
-    
-    # Handle other methods
-    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 @csrf_exempt
 def education_payment(request):
@@ -2736,44 +2651,108 @@ def api_user_tickets(request):
     return JsonResponse(data, safe=False)
 
 
+@csrf_exempt
 def api_create_order(request):
-    """Create a new order (JSON)"""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    """Create a new order - Handles both POST (JSON) and GET (URL parameters)"""
     
+    # Get or create a guest user for unauthenticated users
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    
+    guest_user = None
     try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        guest_user = User.objects.get(email='guest@system.com')
+    except User.DoesNotExist:
+        guest_user = User.objects.create_user(
+            email='guest@system.com',
+            username='guest_system',
+            password=None,
+            account_status='active'
+        )
     
-    # Get USD amount and convert to KES
-    amount_usd = Decimal(str(data.get('amount', 0)))
-    amount_kes = amount_usd * Decimal('129')
+    # Handle GET requests from education section links
+    if request.method == 'GET':
+        program = request.GET.get('program')
+        name = request.GET.get('name')
+        amount = request.GET.get('amount')
+        payment_type = request.GET.get('type', 'education_purchase')
+        
+        if not all([program, name, amount]):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Missing required parameters: program, name, amount'
+            }, status=400)
+        
+        try:
+            amount_usd = Decimal(str(amount))
+            amount_kes = amount_usd * Decimal('129')
+            
+            # Use the authenticated user or guest user
+            user = request.user if request.user.is_authenticated and request.user.id else guest_user
+            
+            transaction = PaymentTransaction.objects.create(
+                user=user,
+                reference=generate_reference(),
+                amount=amount_kes,
+                currency='KES',
+                payment_type=payment_type,
+                payment_method='sasapay',
+                description=name,
+                metadata={
+                    'program_code': program,
+                    'program_name': name,
+                    'amount_usd': float(amount_usd),
+                    'source': 'education_section'
+                },
+                status='initiated',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            )
+            
+            from django.shortcuts import redirect
+            return redirect(f'/payment/?ref={transaction.reference}')
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
-    transaction = PaymentTransaction.objects.create(
-        user=request.user,
-        reference=generate_reference(),
-        amount=amount_kes,  # Store KES
-        currency='KES',
-        payment_type=data.get('payment_type', 'other'),
-        payment_method=data.get('payment_method', 'paystack'),
-        description=data.get('description', ''),
-        metadata={
-            **data.get('metadata', {}),
-            'amount_usd': float(amount_usd)
-        },
-        status='initiated',
-        ip_address=get_client_ip(request),
-        user_agent=request.META.get('HTTP_USER_AGENT', ''),
-    )
+    # Handle POST requests
+    elif request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        
+        amount_usd = Decimal(str(data.get('amount', 0)))
+        amount_kes = amount_usd * Decimal('129')
+        
+        # Use the authenticated user or guest user
+        user = request.user if request.user.is_authenticated and request.user.id else guest_user
+        
+        transaction = PaymentTransaction.objects.create(
+            user=user,
+            reference=generate_reference(),
+            amount=amount_kes,
+            currency='KES',
+            payment_type=data.get('payment_type', 'other'),
+            payment_method='sasapay',
+            description=data.get('description', ''),
+            metadata={
+                **data.get('metadata', {}),
+                'amount_usd': float(amount_usd)
+            },
+            status='initiated',
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'reference': transaction.reference,
+            'amount': float(amount_kes),
+            'currency': 'KES'
+        })
     
-    return JsonResponse({
-        'success': True,
-        'reference': transaction.reference,
-        'amount': float(amount_kes),  # Return KES for Paystack
-        'currency': 'KES',
-        'authorization_url': f"/payment/verify/{transaction.reference}/",
-    })
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 def api_create_ticket(request):
     """Create support ticket (JSON)"""
@@ -6357,3 +6336,527 @@ def abort_multipart_upload(request):
         
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+    
+# ========== HELPER FUNCTIONS ==========
+def send_ticket_email(ticket):
+    """Send ticket email with downloadable ticket"""
+    subject = f"Your Ticket for {ticket.event.title} - {ticket.ticket_number}"
+    
+    # Generate QR code URL (using QR Server API)
+    qr_data = f"{ticket.ticket_number}|{ticket.attendee_name}|{ticket.event.title}|{ticket.event.date}"
+    qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={qr_data}"
+    
+    html_message = f"""
+    <!DOCTYPE html>
+    <html>
+    <head><style>
+        body {{ font-family: Arial, sans-serif; }}
+        .ticket {{ border: 2px solid #FFD700; border-radius: 10px; padding: 20px; max-width: 500px; margin: 0 auto; }}
+        .header {{ text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; }}
+        .details {{ margin: 20px 0; }}
+        .row {{ display: flex; justify-content: space-between; margin: 10px 0; }}
+        .qr {{ text-align: center; margin-top: 20px; }}
+        .footer {{ text-align: center; font-size: 12px; color: #666; margin-top: 20px; }}
+    </style></head>
+    <body>
+        <div class="ticket">
+            <div class="header">
+                <h2>MFALME BETTERDAYS CAPITAL</h2>
+                <p>Elite Trading & Investment</p>
+            </div>
+            <div class="details">
+                <div class="row"><strong>Ticket Number:</strong> <span>{ticket.ticket_number}</span></div>
+                <div class="row"><strong>Attendee:</strong> <span>{ticket.attendee_name}</span></div>
+                <div class="row"><strong>Phone:</strong> <span>{ticket.attendee_phone}</span></div>
+                <div class="row"><strong>Email:</strong> <span>{ticket.attendee_email}</span></div>
+                <div class="row"><strong>Event:</strong> <span>{ticket.event.title}</span></div>
+                <div class="row"><strong>Date:</strong> <span>{ticket.event.date.strftime('%B %d, %Y at %I:%M %p')}</span></div>
+                <div class="row"><strong>Venue:</strong> <span>{ticket.event.venue}</span></div>
+                <div class="row"><strong>Quantity:</strong> <span>{ticket.quantity}</span></div>
+                <div class="row"><strong>Total Paid:</strong> <span>KES {ticket.total_amount_kes:,.2f}</span></div>
+            </div>
+            <div class="qr">
+                <img src="{qr_url}" alt="QR Code" width="150">
+                <p>Scan this QR code at the entrance</p>
+            </div>
+            <div class="footer">
+                <p>Present this ticket at registration desk | For inquiries: +254706286667</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    send_mail(
+        subject=subject,
+        message=f"Your ticket for {ticket.event.title}\n\nTicket Number: {ticket.ticket_number}\nTotal: KES {ticket.total_amount_kes:,.2f}\n\nPresent this ticket at the entrance.",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[ticket.attendee_email],
+        fail_silently=False,
+        html_message=html_message
+    )
+    
+    # Send admin notification
+    send_mail(
+        subject=f"New Ticket Purchase - {ticket.ticket_number}",
+        message=f"New ticket purchased!\n\nName: {ticket.attendee_name}\nPhone: {ticket.attendee_phone}\nEmail: {ticket.attendee_email}\nQuantity: {ticket.quantity}\nTotal: KES {ticket.total_amount_kes:,.2f}",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[settings.ADMIN_EMAIL],
+        fail_silently=True,
+    )
+
+
+def send_merchandise_order_email(order):
+    """Send merchandise order confirmation email"""
+    subject = f"Order Confirmation - {order.order_number}"
+    
+    items_html = ""
+    for item in order.items:
+        items_html += f"<tr><td>{item['name']}</td><td>{item['quantity']}</td><td>KES {item['price']:,.2f}</td><td>KES {item['price'] * item['quantity']:,.2f}</td></tr>"
+    
+    html_message = f"""
+    <!DOCTYPE html>
+    <html>
+    <head><style>
+        body {{ font-family: Arial, sans-serif; }}
+        .order {{ max-width: 600px; margin: 0 auto; }}
+        .header {{ text-align: center; border-bottom: 2px solid #FFD700; padding-bottom: 10px; }}
+        .details {{ margin: 20px 0; }}
+        table {{ width: 100%; border-collapse: collapse; }}
+        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+        th {{ background: #FFD700; color: #0a1520; }}
+        .total {{ text-align: right; margin-top: 20px; font-size: 18px; }}
+    </style></head>
+    <body>
+        <div class="order">
+            <div class="header">
+                <h2>MFALME BETTERDAYS CAPITAL</h2>
+                <p>Order Confirmation</p>
+            </div>
+            <div class="details">
+                <p><strong>Order Number:</strong> {order.order_number}</p>
+                <p><strong>Customer:</strong> {order.customer_name}</p>
+                <p><strong>Phone:</strong> {order.customer_phone}</p>
+                <p><strong>Delivery Address:</strong> {order.delivery_address}</p>
+            </div>
+            <table>
+                <tr><th>Item</th><th>Quantity</th><th>Unit Price</th><th>Total</th></tr>
+                {items_html}
+            </table>
+            <div class="total">
+                <p><strong>Subtotal: KES {order.subtotal:,.2f}</strong></p>
+                <p><strong>Shipping: KES {order.shipping_cost:,.2f}</strong></p>
+                <p><strong>Total: KES {order.total:,.2f}</strong></p>
+            </div>
+            <p>Your order will be processed and shipped within 3-5 business days.</p>
+            <p>For inquiries, contact +254706286667</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    send_mail(
+        subject=subject,
+        message=f"Your order {order.order_number} has been confirmed. Total: KES {order.total:,.2f}",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[order.customer_email],
+        fail_silently=False,
+        html_message=html_message
+    )
+    
+    # Send admin notification
+    send_mail(
+        subject=f"New Merchandise Order - {order.order_number}",
+        message=f"New order received!\n\nCustomer: {order.customer_name}\nPhone: {order.customer_phone}\nTotal: KES {order.total:,.2f}\n\nView in admin panel.",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[settings.ADMIN_EMAIL],
+        fail_silently=True,
+    )
+
+
+# ========== MERCHANDISE CRUD ==========
+@require_http_methods(["GET"])
+def get_merchandise(request):
+    items = Merchandise.objects.filter(status='active')
+    data = [{
+        'id': i.id, 'name': i.name, 'category': i.category,
+        'description': i.description, 'price': float(i.price),
+        'image': i.image, 'stock': i.stock, 'status': i.status
+    } for i in items]
+    return JsonResponse({'items': data})
+
+
+@require_http_methods(["POST"])
+def create_merchandise(request):
+    try:
+        data = json.loads(request.body)
+        merch = Merchandise.objects.create(
+            name=data['name'],
+            category=data.get('category', 'apparel'),
+            description=data.get('description', ''),
+            price=Decimal(data['price']),
+            stock=data.get('stock', 0),
+            image=data.get('image', ''),
+            image_key=data.get('image_key', '')
+        )
+        return JsonResponse({'success': True, 'id': merch.id})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@require_http_methods(["POST"])
+def update_merchandise(request, id):
+    try:
+        merch = Merchandise.objects.get(id=id)
+        data = json.loads(request.body)
+        merch.name = data.get('name', merch.name)
+        merch.category = data.get('category', merch.category)
+        merch.description = data.get('description', merch.description)
+        merch.price = Decimal(data.get('price', merch.price))
+        merch.stock = data.get('stock', merch.stock)
+        merch.status = data.get('status', merch.status)
+        if data.get('image'):
+            merch.image = data['image']
+        merch.save()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@require_http_methods(["POST"])
+def delete_merchandise(request, id):
+    try:
+        Merchandise.objects.get(id=id).delete()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+# ========== MERCHANDISE ORDERS ==========
+@require_http_methods(["GET"])
+def get_merchandise_orders(request):
+    orders = MerchandiseOrder.objects.all().order_by('-created_at')
+    data = [{
+        'id': o.id, 'order_number': o.order_number, 'customer_name': o.customer_name,
+        'customer_phone': o.customer_phone, 'customer_email': o.customer_email,
+        'total': float(o.total), 'status': o.status, 'created_at': o.created_at.strftime('%Y-%m-%d %H:%M')
+    } for o in orders]
+    return JsonResponse({'orders': data})
+
+
+@require_http_methods(["POST"])
+def update_merchandise_order_status(request, id):
+    try:
+        data = json.loads(request.body)
+        order = MerchandiseOrder.objects.get(id=id)
+        order.status = data.get('status', order.status)
+        order.save()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+# ========== EVENTS ==========
+@require_http_methods(["GET"])
+def get_events(request):
+    events = Event.objects.filter(is_active=True)
+    data = [{
+        'id': e.id, 'title': e.title, 'description': e.description,
+        'date': e.date.isoformat(), 'venue': e.venue,
+        'ticket_price_usd': float(e.ticket_price_usd),
+        'poster_image': e.poster_image,
+        'max_attendees': e.max_attendees,
+        'current_bookings': e.current_bookings,
+        'seats_remaining': e.seats_remaining,
+        'is_sold_out': e.is_sold_out
+    } for e in events]
+    return JsonResponse({'events': data})
+
+
+@require_http_methods(["GET"])
+def get_event_detail(request, id):
+    try:
+        event = Event.objects.get(id=id)
+        data = {
+            'id': event.id, 'title': event.title, 'description': event.description,
+            'date': event.date.isoformat(), 'venue': event.venue,
+            'ticket_price_usd': float(event.ticket_price_usd),
+            'poster_image': event.poster_image,
+            'seats_remaining': event.seats_remaining
+        }
+        return JsonResponse(data)
+    except Event.DoesNotExist:
+        return JsonResponse({'error': 'Event not found'}, status=404)
+
+
+@require_http_methods(["POST"])
+def update_event(request, id):
+    try:
+        event = Event.objects.get(id=id)
+        data = json.loads(request.body)
+        event.title = data.get('title', event.title)
+        event.description = data.get('description', event.description)
+        event.date = data.get('date', event.date)
+        event.venue = data.get('venue', event.venue)
+        event.ticket_price_usd = Decimal(data.get('ticket_price_usd', event.ticket_price_usd))
+        event.max_attendees = data.get('max_attendees', event.max_attendees)
+        event.is_active = data.get('is_active', event.is_active)
+        if data.get('poster_image'):
+            event.poster_image = data['poster_image']
+        event.save()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+# ========== TICKETS ==========
+@require_http_methods(["GET"])
+def get_tickets(request):
+    tickets = EventTicket.objects.all().order_by('-created_at')
+    data = [{
+        'id': t.id, 'ticket_number': t.ticket_number, 'attendee_name': t.attendee_name,
+        'attendee_phone': t.attendee_phone, 'attendee_email': t.attendee_email,
+        'quantity': t.quantity, 'total_amount_kes': float(t.total_amount_kes),
+        'event_title': t.event.title, 'status': t.status,
+        'checked_in': t.checked_in, 'created_at': t.created_at.strftime('%Y-%m-%d %H:%M')
+    } for t in tickets]
+    return JsonResponse({'tickets': data})
+
+
+@require_http_methods(["GET"])
+def get_ticket_detail(request, id):
+    try:
+        ticket = EventTicket.objects.get(id=id)
+        data = {
+            'id': ticket.id, 'ticket_number': ticket.ticket_number,
+            'attendee_name': ticket.attendee_name, 'attendee_phone': ticket.attendee_phone,
+            'attendee_email': ticket.attendee_email, 'quantity': ticket.quantity,
+            'total_amount_kes': float(ticket.total_amount_kes),
+            'event_title': ticket.event.title, 'event_date': ticket.event.date.isoformat(),
+            'event_venue': ticket.event.venue, 'status': ticket.status,
+            'checked_in': ticket.checked_in, 'checked_in_at': ticket.checked_in_at
+        }
+        return JsonResponse(data)
+    except EventTicket.DoesNotExist:
+        return JsonResponse({'error': 'Ticket not found'}, status=404)
+
+
+@require_http_methods(["POST"])
+def resend_ticket_email(request, id):
+    try:
+        ticket = EventTicket.objects.get(id=id)
+        send_ticket_email(ticket)
+        return JsonResponse({'success': True, 'message': 'Ticket email resent successfully'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@require_http_methods(["POST"])
+def mark_ticket_checked_in(request, id):
+    try:
+        ticket = EventTicket.objects.get(id=id)
+        ticket.checked_in = True
+        ticket.checked_in_at = datetime.now()
+        ticket.status = 'attended'
+        ticket.save()
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+# ========== ORDER CREATION ==========
+@require_http_methods(["POST"])
+def create_order(request):
+    try:
+        data = json.loads(request.body)
+        
+        order = Order.objects.create(
+            customer_name=data['name'],
+            customer_email=data.get('email', ''),
+            customer_phone=data['phone'],
+            item_type=data.get('type', 'ticket'),
+            items=data.get('items', []),
+            amount=Decimal(data['amount']),
+            metadata={
+                'address': data.get('address', ''),
+                'quantity': data.get('quantity', 1)
+            }
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'reference': order.reference,
+            'order_id': order.id
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+# ========== SASAPAY INTEGRATION ==========
+# Import SasaPay configuration from settings (Production)
+SASAPAY_API_URL = getattr(settings, 'SASAPAY_API_URL', 'https://api.sasapay.app/api/v1')
+SASAPAY_CLIENT_ID = getattr(settings, 'SASAPAY_CLIENT_ID', None)
+SASAPAY_CLIENT_SECRET = getattr(settings, 'SASAPAY_CLIENT_SECRET', None)
+SASAPAY_MERCHANT_CODE = getattr(settings, 'SASAPAY_MERCHANT_CODE', '600980')
+
+# Aliases for compatibility with existing code
+SASAPAY_API_KEY = SASAPAY_CLIENT_ID
+SASAPAY_API_SECRET = SASAPAY_CLIENT_SECRET  
+SASAPAY_SHORTCODE = SASAPAY_MERCHANT_CODE
+
+# Verify production configuration
+if not all([SASAPAY_CLIENT_ID, SASAPAY_CLIENT_SECRET]):
+    print("⚠️ WARNING: SasaPay production credentials not configured!")
+
+def generate_sasapay_signature(data):
+    """Generate HMAC SHA256 signature for SasaPay"""
+    secret = SASAPAY_API_SECRET
+    sorted_data = {k: data[k] for k in sorted(data.keys())}
+    sign_string = ""
+    for k, v in sorted_data.items():
+        sign_string += f"{k}{v}"
+    signature = hmac.new(secret.encode(), sign_string.encode(), hashlib.sha256).hexdigest()
+    return signature
+
+
+@require_http_methods(["POST"])
+def sasapay_stk_push(request):
+    try:
+        data = json.loads(request.body)
+        phone = data['phone'].strip()
+        amount = str(int(float(data['amount'])))
+        reference = data['reference']
+        description = data.get('description', 'MBC Payment')
+        
+        # Format phone number (remove 0 or +254 prefix)
+        if phone.startswith('0'):
+            phone = '254' + phone[1:]
+        elif phone.startswith('+'):
+            phone = phone[1:]
+        
+        payload = {
+            'shortcode': SASAPAY_SHORTCODE,
+            'amount': amount,
+            'phone': phone,
+            'reference': reference,
+            'description': description,
+            'callback_url': f"{settings.SITE_URL}/api/sasapay/callback/"
+        }
+        
+        payload['signature'] = generate_sasapay_signature(payload)
+        
+        response = requests.post(
+            f"{SASAPAY_API_URL}/stkpush",
+            json=payload,
+            headers={'Content-Type': 'application/json', 'Api-Key': SASAPAY_API_KEY},
+            timeout=30
+        )
+        
+        result = response.json()
+        
+        if result.get('success'):
+            # Update order with checkout_request_id
+            Order.objects.filter(reference=reference).update(
+                checkout_request_id=result.get('checkout_request_id'),
+                payment_reference=result.get('checkout_request_id')
+            )
+            return JsonResponse({
+                'success': True,
+                'checkout_request_id': result.get('checkout_request_id'),
+                'message': 'STK Push sent successfully'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': result.get('message', 'STK Push failed')
+            }, status=400)
+            
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@require_http_methods(["GET"])
+def sasapay_check_status(request, checkout_id):
+    try:
+        response = requests.get(
+            f"{SASAPAY_API_URL}/status/{checkout_id}",
+            headers={'Content-Type': 'application/json', 'Api-Key': SASAPAY_API_KEY},
+            timeout=30
+        )
+        result = response.json()
+        
+        return JsonResponse({
+            'status': result.get('status', 'pending'),
+            'message': result.get('message', ''),
+            'data': result
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@csrf_exempt
+def sasapay_callback(request):
+    """Handle SasaPay callback after payment"""
+    try:
+        data = json.loads(request.body)
+        checkout_request_id = data.get('checkout_request_id')
+        status = data.get('status')
+        reference = data.get('reference')
+        
+        if status == 'completed':
+            # Update order
+            order = Order.objects.filter(checkout_request_id=checkout_request_id).first()
+            if order:
+                order.status = 'completed'
+                order.save()
+                
+                if order.item_type == 'ticket':
+                    # Create ticket record
+                    event = Event.objects.filter(is_active=True).first()
+                    if event:
+                        ticket = EventTicket.objects.create(
+                            event=event,
+                            attendee_name=order.customer_name,
+                            attendee_phone=order.customer_phone,
+                            attendee_email=order.customer_email,
+                            quantity=order.metadata.get('quantity', 1),
+                            unit_price_usd=249,
+                            unit_price_kes=249 * 128,
+                            order_reference=order.reference,
+                            payment_reference=checkout_request_id,
+                            status='confirmed'
+                        )
+                        event.current_bookings += ticket.quantity
+                        event.save()
+                        send_ticket_email(ticket)
+                        
+                elif order.item_type == 'merchandise':
+                    # Create merchandise order record
+                    merch_order = MerchandiseOrder.objects.create(
+                        customer_name=order.customer_name,
+                        customer_phone=order.customer_phone,
+                        customer_email=order.customer_email,
+                        delivery_address=order.metadata.get('address', ''),
+                        items=order.items,
+                        subtotal=order.amount,
+                        total=order.amount,
+                        payment_reference=checkout_request_id,
+                        order_reference=order.reference,
+                        status='paid'
+                    )
+                    send_merchandise_order_email(merch_order)
+                    
+                    # Update stock
+                    for item in order.items:
+                        try:
+                            product = Merchandise.objects.get(id=item['id'])
+                            product.stock -= item['quantity']
+                            product.save()
+                        except:
+                            pass
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

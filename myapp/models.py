@@ -9,6 +9,7 @@ import random
 from django.utils.timezone import now
 from decimal import Decimal
 from django.conf import settings
+from datetime import datetime
 
 # ==================== CUSTOM USER MANAGER ====================
 
@@ -3129,3 +3130,166 @@ __all__ = [
     'Video',
     'Activity',
 ]
+
+
+# ========== MERCHANDISE MODELS ==========
+class Merchandise(models.Model):
+    CATEGORY_CHOICES = [
+        ('apparel', 'Apparel'),
+        ('accessories', 'Accessories'),
+        ('tools', 'Tools'),
+        ('books', 'Books'),
+    ]
+    
+    name = models.CharField(max_length=200)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='apparel')
+    description = models.TextField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    stock = models.IntegerField(default=0)
+    image = models.URLField(max_length=500, blank=True, null=True)
+    image_key = models.CharField(max_length=500, blank=True, null=True)
+    status = models.CharField(max_length=20, default='active', choices=[('active', 'Active'), ('inactive', 'Inactive')])
+    featured = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['-created_at']
+
+
+class MerchandiseOrder(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending Payment'),
+        ('paid', 'Paid'),
+        ('processing', 'Processing'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    order_number = models.CharField(max_length=50, unique=True, editable=False)
+    customer_name = models.CharField(max_length=200)
+    customer_phone = models.CharField(max_length=20)
+    customer_email = models.EmailField()
+    delivery_address = models.TextField()
+    items = models.JSONField(default=list)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    payment_method = models.CharField(max_length=50, default='sasapay')
+    payment_reference = models.CharField(max_length=100, blank=True, null=True)
+    order_reference = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(max_length=20, default='pending', choices=STATUS_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            self.order_number = f"MBC-ORD-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.order_number
+
+
+# ========== EVENT MODELS ==========
+class Event(models.Model):
+    title = models.CharField(max_length=200, default="East & Central Africa Live Leveraging Summit")
+    description = models.TextField(default="The biggest trading event in East & Central Africa")
+    date = models.DateTimeField(default=datetime(2026, 8, 7, 9, 0, 0))
+    venue = models.CharField(max_length=300, default="Safari Park Hotel, Nairobi")
+    venue_address = models.TextField(blank=True)
+    ticket_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=249)
+    max_attendees = models.IntegerField(default=500)
+    current_bookings = models.IntegerField(default=0)
+    poster_image = models.URLField(max_length=500, blank=True, null=True)
+    poster_key = models.CharField(max_length=500, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    featured = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    @property
+    def seats_remaining(self):
+        return max(0, self.max_attendees - self.current_bookings)
+    
+    @property
+    def is_sold_out(self):
+        return self.current_bookings >= self.max_attendees
+    
+    def __str__(self):
+        return self.title
+
+
+class EventTicket(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending Payment'),
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
+        ('attended', 'Attended'),
+    ]
+    
+    ticket_number = models.CharField(max_length=50, unique=True, editable=False)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='tickets')
+    attendee_name = models.CharField(max_length=200)
+    attendee_phone = models.CharField(max_length=20)
+    attendee_email = models.EmailField()
+    quantity = models.IntegerField(default=1)
+    unit_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=249)
+    unit_price_kes = models.DecimalField(max_digits=10, decimal_places=2, default=31872)
+    total_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_amount_kes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    payment_method = models.CharField(max_length=50, default='sasapay')
+    payment_reference = models.CharField(max_length=100, blank=True, null=True)
+    order_reference = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(max_length=20, default='pending', choices=STATUS_CHOICES)
+    qr_code = models.TextField(blank=True, null=True)
+    checked_in = models.BooleanField(default=False)
+    checked_in_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.ticket_number:
+            self.ticket_number = f"MBC-TKT-{uuid.uuid4().hex[:8].upper()}"
+        if self.quantity:
+            self.total_amount_usd = self.quantity * self.unit_price_usd
+            self.total_amount_kes = self.quantity * self.unit_price_kes
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.ticket_number} - {self.attendee_name}"
+
+
+# ========== ORDER MODEL (for package purchases) ==========
+class Order(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('refunded', 'Refunded'),
+    ]
+    
+    reference = models.CharField(max_length=100, unique=True, editable=False)
+    customer_name = models.CharField(max_length=200)
+    customer_email = models.EmailField()
+    customer_phone = models.CharField(max_length=20)
+    item_type = models.CharField(max_length=50, choices=[('ticket', 'Ticket'), ('merchandise', 'Merchandise'), ('package', 'Package')])
+    items = models.JSONField(default=list)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_method = models.CharField(max_length=20, default='sasapay')
+    payment_reference = models.CharField(max_length=100, blank=True, null=True)
+    checkout_request_id = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(max_length=20, default='pending', choices=STATUS_CHOICES)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.reference:
+            self.reference = f"MBC-{uuid.uuid4().hex[:12].upper()}"
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.reference

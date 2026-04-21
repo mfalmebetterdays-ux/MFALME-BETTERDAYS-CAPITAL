@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Your Ticket</title>
+    <style>
+        .ticket-card {
+            border: 2px solid #E5C687;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            max-width: 500px;
+            background: white;
+        }
+        .ticket-header {
+            background: linear-gradient(135deg, #E5C687, #B8860B);
+            padding: 15px 20px;
+            color: #0B1A33;
+        }
+        .ticket-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .ticket-header p {
+            margin: 5px 0 0;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        .ticket-body {
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+        }
+        .ticket-details {
+            flex: 2;
+        }
+        .detail-row {
+            margin-bottom: 10px;
+        }
+        .detail-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .detail-value {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .ticket-qr {
+            flex: 1;
+            text-align: center;
+            border-left: 1px dashed #ddd;
+            padding-left: 15px;
+        }
+        .qr-placeholder {
+            width: 100px;
+            height: 100px;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            border-radius: 8px;
+        }
+        .ticket-footer {
+            background: #f8f9fa;
+            padding: 10px 20px;
+            font-size: 10px;
+            color: #666;
+            text-align: center;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="ticket-card">
+        <div class="ticket-header">
+            <h3>🎫 {{ event.name }}</h3>
+            <p>{{ event.venue }} | {{ event.event_date|date:"F j, Y" }} at {{ event.event_date|date:"g:i A" }}</p>
+        </div>
+        <div class="ticket-body">
+            <div class="ticket-details">
+                <div class="detail-row">
+                    <div class="detail-label">Ticket Type</div>
+                    <div class="detail-value">{{ ticket_type.name }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Attendee</div>
+                    <div class="detail-value">{{ ticket.attendee_name }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Ticket Number</div>
+                    <div class="detail-value">{{ ticket.ticket_number }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Order Reference</div>
+                    <div class="detail-value">{{ ticket.order.order_number }}</div>
+                </div>
+            </div>
+            <div class="ticket-qr">
+                <div class="qr-placeholder">
+                    <i class="fas fa-qrcode" style="font-size: 48px; color: #B8860B;"></i>
+                </div>
+                <small style="display: block; margin-top: 8px;">Scan to verify</small>
+            </div>
+        </div>
+        <div class="ticket-footer">
+            Please present this ticket (digital or printed) at the venue entrance.
+            ID verification may be required.
+        </div>
+    </div>
+</body>
+</html>

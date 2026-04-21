@@ -24,18 +24,17 @@
     
     <style>
         :root {
-            --deep-navy: #0B1A33;
-            --midnight-blue: #0F2A4A;
-            --navy-accent: #1A3A5A;
-            --champagne-gold: #E5C687;
-            --soft-beige: #F5E8D1;
-            --cream: #FAF7F0;
-            --off-white: #F8F9FC;
-            --light-gray: #F0F2F5;
-            --emerald-green: #2E865F;
-            --deep-crimson: #B22234;
-            --cool-blue: #288CFA;
-            --charcoal: #2C3E50;
+            --black: #000000;
+            --black-light: #1a1a1a;
+            --black-mid: #2d2d2d;
+            --yellow: #FFD700;
+            --yellow-dark: #DAA520;
+            --yellow-light: #FFED4A;
+            --green: #2E865F;
+            --green-dark: #1f5c41;
+            --red: #B22234;
+            --red-dark: #8b1a1a;
+            --white: #FFFFFF;
             --gray-50: #F8FAFC;
             --gray-100: #F1F5F9;
             --gray-200: #E2E8F0;
@@ -45,9 +44,6 @@
             --gray-600: #475569;
             --gray-700: #334155;
             --gray-800: #1E293B;
-            --gray-900: #0F172A;
-            --black: #0A0F1C;
-            --white: #FFFFFF;
         }
         
         * {
@@ -58,8 +54,8 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--light-gray);
-            color: var(--gray-900);
+            background: var(--gray-100);
+            color: var(--black);
         }
         
         .dashboard {
@@ -69,7 +65,7 @@
         
         .sidebar {
             width: 280px;
-            background: var(--deep-navy);
+            background: var(--black);
             color: var(--white);
             position: fixed;
             height: 100vh;
@@ -77,26 +73,25 @@
             z-index: 1000;
             left: 0;
             top: 0;
-            box-shadow: 4px 0 20px rgba(0,0,0,0.08);
+            box-shadow: 4px 0 20px rgba(0,0,0,0.2);
         }
         
         .sidebar-header {
             padding: 24px 20px;
-            border-bottom: 1px solid var(--navy-accent);
+            border-bottom: 1px solid var(--yellow);
         }
         
         .sidebar-header h2 {
             font-size: 22px;
             font-weight: 700;
-            color: var(--champagne-gold);
+            color: var(--yellow);
             letter-spacing: 0.5px;
         }
         
         .sidebar-header p {
             font-size: 12px;
-            color: var(--soft-beige);
+            color: var(--gray-400);
             margin-top: 4px;
-            opacity: 0.8;
         }
         
         .sidebar-nav {
@@ -106,7 +101,7 @@
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 14px 20px;
+            padding: 12px 20px;
             color: var(--gray-300);
             text-decoration: none;
             font-size: 14px;
@@ -120,30 +115,32 @@
             width: 24px;
             margin-right: 12px;
             color: var(--gray-400);
+            font-size: 16px;
         }
         
         .nav-item:hover {
-            background: var(--midnight-blue);
-            color: var(--white);
+            background: var(--black-light);
+            color: var(--yellow);
         }
         
         .nav-item:hover i {
-            color: var(--champagne-gold);
+            color: var(--yellow);
         }
         
         .nav-item.active {
-            background: var(--midnight-blue);
-            color: var(--white);
-            border-left-color: var(--champagne-gold);
+            background: var(--black-light);
+            color: var(--yellow);
+            border-left-color: var(--yellow);
         }
         
         .nav-item.active i {
-            color: var(--champagne-gold);
+            color: var(--yellow);
         }
         
         .sidebar-footer {
             padding: 20px;
-            border-top: 1px solid var(--navy-accent);
+            border-top: 1px solid var(--gray-800);
+            margin-top: 20px;
         }
         
         .admin-info {
@@ -156,13 +153,13 @@
         .admin-avatar {
             width: 45px;
             height: 45px;
-            background: var(--champagne-gold);
+            background: var(--yellow);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            color: var(--deep-navy);
+            color: var(--black);
             font-size: 18px;
         }
         
@@ -173,15 +170,15 @@
         
         .admin-details span {
             font-size: 12px;
-            color: var(--soft-beige);
+            color: var(--gray-400);
         }
         
         .logout-btn {
             width: 100%;
             padding: 12px;
             background: transparent;
-            border: 2px solid var(--deep-crimson);
-            color: var(--deep-crimson);
+            border: 2px solid var(--red);
+            color: var(--red);
             font-weight: 600;
             cursor: pointer;
             display: flex;
@@ -189,10 +186,11 @@
             justify-content: center;
             gap: 8px;
             transition: all 0.2s;
+            border-radius: 8px;
         }
         
         .logout-btn:hover {
-            background: var(--deep-crimson);
+            background: var(--red);
             color: var(--white);
         }
         
@@ -204,7 +202,7 @@
             z-index: 1;
             overflow-x: auto;
             min-height: 100vh;
-            background: var(--light-gray);
+            background: var(--gray-100);
         }
         
         .top-bar {
@@ -221,7 +219,7 @@
         .page-title h1 {
             font-size: 24px;
             font-weight: 700;
-            color: var(--deep-navy);
+            color: var(--black);
         }
         
         .page-title p {
@@ -250,7 +248,7 @@
             position: absolute;
             top: -8px;
             right: -8px;
-            background: var(--deep-crimson);
+            background: var(--red);
             color: var(--white);
             font-size: 10px;
             padding: 2px 6px;
@@ -259,8 +257,8 @@
         
         .btn-refresh {
             background: transparent;
-            border: 2px solid var(--champagne-gold);
-            color: var(--deep-navy);
+            border: 2px solid var(--yellow);
+            color: var(--black);
             padding: 10px 20px;
             font-weight: 600;
             cursor: pointer;
@@ -272,8 +270,8 @@
         }
         
         .btn-refresh:hover {
-            background: var(--champagne-gold);
-            color: var(--deep-navy);
+            background: var(--yellow);
+            color: var(--black);
         }
         
         .stats-grid {
@@ -307,10 +305,9 @@
             font-size: 24px;
         }
         
-        .stat-header i.text-gold { color: var(--champagne-gold); }
-        .stat-header i.text-green { color: var(--emerald-green); }
-        .stat-header i.text-red { color: var(--deep-crimson); }
-        .stat-header i.text-blue { color: var(--cool-blue); }
+        .stat-header i.text-yellow { color: var(--yellow); }
+        .stat-header i.text-green { color: var(--green); }
+        .stat-header i.text-red { color: var(--red); }
         
         .stat-title {
             font-size: 13px;
@@ -323,7 +320,7 @@
         .stat-number {
             font-size: 28px;
             font-weight: 700;
-            color: var(--deep-navy);
+            color: var(--black);
         }
         
         .charts-row {
@@ -350,7 +347,7 @@
         .chart-header h3 {
             font-size: 16px;
             font-weight: 600;
-            color: var(--deep-navy);
+            color: var(--black);
         }
         
         .chart-header span {
@@ -384,13 +381,13 @@
         .activity-header h3 {
             font-size: 16px;
             font-weight: 600;
-            color: var(--deep-navy);
+            color: var(--black);
         }
         
         .show-more {
             background: transparent;
-            border: 2px solid var(--champagne-gold);
-            color: var(--deep-navy);
+            border: 2px solid var(--yellow);
+            color: var(--black);
             padding: 8px 16px;
             font-weight: 600;
             cursor: pointer;
@@ -402,8 +399,8 @@
         }
         
         .show-more:hover {
-            background: var(--champagne-gold);
-            color: var(--deep-navy);
+            background: var(--yellow);
+            color: var(--black);
         }
         
         .activity-list {
@@ -437,10 +434,10 @@
             color: white;
         }
         
-        .bg-gold { background: var(--champagne-gold); color: var(--deep-navy); }
-        .bg-green { background: var(--emerald-green); }
-        .bg-red { background: var(--deep-crimson); }
-        .bg-blue { background: var(--cool-blue); }
+        .bg-yellow { background: var(--yellow); color: var(--black); }
+        .bg-green { background: var(--green); }
+        .bg-red { background: var(--red); }
+        .bg-black { background: var(--black); }
         
         .activity-content {
             flex: 1;
@@ -448,7 +445,7 @@
         
         .activity-title {
             font-weight: 600;
-            color: var(--gray-900);
+            color: var(--black);
             margin-bottom: 4px;
         }
         
@@ -477,7 +474,7 @@
         .section-header h2 {
             font-size: 22px;
             font-weight: 700;
-            color: var(--deep-navy);
+            color: var(--black);
         }
         
         .section-header .btn-group {
@@ -487,9 +484,9 @@
         }
         
         .btn-add {
-            background: var(--champagne-gold);
+            background: var(--yellow);
             border: none;
-            color: var(--deep-navy);
+            color: var(--black);
             padding: 10px 16px;
             font-weight: 600;
             cursor: pointer;
@@ -507,13 +504,13 @@
         }
         
         .btn-add:hover {
-            background: #d4b573;
+            background: var(--yellow-dark);
             transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(229, 198, 135, 0.3);
+            box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
         }
         
         .btn-export {
-            background: var(--emerald-green);
+            background: var(--green);
             border: none;
             color: var(--white);
             padding: 10px 16px;
@@ -529,22 +526,22 @@
         }
         
         .btn-export:hover {
-            background: #236b4b;
+            background: var(--green-dark);
             transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(46, 134, 95, 0.3);
         }
         
         .btn-export-excel {
-            background: var(--emerald-green);
+            background: var(--green);
         }
         
         .btn-export-csv {
-            background: var(--cool-blue);
+            background: var(--gray-600);
             color: var(--white);
         }
         
         .btn-export-csv:hover {
-            background: #1e6bc4;
+            background: var(--gray-700);
         }
         
         .table-container {
@@ -616,17 +613,17 @@
         }
         
         .status-active {
-            background: var(--emerald-green);
+            background: var(--green);
             color: white;
         }
         
         .status-pending {
-            background: var(--champagne-gold);
-            color: var(--deep-navy);
+            background: var(--yellow);
+            color: var(--black);
         }
         
         .status-inactive {
-            background: var(--deep-crimson);
+            background: var(--red);
             color: white;
         }
         
@@ -666,42 +663,51 @@
         }
         
         .btn-edit {
-            background: var(--champagne-gold);
-            color: var(--deep-navy);
+            background: var(--yellow);
+            color: var(--black);
         }
         
         .btn-edit:hover {
-            background: #d4b573;
+            background: var(--yellow-dark);
         }
         
         .btn-view {
-            background: var(--cool-blue);
+            background: var(--green);
             color: white;
         }
         
         .btn-view:hover {
-            background: #1e6bc4;
+            background: var(--green-dark);
         }
         
         .btn-delete {
-            background: var(--deep-crimson);
+            background: var(--red);
             color: white;
         }
         
         .btn-delete:hover {
-            background: #8b1a1a;
+            background: var(--red-dark);
         }
         
         .btn-fix {
-            background: var(--champagne-gold);
-            color: var(--deep-navy);
+            background: var(--yellow);
+            color: var(--black);
         }
         
         .btn-fix:hover {
-            background: #d4b573;
+            background: var(--yellow-dark);
         }
         
-        /* FIXED: Image styles */
+        .btn-success {
+            background: var(--green);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: var(--green-dark);
+        }
+        
+        /* Image styles */
         .thumbnail-img {
             width: 50px;
             height: 50px;
@@ -730,7 +736,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(11, 26, 51, 0.5);
+            background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
             z-index: 2000;
             align-items: center;
@@ -758,7 +764,7 @@
         .modal-header h3 {
             font-size: 18px;
             font-weight: 700;
-            color: var(--deep-navy);
+            color: var(--black);
         }
         
         .modal-close {
@@ -809,7 +815,7 @@
             background: var(--white);
             border: 1px solid var(--gray-300);
             border-radius: 8px;
-            color: var(--gray-900);
+            color: var(--black);
             font-family: 'Inter', sans-serif;
             font-size: 14px;
             transition: all 0.2s;
@@ -817,8 +823,8 @@
         
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: var(--champagne-gold);
-            box-shadow: 0 0 0 3px rgba(229, 198, 135, 0.1);
+            border-color: var(--yellow);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
         }
         
         .file-upload {
@@ -832,19 +838,19 @@
         }
         
         .file-upload:hover {
-            border-color: var(--champagne-gold);
-            background: rgba(229, 198, 135, 0.05);
+            border-color: var(--yellow);
+            background: rgba(255, 215, 0, 0.05);
         }
         
         .file-upload i {
             font-size: 32px;
-            color: var(--champagne-gold);
+            color: var(--yellow);
             margin-bottom: 10px;
         }
         
         .btn-primary {
-            background: var(--champagne-gold);
-            color: var(--deep-navy);
+            background: var(--yellow);
+            color: var(--black);
             border: none;
             padding: 10px 20px;
             font-weight: 600;
@@ -855,9 +861,9 @@
         }
         
         .btn-primary:hover {
-            background: #d4b573;
+            background: var(--yellow-dark);
             transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(229, 198, 135, 0.3);
+            box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
         }
         
         .btn-secondary {
@@ -876,306 +882,299 @@
             background: var(--gray-100);
         }
         
+        /* PILLS LOADER - BLACK & YELLOW */
+        .loader-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--black);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
         
-
-      /* ===== PILLS LOADER - DEEP NAVY & CHAMPAGNE GOLD ===== */
-.loader-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--deep-navy);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    z-index: 99999;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-}
-
-.loader-container {
-    text-align: center;
-    max-width: 500px;
-    width: 90%;
-    padding: 40px 20px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-/* PILLS LOADER - DEEP NAVY & CHAMPAGNE GOLD */
-.loader-pills {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    height: 70px;
-    margin: 0 auto 30px;
-}
-
-.pill {
-    width: 20px;
-    height: 40px;
-    background: var(--champagne-gold);
-    border-radius: 30px;
-    animation: pillPulse 1.5s ease-in-out infinite;
-    box-shadow: 0 0 15px var(--champagne-gold);
-}
-
-.pill:nth-child(1) {
-    animation-delay: 0s;
-    height: 25px;
-}
-
-.pill:nth-child(2) {
-    animation-delay: 0.2s;
-    height: 40px;
-}
-
-.pill:nth-child(3) {
-    animation-delay: 0.4s;
-    height: 55px;
-}
-
-.pill:nth-child(4) {
-    animation-delay: 0.6s;
-    height: 40px;
-}
-
-.pill:nth-child(5) {
-    animation-delay: 0.8s;
-    height: 25px;
-}
-
-@keyframes pillPulse {
-    0%, 100% {
-        transform: scaleY(0.8);
-        opacity: 0.5;
-        background: var(--champagne-gold);
-    }
-    50% {
-        transform: scaleY(1.5);
-        opacity: 1;
-        background: var(--cream);
-        box-shadow: 0 0 30px var(--champagne-gold);
-    }
-}
-
-.loader-text {
-    color: var(--cream);
-    font-size: 32px;
-    font-weight: 700;
-    margin-bottom: 15px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}
-
-.loader-message {
-    color: var(--champagne-gold);
-    font-size: 18px;
-    margin-bottom: 30px;
-    font-weight: 400;
-    min-height: 28px;
-}
-
-/* PROGRESS BAR - CHAMPAGNE GOLD */
-.loader-progress-container {
-    width: 100%;
-    height: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50px;
-    overflow: hidden;
-    margin: 20px 0;
-    border: 1px solid rgba(229, 198, 135, 0.3);
-}
-
-.loader-progress-bar {
-    height: 100%;
-    width: 0%;
-    background: var(--champagne-gold);
-    border-radius: 50px;
-    transition: width 0.3s ease;
-    box-shadow: 0 0 20px var(--champagne-gold);
-}
-
-/* PROGRESS PERCENTAGE - CREAM */
-.loader-percentage {
-    color: var(--cream);
-    font-size: 24px;
-    font-weight: 700;
-    margin-top: 10px;
-    font-family: monospace;
-}
-
-/* FILE INFO - CREAM WITH GOLD HIGHLIGHT */
-.loader-stats {
-    color: var(--cream);
-    font-size: 14px;
-    margin-top: 15px;
-    opacity: 0.8;
-    letter-spacing: 0.5px;
-}
-
-/* FILE SIZE INDICATOR */
-.loader-size {
-    color: var(--champagne-gold);
-    font-size: 16px;
-    margin-top: 5px;
-    font-weight: 600;
-}
-
-.loader-size span {
-    color: var(--cream);
-    font-weight: 400;
-}
-
-/* COMPLETE CHECKMARK - CHAMPAGNE GOLD */
-.loader-complete {
-    color: var(--champagne-gold);
-    font-size: 60px;
-    margin: 20px 0;
-    display: none;
-}
-
-.loader-complete.show {
-    display: block;
-    animation: bounce 0.5s ease;
-}
-
-@keyframes bounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-}
-
-/* MINIMUM LOADER TIME GUARANTEE */
-.loader-guarantee {
-    position: absolute;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--champagne-gold);
-    padding: 8px 20px;
-    border-radius: 50px;
-    font-size: 13px;
-    display: none;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid rgba(229, 198, 135, 0.3);
-    backdrop-filter: blur(5px);
-}
-
-.loader-guarantee i {
-    color: var(--champagne-gold);
-}
-
-/* TOAST NOTIFICATION - CHAMPAGNE GOLD */
-.toast {
-    position: fixed;
-    top: 30px;
-    right: 30px;
-    background: var(--champagne-gold);
-    color: var(--deep-navy);
-    padding: 16px 24px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-    z-index: 100000;
-    display: none;
-    align-items: center;
-    gap: 12px;
-    min-width: 300px;
-    transform: translateX(400px);
-    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    font-weight: 500;
-}
-
-.toast.show {
-    transform: translateX(0);
-}
-
-.toast.error {
-    background: var(--deep-crimson);
-    color: white;
-}
-
-.toast.success {
-    background: var(--emerald-green);
-    color: white;
-}
-
-.toast i {
-    font-size: 20px;
-}
-
-.toast-close {
-    margin-left: auto;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: opacity 0.2s;
-}
-
-.toast-close:hover {
-    opacity: 1;
-}
+        .loader-container {
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            padding: 40px 20px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .loader-pills {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            height: 70px;
+            margin: 0 auto 30px;
+        }
+        
+        .pill {
+            width: 20px;
+            height: 40px;
+            background: var(--yellow);
+            border-radius: 30px;
+            animation: pillPulse 1.5s ease-in-out infinite;
+            box-shadow: 0 0 15px var(--yellow);
+        }
+        
+        .pill:nth-child(1) {
+            animation-delay: 0s;
+            height: 25px;
+        }
+        
+        .pill:nth-child(2) {
+            animation-delay: 0.2s;
+            height: 40px;
+        }
+        
+        .pill:nth-child(3) {
+            animation-delay: 0.4s;
+            height: 55px;
+        }
+        
+        .pill:nth-child(4) {
+            animation-delay: 0.6s;
+            height: 40px;
+        }
+        
+        .pill:nth-child(5) {
+            animation-delay: 0.8s;
+            height: 25px;
+        }
+        
+        @keyframes pillPulse {
+            0%, 100% {
+                transform: scaleY(0.8);
+                opacity: 0.5;
+                background: var(--yellow);
+            }
+            50% {
+                transform: scaleY(1.5);
+                opacity: 1;
+                background: var(--yellow-light);
+                box-shadow: 0 0 30px var(--yellow);
+            }
+        }
+        
+        .loader-text {
+            color: var(--white);
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .loader-message {
+            color: var(--yellow);
+            font-size: 18px;
+            margin-bottom: 30px;
+            font-weight: 400;
+            min-height: 28px;
+        }
+        
+        .loader-progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            overflow: hidden;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        .loader-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--yellow);
+            border-radius: 50px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 20px var(--yellow);
+        }
+        
+        .loader-percentage {
+            color: var(--white);
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+        
+        .loader-stats {
+            color: var(--white);
+            font-size: 14px;
+            margin-top: 15px;
+            opacity: 0.8;
+            letter-spacing: 0.5px;
+        }
+        
+        .loader-size {
+            color: var(--yellow);
+            font-size: 16px;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+        
+        .loader-size span {
+            color: var(--white);
+            font-weight: 400;
+        }
+        
+        .loader-complete {
+            color: var(--yellow);
+            font-size: 60px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .loader-complete.show {
+            display: block;
+            animation: bounce 0.5s ease;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        
+        .loader-guarantee {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--yellow);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            backdrop-filter: blur(5px);
+        }
+        
+        .loader-guarantee i {
+            color: var(--yellow);
+        }
+        
+        /* TOAST NOTIFICATION */
+        .toast {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: var(--yellow);
+            color: var(--black);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            z-index: 100000;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            transform: translateX(400px);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            font-weight: 500;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .toast.error {
+            background: var(--red);
+            color: white;
+        }
+        
+        .toast.success {
+            background: var(--green);
+            color: white;
+        }
+        
+        .toast i {
+            font-size: 20px;
+        }
+        
+        .toast-close {
+            margin-left: auto;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        
+        .toast-close:hover {
+            opacity: 1;
+        }
+        
+        .status-select {
+            padding: 6px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: 1px solid var(--gray-300);
+            background: var(--white);
+            cursor: pointer;
+        }
+        
+        .text-center { text-align: center; }
+        .text-danger { color: var(--red); }
+        .text-muted { color: var(--gray-500); font-size: 11px; margin-top: 4px; display: block; }
     </style>
 </head>
 <body>
-    <!-- PILLS LOADER - GROWING & SHRINKING IN A LINE -->
-<div class="loader-overlay" id="loaderOverlay">
-    <div class="loader-container">
-        <!-- Pills loader - growing and shrinking in a straight line -->
-        <div class="loader-pills">
-            <div class="pill"></div>
-            <div class="pill"></div>
-            <div class="pill"></div>
-            <div class="pill"></div>
-            <div class="pill"></div>
+    <!-- PILLS LOADER -->
+    <div class="loader-overlay" id="loaderOverlay">
+        <div class="loader-container">
+            <div class="loader-pills">
+                <div class="pill"></div>
+                <div class="pill"></div>
+                <div class="pill"></div>
+                <div class="pill"></div>
+                <div class="pill"></div>
+            </div>
+            <div class="loader-text" id="loaderTitle">Loading</div>
+            <div class="loader-message" id="loaderMessage">Please wait...</div>
+            <div class="loader-progress-container" id="loaderProgressContainer" style="display: none;">
+                <div class="loader-progress-bar" id="loaderProgressBar"></div>
+            </div>
+            <div class="loader-percentage" id="loaderPercentage">0%</div>
+            <div class="loader-size" id="loaderSize">
+                <span id="uploadedSize">0 MB</span> / <span id="totalSize">0 MB</span> uploaded
+            </div>
+            <div class="loader-size" id="loaderRemaining">
+                <span id="remainingSize">0 MB</span> remaining
+            </div>
+            <div class="loader-stats" id="loaderStats"></div>
+            <div class="loader-complete" id="loaderComplete">
+                <i class="fas fa-check-circle"></i>
+            </div>
         </div>
-        
-        <div class="loader-text" id="loaderTitle">Loading</div>
-        <div class="loader-message" id="loaderMessage">Please wait...</div>
-        
-        <!-- Progress bar with percentage -->
-        <div class="loader-progress-container" id="loaderProgressContainer" style="display: none;">
-            <div class="loader-progress-bar" id="loaderProgressBar"></div>
-        </div>
-        <div class="loader-percentage" id="loaderPercentage">0%</div>
-        
-        <!-- FILE SIZE INDICATOR -->
-        <div class="loader-size" id="loaderSize">
-            <span id="uploadedSize">0 MB</span> / <span id="totalSize">0 MB</span> uploaded
-        </div>
-        <div class="loader-size" id="loaderRemaining">
-            <span id="remainingSize">0 MB</span> remaining
-        </div>
-        
-        <div class="loader-stats" id="loaderStats"></div>
-        
-        <!-- Success checkmark -->
-        <div class="loader-complete" id="loaderComplete">
-            <i class="fas fa-check-circle"></i>
+        <div class="loader-guarantee" id="loaderGuarantee">
+            <i class="fas fa-clock"></i>
+            <span>Processing... this won't take long</span>
         </div>
     </div>
-    
-    <!-- Subtle guarantee message -->
-    <div class="loader-guarantee" id="loaderGuarantee">
-        <i class="fas fa-clock"></i>
-        <span>Processing... this won't take long</span>
-    </div>
-</div>
 
-<!-- TOAST NOTIFICATION -->
-<div class="toast" id="toast">
-    <i class="fas fa-check-circle" id="toastIcon"></i>
-    <span id="toastMessage">Operation successful</span>
-    <i class="fas fa-times toast-close" onclick="hideToast()"></i>
-</div>
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle" id="toastIcon"></i>
+        <span id="toastMessage">Operation successful</span>
+        <i class="fas fa-times toast-close" onclick="hideToast()"></i>
+    </div>
     
     <div class="dashboard">
-        <!-- SIDEBAR - DEEP NAVY -->
+        <!-- SIDEBAR -->
         <div class="sidebar">
             <div class="sidebar-header">
                 <h2>MBC ADMIN</h2>
@@ -1215,6 +1214,18 @@
                     <i class="fas fa-shopping-cart"></i>
                     <span>Orders</span>
                 </div>
+                <div class="nav-item" data-section="merchandise">
+                    <i class="fas fa-tshirt"></i>
+                    <span>Merchandise</span>
+                </div>
+                <div class="nav-item" data-section="tickets">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Event Tickets</span>
+                </div>
+                <div class="nav-item" data-section="merchandise-orders">
+                    <i class="fas fa-truck"></i>
+                    <span>Merch Orders</span>
+                </div>
                 <div class="nav-item" data-section="partnerships">
                     <i class="fas fa-handshake"></i>
                     <span>Partnerships</span>
@@ -1245,7 +1256,7 @@
         
         <!-- MAIN CONTENT -->
         <div class="main-content">
-            <!-- TOP BAR - WHITE -->
+            <!-- TOP BAR -->
             <div class="top-bar">
                 <div class="page-title">
                     <h1 id="pageTitle">Dashboard</h1>
@@ -1263,14 +1274,13 @@
                 </div>
             </div>
             
-            <!-- ========== DASHBOARD SECTION ========== -->
+            <!-- DASHBOARD SECTION -->
             <div id="section-dashboard" class="section-page active">
-                <!-- STATS CARDS -->
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-header">
                             <span class="stat-title">Total Users</span>
-                            <i class="fas fa-users text-gold"></i>
+                            <i class="fas fa-users text-yellow"></i>
                         </div>
                         <div class="stat-number" id="statUsers">0</div>
                     </div>
@@ -1286,7 +1296,7 @@
                     <div class="stat-card">
                         <div class="stat-header">
                             <span class="stat-title">Active Courses</span>
-                            <i class="fas fa-graduation-cap text-gold"></i>
+                            <i class="fas fa-graduation-cap text-yellow"></i>
                         </div>
                         <div class="stat-number" id="statCourses">0</div>
                     </div>
@@ -1300,7 +1310,6 @@
                     </div>
                 </div>
                 
-                <!-- CHARTS ROW -->
                 <div class="charts-row">
                     <div class="chart-card">
                         <div class="chart-header">
@@ -1323,7 +1332,6 @@
                     </div>
                 </div>
                 
-                <!-- RECENT ACTIVITY -->
                 <div class="activity-card">
                     <div class="activity-header">
                         <h3>Recent Activity</h3>
@@ -1332,16 +1340,12 @@
                         </button>
                     </div>
                     
-                    <div class="activity-list" id="activityList">
-                        <!-- Loaded via AJAX - shows only 3 -->
-                    </div>
-                    <div class="activity-list" id="allActivitiesList" style="display: none;">
-                        <!-- Loaded via AJAX - shows all -->
-                    </div>
+                    <div class="activity-list" id="activityList"></div>
+                    <div class="activity-list" id="allActivitiesList" style="display: none;"></div>
                 </div>
             </div>
             
-            <!-- ========== USERS SECTION ========== -->
+            <!-- USERS SECTION -->
             <div id="section-users" class="section-page">
                 <div class="section-header">
                     <h2>User Management</h2>
@@ -1372,14 +1376,12 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="usersTableBody">
-                            <!-- Loaded via AJAX -->
-                        </tbody>
+                        <tbody id="usersTableBody"></tbody>
                     </table>
                 </div>
             </div>
             
-            <!-- ========== COURSES SECTION ========== -->
+            <!-- COURSES SECTION -->
             <div id="section-courses" class="section-page">
                 <div class="section-header">
                     <h2>Course Management</h2>
@@ -1408,14 +1410,12 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="coursesTableBody">
-                            <!-- Loaded via AJAX -->
-                        </tbody>
+                        <tbody id="coursesTableBody"></tbody>
                     </table>
                 </div>
             </div>
             
-            <!-- ========== VIDEOS SECTION ========== -->
+            <!-- VIDEOS SECTION -->
             <div id="section-videos" class="section-page">
                 <div class="section-header">
                     <h2>Video Library</h2>
@@ -1444,14 +1444,12 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="videosTableBody">
-                            <!-- Loaded via AJAX -->
-                        </tbody>
+                        <tbody id="videosTableBody"></tbody>
                     </table>
                 </div>
             </div>
             
-            <!-- ========== PDFs SECTION ========== -->
+            <!-- PDFs SECTION -->
             <div id="section-pdfs" class="section-page">
                 <div class="section-header">
                     <h2>PDF Resources</h2>
@@ -1480,14 +1478,12 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="pdfsTableBody">
-                            <!-- Loaded via AJAX -->
-                        </tbody>
+                        <tbody id="pdfsTableBody"></tbody>
                     </table>
                 </div>
             </div>
             
-            <!-- ========== BLOGS SECTION ========== -->
+            <!-- BLOGS SECTION -->
             <div id="section-blogs" class="section-page">
                 <div class="section-header">
                     <h2>Blog Posts</h2>
@@ -1516,14 +1512,12 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="blogsTableBody">
-                            <!-- Loaded via AJAX -->
-                        </tbody>
+                        <tbody id="blogsTableBody"></tbody>
                     </table>
                 </div>
             </div>
             
-            <!-- ========== PACKAGES SECTION ========== -->
+            <!-- PACKAGES SECTION -->
             <div id="section-packages" class="section-page">
                 <div class="section-header">
                     <h2>Trading Packages</h2>
@@ -1552,14 +1546,12 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="packagesTableBody">
-                            <!-- Loaded via AJAX -->
-                        </tbody>
+                        <tbody id="packagesTableBody"></tbody>
                     </table>
                 </div>
             </div>
             
-            <!-- ========== ORDERS SECTION ========== -->
+            <!-- ORDERS SECTION -->
             <div id="section-orders" class="section-page">
                 <div class="section-header">
                     <h2>Order Management</h2>
@@ -1587,14 +1579,67 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="ordersTableBody">
-                            <!-- Loaded via AJAX -->
-                        </tbody>
+                        <tbody id="ordersTableBody"></tbody>
                     </table>
                 </div>
             </div>
             
-            <!-- ========== PARTNERSHIPS SECTION ========== -->
+            <!-- MERCHANDISE SECTION -->
+            <div id="section-merchandise" class="section-page">
+                <div class="section-header">
+                    <h2>Merchandise Store</h2>
+                    <div class="btn-group">
+                        <button class="btn-export" onclick="exportData('merchandise')"><i class="fas fa-file-excel"></i> EXPORT</button>
+                        <button class="btn-add" onclick="openMerchandiseModal()"><i class="fas fa-plus"></i> ADD PRODUCT</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>Image</th><th>Product Name</th><th>Category</th><th>Price (KES)</th><th>Stock</th><th>Status</th><th>Actions</th>
+                        </thead>
+                        <tbody id="merchandiseTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- EVENT TICKETS SECTION -->
+            <div id="section-tickets" class="section-page">
+                <div class="section-header">
+                    <h2>Event Ticket Sales</h2>
+                    <div class="btn-group">
+                        <button class="btn-export" onclick="exportData('tickets')"><i class="fas fa-file-excel"></i> EXPORT</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>ID</th><th>Ticket #</th><th>Attendee</th><th>Phone</th><th>Email</th><th>Qty</th><th>Amount (KES)</th><th>Event</th><th>Date</th><th>Checked In</th><th>Status</th><th>Actions</th>
+                        </thead>
+                        <tbody id="ticketsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MERCHANDISE ORDERS SECTION -->
+            <div id="section-merchandise-orders" class="section-page">
+                <div class="section-header">
+                    <h2>Merchandise Orders</h2>
+                    <div class="btn-group">
+                        <button class="btn-export" onclick="exportData('merchandise-orders')"><i class="fas fa-file-excel"></i> EXPORT</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>Order #</th><th>Customer</th><th>Phone</th><th>Email</th><th>Total (KES)</th><th>Status</th><th>Date</th><th>Actions</th>
+                        </thead>
+                        <tbody id="merchandiseOrdersTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- PARTNERSHIPS SECTION -->
             <div id="section-partnerships" class="section-page">
                 <div class="section-header">
                     <h2>Partnership Applications</h2>
@@ -1622,14 +1667,12 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="partnershipsTableBody">
-                            <!-- Loaded via AJAX -->
-                        </tbody>
+                        <tbody id="partnershipsTableBody"></tbody>
                     </table>
                 </div>
             </div>
             
-            <!-- ========== REPORTS SECTION ========== -->
+            <!-- REPORTS SECTION -->
             <div id="section-reports" class="section-page">
                 <div class="section-header">
                     <h2>Reports & Analytics</h2>
@@ -1660,7 +1703,7 @@
                     <div class="stat-card">
                         <div class="stat-header">
                             <span class="stat-title">New Users</span>
-                            <i class="fas fa-user-plus text-gold"></i>
+                            <i class="fas fa-user-plus text-yellow"></i>
                         </div>
                         <div class="stat-number" id="newUsers">0</div>
                     </div>
@@ -1674,7 +1717,7 @@
                     <div class="stat-card">
                         <div class="stat-header">
                             <span class="stat-title">Active Students</span>
-                            <i class="fas fa-graduation-cap text-gold"></i>
+                            <i class="fas fa-graduation-cap text-yellow"></i>
                         </div>
                         <div class="stat-number" id="activeStudents">0</div>
                     </div>
@@ -1691,7 +1734,7 @@
                 </div>
             </div>
             
-            <!-- ========== SETTINGS SECTION ========== -->
+            <!-- SETTINGS SECTION -->
             <div id="section-settings" class="section-page">
                 <div class="section-header">
                     <h2>System Settings</h2>
@@ -1751,9 +1794,7 @@
                     <h3 id="modalTitle">Add New Content</h3>
                     <button class="modal-close" onclick="closeModal()">&times;</button>
                 </div>
-                <div class="modal-body" id="modalBody">
-                    <!-- Dynamic content loaded via JS -->
-                </div>
+                <div class="modal-body" id="modalBody"></div>
                 <div class="modal-footer">
                     <button class="btn-secondary" onclick="closeModal()">CANCEL</button>
                     <button class="btn-primary" id="modalSaveBtn">SAVE</button>
@@ -1781,7 +1822,6 @@
             $('#loaderStats').text('');
             $('#loaderComplete').removeClass('show');
             
-            // Reset size indicators
             $('#uploadedSize').text('0 MB');
             $('#totalSize').text('0 MB');
             $('#remainingSize').text('0 MB');
@@ -1820,18 +1860,15 @@
                 $('#loaderPercentage').text(percent + '%');
                 if (message) { $('#loaderMessage').text(message); }
                 
-                // Update file size indicators if we have loaded/total
                 if (loaded !== null && total !== null) {
                     $('#uploadedSize').text(formatFileSize(loaded));
                     $('#totalSize').text(formatFileSize(total));
-                    
                     let remaining = Math.max(0, total - loaded);
                     $('#remainingSize').text(formatFileSize(remaining));
                     
-                    // Calculate upload speed if we have time
                     if (loaderStartTime) {
                         let elapsedSeconds = (Date.now() - loaderStartTime) / 1000;
-                        let speed = loaded / elapsedSeconds; // bytes per second
+                        let speed = loaded / elapsedSeconds;
                         $('#loaderStats').text(`Speed: ${formatFileSize(speed)}/s`);
                     }
                 }
@@ -1929,34 +1966,28 @@
         }
         
         function getThumbnailHtml(imageUrl, title) {
-    // If it's already a full URL (starts with http), use it directly
-    if (imageUrl && imageUrl !== 'null' && imageUrl !== 'undefined' && imageUrl.trim() !== '') {
-        // Check if it's already a full URL
-        if (imageUrl.startsWith('http')) {
-            return `<img src="${imageUrl}" alt="${title || 'Course'}" class="thumbnail-img" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:2px solid var(--champagne-gold);" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\\'no-thumbnail\\' style=\\'background:var(--champagne-gold); color:var(--deep-navy); width:50px; height:50px; display:flex; align-items:center; justify-content:center; border-radius:8px;\\'><i class=\\'fas fa-image\\'></i></div>';">`;
-        } 
-        // If it's just a path, assume it's from S3 and construct the URL
-        else {
-            // You might need to add your S3 base URL here
-            // For now, return a placeholder
-            return `<div class="no-thumbnail" style="background:var(--champagne-gold); color:var(--deep-navy); width:50px; height:50px; display:flex; align-items:center; justify-content:center; border-radius:8px;"><i class="fas fa-image"></i></div>`;
+            if (imageUrl && imageUrl !== 'null' && imageUrl !== 'undefined' && imageUrl.trim() !== '') {
+                if (imageUrl.startsWith('http')) {
+                    return `<img src="${imageUrl}" alt="${title || 'Course'}" class="thumbnail-img" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:2px solid var(--yellow);" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\\'no-thumbnail\\' style=\\'background:var(--yellow); color:var(--black); width:50px; height:50px; display:flex; align-items:center; justify-content:center; border-radius:8px;\\'><i class=\\'fas fa-image\\'></i></div>';">`;
+                } else {
+                    return `<div class="no-thumbnail" style="background:var(--yellow); color:var(--black); width:50px; height:50px; display:flex; align-items:center; justify-content:center; border-radius:8px;"><i class="fas fa-image"></i></div>`;
+                }
+            } else {
+                return `<div class="no-thumbnail" style="background:var(--yellow); color:var(--black); width:50px; height:50px; display:flex; align-items:center; justify-content:center; border-radius:8px;"><i class="fas fa-image"></i></div>`;
+            }
         }
-    } else {
-        return `<div class="no-thumbnail" style="background:var(--champagne-gold); color:var(--deep-navy); width:50px; height:50px; display:flex; align-items:center; justify-content:center; border-radius:8px;"><i class="fas fa-image"></i></div>`;
-    }
-}
         
         function getTierColor(tier) {
             const colors = {
                 'citizen': 'var(--gray-500)', 
-                'studyhall': 'var(--champagne-gold)', 
-                'society': 'var(--emerald-green)',
+                'studyhall': 'var(--yellow)', 
+                'society': 'var(--green)',
                 'recruit': 'var(--gray-500)', 
                 'private': 'var(--gray-500)', 
-                'sergeant': 'var(--champagne-gold)',
-                'captain': 'var(--emerald-green)', 
-                'commander': 'var(--champagne-gold)', 
-                'general': 'var(--deep-crimson)'
+                'sergeant': 'var(--yellow)',
+                'captain': 'var(--green)', 
+                'commander': 'var(--yellow)', 
+                'general': 'var(--red)'
             };
             return colors[tier?.toLowerCase()] || 'var(--gray-500)';
         }
@@ -1966,6 +1997,7 @@
             try {
                 loadDashboardData(); loadUsers(); loadCourses(); loadVideos(); loadPDFs();
                 loadBlogs(); loadPackages(); loadOrders(); loadPartnerships(); loadReportsData();
+                loadMerchandise(); loadTickets(); loadMerchandiseOrders();
                 initCharts(); setupNavigation(); checkTableScroll();
             } catch(e) { console.error('Initialization error:', e); forceHideLoader(); }
             $(window).on('resize', function() { checkTableScroll(); });
@@ -1981,6 +2013,8 @@
                     'dashboard': 'Dashboard', 'users': 'User Management', 'courses': 'Course Management',
                     'videos': 'Video Library', 'pdfs': 'PDF Resources', 'blogs': 'Blog Posts',
                     'packages': 'Package Management', 'orders': 'Order Management',
+                    'merchandise': 'Merchandise Store', 'tickets': 'Event Tickets',
+                    'merchandise-orders': 'Merchandise Orders',
                     'partnerships': 'Partnership Applications', 'reports': 'Reports & Analytics',
                     'settings': 'System Settings'
                 };
@@ -1998,6 +2032,9 @@
                         case 'blogs': loadBlogs(); break;
                         case 'packages': loadPackages(); break;
                         case 'orders': loadOrders(); break;
+                        case 'merchandise': loadMerchandise(); break;
+                        case 'tickets': loadTickets(); break;
+                        case 'merchandise-orders': loadMerchandiseOrders(); break;
                         case 'partnerships': loadPartnerships(); break;
                         case 'reports': loadReportsData(); break;
                     }
@@ -2026,9 +2063,9 @@
             let html = '';
             if (activities && activities.length > 0) {
                 activities.forEach(act => {
-                    let iconClass = 'bg-gold';
+                    let iconClass = 'bg-yellow';
                     if (act.type === 'user') iconClass = 'bg-green';
-                    if (act.type === 'payment') iconClass = 'bg-gold';
+                    if (act.type === 'payment') iconClass = 'bg-yellow';
                     if (act.type === 'course') iconClass = 'bg-green';
                     
                     html += `
@@ -2139,7 +2176,16 @@
                         if (users.length > 0) {
                             users.sort((a, b) => b.id - a.id);
                             users.forEach((user, index) => {
-                                html += `<tr><td>${users.length - index}</td><td>${user.name || user.username || 'N/A'}</td><td>${user.email || 'N/A'}</td><td>${user.phone || 'N/A'}</td><td><span class="status-badge" style="background:${getTierColor(user.tier)}; color:white;">${user.tier || user.rank || 'citizen'}</span></td><td>${user.joined || user.date_joined || 'N/A'}</td><td><span class="status-badge status-${user.status || 'pending'}">${user.status || 'pending'}</span></td><td class="action-cell"><button class="action-btn btn-edit" onclick="editItem('user', ${user.id})"><i class="fas fa-edit"></i> Edit</button><button class="action-btn btn-view" onclick="viewItem('user', ${user.id})"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-delete" onclick="deleteItem('user', ${user.id})"><i class="fas fa-trash"></i> Del</button></td></tr>`;
+                                html += `<tr>
+                                    <td>${users.length - index}</td>
+                                    <td>${user.name || user.username || 'N/A'}</td>
+                                    <td>${user.email || 'N/A'}</td>
+                                    <td>${user.phone || 'N/A'}</td>
+                                    <td><span class="status-badge" style="background:${getTierColor(user.tier)}; color:${user.tier === 'studyhall' ? 'var(--black)' : 'white'};">${user.tier || user.rank || 'citizen'}</span></td>
+                                    <td>${user.joined || user.date_joined || 'N/A'}</td>
+                                    <td><span class="status-badge status-${user.status || 'pending'}">${user.status || 'pending'}</span></td>
+                                    <td class="action-cell"><button class="action-btn btn-edit" onclick="editItem('user', ${user.id})"><i class="fas fa-edit"></i> Edit</button><button class="action-btn btn-view" onclick="viewItem('user', ${user.id})"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-delete" onclick="deleteItem('user', ${user.id})"><i class="fas fa-trash"></i> Del</button></td>
+                                </tr>`;
                             });
                         } else { html = '<tr><td colspan="8" class="text-center">No users found</td></tr>'; }
                         $('#usersTableBody').html(html); checkTableScroll(); hideLoader();
@@ -2161,7 +2207,17 @@
                                 let price = parseFloat(course.price || course.price_1month || 0);
                                 let status = course.status || (course.is_active ? 'active' : 'inactive');
                                 let imageUrl = course.thumbnail || course.image;
-                                html += `<tr><td>${coursesArray.length - index}</td><td>${getThumbnailHtml(imageUrl, course.title)}</td><td>${course.name || course.title || 'Untitled'}</td><td>CRS-${(course.id || '').toString().padStart(4, '0')}</td><td>${formatCurrency(price, 'USD')}</td><td>${course.videos || 0}</td><td>${course.pdfs || 0}</td><td><span class="status-badge status-${status}">${status}</span></td><td class="action-cell"><button class="action-btn btn-edit" onclick="editItem('course', ${course.id})"><i class="fas fa-edit"></i> Edit</button><button class="action-btn btn-view" onclick="viewItem('course', ${course.id})"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-delete" onclick="deleteItem('course', ${course.id})"><i class="fas fa-trash"></i> Del</button></td></tr>`;
+                                html += `<tr>
+                                    <td>${coursesArray.length - index}</td>
+                                    <td>${getThumbnailHtml(imageUrl, course.title)}</td>
+                                    <td>${course.name || course.title || 'Untitled'}</td>
+                                    <td>CRS-${(course.id || '').toString().padStart(4, '0')}</td>
+                                    <td>${formatCurrency(price, 'USD')}</td>
+                                    <td>${course.videos || 0}</td>
+                                    <td>${course.pdfs || 0}</td>
+                                    <td><span class="status-badge status-${status}">${status}</span></td>
+                                    <td class="action-cell"><button class="action-btn btn-edit" onclick="editItem('course', ${course.id})"><i class="fas fa-edit"></i> Edit</button><button class="action-btn btn-view" onclick="viewItem('course', ${course.id})"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-delete" onclick="deleteItem('course', ${course.id})"><i class="fas fa-trash"></i> Del</button></td>
+                                </tr>`;
                             });
                         } else { html = '<tr><td colspan="9" class="text-center">No courses found. Click "ADD COURSE" to create one.</td></tr>'; }
                         $('#coursesTableBody').html(html); checkTableScroll(); hideLoader();
@@ -2181,7 +2237,17 @@
                             videosArray.sort((a, b) => b.id - a.id);
                             videosArray.forEach((video, index) => {
                                 let imageUrl = video.thumbnail;
-                                html += `<tr><td>${videosArray.length - index}</td><td>${imageUrl ? `<img src="${imageUrl}" alt="${video.title}" class="thumbnail-img" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--champagne-gold);" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\\'no-thumbnail\\' style=\\'background:var(--champagne-gold); color:var(--deep-navy); width:50px; height:50px; display:flex; align-items:center; justify-content:center; border-radius:8px;\\'><i class=\\'fas fa-image\\'></i></div>';">` : `<div class="no-thumbnail" style="background:var(--champagne-gold); color:var(--deep-navy); width:50px; height:50px; display:flex; align-items:center; justify-content:center; border-radius:8px;"><i class="fas fa-image"></i></div>`}</td><td>${video.title || 'Untitled'}</td><td>${video.course_name || 'Uncategorized'}</td><td>${video.duration || '00:00'}</td><td>${video.module || 'N/A'}</td><td>${video.uploaded || video.created_at || 'N/A'}</td><td><span class="status-badge status-${video.status === 'published' ? 'active' : 'pending'}">${video.status || 'draft'}</span></td><td class="action-cell"><button class="action-btn btn-edit" onclick="editItem('video', ${video.id})"><i class="fas fa-edit"></i> Edit</button><button class="action-btn btn-view" onclick="viewItem('video', ${video.id})"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-delete" onclick="deleteItem('video', ${video.id})"><i class="fas fa-trash"></i> Del</button></td></tr>`;
+                                html += `<tr>
+                                    <td>${videosArray.length - index}</td>
+                                    <td>${imageUrl ? `<img src="${imageUrl}" alt="${video.title}" class="thumbnail-img" style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:1px solid var(--yellow);" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\\'no-thumbnail\\' style=\\'background:var(--yellow); color:var(--black); width:50px; height:50px; display:flex; align-items:center; justify-content:center; border-radius:8px;\\'><i class=\\'fas fa-image\\'></i></div>';">` : `<div class="no-thumbnail" style="background:var(--yellow); color:var(--black); width:50px; height:50px; display:flex; align-items:center; justify-content:center; border-radius:8px;"><i class="fas fa-image"></i></div>`}</td>
+                                    <td>${video.title || 'Untitled'}</td>
+                                    <td>${video.course_name || 'Uncategorized'}</td>
+                                    <td>${video.duration || '00:00'}</td>
+                                    <td>${video.module || 'N/A'}</td>
+                                    <td>${video.uploaded || video.created_at || 'N/A'}</td>
+                                    <td><span class="status-badge status-${video.status === 'published' ? 'active' : 'pending'}">${video.status || 'draft'}</span></td>
+                                    <td class="action-cell"><button class="action-btn btn-edit" onclick="editItem('video', ${video.id})"><i class="fas fa-edit"></i> Edit</button><button class="action-btn btn-view" onclick="viewItem('video', ${video.id})"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-delete" onclick="deleteItem('video', ${video.id})"><i class="fas fa-trash"></i> Del</button></td>
+                                </tr>`;
                             });
                         } else { html = '<tr><td colspan="9" class="text-center">No videos found</td></tr>'; }
                         $('#videosTableBody').html(html); checkTableScroll(); hideLoader();
@@ -2201,8 +2267,18 @@
                             pdfsArray.sort((a, b) => b.id - a.id);
                             pdfsArray.forEach((pdf, index) => {
                                 let imageUrl = pdf.cover_image || pdf.thumbnail;
-                                let fileStatus = pdf.has_file ? '<span style="color: var(--emerald-green); font-size: 11px; margin-left: 5px;"><i class="fas fa-check-circle"></i></span>' : (pdf.pdf_file ? '<span style="color: orange; font-size: 11px; margin-left: 5px;"><i class="fas fa-exclamation-triangle"></i></span>' : '<span style="color: var(--deep-crimson); font-size: 11px; margin-left: 5px;"><i class="fas fa-times-circle"></i></span>');
-                                html += `<tr><td>${pdfsArray.length - index}</td><td>${getThumbnailHtml(imageUrl, pdf.title)}</td><td>${pdf.title || 'Untitled'} ${fileStatus}</td><td>${pdf.course_name || 'General'}</td><td>${pdf.pages || 0}</td><td>${pdf.size || pdf.file_size || 'N/A'}</td><td>${pdf.uploaded || pdf.created_at || 'N/A'}</td><td>${pdf.downloads || 0}</td><td class="action-cell"><button class="action-btn btn-edit" onclick="editItem('pdf', ${pdf.id})"><i class="fas fa-edit"></i> Edit</button><button class="action-btn btn-view" onclick="viewItem('pdf', ${pdf.id})"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-delete" onclick="deleteItem('pdf', ${pdf.id})"><i class="fas fa-trash"></i> Del</button>${!pdf.has_file ? `<button class="action-btn btn-fix" onclick="fixPDFFile(${pdf.id})"><i class="fas fa-wrench"></i> Fix</button>` : ''}</td></tr>`;
+                                let fileStatus = pdf.has_file ? '<span style="color: var(--green); font-size: 11px; margin-left: 5px;"><i class="fas fa-check-circle"></i></span>' : (pdf.pdf_file ? '<span style="color: orange; font-size: 11px; margin-left: 5px;"><i class="fas fa-exclamation-triangle"></i></span>' : '<span style="color: var(--red); font-size: 11px; margin-left: 5px;"><i class="fas fa-times-circle"></i></span>');
+                                html += `<tr>
+                                    <td>${pdfsArray.length - index}</td>
+                                    <td>${getThumbnailHtml(imageUrl, pdf.title)}</td>
+                                    <td>${pdf.title || 'Untitled'} ${fileStatus}</td>
+                                    <td>${pdf.course_name || 'General'}</td>
+                                    <td>${pdf.pages || 0}</td>
+                                    <td>${pdf.size || pdf.file_size || 'N/A'}</td>
+                                    <td>${pdf.uploaded || pdf.created_at || 'N/A'}</td>
+                                    <td>${pdf.downloads || 0}</td>
+                                    <td class="action-cell"><button class="action-btn btn-edit" onclick="editItem('pdf', ${pdf.id})"><i class="fas fa-edit"></i> Edit</button><button class="action-btn btn-view" onclick="viewItem('pdf', ${pdf.id})"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-delete" onclick="deleteItem('pdf', ${pdf.id})"><i class="fas fa-trash"></i> Del</button>${!pdf.has_file ? `<button class="action-btn btn-fix" onclick="fixPDFFile(${pdf.id})"><i class="fas fa-wrench"></i> Fix</button>` : ''}</td>
+                                </tr>`;
                             });
                         } else { html = '<tr><td colspan="9" class="text-center">No PDFs found</td></tr>'; }
                         $('#pdfsTableBody').html(html); checkTableScroll(); hideLoader();
@@ -2222,7 +2298,17 @@
                             blogsArray.sort((a, b) => b.id - a.id);
                             blogsArray.forEach((blog, index) => {
                                 let imageUrl = blog.featured_image;
-                                html += `<tr><td>${blogsArray.length - index}</td><td>${getThumbnailHtml(imageUrl, blog.title)}</td><td>${blog.title || 'Untitled'}</td><td>${blog.author || 'Admin'}</td><td>${blog.category || 'General'}</td><td>${blog.views || 0}</td><td>${blog.published || blog.published_at || 'Not published'}</td><td><span class="status-badge status-${blog.status === 'published' ? 'active' : 'pending'}">${blog.status || 'draft'}</span></td><td class="action-cell"><button class="action-btn btn-edit" onclick="editItem('blog', ${blog.id})"><i class="fas fa-edit"></i> Edit</button><button class="action-btn btn-view" onclick="viewItem('blog', ${blog.id})"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-delete" onclick="deleteItem('blog', ${blog.id})"><i class="fas fa-trash"></i> Del</button></td></tr>`;
+                                html += `<tr>
+                                    <td>${blogsArray.length - index}</td>
+                                    <td>${getThumbnailHtml(imageUrl, blog.title)}</td>
+                                    <td>${blog.title || 'Untitled'}</td>
+                                    <td>${blog.author || 'Admin'}</td>
+                                    <td>${blog.category || 'General'}</td>
+                                    <td>${blog.views || 0}</td>
+                                    <td>${blog.published || blog.published_at || 'Not published'}</td>
+                                    <td><span class="status-badge status-${blog.status === 'published' ? 'active' : 'pending'}">${blog.status || 'draft'}</span></td>
+                                    <td class="action-cell"><button class="action-btn btn-edit" onclick="editItem('blog', ${blog.id})"><i class="fas fa-edit"></i> Edit</button><button class="action-btn btn-view" onclick="viewItem('blog', ${blog.id})"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-delete" onclick="deleteItem('blog', ${blog.id})"><i class="fas fa-trash"></i> Del</button></td>
+                                </tr>`;
                             });
                         } else { html = '<tr><td colspan="9" class="text-center">No blogs found</td></tr>'; }
                         $('#blogsTableBody').html(html); checkTableScroll(); hideLoader();
@@ -2244,14 +2330,25 @@
                             packages.forEach((pkg, index) => {
                                 let price = parseFloat(pkg.price) || 0;
                                 let imageHtml = pkg.image ? `<img src="${pkg.image}" alt="${pkg.name}" class="thumbnail-img" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\\'no-thumbnail\\'><i class=\\'fas fa-image\\'></i></div>';">` : '<div class="no-thumbnail"><i class="fas fa-box"></i></div>';
-                                let popularBadge = pkg.popular ? '<span style="background:var(--champagne-gold); color:var(--deep-navy); padding:2px 6px; border-radius:12px; font-size:10px; margin-left:5px;">🔥 POPULAR</span>' : '';
-                                html += `<tr><td>${pkg.id}</td><td>${imageHtml}</td><td>${pkg.name} ${popularBadge}</td><td>$${price.toFixed(2)} ${pkg.is_recurring ? '/mo' : ''}</td><td>${pkg.package_type || 'N/A'}</td><td><span class="package-duration">${pkg.duration || 'Lifetime'}</span></td><td>${pkg.sales_count || 0}</td><td>$${(parseFloat(pkg.total_revenue) || 0).toFixed(2)}</td><td><span class="status-badge status-${pkg.status}">${pkg.status}</span></td><td class="action-cell"><button class="action-btn btn-edit" onclick="editItem('package', ${pkg.id})"><i class="fas fa-edit"></i></button><button class="action-btn btn-view" onclick="viewItem('package', ${pkg.id})"><i class="fas fa-eye"></i></button><button class="action-btn btn-delete" onclick="deleteItem('package', ${pkg.id})"><i class="fas fa-trash"></i></button><button class="action-btn btn-${pkg.popular ? 'warning' : 'success'}" onclick="togglePopular(${pkg.id})"><i class="fas fa-${pkg.popular ? 'star' : 'star-o'}"></i></button></td></tr>`;
+                                let popularBadge = pkg.popular ? '<span style="background:var(--yellow); color:var(--black); padding:2px 6px; border-radius:12px; font-size:10px; margin-left:5px;">🔥 POPULAR</span>' : '';
+                                html += `<tr>
+                                    <td>${pkg.id}</td>
+                                    <td>${imageHtml}</td>
+                                    <td>${pkg.name} ${popularBadge}</td>
+                                    <td>$${price.toFixed(2)} ${pkg.is_recurring ? '/mo' : ''}</td>
+                                    <td>${pkg.package_type || 'N/A'}</td>
+                                    <td><span class="package-duration">${pkg.duration || 'Lifetime'}</span></td>
+                                    <td>${pkg.sales_count || 0}</td>
+                                    <td>$${(parseFloat(pkg.total_revenue) || 0).toFixed(2)}</td>
+                                    <td><span class="status-badge status-${pkg.status}">${pkg.status}</span></td>
+                                    <td class="action-cell"><button class="action-btn btn-edit" onclick="editItem('package', ${pkg.id})"><i class="fas fa-edit"></i></button><button class="action-btn btn-view" onclick="viewItem('package', ${pkg.id})"><i class="fas fa-eye"></i></button><button class="action-btn btn-delete" onclick="deleteItem('package', ${pkg.id})"><i class="fas fa-trash"></i></button><button class="action-btn btn-${pkg.popular ? 'warning' : 'success'}" onclick="togglePopular(${pkg.id})"><i class="fas fa-${pkg.popular ? 'star' : 'star-o'}"></i></button></td>
+                                </tr>`;
                             });
                         } else { html = '<tr><td colspan="10" style="text-align:center; padding:40px;">No packages found. Click "ADD PACKAGE" to create one.</td></tr>'; }
                         $('#packagesTableBody').html(html); hideLoader();
-                    } catch(e) { console.error('Error processing packages:', e); $('#packagesTableBody').html('<tr><td colspan="10" style="text-align:center; color:var(--deep-crimson);">Error processing packages</td></tr>'); hideLoader(); }
+                    } catch(e) { console.error('Error processing packages:', e); $('#packagesTableBody').html('<tr><td colspan="10" style="text-align:center; color:var(--red);">Error processing packages</td></tr>'); hideLoader(); }
                 },
-                error: function(xhr) { console.error('Error loading packages:', xhr.responseText); $('#packagesTableBody').html('<tr><td colspan="10" style="text-align:center; color:var(--deep-crimson);">Error loading packages</td></tr>'); hideLoader(); }
+                error: function(xhr) { console.error('Error loading packages:', xhr.responseText); $('#packagesTableBody').html('<tr><td colspan="10" style="text-align:center; color:var(--red);">Error loading packages</td></tr>'); hideLoader(); }
             });
         }
         
@@ -2273,7 +2370,16 @@
                         if (ordersArray.length > 0) {
                             ordersArray.sort((a, b) => (b.id || 0) - (a.id || 0));
                             ordersArray.forEach((order, index) => {
-                                html += `<tr><td>${ordersArray.length - index}</td><td>${order.customer || 'Unknown'}</td><td>${order.package || order.item || 'N/A'}</td><td>${formatCurrency(order.amount, 'KES')}</td><td>${order.date || order.created_at || 'N/A'}</td><td>${order.payment || order.payment_method || 'N/A'}</td><td><span class="status-badge status-${order.status === 'completed' ? 'active' : 'pending'}">${order.status || 'pending'}</span></td><td class="action-cell"><button class="action-btn btn-view" onclick="viewItem('order', '${order.id || order.reference}')"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-edit" onclick="editItem('order', '${order.id || order.reference}')"><i class="fas fa-edit"></i> Edit</button></td></tr>`;
+                                html += `<tr>
+                                    <td>${ordersArray.length - index}</td>
+                                    <td>${order.customer || 'Unknown'}</td>
+                                    <td>${order.package || order.item || 'N/A'}</td>
+                                    <td>${formatCurrency(order.amount, 'KES')}</td>
+                                    <td>${order.date || order.created_at || 'N/A'}</td>
+                                    <td>${order.payment || order.payment_method || 'N/A'}</td>
+                                    <td><span class="status-badge status-${order.status === 'completed' ? 'active' : 'pending'}">${order.status || 'pending'}</span></td>
+                                    <td class="action-cell"><button class="action-btn btn-view" onclick="viewItem('order', '${order.id || order.reference}')"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-edit" onclick="editItem('order', '${order.id || order.reference}')"><i class="fas fa-edit"></i> Edit</button></td>
+                                </tr>`;
                             });
                         } else { html = '<tr><td colspan="8" class="text-center">No orders found</td></tr>'; }
                         $('#ordersTableBody').html(html); checkTableScroll(); hideLoader();
@@ -2292,7 +2398,16 @@
                         if (partnershipsArray.length > 0) {
                             partnershipsArray.sort((a, b) => b.id - a.id);
                             partnershipsArray.forEach((p, index) => {
-                                html += `<tr><td>${partnershipsArray.length - index}</td><td>${p.company || p.contact || 'N/A'}</td><td>${p.contact || p.email || 'N/A'}</td><td>${p.tier || 'N/A'}</td><td>${formatCurrency(p.amount, 'KES')}</td><td><span class="status-badge status-${p.nda === 'Signed' ? 'active' : 'pending'}">${p.nda || 'Pending'}</span></td><td><span class="status-badge status-${p.status === 'approved' ? 'active' : 'pending'}">${p.status || 'pending'}</span></td><td class="action-cell"><button class="action-btn btn-view" onclick="viewItem('partnership', ${p.id})"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-edit" onclick="editItem('partnership', ${p.id})"><i class="fas fa-edit"></i> Edit</button></td></tr>`;
+                                html += `<tr>
+                                    <td>${partnershipsArray.length - index}</td>
+                                    <td>${p.company || p.contact || 'N/A'}</td>
+                                    <td>${p.contact || p.email || 'N/A'}</td>
+                                    <td>${p.tier || 'N/A'}</td>
+                                    <td>${formatCurrency(p.amount, 'KES')}</td>
+                                    <td><span class="status-badge status-${p.nda === 'Signed' ? 'active' : 'pending'}">${p.nda || 'Pending'}</span></td>
+                                    <td><span class="status-badge status-${p.status === 'approved' ? 'active' : 'pending'}">${p.status || 'pending'}</span></td>
+                                    <td class="action-cell"><button class="action-btn btn-view" onclick="viewItem('partnership', ${p.id})"><i class="fas fa-eye"></i> View</button><button class="action-btn btn-edit" onclick="editItem('partnership', ${p.id})"><i class="fas fa-edit"></i> Edit</button></td>
+                                </tr>`;
                             });
                         } else { html = '<tr><td colspan="8" class="text-center">No partnerships found</td></tr>'; }
                         $('#partnershipsTableBody').html(html); checkTableScroll(); hideLoader();
@@ -2329,6 +2444,232 @@
                 },
                 error: function(xhr) { console.error("Error loading users report:", xhr.responseText); $('#newUsers').text('0'); $('#activeStudents').text('0'); $('#conversionRate').text('0%'); }
             });
+        }
+        
+        // ========== MERCHANDISE FUNCTIONS ==========
+        function loadMerchandise() {
+            $.ajax({
+                url: '/api/merchandise/',
+                method: 'GET',
+                success: function(response) {
+                    let items = response.items || [];
+                    let html = '';
+                    items.forEach(item => {
+                        html += `<tr>
+                            <td>${item.id}</td>
+                            <td>${item.image ? `<img src="${item.image}" class="thumbnail-img" style="width:50px;height:50px;object-fit:cover;">` : '<div class="no-thumbnail"><i class="fas fa-image"></i></div>'}</td>
+                            <td>${item.name}</td>
+                            <td>${item.category}</td>
+                            <td>KES ${parseFloat(item.price).toLocaleString()}</td>
+                            <td>${item.stock}</td>
+                            <td><span class="status-badge status-${item.status}">${item.status}</span></td>
+                            <td class="action-cell">
+                                <button class="action-btn btn-edit" onclick="editMerchandise(${item.id})"><i class="fas fa-edit"></i> Edit</button>
+                                <button class="action-btn btn-delete" onclick="deleteMerchandise(${item.id})"><i class="fas fa-trash"></i> Del</button>
+                            </td>
+                        </tr>`;
+                    });
+                    $('#merchandiseTableBody').html(html || '<tr><td colspan="8" class="text-center">No products</td></tr>');
+                }
+            });
+        }
+        
+        function openMerchandiseModal(product = null) {
+            let isEdit = !!product;
+            let html = `
+                <form id="merchandiseForm">
+                    <div class="form-group"><label>Product Name</label><input type="text" id="prod_name" class="form-control" value="${product ? product.name : ''}" required></div>
+                    <div class="form-row">
+                        <div class="form-col"><label>Category</label><select id="prod_category" class="form-control"><option value="apparel">Apparel</option><option value="accessories">Accessories</option><option value="tools">Tools</option><option value="books">Books</option></select></div>
+                        <div class="form-col"><label>Price (KES)</label><input type="number" id="prod_price" class="form-control" value="${product ? product.price : ''}" step="0.01" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col"><label>Stock</label><input type="number" id="prod_stock" class="form-control" value="${product ? product.stock : '0'}"></div>
+                        <div class="form-col"><label>Status</label><select id="prod_status" class="form-control"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+                    </div>
+                    <div class="form-group"><label>Description</label><textarea id="prod_desc" class="form-control" rows="3">${product ? product.description : ''}</textarea></div>
+                    <div class="form-group"><label>Product Image URL</label><input type="url" id="prod_image" class="form-control" value="${product ? product.image : ''}" placeholder="https://..."></div>
+                </form>
+            `;
+            $('#modalTitle').text(isEdit ? 'Edit Product' : 'Add Product');
+            $('#modalBody').html(html);
+            $('#modalSaveBtn').off('click').on('click', () => saveMerchandise(isEdit ? product.id : null));
+            $('#contentModal').fadeIn(200);
+        }
+        
+        function saveMerchandise(id) {
+            let data = {
+                name: $('#prod_name').val(),
+                category: $('#prod_category').val(),
+                price: $('#prod_price').val(),
+                stock: $('#prod_stock').val(),
+                description: $('#prod_desc').val(),
+                image: $('#prod_image').val(),
+                status: $('#prod_status').val()
+            };
+            let url = id ? `/api/merchandise/${id}/update/` : '/api/merchandise/create/';
+            $.ajax({
+                url: url,
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrftoken},
+                data: JSON.stringify(data),
+                success: function() { showToast('Product saved'); closeModal(); loadMerchandise(); },
+                error: function() { showToast('Error saving product', true); }
+            });
+        }
+        
+        function editMerchandise(id) {
+            $.ajax({
+                url: `/api/merchandise/${id}/`,
+                method: 'GET',
+                success: function(product) { openMerchandiseModal(product); },
+                error: function() { showToast('Error loading product', true); }
+            });
+        }
+        
+        function deleteMerchandise(id) {
+            if(confirm('Delete this product?')) {
+                $.ajax({
+                    url: `/api/merchandise/${id}/delete/`,
+                    method: 'POST',
+                    headers: {'X-CSRFToken': csrftoken},
+                    success: function() { showToast('Product deleted'); loadMerchandise(); },
+                    error: function() { showToast('Error deleting product', true); }
+                });
+            }
+        }
+        
+        // ========== TICKETS FUNCTIONS ==========
+        function loadTickets() {
+            $.ajax({
+                url: '/api/tickets/',
+                method: 'GET',
+                success: function(response) {
+                    let tickets = response.tickets || [];
+                    let html = '';
+                    tickets.forEach(t => {
+                        html += `<tr>
+                            <td>${t.id}</td>
+                            <td><span style="font-family:monospace">${t.ticket_number}</span></td>
+                            <td>${t.attendee_name}</td>
+                            <td>${t.attendee_phone}</td>
+                            <td>${t.attendee_email}</td>
+                            <td>${t.quantity}</td>
+                            <td>KES ${parseFloat(t.total_amount_kes).toLocaleString()}</td>
+                            <td>${t.event_title}</td>
+                            <td>${t.created_at}</td>
+                            <td>${t.checked_in ? '<span class="status-badge status-active">✓ Checked In</span>' : '<span class="status-badge status-pending">Not Checked</span>'}</td>
+                            <td><span class="status-badge status-active">${t.status}</span></td>
+                            <td class="action-cell">
+                                <button class="action-btn btn-view" onclick="viewTicket(${t.id})"><i class="fas fa-eye"></i> View</button>
+                                <button class="action-btn btn-edit" onclick="resendTicket(${t.id})"><i class="fas fa-envelope"></i> Resend</button>
+                                ${!t.checked_in ? `<button class="action-btn btn-success" onclick="checkInTicket(${t.id})"><i class="fas fa-check"></i> Check In</button>` : ''}
+                            </td>
+                        </tr>`;
+                    });
+                    $('#ticketsTableBody').html(html || '<tr><td colspan="12" class="text-center">No tickets</td></tr>');
+                }
+            });
+        }
+        
+        function viewTicket(id) {
+            $.ajax({
+                url: `/api/tickets/${id}/`,
+                method: 'GET',
+                success: function(t) {
+                    let html = `
+                        <div style="padding:10px">
+                            <h4>Ticket Details</h4>
+                            <div class="form-group"><strong>Ticket #:</strong> ${t.ticket_number}</div>
+                            <div class="form-group"><strong>Attendee:</strong> ${t.attendee_name}</div>
+                            <div class="form-group"><strong>Phone:</strong> ${t.attendee_phone}</div>
+                            <div class="form-group"><strong>Email:</strong> ${t.attendee_email}</div>
+                            <div class="form-group"><strong>Quantity:</strong> ${t.quantity}</div>
+                            <div class="form-group"><strong>Total:</strong> KES ${parseFloat(t.total_amount_kes).toLocaleString()}</div>
+                            <div class="form-group"><strong>Event:</strong> ${t.event_title}</div>
+                            <div class="form-group"><strong>Venue:</strong> ${t.event_venue}</div>
+                            <div class="form-group"><strong>Date:</strong> ${new Date(t.event_date).toLocaleString()}</div>
+                            <div class="form-group"><strong>Status:</strong> ${t.status}</div>
+                            <div class="form-group"><strong>Checked In:</strong> ${t.checked_in ? 'Yes at ' + new Date(t.checked_in_at).toLocaleString() : 'No'}</div>
+                        </div>
+                    `;
+                    $('#modalTitle').text('Ticket Details');
+                    $('#modalBody').html(html);
+                    $('#modalSaveBtn').hide();
+                    $('#contentModal').fadeIn(200);
+                }
+            });
+        }
+        
+        function resendTicket(id) {
+            $.ajax({
+                url: `/api/tickets/${id}/resend/`,
+                method: 'POST',
+                headers: {'X-CSRFToken': csrftoken},
+                success: function() { showToast('Ticket email resent'); },
+                error: function() { showToast('Error resending email', true); }
+            });
+        }
+        
+        function checkInTicket(id) {
+            if(confirm('Mark this ticket as checked in?')) {
+                $.ajax({
+                    url: `/api/tickets/${id}/checkin/`,
+                    method: 'POST',
+                    headers: {'X-CSRFToken': csrftoken},
+                    success: function() { showToast('Ticket checked in'); loadTickets(); },
+                    error: function() { showToast('Error checking in', true); }
+                });
+            }
+        }
+        
+        // ========== MERCHANDISE ORDERS FUNCTIONS ==========
+        function loadMerchandiseOrders() {
+            $.ajax({
+                url: '/api/merchandise-orders/',
+                method: 'GET',
+                success: function(response) {
+                    let orders = response.orders || [];
+                    let html = '';
+                    orders.forEach(o => {
+                        html += `<tr>
+                            <td>${o.order_number}</td>
+                            <td>${o.customer_name}</td>
+                            <td>${o.customer_phone}</td>
+                            <td>${o.customer_email}</td>
+                            <td>KES ${parseFloat(o.total).toLocaleString()}</td>
+                            <td><span class="status-badge status-${o.status}">${o.status}</span></td>
+                            <td>${o.created_at}</td>
+                            <td class="action-cell">
+                                <select onchange="updateOrderStatus(${o.id}, this.value)" class="status-select">
+                                    <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="paid" ${o.status === 'paid' ? 'selected' : ''}>Paid</option>
+                                    <option value="processing" ${o.status === 'processing' ? 'selected' : ''}>Processing</option>
+                                    <option value="shipped" ${o.status === 'shipped' ? 'selected' : ''}>Shipped</option>
+                                    <option value="delivered" ${o.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                                    <option value="cancelled" ${o.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                                </select>
+                            </td>
+                        </tr>`;
+                    });
+                    $('#merchandiseOrdersTableBody').html(html || '<tr><td colspan="8" class="text-center">No orders</td></tr>');
+                }
+            });
+        }
+        
+        function updateOrderStatus(id, status) {
+            $.ajax({
+                url: `/api/merchandise-orders/${id}/update-status/`,
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrftoken},
+                data: JSON.stringify({status: status}),
+                success: function() { showToast('Order status updated'); },
+                error: function() { showToast('Error updating status', true); }
+            });
+        }
+        
+        function exportData(type) {
+            window.location.href = `/api/${type}/export/`;
         }
         
         function downloadUsers(format) {
@@ -2475,1121 +2816,254 @@
         
         function closeModal() { $('#contentModal').fadeOut(200); currentModalType = ''; currentEditId = null; }
         
-        // ========== ALL FORM GENERATOR FUNCTIONS ==========
-        
+        // ========== FORM GENERATOR FUNCTIONS ==========
         function getUserForm() {
             return `<form id="modalForm">
                 <div class="form-row">
-                    <div class="form-col">
-                        <label>Username</label>
-                        <input type="text" id="username" class="form-control" placeholder="johndoe" required>
-                    </div>
-                    <div class="form-col">
-                        <label>Password</label>
-                        <input type="password" id="password" class="form-control" placeholder="********" required>
-                    </div>
+                    <div class="form-col"><label>Username</label><input type="text" id="username" required></div>
+                    <div class="form-col"><label>Password</label><input type="password" id="password" required></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-col">
-                        <label>First Name</label>
-                        <input type="text" id="first_name" class="form-control" placeholder="John">
-                    </div>
-                    <div class="form-col">
-                        <label>Last Name</label>
-                        <input type="text" id="last_name" class="form-control" placeholder="Doe">
-                    </div>
+                    <div class="form-col"><label>First Name</label><input type="text" id="first_name"></div>
+                    <div class="form-col"><label>Last Name</label><input type="text" id="last_name"></div>
                 </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="email" class="form-control" placeholder="john@example.com" required>
-                </div>
-                <div class="form-group">
-                    <label>Phone</label>
-                    <input type="text" id="phone" class="form-control" placeholder="+254700000000">
-                </div>
-                <div class="form-group">
-                    <label>User Tier</label>
-                    <select id="tier" class="form-control">
-                        <option value="citizen">Citizen</option>
-                        <option value="studyhall">StudyHall</option>
-                        <option value="society">Society</option>
-                    </select>
-                </div>
+                <div class="form-group"><label>Email</label><input type="email" id="email" required></div>
+                <div class="form-group"><label>Phone</label><input type="text" id="phone"></div>
+                <div class="form-group"><label>User Tier</label><select id="tier"><option value="citizen">Citizen</option><option value="studyhall">StudyHall</option><option value="society">Society</option></select></div>
             </form>`;
         }
         
         function getCourseForm() {
             return `<form id="modalForm">
-                <div class="form-group">
-                    <label>Course Title</label>
-                    <input type="text" id="name" class="form-control" placeholder="e.g., Professional Trading Masterclass" required>
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="description" class="form-control" rows="3" placeholder="Course description..."></textarea>
-                </div>
+                <div class="form-group"><label>Course Title</label><input type="text" id="name" required></div>
+                <div class="form-group"><label>Description</label><textarea id="description" rows="3"></textarea></div>
                 <div class="form-row">
-                    <div class="form-col">
-                        <label>Price (USD)</label>
-                        <input type="number" id="price" class="form-control" placeholder="1999" value="0" step="0.01" required>
-                    </div>
-                    <div class="form-col">
-                        <label>Duration (weeks)</label>
-                        <input type="number" id="duration_weeks" class="form-control" value="4">
-                    </div>
+                    <div class="form-col"><label>Price (USD)</label><input type="number" id="price" value="0" step="0.01" required></div>
+                    <div class="form-col"><label>Duration (weeks)</label><input type="number" id="duration_weeks" value="4"></div>
                 </div>
-                <div class="form-group">
-                    <label>Course Thumbnail</label>
-                    <input type="file" id="thumbnail" accept="image/*" class="form-control" required>
-                    <small class="text-muted">Upload course cover image</small>
-                </div>
+                <div class="form-group"><label>Course Thumbnail</label><input type="file" id="thumbnail" accept="image/*" required></div>
             </form>`;
         }
         
         function getVideoForm() {
             return `<form id="modalForm" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label>Video Title</label>
-                    <input type="text" id="title" class="form-control" placeholder="e.g., Introduction to Market Analysis" required>
-                </div>
+                <div class="form-group"><label>Video Title</label><input type="text" id="title" required></div>
                 <div class="form-row">
-                    <div class="form-col">
-                        <label>Course</label>
-                        <select id="course_id" class="form-control">
-                            <option value="">Select Course</option>
-                        </select>
-                    </div>
-                    <div class="form-col">
-                        <label>Category</label>
-                        <select id="category" class="form-control">
-                            <option value="PTM">PTM Series</option>
-                            <option value="POTM">POTM Series</option>
-                            <option value="PFTM">PFTM Series</option>
-                            <option value="Webinars">Webinars</option>
-                        </select>
-                    </div>
+                    <div class="form-col"><label>Course</label><select id="course_id"><option value="">Select Course</option></select></div>
+                    <div class="form-col"><label>Category</label><select id="category"><option value="PTM">PTM Series</option><option value="POTM">POTM Series</option><option value="PFTM">PFTM Series</option><option value="Webinars">Webinars</option></select></div>
                 </div>
-                <div class="form-group">
-                    <label>Video File</label>
-                    <input type="file" id="video_file" accept="video/mp4,video/mov,video/avi,video/mkv" class="form-control" required>
-                    <small class="text-muted">Upload MP4, MOV, AVI, or MKV file</small>
-                </div>
-                <div class="form-group">
-                    <label>Thumbnail</label>
-                    <input type="file" id="thumbnail" accept="image/*" class="form-control">
-                    <small class="text-muted">Upload video thumbnail (optional)</small>
-                </div>
+                <div class="form-group"><label>Video File</label><input type="file" id="video_file" accept="video/*" required></div>
+                <div class="form-group"><label>Thumbnail</label><input type="file" id="thumbnail" accept="image/*"></div>
                 <div class="form-row">
-                    <div class="form-col">
-                        <label>Duration (minutes)</label>
-                        <input type="number" id="duration" class="form-control" placeholder="45" value="30" required>
-                    </div>
-                    <div class="form-col">
-                        <label>Price (USD)</label>
-                        <input type="number" id="price" class="form-control" placeholder="0 for free" value="0" step="0.01">
-                    </div>
+                    <div class="form-col"><label>Duration (minutes)</label><input type="number" id="duration" value="30" required></div>
+                    <div class="form-col"><label>Price (USD)</label><input type="number" id="price" value="0" step="0.01"></div>
                 </div>
-                <div class="form-group">
-                    <label>Module/Chapter</label>
-                    <input type="text" id="module" class="form-control" placeholder="e.g., Chapter 1">
-                </div>
+                <div class="form-group"><label>Module/Chapter</label><input type="text" id="module"></div>
             </form>`;
         }
         
         function getPDFForm() {
             return `<form id="modalForm" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label>PDF Title</label>
-                    <input type="text" id="title" class="form-control" placeholder="e.g., Trading Workbook" required>
-                </div>
-                <div class="form-group">
-                    <label>Course</label>
-                    <select id="course_id" class="form-control">
-                        <option value="">All Courses</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>PDF File</label>
-                    <input type="file" id="pdf_file" accept=".pdf" class="form-control" required>
-                    <small class="text-muted">Upload PDF file only</small>
-                </div>
-                <div class="form-group">
-                    <label>Cover Image</label>
-                    <input type="file" id="cover_image" accept="image/*" class="form-control">
-                    <small class="text-muted">Upload PDF cover (optional)</small>
-                </div>
+                <div class="form-group"><label>PDF Title</label><input type="text" id="title" required></div>
+                <div class="form-group"><label>Course</label><select id="course_id"><option value="">All Courses</option></select></div>
+                <div class="form-group"><label>PDF File</label><input type="file" id="pdf_file" accept=".pdf" required></div>
+                <div class="form-group"><label>Cover Image</label><input type="file" id="cover_image" accept="image/*"></div>
                 <div class="form-row">
-                    <div class="form-col">
-                        <label>Pages</label>
-                        <input type="number" id="pages" class="form-control" placeholder="48">
-                    </div>
-                    <div class="form-col">
-                        <label>Price (USD)</label>
-                        <input type="number" id="price" class="form-control" placeholder="0 for free" value="0" step="0.01">
-                    </div>
+                    <div class="form-col"><label>Pages</label><input type="number" id="pages"></div>
+                    <div class="form-col"><label>Price (USD)</label><input type="number" id="price" value="0" step="0.01"></div>
                 </div>
-                <div class="form-group">
-                    <label>Access Level</label>
-                    <select id="access_level" class="form-control">
-                        <option value="free">Free</option>
-                        <option value="citizen">Citizen</option>
-                        <option value="studyhall">Study Hall</option>
-                        <option value="society">Society</option>
-                        <option value="paid">Paid Only</option>
-                    </select>
-                </div>
+                <div class="form-group"><label>Access Level</label><select id="access_level"><option value="free">Free</option><option value="citizen">Citizen</option><option value="studyhall">Study Hall</option><option value="society">Society</option><option value="paid">Paid Only</option></select></div>
             </form>`;
         }
         
         function getBlogForm() {
             return `<form id="modalForm" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label>Blog Title</label>
-                    <input type="text" id="title" class="form-control" placeholder="e.g., Weekly Market Analysis" required>
-                </div>
-                <div class="form-group">
-                    <label>Content</label>
-                    <textarea id="content" class="form-control" rows="5" placeholder="Write your blog post..." required></textarea>
-                </div>
+                <div class="form-group"><label>Blog Title</label><input type="text" id="title" required></div>
+                <div class="form-group"><label>Content</label><textarea id="content" rows="5" required></textarea></div>
                 <div class="form-row">
-                    <div class="form-col">
-                        <label>Category</label>
-                        <select id="category" class="form-control">
-                            <option value="market_analysis">Market Analysis</option>
-                            <option value="trading_psychology">Trading Psychology</option>
-                            <option value="options_strategies">Options Strategies</option>
-                            <option value="forex_trading">Forex Trading</option>
-                            <option value="general">General</option>
-                        </select>
-                    </div>
-                    <div class="form-col">
-                        <label>Status</label>
-                        <select id="status" class="form-control">
-                            <option value="published">Published</option>
-                            <option value="draft">Draft</option>
-                        </select>
-                    </div>
+                    <div class="form-col"><label>Category</label><select id="category"><option value="market_analysis">Market Analysis</option><option value="trading_psychology">Trading Psychology</option><option value="options_strategies">Options Strategies</option><option value="forex_trading">Forex Trading</option><option value="general">General</option></select></div>
+                    <div class="form-col"><label>Status</label><select id="status"><option value="published">Published</option><option value="draft">Draft</option></select></div>
                 </div>
-                <div class="form-group">
-                    <label>Featured Image</label>
-                    <input type="file" id="featured_image" accept="image/*" class="form-control">
-                    <small class="text-muted">Upload blog featured image</small>
-                </div>
-                <div class="form-group">
-                    <label>Tags (comma separated)</label>
-                    <input type="text" id="tags" class="form-control" placeholder="trading, forex, analysis">
-                </div>
+                <div class="form-group"><label>Featured Image</label><input type="file" id="featured_image" accept="image/*"></div>
+                <div class="form-group"><label>Tags (comma separated)</label><input type="text" id="tags"></div>
             </form>`;
         }
         
         function getPackageForm() {
             return `<form id="modalForm">
                 <div class="form-row">
-                    <div class="form-col">
-                        <label>Package Name</label>
-                        <input type="text" id="name" class="form-control" placeholder="e.g., Market Consultation" required>
-                    </div>
-                    <div class="form-col">
-                        <label>Price (USD)</label>
-                        <input type="number" id="price" class="form-control" placeholder="200" step="0.01" required>
-                    </div>
+                    <div class="form-col"><label>Package Name</label><input type="text" id="name" required></div>
+                    <div class="form-col"><label>Price (USD)</label><input type="number" id="price" step="0.01" required></div>
                 </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="description" class="form-control" rows="3" placeholder="Package description..." required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Package Type</label>
-                    <select id="package_type" class="form-control">
-                        <option value="trading">Trading Package</option>
-                        <option value="partnership">Partnership</option>
-                        <option value="course">Course</option>
-                        <option value="mentorship">Mentorship</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Features (one per line)</label>
-                    <textarea id="features" class="form-control" rows="4" placeholder="✓ Feature 1&#10;✓ Feature 2&#10;✓ Feature 3" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Package Image</label>
-                    <input type="file" id="image" accept="image/*" class="form-control">
-                </div>
+                <div class="form-group"><label>Description</label><textarea id="description" rows="3" required></textarea></div>
+                <div class="form-group"><label>Package Type</label><select id="package_type"><option value="trading">Trading Package</option><option value="partnership">Partnership</option><option value="course">Course</option><option value="mentorship">Mentorship</option></select></div>
+                <div class="form-group"><label>Features (one per line)</label><textarea id="features" rows="4" required></textarea></div>
+                <div class="form-group"><label>Package Image</label><input type="file" id="image" accept="image/*"></div>
             </form>`;
         }
         
         // ========== SUBMIT FORM FUNCTIONS ==========
-        
         function submitUserForm() {
-            const data = { 
-                username: $('#username').val(), 
-                password: $('#password').val(), 
-                first_name: $('#first_name').val(), 
-                last_name: $('#last_name').val(), 
-                email: $('#email').val(), 
-                phone: $('#phone').val(), 
-                tier: $('#tier').val() 
-            };
+            const data = { username: $('#username').val(), password: $('#password').val(), first_name: $('#first_name').val(), last_name: $('#last_name').val(), email: $('#email').val(), phone: $('#phone').val(), tier: $('#tier').val() };
             showLoader('Creating User', 'Please wait...');
             $.ajax({
-                url: '/admin/api/users/create/', 
-                method: 'POST', 
-                headers: {'X-CSRFToken': csrftoken}, 
-                data: JSON.stringify(data),
-                success: function(response) {
-                    hideLoader(); 
-                    showToast('User created successfully!'); 
-                    closeModal(); 
-                    loadUsers(); 
-                    loadDashboardData();
-                },
-                error: function(xhr) { 
-                    console.error("Error creating user:", xhr.responseText); 
-                    hideLoader(); 
-                    let errorMsg = 'Error creating user'; 
-                    try { 
-                        let resp = JSON.parse(xhr.responseText); 
-                        errorMsg = resp.error || resp.message || errorMsg; 
-                    } catch(e) {} 
-                    showToast(errorMsg, true); 
-                }
+                url: '/admin/api/users/create/', method: 'POST', headers: {'X-CSRFToken': csrftoken, 'Content-Type': 'application/json'}, data: JSON.stringify(data),
+                success: function() { hideLoader(); showToast('User created successfully!'); closeModal(); loadUsers(); loadDashboardData(); },
+                error: function() { hideLoader(); showToast('Error creating user', true); }
             });
         }
         
         function submitCourseForm() {
-    try {
-        const title = $('#name').val().trim();
-        const description = $('#description').val();
-        const price = $('#price').val();
-        const duration_weeks = $('#duration_weeks').val();
-        const thumbnailFile = $('#thumbnail')[0]?.files[0];
-        
-        if (!title) { showToast('Please enter a course title', true); return; }
-        if (!thumbnailFile) { showToast('Please select a thumbnail', true); return; }
-        
-        showLoader('🚀 Creating Course', 'Uploading thumbnail...', true);
-        
-        // ===== STEP 1: Get presigned URL for thumbnail =====
-        $.ajax({
-            url: '/admin/api/get-s3-presigned-url/',
-            method: 'POST',
-            headers: {'X-CSRFToken': csrftoken},
-            data: JSON.stringify({
-                filename: thumbnailFile.name,
-                filetype: thumbnailFile.type,
-                folder: 'course_thumbnails',
-                method: 'put'
-            }),
-            success: function(response) {
-                if (!response.presigned_url) {
-                    hideLoader();
-                    showToast('Failed to get upload URL', true);
-                    return;
-                }
-                
-                // ===== STEP 2: Upload thumbnail directly to S3 using PUT =====
-                updateLoaderProgress(10, 'Uploading to S3...', 0, thumbnailFile.size);
-                
-                const xhr = new XMLHttpRequest();
-                xhr.open('PUT', response.presigned_url, true);
-                xhr.setRequestHeader('Content-Type', thumbnailFile.type);
-                
-                xhr.upload.onprogress = function(e) {
-                    if (e.lengthComputable) {
-                        const percent = 10 + Math.round((e.loaded / e.total) * 80);
-                        updateLoaderProgress(percent, `Uploading: ${percent-10}%`, e.loaded, e.total);
-                    }
-                };
-                
-                xhr.onload = function() {
-                    if (xhr.status === 200) {
-                        console.log("✅ Thumbnail uploaded, S3 key:", response.key);
-                        
-                        updateLoaderProgress(95, 'Creating course record...');
-                        
-                        // ===== STEP 3: Create course record with the S3 key =====
-                        const courseData = {
-                            title: title,
-                            name: title,
-                            description: description,
-                            price: parseFloat(price) || 0,
-                            duration_weeks: parseInt(duration_weeks) || 4,
-                            thumbnail_key: response.key
-                        };
-                        
-                        $.ajax({
-                            url: '/admin/api/courses/create/',
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': csrftoken,
-                                'Content-Type': 'application/json'
-                            },
-                            data: JSON.stringify(courseData),
-                            success: function(res) {
-                                hideLoader();
-                                showToast('✅ Course created!');
-                                closeModal();
-                                loadCourses();
-                            },
-                            error: function(xhr) {
-                                console.error("Error creating course:", xhr.responseText);
-                                hideLoader();
-                                showToast('Error creating course', true);
-                            }
-                        });
-                    } else {
-                        hideLoader();
-                        showToast(`Upload failed: ${xhr.status}`, true);
-                    }
-                };
-                
-                xhr.onerror = function() {
-                    hideLoader();
-                    showToast('Network error', true);
-                };
-                
-                xhr.send(thumbnailFile);
-            },
-            error: function(xhr) {
-                hideLoader();
-                showToast('Failed to get upload URL', true);
-                console.error("Error getting presigned URL:", xhr.responseText);
-            }
-        });
-        
-    } catch(e) {
-        console.error('Error:', e);
-        hideLoader();
-        showToast('Error: ' + e.message, true);
-    }
-}
+            const formData = new FormData();
+            formData.append('title', $('#name').val());
+            formData.append('description', $('#description').val());
+            formData.append('price', $('#price').val());
+            formData.append('duration_weeks', $('#duration_weeks').val());
+            if ($('#thumbnail')[0].files[0]) formData.append('thumbnail', $('#thumbnail')[0].files[0]);
+            showLoader('Creating Course', 'Please wait...');
+            $.ajax({
+                url: '/admin/api/courses/create/', method: 'POST', headers: {'X-CSRFToken': csrftoken}, data: formData, processData: false, contentType: false,
+                success: function() { hideLoader(); showToast('Course created!'); closeModal(); loadCourses(); },
+                error: function() { hideLoader(); showToast('Error creating course', true); }
+            });
+        }
         
         function submitVideoForm() {
-    try {
-        const title = $('#title').val().trim();
-        const videoFile = $('#video_file')[0]?.files[0];
-        const thumbnailFile = $('#thumbnail')[0]?.files[0];
-        const courseId = $('#course_id').val();
-        
-        if (!title) { showToast('Please enter a video title', true); return; }
-        if (!videoFile) { showToast('Please select a video file', true); return; }
-        
-        showLoader('🚀 Uploading Video', 'Getting upload URL...', true);
-        
-        // ===== STEP 1: Get presigned URL for video =====
-        $.ajax({
-            url: '/admin/api/get-s3-presigned-url/',
-            method: 'POST',
-            headers: {'X-CSRFToken': csrftoken},
-            data: JSON.stringify({
-                filename: videoFile.name,
-                filetype: videoFile.type || 'video/mp4',
-                folder: 'videos'
-            }),
-            success: function(response) {
-                if (!response.presigned_url) {
-                    hideLoader();
-                    showToast('Failed to get upload URL', true);
-                    return;
-                }
-                
-                // ===== STEP 2: Upload video directly to S3 using PUT =====
-                updateLoaderProgress(10, 'Uploading to S3...', 0, videoFile.size);
-                
-                const xhr = new XMLHttpRequest();
-                xhr.open('PUT', response.presigned_url, true);
-                xhr.setRequestHeader('Content-Type', videoFile.type);
-                
-                xhr.upload.onprogress = function(e) {
-                    if (e.lengthComputable) {
-                        const percent = 10 + Math.round((e.loaded / e.total) * 40);
-                        updateLoaderProgress(percent, `Uploading: ${percent-10}%`, e.loaded, e.total);
-                    }
-                };
-                
-                xhr.onload = function() {
-                    if (xhr.status === 200) {
-                        console.log("✅ Video uploaded, S3 key:", response.key);
-                        
-                        // If we have thumbnail, upload it next
-                        if (thumbnailFile) {
-                            uploadVideoThumbnail(thumbnailFile, {
-                                title: title,
-                                courseId: courseId,
-                                videoKey: response.key,
-                                category: $('#category').val(),
-                                duration: $('#duration').val(),
-                                price: $('#price').val(),
-                                module: $('#module').val()
-                            });
-                        } else {
-                            // ===== STEP 3: Create database record =====
-                            createVideoRecord({
-                                title: title,
-                                courseId: courseId,
-                                videoKey: response.key,
-                                category: $('#category').val(),
-                                duration: $('#duration').val(),
-                                price: $('#price').val(),
-                                module: $('#module').val()
-                            });
-                        }
-                    } else {
-                        hideLoader();
-                        showToast(`Upload failed: ${xhr.status}`, true);
-                    }
-                };
-                
-                xhr.onerror = function() {
-                    hideLoader();
-                    showToast('Network error', true);
-                };
-                
-                xhr.send(videoFile);
-            },
-            error: function(xhr) {
-                hideLoader();
-                showToast('Failed to get upload URL', true);
-            }
-        });
-    } catch(e) {
-        console.error("Error:", e);
-        hideLoader();
-        showToast('Error: ' + e.message, true);
-    }
-}
-
-function uploadVideoThumbnail(file, videoData) {
-    updateLoaderProgress(60, 'Uploading thumbnail...', 0, file.size);
-    
-    $.ajax({
-        url: '/admin/api/get-s3-presigned-url/',
-        method: 'POST',
-        headers: {'X-CSRFToken': csrftoken},
-        data: JSON.stringify({
-            filename: file.name,
-            filetype: file.type,
-            folder: 'thumbnails'
-        }),
-        success: function(response) {
-            const xhr = new XMLHttpRequest();
-            xhr.open('PUT', response.presigned_url, true);
-            xhr.setRequestHeader('Content-Type', file.type);
-            
-            xhr.upload.onprogress = function(e) {
-                if (e.lengthComputable) {
-                    const percent = 60 + Math.round((e.loaded / e.total) * 20);
-                    updateLoaderProgress(percent, `Thumbnail: ${percent-60}%`, e.loaded, e.total);
-                }
-            };
-            
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    createVideoRecord({
-                        title: videoData.title,
-                        courseId: videoData.courseId,
-                        videoKey: videoData.videoKey,
-                        thumbnailKey: response.key,
-                        category: videoData.category,
-                        duration: videoData.duration,
-                        price: videoData.price,
-                        module: videoData.module
+            const formData = new FormData();
+            formData.append('title', $('#title').val());
+            formData.append('course_id', $('#course_id').val());
+            formData.append('category', $('#category').val());
+            formData.append('duration', $('#duration').val());
+            formData.append('price', $('#price').val());
+            formData.append('module', $('#module').val());
+            if ($('#video_file')[0].files[0]) formData.append('video_file', $('#video_file')[0].files[0]);
+            if ($('#thumbnail')[0].files[0]) formData.append('thumbnail', $('#thumbnail')[0].files[0]);
+            showLoader('Uploading Video', 'Please wait...', true);
+            $.ajax({
+                url: '/admin/api/videos/create/', method: 'POST', headers: {'X-CSRFToken': csrftoken}, data: formData, processData: false, contentType: false,
+                xhr: function() {
+                    let xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) updateLoaderProgress(Math.round((e.loaded / e.total) * 90), 'Uploading...', e.loaded, e.total);
                     });
-                } else {
-                    createVideoRecord(videoData);
-                }
-            };
-            
-            xhr.onerror = function() {
-                createVideoRecord(videoData);
-            };
-            
-            xhr.send(file);
-        },
-        error: function() {
-            createVideoRecord(videoData);
+                    return xhr;
+                },
+                success: function() { hideLoader(); showToast('Video uploaded!'); closeModal(); loadVideos(); },
+                error: function() { hideLoader(); showToast('Error uploading video', true); }
+            });
         }
-    });
-}
-
-function createVideoRecord(data) {
-    updateLoaderProgress(90, 'Creating video record...');
-    
-    const payload = {
-        title: data.title,
-        s3_key: data.videoKey,
-        course_id: data.courseId || null,
-        category: data.category || 'PTM',
-        duration: parseInt(data.duration) || 30,
-        price: parseFloat(data.price) || 0,
-        module: data.module || ''
-    };
-    
-    if (data.thumbnailKey) {
-        payload.thumbnail_key = data.thumbnailKey;
-    }
-    
-    $.ajax({
-        url: '/admin/api/videos/create/',
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrftoken,
-            'Content-Type': 'application/json'
-        },
-        data: JSON.stringify(payload),
-        success: function(response) {
-            hideLoader();
-            showToast('✅ Video uploaded successfully!');
-            closeModal();
-            loadVideos();
-        },
-        error: function(xhr) {
-            console.error("Error creating video:", xhr.responseText);
-            hideLoader();
-            showToast('Video uploaded but database save failed', true);
-            closeModal();
-            loadVideos();
+        
+        function submitPDFForm() {
+            const formData = new FormData();
+            formData.append('title', $('#title').val());
+            formData.append('course_id', $('#course_id').val());
+            formData.append('pages', $('#pages').val());
+            formData.append('price', $('#price').val());
+            formData.append('access_level', $('#access_level').val());
+            if ($('#pdf_file')[0].files[0]) formData.append('pdf_file', $('#pdf_file')[0].files[0]);
+            if ($('#cover_image')[0].files[0]) formData.append('cover_image', $('#cover_image')[0].files[0]);
+            showLoader('Uploading PDF', 'Please wait...', true);
+            $.ajax({
+                url: '/admin/api/pdfs/create/', method: 'POST', headers: {'X-CSRFToken': csrftoken}, data: formData, processData: false, contentType: false,
+                xhr: function() {
+                    let xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) updateLoaderProgress(Math.round((e.loaded / e.total) * 90), 'Uploading...', e.loaded, e.total);
+                    });
+                    return xhr;
+                },
+                success: function() { hideLoader(); showToast('PDF uploaded!'); closeModal(); loadPDFs(); },
+                error: function() { hideLoader(); showToast('Error uploading PDF', true); }
+            });
         }
-    });
-}
-        
-function submitPDFForm() {
-    try {
-        const title = $('#title').val().trim();
-        const pdfFile = $('#pdf_file')[0]?.files[0];
-        const coverFile = $('#cover_image')[0]?.files[0];
-        const courseId = $('#course_id').val();
-        const pages = $('#pages').val();
-        const price = $('#price').val();
-        const accessLevel = $('#access_level').val();
-        
-        if (!title) { showToast('Please enter a PDF title', true); return; }
-        if (!pdfFile) { showToast('Please select a PDF file', true); return; }
-        if (pdfFile.type !== 'application/pdf') { showToast('Please upload a valid PDF file', true); return; }
-        
-        showLoader('🚀 Uploading PDF', 'Getting upload URL...', true);
-        
-        // Show file size info
-        $('#totalSize').text(formatFileSize(pdfFile.size));
-        $('#remainingSize').text(formatFileSize(pdfFile.size));
-        
-        // ===== STEP 1: Get presigned URL for PDF =====
-        $.ajax({
-            url: '/admin/api/get-s3-presigned-url/',
-            method: 'POST',
-            headers: {'X-CSRFToken': csrftoken},
-            data: JSON.stringify({
-                filename: pdfFile.name,
-                filetype: 'application/pdf',
-                folder: 'pdfs'
-            }),
-            success: function(response) {
-                if (!response.presigned_url) {
-                    hideLoader();
-                    showToast('Failed to get upload URL', true);
-                    return;
-                }
-                
-                // ===== STEP 2: Upload PDF directly to S3 using PUT =====
-                updateLoaderProgress(10, 'Uploading PDF to S3...', 0, pdfFile.size);
-                
-                const xhr = new XMLHttpRequest();
-                xhr.open('PUT', response.presigned_url, true);
-                xhr.setRequestHeader('Content-Type', 'application/pdf');
-                
-                xhr.upload.onprogress = function(e) {
-                    if (e.lengthComputable) {
-                        const percent = 10 + Math.round((e.loaded / e.total) * 40);
-                        updateLoaderProgress(percent, `Uploading PDF: ${percent-10}%`, e.loaded, e.total);
-                    }
-                };
-                
-                xhr.onload = function() {
-                    if (xhr.status === 200) {
-                        console.log("✅ PDF uploaded, S3 key:", response.key);
-                        
-                        // Get file size display
-                        const fileSizeBytes = pdfFile.size;
-                        let sizeDisplay = '';
-                        if (fileSizeBytes < 1024) {
-                            sizeDisplay = `${fileSizeBytes} B`;
-                        } else if (fileSizeBytes < 1024 * 1024) {
-                            sizeDisplay = `${(fileSizeBytes / 1024).toFixed(1)} KB`;
-                        } else {
-                            sizeDisplay = `${(fileSizeBytes / (1024 * 1024)).toFixed(1)} MB`;
-                        }
-                        
-                        const pdfData = {
-                            title: title,
-                            course_id: courseId,
-                            pages: pages || 0,
-                            price: price || 0,
-                            access_level: accessLevel || 'free',
-                            pdf_key: response.key,
-                            size_display: sizeDisplay
-                        };
-                        
-                        // If we have cover image, upload it next
-                        if (coverFile) {
-                            uploadPDFCover(coverFile, pdfData);
-                        } else {
-                            // ===== STEP 3: Create database record =====
-                            createPDFRecord(pdfData);
-                        }
-                    } else {
-                        hideLoader();
-                        showToast(`PDF upload failed: ${xhr.status}`, true);
-                    }
-                };
-                
-                xhr.onerror = function() {
-                    hideLoader();
-                    showToast('Network error', true);
-                };
-                
-                xhr.send(pdfFile);
-            },
-            error: function(xhr) {
-                hideLoader();
-                showToast('Failed to get upload URL', true);
-                console.error("Error getting presigned URL:", xhr.responseText);
-            }
-        });
-        
-    } catch(e) {
-        hideLoader();
-        showToast('Error: ' + e.message, true);
-    }
-}
-
-function uploadPDFCover(file, pdfData) {
-    updateLoaderProgress(60, 'Uploading cover image...', 0, file.size);
-    
-    $.ajax({
-        url: '/admin/api/get-s3-presigned-url/',
-        method: 'POST',
-        headers: {'X-CSRFToken': csrftoken},
-        data: JSON.stringify({
-            filename: file.name,
-            filetype: file.type,
-            folder: 'pdf_covers'
-        }),
-        success: function(response) {
-            if (!response.presigned_url) {
-                // If cover upload fails, still create PDF record
-                createPDFRecord(pdfData);
-                return;
-            }
-            
-            const xhr = new XMLHttpRequest();
-            xhr.open('PUT', response.presigned_url, true);
-            xhr.setRequestHeader('Content-Type', file.type);
-            
-            xhr.upload.onprogress = function(e) {
-                if (e.lengthComputable) {
-                    const percent = 60 + Math.round((e.loaded / e.total) * 20);
-                    updateLoaderProgress(percent, `Cover: ${percent-60}%`, e.loaded, e.total);
-                }
-            };
-            
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    console.log("✅ Cover uploaded, S3 key:", response.key);
-                    pdfData.cover_key = response.key;
-                    createPDFRecord(pdfData);
-                } else {
-                    createPDFRecord(pdfData);
-                }
-            };
-            
-            xhr.onerror = function() {
-                createPDFRecord(pdfData);
-            };
-            
-            xhr.send(file);
-        },
-        error: function() {
-            createPDFRecord(pdfData);
-        }
-    });
-}
-
-function createPDFRecord(pdfData) {
-    updateLoaderProgress(90, 'Saving PDF info...');
-    
-    const payload = {
-        title: pdfData.title,
-        course_id: pdfData.course_id || null,
-        pages: parseInt(pdfData.pages) || 0,
-        price: parseFloat(pdfData.price) || 0,
-        access_level: pdfData.access_level || 'free',
-        pdf_key: pdfData.pdf_key,
-        size_display: pdfData.size_display
-    };
-    
-    if (pdfData.cover_key) {
-        payload.cover_key = pdfData.cover_key;
-    }
-    
-    $.ajax({
-        url: '/admin/api/pdfs/create/',
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrftoken,
-            'Content-Type': 'application/json'
-        },
-        data: JSON.stringify(payload),
-        success: function(response) {
-            hideLoader();
-            showToast('✅ PDF uploaded successfully!');
-            closeModal();
-            loadPDFs();
-        },
-        error: function(xhr) {
-            console.error("Error saving PDF:", xhr.responseText);
-            hideLoader();
-            showToast('PDF uploaded but database save failed', true);
-            closeModal();
-            loadPDFs();
-        }
-    });
-}
         
         function submitBlogForm() {
-            try {
-                const title = $('#title').val().trim();
-                const content = $('#content').val().trim();
-                const category = $('#category').val();
-                const status = $('#status').val();
-                const tags = $('#tags').val();
-                const featuredImage = $('#featured_image')[0]?.files[0];
-                
-                if (!title) { showToast('Please enter a blog title', true); return; }
-                if (!content) { showToast('Please enter blog content', true); return; }
-                
-                showLoader('Creating Blog Post', 'Please wait...', true);
-                
-                const formData = new FormData();
-                formData.append('title', title);
-                formData.append('content', content);
-                formData.append('category', category);
-                formData.append('status', status);
-                formData.append('tags', tags);
-                
-                if (featuredImage) {
-                    formData.append('featured_image', featuredImage);
-                }
-                
-                $.ajax({
-                    url: '/admin/api/blogs/create/',
-                    method: 'POST',
-                    headers: {'X-CSRFToken': csrftoken},
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        hideLoader();
-                        showToast('✅ Blog post created!');
-                        closeModal();
-                        loadBlogs();
-                    },
-                    error: function(xhr) {
-                        console.error("Error creating blog:", xhr.responseText);
-                        hideLoader();
-                        showToast('Error creating blog post', true);
-                    }
-                });
-                
-            } catch(e) {
-                console.error('Error:', e);
-                hideLoader();
-                showToast('Error: ' + e.message, true);
-            }
+            const formData = new FormData();
+            formData.append('title', $('#title').val());
+            formData.append('content', $('#content').val());
+            formData.append('category', $('#category').val());
+            formData.append('status', $('#status').val());
+            formData.append('tags', $('#tags').val());
+            if ($('#featured_image')[0].files[0]) formData.append('featured_image', $('#featured_image')[0].files[0]);
+            showLoader('Creating Blog', 'Please wait...');
+            $.ajax({
+                url: '/admin/api/blogs/create/', method: 'POST', headers: {'X-CSRFToken': csrftoken}, data: formData, processData: false, contentType: false,
+                success: function() { hideLoader(); showToast('Blog created!'); closeModal(); loadBlogs(); },
+                error: function() { hideLoader(); showToast('Error creating blog', true); }
+            });
         }
         
         function submitPackageForm() {
-            try {
-                const name = $('#name').val().trim();
-                const description = $('#description').val().trim();
-                const price = $('#price').val();
-                const package_type = $('#package_type').val();
-                const features = $('#features').val().split('\n').filter(f => f.trim());
-                const imageFile = $('#image')[0]?.files[0];
-                
-                if (!name) { showToast('Please enter a package name', true); return; }
-                if (!price) { showToast('Please enter a price', true); return; }
-                
-                showLoader('Creating Package', 'Please wait...', true);
-                
-                if (imageFile) {
-                    // Upload image first if provided
-                    $.ajax({
-                        url: '/admin/api/get-s3-presigned-url/',
-                        method: 'POST',
-                        headers: {'X-CSRFToken': csrftoken},
-                        data: JSON.stringify({
-                            filename: imageFile.name,
-                            filetype: imageFile.type,
-                            folder: 'packages',
-                            method: 'post'
-                        }),
-                        success: function(response) {
-                            const formData = new FormData();
-                            Object.keys(response.fields).forEach(key => {
-                                formData.append(key, response.fields[key]);
-                            });
-                            formData.append('file', imageFile);
-                            
-                            updateLoaderProgress(0, 'Uploading image...', 0, imageFile.size);
-                            
-                            $.ajax({
-                                url: response.url,
-                                method: 'POST',
-                                data: formData,
-                                processData: false,
-                                contentType: false,
-                                xhr: function() {
-                                    const xhr = new window.XMLHttpRequest();
-                                    xhr.upload.addEventListener('progress', function(e) {
-                                        if (e.lengthComputable) {
-                                            const percent = Math.round((e.loaded / e.total) * 50);
-                                            updateLoaderProgress(percent, `Uploading image: ${percent}%`, e.loaded, e.total);
-                                        }
-                                    });
-                                    return xhr;
-                                },
-                                success: function() {
-                                    updateLoaderProgress(60, 'Creating package record...');
-                                    const packageData = {
-                                        name: name,
-                                        description: description,
-                                        price: price,
-                                        package_type: package_type,
-                                        features: features,
-                                        image_key: response.key
-                                    };
-                                    createPackageRecord(packageData);
-                                },
-                                error: function() {
-                                    updateLoaderProgress(60, 'Creating package record...');
-                                    const packageData = {
-                                        name: name,
-                                        description: description,
-                                        price: price,
-                                        package_type: package_type,
-                                        features: features
-                                    };
-                                    createPackageRecord(packageData);
-                                }
-                            });
-                        },
-                        error: function() {
-                            const packageData = {
-                                name: name,
-                                description: description,
-                                price: price,
-                                package_type: package_type,
-                                features: features
-                            };
-                            createPackageRecord(packageData);
-                        }
-                    });
-                } else {
-                    const packageData = {
-                        name: name,
-                        description: description,
-                        price: price,
-                        package_type: package_type,
-                        features: features
-                    };
-                    createPackageRecord(packageData);
-                }
-                
-            } catch(e) {
-                console.error('Error:', e);
-                hideLoader();
-                showToast('Error: ' + e.message, true);
-            }
-        }
-        
-        function createPackageRecord(packageData) {
-            updateLoaderProgress(90, 'Creating package record...');
-            
+            const formData = new FormData();
+            formData.append('name', $('#name').val());
+            formData.append('description', $('#description').val());
+            formData.append('price', $('#price').val());
+            formData.append('package_type', $('#package_type').val());
+            formData.append('features', $('#features').val());
+            if ($('#image')[0].files[0]) formData.append('image', $('#image')[0].files[0]);
+            showLoader('Creating Package', 'Please wait...');
             $.ajax({
-                url: '/admin/api/packages/create/',
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrftoken,
-                    'Content-Type': 'application/json'
-                },
-                data: JSON.stringify(packageData),
-                success: function() {
-                    hideLoader();
-                    showToast('✅ Package created!');
-                    closeModal();
-                    loadPackages();
-                },
-                error: function(xhr) {
-                    console.error("Error creating package:", xhr.responseText);
-                    hideLoader();
-                    showToast('Error creating package', true);
-                }
+                url: '/admin/api/packages/create/', method: 'POST', headers: {'X-CSRFToken': csrftoken}, data: formData, processData: false, contentType: false,
+                success: function() { hideLoader(); showToast('Package created!'); closeModal(); loadPackages(); },
+                error: function() { hideLoader(); showToast('Error creating package', true); }
             });
         }
         
         function editItem(type, id) {
             showLoader('Loading', `Loading ${type} data...`);
-            
-            // For edit, we'll redirect to a dedicated edit page or open modal with data
-            // For now, just show a toast
-            setTimeout(() => {
-                hideLoader();
-                showToast(`Edit ${type} #${id} - Feature coming soon`, true);
-            }, 1000);
+            setTimeout(() => { hideLoader(); showToast(`Edit ${type} #${id} - Feature coming soon`, true); }, 1000);
         }
         
         function viewItem(type, id) {
             showLoader('Loading', `Loading ${type} details...`);
-            
-            let apiUrl = '';
-            switch(type) {
-                case 'user': apiUrl = `/admin/api/users/${id}/`; break;
-                case 'course': apiUrl = `/admin/api/courses/${id}/`; break;
-                case 'video': apiUrl = `/admin/api/videos/${id}/`; break;
-                case 'pdf': apiUrl = `/admin/api/pdfs/${id}/`; break;
-                case 'blog': apiUrl = `/admin/api/blogs/${id}/`; break;
-                case 'package': apiUrl = `/admin/api/packages/${id}/`; break;
-                case 'order': apiUrl = `/admin/api/orders/${id}/`; break;
-                case 'partnership': apiUrl = `/admin/api/partnerships/${id}/`; break;
-                default: apiUrl = `/admin/api/${type}s/${id}/`;
-            }
-            
+            let apiUrl = `/admin/api/${type}s/${id}/`;
             $.ajax({
-                url: apiUrl,
-                method: 'GET',
-                headers: {'X-CSRFToken': csrftoken},
+                url: apiUrl, method: 'GET', headers: {'X-CSRFToken': csrftoken},
                 success: function(item) {
                     hideLoader();
-                    
-                    // Build HTML for viewing
                     let html = '<div style="max-height: 500px; overflow-y: auto; padding: 10px;">';
-                    
-                    // Handle special cases for images
-                    if (item.thumbnail) {
-                        html += `<div style="text-align: center; margin-bottom: 20px;">`;
-                        html += `<img src="${item.thumbnail}" style="max-width: 200px; max-height: 200px; border: 2px solid var(--champagne-gold); border-radius: 8px;">`;
-                        html += `</div>`;
-                    } else if (item.cover_image) {
-                        html += `<div style="text-align: center; margin-bottom: 20px;">`;
-                        html += `<img src="${item.cover_image}" style="max-width: 200px; max-height: 200px; border: 2px solid var(--champagne-gold); border-radius: 8px;">`;
-                        html += `</div>`;
-                    } else if (item.featured_image) {
-                        html += `<div style="text-align: center; margin-bottom: 20px;">`;
-                        html += `<img src="${item.featured_image}" style="max-width: 200px; max-height: 200px; border: 2px solid var(--champagne-gold); border-radius: 8px;">`;
-                        html += `</div>`;
-                    } else if (item.image) {
-                        html += `<div style="text-align: center; margin-bottom: 20px;">`;
-                        html += `<img src="${item.image}" style="max-width: 200px; max-height: 200px; border: 2px solid var(--champagne-gold); border-radius: 8px;">`;
-                        html += `</div>`;
+                    if (item.thumbnail || item.cover_image || item.featured_image || item.image) {
+                        let imgUrl = item.thumbnail || item.cover_image || item.featured_image || item.image;
+                        html += `<div style="text-align: center; margin-bottom: 20px;"><img src="${imgUrl}" style="max-width: 200px; max-height: 200px; border: 2px solid var(--yellow); border-radius: 8px;"></div>`;
                     }
-                    
-                    // Loop through all properties
                     for (let key in item) {
                         if (typeof item[key] !== 'object' || item[key] === null) {
                             let value = item[key];
                             if (value === null || value === undefined) value = 'N/A';
-                            
-                            // Truncate long strings
-                            if (typeof value === 'string' && value.length > 100) {
-                                value = value.substring(0, 100) + '...';
+                            if (typeof value === 'string' && value.length > 100) value = value.substring(0, 100) + '...';
+                            if (key.toLowerCase().includes('price') || key.toLowerCase().includes('amount') || key.toLowerCase().includes('revenue') || key.toLowerCase().includes('total')) {
+                                if (!isNaN(parseFloat(value))) value = formatCurrency(value, 'KES');
                             }
-                            
-                            // Format currency
-                            if (key.toLowerCase().includes('price') || 
-                                key.toLowerCase().includes('amount') || 
-                                key.toLowerCase().includes('revenue') ||
-                                key.toLowerCase().includes('total')) {
-                                if (!isNaN(parseFloat(value))) {
-                                    value = formatCurrency(value, 'KES');
-                                }
-                            }
-                            
-                            html += `<div style="margin-bottom: 10px; padding: 8px; background: var(--gray-50); border-radius: 4px;">`;
-                            html += `<strong style="text-transform: capitalize;">${key.replace(/_/g, ' ')}:</strong> `;
-                            html += `<span style="float: right; max-width: 60%; word-break: break-word;">${value}</span>`;
-                            html += `</div>`;
+                            html += `<div style="margin-bottom: 10px; padding: 8px; background: var(--gray-50); border-radius: 4px;"><strong style="text-transform: capitalize;">${key.replace(/_/g, ' ')}:</strong> <span style="float: right; max-width: 60%; word-break: break-word;">${value}</span></div>`;
                         }
                     }
                     html += '</div>';
-                    
                     $('#modalTitle').text(`${type.charAt(0).toUpperCase() + type.slice(1)} Details`);
                     $('#modalBody').html(html);
                     $('#modalSaveBtn').hide();
                     $('#contentModal').fadeIn(200);
-                    
-                    // Show save button after a delay (for closing)
-                    setTimeout(() => {
-                        $('#modalSaveBtn').show().text('CLOSE').off('click').on('click', closeModal);
-                    }, 100);
+                    setTimeout(() => { $('#modalSaveBtn').show().text('CLOSE').off('click').on('click', closeModal); }, 100);
                 },
-                error: function(xhr) {
-                    console.error(`Error loading ${type}:`, xhr.responseText);
-                    hideLoader();
-                    showToast(`Error loading ${type} details`, true);
-                }
+                error: function() { hideLoader(); showToast(`Error loading ${type} details`, true); }
             });
         }
         
         function deleteItem(type, id) {
             if (confirm(`Are you sure you want to delete this ${type}? This action cannot be undone.`)) {
                 showLoader('Deleting', `Removing ${type}...`);
-                
-                let apiUrl = '';
-                switch(type) {
-                    case 'user': apiUrl = `/admin/api/users/${id}/delete/`; break;
-                    case 'course': apiUrl = `/admin/api/courses/${id}/delete/`; break;
-                    case 'video': apiUrl = `/admin/api/videos/${id}/delete/`; break;
-                    case 'pdf': apiUrl = `/admin/api/pdfs/${id}/delete/`; break;
-                    case 'blog': apiUrl = `/admin/api/blogs/${id}/delete/`; break;
-                    case 'package': apiUrl = `/admin/api/packages/${id}/delete/`; break;
-                    default: apiUrl = `/admin/api/${type}/${id}/delete/`;
-                }
-                
+                let apiUrl = `/admin/api/${type}s/${id}/delete/`;
                 $.ajax({
-                    url: apiUrl,
-                    method: 'POST',
-                    headers: {'X-CSRFToken': csrftoken},
-                    success: function(response) {
-                        hideLoader();
-                        showToast(`${type} deleted successfully`);
-                        
-                        // Reload the appropriate table
+                    url: apiUrl, method: 'POST', headers: {'X-CSRFToken': csrftoken},
+                    success: function() {
+                        hideLoader(); showToast(`${type} deleted successfully`);
                         switch(type) {
-                            case 'user': loadUsers(); break;
-                            case 'course': loadCourses(); break;
-                            case 'video': loadVideos(); break;
-                            case 'pdf': loadPDFs(); break;
-                            case 'blog': loadBlogs(); break;
-                            case 'package': loadPackages(); break;
-                            case 'order': loadOrders(); break;
-                            case 'partnership': loadPartnerships(); break;
+                            case 'user': loadUsers(); break; case 'course': loadCourses(); break; case 'video': loadVideos(); break;
+                            case 'pdf': loadPDFs(); break; case 'blog': loadBlogs(); break; case 'package': loadPackages(); break;
+                            case 'order': loadOrders(); break; case 'partnership': loadPartnerships(); break;
                         }
-                        
-                        // Also refresh dashboard stats
                         loadDashboardData();
                     },
-                    error: function(xhr) {
-                        console.error(`Error deleting ${type}:`, xhr.responseText);
-                        hideLoader();
-                        
-                        let errorMsg = `Error deleting ${type}`;
-                        try {
-                            const resp = JSON.parse(xhr.responseText);
-                            errorMsg = resp.error || resp.message || errorMsg;
-                        } catch(e) {}
-                        
-                        showToast(errorMsg, true);
-                    }
+                    error: function() { hideLoader(); showToast(`Error deleting ${type}`, true); }
                 });
             }
         }
@@ -3601,14 +3075,14 @@ function createPDFRecord(pdfData) {
                 const revenueCtx = document.getElementById('revenueChart').getContext('2d');
                 revenueChart = new Chart(revenueCtx, {
                     type: 'line',
-                    data: { labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], datasets: [{ label: 'Revenue (KES)', data: [45000, 52000, 48000, 67000], borderColor: '#E5C687', backgroundColor: 'rgba(229, 198, 135, 0.1)', tension: 0.4, fill: true }] },
+                    data: { labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], datasets: [{ label: 'Revenue (KES)', data: [45000, 52000, 48000, 67000], borderColor: '#FFD700', backgroundColor: 'rgba(255, 215, 0, 0.1)', tension: 0.4, fill: true }] },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
                 });
                 
                 const distCtx = document.getElementById('distributionChart').getContext('2d');
                 distributionChart = new Chart(distCtx, {
                     type: 'doughnut',
-                    data: { labels: ['Users', 'Videos', 'Courses', 'Blogs', 'PDFs'], datasets: [{ data: [0, 0, 0, 0, 0], backgroundColor: ['#E5C687', '#2E865F', '#0B1A33', '#B22234', '#64748B'], borderWidth: 0 }] },
+                    data: { labels: ['Users', 'Videos', 'Courses', 'Blogs', 'PDFs'], datasets: [{ data: [0, 0, 0, 0, 0], backgroundColor: ['#FFD700', '#2E865F', '#000000', '#B22234', '#64748B'], borderWidth: 0 }] },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
                 });
                 
@@ -3616,7 +3090,7 @@ function createPDFRecord(pdfData) {
                 if(reportsCtx) {
                     reportsChart = new Chart(reportsCtx.getContext('2d'), {
                         type: 'bar',
-                        data: { labels: [], datasets: [{ label: 'Revenue (KES)', data: [], backgroundColor: '#E5C687' }] },
+                        data: { labels: [], datasets: [{ label: 'Revenue (KES)', data: [], backgroundColor: '#FFD700' }] },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
                     });
                 }
@@ -3647,16 +3121,10 @@ function createPDFRecord(pdfData) {
         function updateReportsChart(packageData) {
             if (reportsChart && packageData && packageData.length > 0) {
                 try {
-                    const labels = packageData.map(item => item.name || item.package_type);
-                    const data = packageData.map(item => parseFloat(item.total) || 0);
-                    reportsChart.data.labels = labels;
-                    reportsChart.data.datasets[0].data = data;
+                    reportsChart.data.labels = packageData.map(item => item.name || item.package_type);
+                    reportsChart.data.datasets[0].data = packageData.map(item => parseFloat(item.total) || 0);
                     reportsChart.update();
                 } catch(e) { console.error('Error updating reports chart:', e); }
-            } else if (reportsChart) {
-                reportsChart.data.labels = [];
-                reportsChart.data.datasets[0].data = [];
-                reportsChart.update();
             }
         }
         
@@ -3665,8 +3133,9 @@ function createPDFRecord(pdfData) {
             try {
                 loadDashboardData(); loadUsers(); loadCourses(); loadVideos(); loadPDFs();
                 loadBlogs(); loadPackages(); loadOrders(); loadPartnerships(); loadReportsData(); loadDistributionData();
+                loadMerchandise(); loadTickets(); loadMerchandiseOrders();
             } catch(e) { console.error('Error refreshing data:', e); }
-            setTimeout(() => { if ($('#loaderOverlay').is(':visible')) { console.log('Safety hide loader after refresh'); hideLoader(); } }, 3000);
+            setTimeout(() => { if ($('#loaderOverlay').is(':visible')) { hideLoader(); } }, 3000);
         }
         
         function logout() {
@@ -3677,28 +3146,21 @@ function createPDFRecord(pdfData) {
         }
         
         function saveSettings() {
-            const settings = {
-                site_name: $('#site_name').val(),
-                site_email: $('#site_email').val(),
-                support_phone: $('#support_phone').val(),
-                currency: $('#currency').val(),
-                paystack_key: $('#paystack_key').val(),
-                maintenance_mode: $('#maintenance_mode').val() === 'true'
-            };
-            
             showLoader('Saving Settings', 'Please wait...');
-            
-            // Simulate saving (you can implement actual API endpoint later)
-            setTimeout(() => {
-                hideLoader();
-                showToast('Settings saved successfully!');
-            }, 1500);
+            setTimeout(() => { hideLoader(); showToast('Settings saved successfully!'); }, 1500);
         }
         
         function openDateRangePicker() {
             const today = new Date().toISOString().split('T')[0];
             const thirtyDaysAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0];
-            const html = `<div style="padding:20px;"><h4 style="margin-bottom:20px;">Select Date Range</h4><div class="form-group"><label>Start Date</label><input type="date" id="report_start_date" class="form-control" value="${thirtyDaysAgo}"></div><div class="form-group"><label>End Date</label><input type="date" id="report_end_date" class="form-control" value="${today}"></div><div class="form-group"><label>Report Type</label><select id="report_type" class="form-control"><option value="revenue">Revenue Report</option><option value="users">Users Report</option><option value="orders">Orders Report</option><option value="courses">Courses Report</option><option value="videos">Videos Report</option><option value="pdfs">PDFs Report</option><option value="packages">Packages Report</option><option value="partnerships">Partnerships Report</option><option value="blogs">Blogs Report</option></select></div></div>`;
+            const html = `<div style="padding:20px;"><h4 style="margin-bottom:20px;">Select Date Range</h4>
+                <div class="form-group"><label>Start Date</label><input type="date" id="report_start_date" class="form-control" value="${thirtyDaysAgo}"></div>
+                <div class="form-group"><label>End Date</label><input type="date" id="report_end_date" class="form-control" value="${today}"></div>
+                <div class="form-group"><label>Report Type</label><select id="report_type" class="form-control">
+                    <option value="revenue">Revenue Report</option><option value="users">Users Report</option><option value="orders">Orders Report</option>
+                    <option value="courses">Courses Report</option><option value="videos">Videos Report</option><option value="pdfs">PDFs Report</option>
+                    <option value="packages">Packages Report</option><option value="partnerships">Partnerships Report</option><option value="blogs">Blogs Report</option>
+                </select></div></div>`;
             $('#modalTitle').text('Generate Custom Report');
             $('#modalBody').html(html);
             $('#modalSaveBtn').text('GENERATE REPORT').off('click').on('click', function() {
