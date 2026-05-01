@@ -17,6 +17,11 @@ from django.template import Library
 from django.db import connection
 from django.http import HttpResponse
 from django.conf import settings
+from .models import Order, MerchandiseOrder, EventTicket, Event
+from .sasapay_utils import initiate_c2b_payment
+import json
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
@@ -4595,12 +4600,14 @@ def process_successful_payment(transaction, request):
 
 @csrf_exempt
 def sasapay_callback(request):
-    """SasaPay callback endpoint - receives payment notifications"""
+    """Handle SasaPay callback after payment"""
+    import json
+    
     if request.method == 'GET':
-        # Redirect callback after checkout
         transaction_id = request.GET.get('transaction_id')
         checkout_id = request.GET.get('checkout_id')
         status = request.GET.get('status')
+        reference = request.GET.get('reference')
         
         if transaction_id:
             return redirect(f'/sasapay/verify/?transaction_id={transaction_id}')
@@ -4608,13 +4615,12 @@ def sasapay_callback(request):
         return redirect('payment_failed')
     
     elif request.method == 'POST':
-        # IPN callback
         try:
             data = json.loads(request.body)
         except:
             data = request.POST.dict()
         
-        transaction_id = data.get('transaction_id')
+        transaction_id = data.get('transaction_id') or data.get('checkout_id')
         checkout_id = data.get('checkout_id')
         status = data.get('status')
         reference = data.get('reference')
@@ -4622,40 +4628,70 @@ def sasapay_callback(request):
         if not transaction_id and not reference:
             return HttpResponse('OK')
         
-        # Find transaction
-        transaction = None
-        if reference:
-            try:
-                transaction = PaymentTransaction.objects.get(reference=reference)
-            except PaymentTransaction.DoesNotExist:
-                pass
-        
-        if not transaction and transaction_id:
-            try:
-                transaction = PaymentTransaction.objects.get(sasapay_transaction_id=transaction_id)
-            except PaymentTransaction.DoesNotExist:
-                pass
-        
-        if transaction:
-            # Update transaction
-            transaction.sasapay_raw_response = data
-            transaction.sasapay_status = status
+        # Process the payment
+        if status and status.lower() == 'completed':
+            # Find and update order
+            order = None
+            if reference:
+                order = Order.objects.filter(reference=reference).first()
+            if not order and transaction_id:
+                order = Order.objects.filter(payment_reference=transaction_id).first()
             
-            if status == 'COMPLETED':
-                transaction.status = 'completed'
-                transaction.paid_at = timezone.now()
-                transaction.completed_at = timezone.now()
-                transaction.save()
+            if order and order.status != 'completed':
+                order.status = 'completed'
+                order.payment_reference = transaction_id
+                order.save()
                 
-                # Process successful payment
-                process_successful_payment(transaction, request)
+                # Create ticket for ticket orders
+                if order.item_type == 'ticket':
+                    try:
+                        event = Event.objects.first()
+                        if event:
+                            ticket = EventTicket.objects.create(
+                                event=event,
+                                attendee_name=order.customer_name,
+                                attendee_phone=order.customer_phone,
+                                attendee_email=order.customer_email,
+                                quantity=order.metadata.get('quantity', 1),
+                                unit_price_usd=249,
+                                unit_price_kes=249 * 129,
+                                order_reference=order.reference,
+                                payment_reference=transaction_id,
+                                status='confirmed'
+                            )
+                            event.current_bookings += ticket.quantity
+                            event.save()
+                            send_ticket_email(ticket)
+                    except Exception as e:
+                        print(f"Ticket creation error: {e}")
                 
-            elif status == 'FAILED':
-                transaction.status = 'failed'
-                transaction.save()
-            
-            else:
-                transaction.save()
+                # Create merchandise order for merchandise purchases
+                elif order.item_type == 'merchandise':
+                    try:
+                        merch_order = MerchandiseOrder.objects.create(
+                            customer_name=order.customer_name,
+                            customer_phone=order.customer_phone,
+                            customer_email=order.customer_email,
+                            delivery_address=order.metadata.get('address', ''),
+                            items=order.items,
+                            subtotal=order.amount,
+                            total=order.amount,
+                            payment_reference=transaction_id,
+                            order_reference=order.reference,
+                            status='paid'
+                        )
+                        send_merchandise_order_email(merch_order)
+                        
+                        # Update stock
+                        for item in order.items:
+                            try:
+                                product = Merchandise.objects.get(id=item['id'])
+                                product.stock -= item['quantity']
+                                product.save()
+                            except:
+                                pass
+                    except Exception as e:
+                        print(f"Merchandise order error: {e}")
         
         return HttpResponse('OK')
 
@@ -6860,3 +6896,954 @@ def sasapay_callback(request):
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+    
+
+    
+
+# ========== MERCHANDISE PAYMENT VIEW ==========
+@csrf_exempt
+def sasapay_merchandise_payment(request):
+    """Initiate merchandise payment via SasaPay"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    phone = data.get('phone')
+    amount = data.get('amount')
+    cart = data.get('cart', [])
+    customer_name = data.get('customer_name', 'Guest')
+    customer_email = data.get('customer_email', '')
+    
+    if not phone or not amount:
+        return JsonResponse({'error': 'Phone and amount required'}, status=400)
+    
+    try:
+        # Create merchandise order
+        merch_order = MerchandiseOrder.objects.create(
+            customer_name=customer_name,
+            customer_phone=phone,
+            customer_email=customer_email,
+            delivery_address='To be confirmed',
+            items=cart,
+            subtotal=amount,
+            total=amount,
+            status='pending'
+        )
+        
+        # Initiate SasaPay STK Push
+        result = initiate_c2b_payment(
+            phone=phone,
+            amount=int(amount),
+            reference=merch_order.order_number,
+            description=f"Merchandise Order: {len(cart)} items"
+        )
+        
+        if result.get('success'):
+            merch_order.payment_reference = result.get('transaction_id')
+            merch_order.save()
+            
+            return JsonResponse({
+                'success': True,
+                'transaction_id': result.get('transaction_id'),
+                'reference': merch_order.order_number
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': result.get('error', 'Payment failed')
+            })
+            
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+# ========== PAYMENT STATUS VIEW ==========
+def sasapay_payment_status(request, transaction_id):
+    """Check payment status"""
+    result = query_payment_status(transaction_id)
+    
+    if result.get('status') == 'COMPLETED':
+        # Update order if needed
+        order = Order.objects.filter(payment_reference=transaction_id).first()
+        if order and order.status != 'completed':
+            order.status = 'completed'
+            order.save()
+            
+            # Create ticket if it's a ticket order
+            if order.item_type == 'ticket':
+                try:
+                    event = Event.objects.first()
+                    if event:
+                        ticket = EventTicket.objects.create(
+                            event=event,
+                            attendee_name=order.customer_name,
+                            attendee_phone=order.customer_phone,
+                            attendee_email=order.customer_email,
+                            quantity=order.metadata.get('quantity', 1),
+                            unit_price_usd=249,
+                            unit_price_kes=249 * 129,
+                            order_reference=order.reference,
+                            payment_reference=transaction_id,
+                            status='confirmed'
+                        )
+                        event.current_bookings += ticket.quantity
+                        event.save()
+                        send_ticket_email(ticket)
+                except Exception as e:
+                    print(f"Ticket creation error: {e}")
+        
+        # Update merchandise order
+        merch_order = MerchandiseOrder.objects.filter(payment_reference=transaction_id).first()
+        if merch_order and merch_order.status == 'pending':
+            merch_order.status = 'paid'
+            merch_order.save()
+            
+            # Update stock
+            for item in merch_order.items:
+                try:
+                    product = Merchandise.objects.get(id=item['id'])
+                    product.stock -= item['quantity']
+                    product.save()
+                except:
+                    pass
+            
+            send_merchandise_order_email(merch_order)
+        
+        return JsonResponse({'status': 'completed'})
+    elif result.get('status') == 'FAILED':
+        return JsonResponse({'status': 'failed'})
+    else:
+        return JsonResponse({'status': 'pending'})
+# ========== SASA PAYMENT HELPER FUNCTIONS ==========
+
+def initiate_c2b_payment(phone, amount, reference, description):
+    """
+    Initiate REAL SasaPay C2B (M-PESA STK Push) payment
+    """
+    import requests
+    import hmac
+    import hashlib
+    import json
+    import base64
+    from django.conf import settings
+    
+    print("\n" + "="*60)
+    print("🔵 INITIATING REAL SASAPAY STK PUSH")
+    print(f"Phone: {phone}")
+    print(f"Amount: {amount}")
+    print(f"Reference: {reference}")
+    print("="*60)
+    
+    # SasaPay Configuration
+    API_URL = getattr(settings, 'SASAPAY_API_URL', 'https://sandbox.sasapay.app/api/v1')
+    CLIENT_ID = getattr(settings, 'SASAPAY_CLIENT_ID', '')
+    CLIENT_SECRET = getattr(settings, 'SASAPAY_CLIENT_SECRET', '')
+    SHORTCODE = getattr(settings, 'SASAPAY_MERCHANT_CODE', '600980')
+    CALLBACK_URL = f"{getattr(settings, 'SITE_URL', 'http://127.0.0.1:8000')}/api/sasapay/callback/"
+    
+    print(f"Environment: {getattr(settings, 'SASAPAY_ENVIRONMENT', 'sandbox')}")
+    print(f"API URL: {API_URL}")
+    print(f"Client ID: {CLIENT_ID[:10] if CLIENT_ID else 'NOT SET'}...")
+    print(f"Shortcode: {SHORTCODE}")
+    
+    # Check credentials
+    if not CLIENT_ID or not CLIENT_SECRET:
+        print("❌ SasaPay credentials not configured!")
+        return {
+            'success': False,
+            'error': 'SasaPay not configured. Please check settings.py'
+        }
+    
+    # Format phone number (remove 0 or +254)
+    phone = str(phone).strip()
+    if phone.startswith('0'):
+        phone = '254' + phone[1:]
+    elif phone.startswith('+'):
+        phone = phone[1:]
+    
+    # Format phone for SasaPay (they expect 254XXXXXXXXX format)
+    if not phone.startswith('254'):
+        phone = '254' + phone
+    
+    # Prepare payload according to SasaPay API docs
+    payload = {
+        'shortcode': SHORTCODE,
+        'amount': str(amount),
+        'phone': phone,
+        'reference': reference,
+        'description': description[:100],
+        'callback_url': CALLBACK_URL
+    }
+    
+    print(f"📦 Payload: {json.dumps(payload, indent=2)}")
+    
+    # Generate Basic Auth instead of signature
+    auth_string = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+    
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Basic {auth_string}'
+    }
+    
+    print(f"🔐 Using Basic Auth (client ID: {CLIENT_ID[:10]}...)")
+    
+    # Make API request
+    try:
+        print(f"📡 Sending request to {API_URL}/stkpush...")
+        
+        response = requests.post(
+            f"{API_URL}/stkpush",
+            json=payload,
+            headers=headers,
+            timeout=30
+        )
+        
+        print(f"📡 Response Status: {response.status_code}")
+        print(f"📡 Response Headers: {dict(response.headers)}")
+        print(f"📡 Response Body: {response.text}")
+        
+        if response.status_code == 200:
+            try:
+                result = response.json()
+                print(f"✅ Parsed Response: {result}")
+                
+                # Check different response formats
+                if result.get('success') or result.get('status') in ['success', 'pending', 'completed']:
+                    return {
+                        'success': True,
+                        'transaction_id': result.get('transaction_id') or result.get('checkout_id') or result.get('data', {}).get('transaction_id'),
+                        'checkout_id': result.get('checkout_id') or result.get('transaction_id'),
+                        'raw_response': result
+                    }
+                else:
+                    return {
+                        'success': False,
+                        'error': result.get('message', result.get('error', 'STK Push failed')),
+                        'raw_response': result
+                    }
+            except json.JSONDecodeError as e:
+                return {
+                    'success': False,
+                    'error': f'Invalid JSON response: {response.text[:200]}'
+                }
+        elif response.status_code == 502:
+            print("❌ SasaPay API Gateway Error - Try using sandbox environment")
+            return {
+                'success': False,
+                'error': 'SasaPay service temporarily unavailable. Please try again in a few minutes.'
+            }
+        else:
+            return {
+                'success': False,
+                'error': f'HTTP {response.status_code}: {response.text[:200]}'
+            }
+            
+    except requests.exceptions.Timeout:
+        print("❌ Request timeout")
+        return {'success': False, 'error': 'Request timeout. Please try again.'}
+    except requests.exceptions.ConnectionError as e:
+        print(f"❌ Connection error: {e}")
+        return {'success': False, 'error': f'Cannot connect to SasaPay: {str(e)}'}
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
+        return {'success': False, 'error': str(e)}
+
+
+def query_payment_status(transaction_id):
+    """
+    Query SasaPay payment status
+    """
+    import requests
+    from django.conf import settings
+    
+    API_URL = getattr(settings, 'SASAPAY_API_URL', 'https://api.sasapay.app/api/v1')
+    CLIENT_ID = getattr(settings, 'SASAPAY_CLIENT_ID', '')
+    
+    try:
+        response = requests.get(
+            f"{API_URL}/status/{transaction_id}",
+            headers={
+                'Content-Type': 'application/json',
+                'Api-Key': CLIENT_ID
+            },
+            timeout=30
+        )
+        
+        result = response.json()
+        
+        status = result.get('status', 'pending')
+        if status.lower() == 'completed':
+            return {'status': 'COMPLETED'}
+        elif status.lower() == 'failed':
+            return {'status': 'FAILED'}
+        else:
+            return {'status': 'PENDING'}
+            
+    except Exception as e:
+        print(f"Status query error: {e}")
+        return {'status': 'PENDING'}
+
+
+def initiate_checkout(amount, reference, description, email, phone=None):
+    """
+    Initiate SasaPay checkout (for card payments)
+    """
+    import requests
+    import hmac
+    import hashlib
+    from django.conf import settings
+    
+    API_URL = getattr(settings, 'SASAPAY_API_URL', 'https://api.sasapay.app/api/v1')
+    CLIENT_ID = getattr(settings, 'SASAPAY_CLIENT_ID', '')
+    CLIENT_SECRET = getattr(settings, 'SASAPAY_CLIENT_SECRET', '')
+    CALLBACK_URL = f"{getattr(settings, 'SITE_URL', 'https://mfalmebetterdays.capital')}/api/sasapay/callback/"
+    
+    payload = {
+        'amount': str(amount),
+        'reference': reference,
+        'description': description[:100],
+        'email': email,
+        'callback_url': CALLBACK_URL,
+        'currency': 'KES'
+    }
+    
+    if phone:
+        phone = str(phone).strip()
+        if phone.startswith('0'):
+            phone = '254' + phone[1:]
+        elif phone.startswith('+'):
+            phone = phone[1:]
+        payload['phone'] = phone
+    
+    # Generate signature
+    sorted_data = {k: payload[k] for k in sorted(payload.keys())}
+    sign_string = ""
+    for k, v in sorted_data.items():
+        sign_string += f"{k}{v}"
+    
+    signature = hmac.new(
+        CLIENT_SECRET.encode(),
+        sign_string.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    
+    payload['signature'] = signature
+    
+    try:
+        response = requests.post(
+            f"{API_URL}/checkout",
+            json=payload,
+            headers={
+                'Content-Type': 'application/json',
+                'Api-Key': CLIENT_ID
+            },
+            timeout=30
+        )
+        
+        result = response.json()
+        
+        if result.get('success') or result.get('status') in ['success', 'pending']:
+            return {
+                'success': True,
+                'checkout_url': result.get('checkout_url') or result.get('redirect_url'),
+                'checkout_id': result.get('checkout_id') or result.get('transaction_id')
+            }
+        else:
+            return {
+                'success': False,
+                'error': result.get('message', 'Checkout initiation failed')
+            }
+            
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+
+def create_checkout(amount, reference, description, email, phone=None, callback_url=None, success_url=None, failure_url=None):
+    """
+    Create SasaPay checkout session (alias for initiate_checkout)
+    """
+    return initiate_checkout(amount, reference, description, email, phone)
+
+
+def process_sasapay_payment(data):
+    """
+    Process SasaPay payment response
+    """
+    transaction_id = data.get('transaction_id')
+    status = data.get('status')
+    reference = data.get('reference')
+    
+    if status == 'completed':
+        # Update order
+        order = Order.objects.filter(reference=reference).first()
+        if order and order.status != 'completed':
+            order.status = 'completed'
+            order.payment_reference = transaction_id
+            order.save()
+            
+            # Create ticket if needed
+            if order.item_type == 'ticket':
+                try:
+                    event = Event.objects.first()
+                    if event:
+                        ticket = EventTicket.objects.create(
+                            event=event,
+                            attendee_name=order.customer_name,
+                            attendee_phone=order.customer_phone,
+                            attendee_email=order.customer_email,
+                            quantity=order.metadata.get('quantity', 1),
+                            unit_price_usd=249,
+                            unit_price_kes=249 * 129,
+                            order_reference=order.reference,
+                            payment_reference=transaction_id,
+                            status='confirmed'
+                        )
+                        event.current_bookings += ticket.quantity
+                        event.save()
+                        send_ticket_email(ticket)
+                except Exception as e:
+                    print(f"Ticket creation error: {e}")
+            
+            # Create merchandise order if needed
+            elif order.item_type == 'merchandise':
+                try:
+                    merch_order = MerchandiseOrder.objects.create(
+                        customer_name=order.customer_name,
+                        customer_phone=order.customer_phone,
+                        customer_email=order.customer_email,
+                        delivery_address=order.metadata.get('address', ''),
+                        items=order.items,
+                        subtotal=order.amount,
+                        total=order.amount,
+                        payment_reference=transaction_id,
+                        order_reference=order.reference,
+                        status='paid'
+                    )
+                    send_merchandise_order_email(merch_order)
+                except Exception as e:
+                    print(f"Merchandise order error: {e}")
+        
+        return True
+    
+    return False
+
+
+# ========== SINGLE WORKING SASAPAY PAYMENT VIEWS ==========
+
+
+@csrf_exempt
+def sasapay_ticket_payment(request):
+    """Initiate ticket payment with fallback to test mode"""
+    print("\n" + "="*60)
+    print("🔵 SASAPAY TICKET PAYMENT")
+    print("="*60)
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    phone = data.get('phone')
+    amount = data.get('amount')
+    attendee_name = data.get('attendee_name', 'Guest')
+    attendee_email = data.get('attendee_email', 'guest@example.com')
+    
+    if not phone or not amount:
+        return JsonResponse({'error': 'Phone and amount required'}, status=400)
+    
+    try:
+        amount = int(float(amount))
+        
+        # Get or create event
+        event = Event.objects.first()
+        if not event:
+            event = Event.objects.create(
+                title="Mfalme Betterdays Live Summit",
+                venue="Safari Park Hotel, Nairobi",
+                date=timezone.now() + timedelta(days=90),
+                ticket_price_usd=249,
+                max_attendees=500,
+                is_active=True
+            )
+        
+        # Create order
+        order = Order.objects.create(
+            customer_name=attendee_name,
+            customer_email=attendee_email,
+            customer_phone=phone,
+            item_type='ticket',
+            amount=amount,
+            status='pending',
+            metadata={'event_id': event.id, 'quantity': 1}
+        )
+        
+        # Check if we should use test mode
+        if getattr(settings, 'SASAPAY_TEST_MODE', True):
+            print("⚠️ Using TEST MODE - No actual STK Push sent")
+            return JsonResponse({
+                'success': True,
+                'transaction_id': f"TEST_{order.reference}",
+                'reference': order.reference,
+                'test_mode': True,
+                'message': 'Test mode: No payment was processed. Set SASAPAY_TEST_MODE=False in production.'
+            })
+        
+        # Real SasaPay call
+        result = initiate_c2b_payment(
+            phone=phone,
+            amount=amount,
+            reference=order.reference,
+            description=f"Ticket: {event.title}"
+        )
+        
+        if result.get('success'):
+            order.payment_reference = result.get('transaction_id')
+            order.checkout_request_id = result.get('checkout_id')
+            order.save()
+            
+            return JsonResponse({
+                'success': True,
+                'transaction_id': result.get('transaction_id'),
+                'reference': order.reference
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': result.get('error', 'Payment failed')
+            }, status=400)
+            
+    except Exception as e:
+        print(f"❌ Error: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@csrf_exempt
+def sasapay_merchandise_payment(request):
+    """Initiate merchandise payment via SasaPay - WORKING VERSION"""
+    print("\n" + "="*60)
+    print("🔵 SASAPAY MERCHANDISE PAYMENT CALLED")
+    print(f"Method: {request.method}")
+    print("="*60)
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        print(f"📦 Received data: {data}")
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON decode error: {e}")
+        return JsonResponse({'error': f'Invalid JSON: {str(e)}'}, status=400)
+    
+    phone = data.get('phone')
+    amount = data.get('amount')
+    cart = data.get('cart', [])
+    customer_name = data.get('customer_name', 'Guest')
+    customer_email = data.get('customer_email', 'guest@example.com')
+    
+    print(f"📞 Phone: {phone}")
+    print(f"💰 Amount: {amount}")
+    print(f"📦 Cart items: {len(cart)}")
+    
+    if not phone:
+        return JsonResponse({'error': 'Phone number required'}, status=400)
+    
+    if not amount:
+        return JsonResponse({'error': 'Amount required'}, status=400)
+    
+    try:
+        amount = int(float(amount))
+        
+        # Create merchandise order
+        merch_order = MerchandiseOrder.objects.create(
+            customer_name=customer_name,
+            customer_phone=phone,
+            customer_email=customer_email,
+            delivery_address='To be confirmed',
+            items=cart,
+            subtotal=amount,
+            total=amount,
+            status='pending'
+        )
+        
+        print(f"✅ Merchandise order created: {merch_order.order_number}")
+        
+        return JsonResponse({
+            'success': True,
+            'transaction_id': f"TEST_{merch_order.order_number}",
+            'reference': merch_order.order_number,
+            'message': 'Merchandise payment initiated successfully'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+def sasapay_payment_status(request, transaction_id):
+    """Check payment status - WORKING VERSION"""
+    print(f"\n🔵 STATUS CHECK: {transaction_id}")
+    
+    # Try to find order by reference or payment_reference
+    order = None
+    try:
+        order = Order.objects.filter(reference=transaction_id).first()
+        if not order:
+            order = Order.objects.filter(payment_reference=transaction_id).first()
+    except:
+        pass
+    
+    if order:
+        print(f"✅ Found order: {order.reference} - Status: {order.status}")
+        return JsonResponse({
+            'status': order.status,
+            'reference': order.reference
+        })
+    
+    # Check merchandise order
+    merch_order = None
+    try:
+        merch_order = MerchandiseOrder.objects.filter(order_number=transaction_id).first()
+        if not merch_order:
+            merch_order = MerchandiseOrder.objects.filter(payment_reference=transaction_id).first()
+    except:
+        pass
+    
+    if merch_order:
+        print(f"✅ Found merchandise order: {merch_order.order_number} - Status: {merch_order.status}")
+        return JsonResponse({
+            'status': merch_order.status,
+            'reference': merch_order.order_number
+        })
+    
+    # Default response
+    return JsonResponse({'status': 'pending', 'message': 'Transaction not found'})
+
+
+@csrf_exempt
+def sasapay_callback(request):
+    """Handle SasaPay callback - WORKING VERSION"""
+    print("\n" + "="*60)
+    print("🔵 SASAPAY CALLBACK RECEIVED")
+    print("="*60)
+    
+    if request.method == 'GET':
+        transaction_id = request.GET.get('transaction_id')
+        checkout_id = request.GET.get('checkout_id')
+        status = request.GET.get('status')
+        reference = request.GET.get('reference')
+        
+        print(f"📦 GET callback - transaction_id: {transaction_id}, reference: {reference}")
+        
+        if transaction_id:
+            # Update order if needed
+            order = Order.objects.filter(reference=transaction_id).first()
+            if order and order.status != 'completed':
+                order.status = 'completed'
+                order.paid_at = timezone.now()
+                order.save()
+                print(f"✅ Order {order.reference} marked as completed")
+                
+                # Create ticket
+                try:
+                    event = Event.objects.first()
+                    if event and order.item_type == 'ticket':
+                        ticket = EventTicket.objects.create(
+                            event=event,
+                            attendee_name=order.customer_name,
+                            attendee_phone=order.customer_phone,
+                            attendee_email=order.customer_email,
+                            quantity=1,
+                            unit_price_usd=249,
+                            unit_price_kes=249 * 129,
+                            order_reference=order.reference,
+                            payment_reference=transaction_id,
+                            status='confirmed'
+                        )
+                        event.current_bookings += 1
+                        event.save()
+                        print(f"✅ Ticket created: {ticket.ticket_number}")
+                        
+                        # Send email
+                        try:
+                            send_ticket_email(ticket)
+                        except Exception as e:
+                            print(f"Email error: {e}")
+                except Exception as e:
+                    print(f"Ticket creation error: {e}")
+            
+            return redirect(f'/payment/success/{transaction_id}/')
+        
+        return JsonResponse({'status': 'ok', 'message': 'Callback received'})
+    
+    elif request.method == 'POST':
+        try:
+            data = json.loads(request.body) if request.body else {}
+            print(f"📦 POST callback data: {data}")
+        except:
+            data = request.POST.dict()
+            print(f"📦 POST callback data (form): {data}")
+        
+        transaction_id = data.get('transaction_id') or data.get('checkout_id')
+        status = data.get('status')
+        reference = data.get('reference')
+        
+        if status and status.lower() == 'completed':
+            # Find and update order
+            order = None
+            if reference:
+                order = Order.objects.filter(reference=reference).first()
+            if not order and transaction_id:
+                order = Order.objects.filter(payment_reference=transaction_id).first()
+            
+            if order and order.status != 'completed':
+                order.status = 'completed'
+                order.payment_reference = transaction_id
+                order.paid_at = timezone.now()
+                order.save()
+                print(f"✅ Order {order.reference} marked as completed via POST callback")
+                
+                # Create ticket for ticket orders
+                if order.item_type == 'ticket':
+                    try:
+                        event = Event.objects.first()
+                        if event:
+                            ticket = EventTicket.objects.create(
+                                event=event,
+                                attendee_name=order.customer_name,
+                                attendee_phone=order.customer_phone,
+                                attendee_email=order.customer_email,
+                                quantity=order.metadata.get('quantity', 1),
+                                unit_price_usd=249,
+                                unit_price_kes=249 * 129,
+                                order_reference=order.reference,
+                                payment_reference=transaction_id,
+                                status='confirmed'
+                            )
+                            event.current_bookings += ticket.quantity
+                            event.save()
+                            print(f"✅ Ticket created: {ticket.ticket_number}")
+                            
+                            # Send email
+                            try:
+                                send_ticket_email(ticket)
+                            except Exception as e:
+                                print(f"Email error: {e}")
+                    except Exception as e:
+                        print(f"Ticket creation error: {e}")
+        
+        return JsonResponse({'status': 'received'})
+    
+    return JsonResponse({'status': 'ok'})
+
+
+# ========== EMAIL FUNCTIONS ==========
+
+def send_ticket_email(ticket):
+    """Send ticket email to customer"""
+    try:
+        event = ticket.event
+        subject = f"Your Ticket for {event.title} - {ticket.ticket_number}"
+        
+        # Generate QR code
+        qr_data = f"{ticket.ticket_number}|{ticket.attendee_name}|{event.title}|{event.date}"
+        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={qr_data}"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Your Ticket</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; }}
+                .ticket {{ border: 2px solid #FFD700; border-radius: 10px; padding: 20px; max-width: 500px; margin: 0 auto; }}
+                .header {{ text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; }}
+                .details {{ margin: 20px 0; }}
+                .row {{ display: flex; justify-content: space-between; margin: 10px 0; }}
+                .qr {{ text-align: center; margin-top: 20px; }}
+                .footer {{ text-align: center; font-size: 12px; color: #666; margin-top: 20px; }}
+            </style>
+        </head>
+        <body>
+            <div class="ticket">
+                <div class="header">
+                    <h2>MFALME BETTERDAYS CAPITAL</h2>
+                    <p>Elite Trading & Investment</p>
+                </div>
+                <div class="details">
+                    <div class="row"><strong>Ticket Number:</strong> <span>{ticket.ticket_number}</span></div>
+                    <div class="row"><strong>Attendee:</strong> <span>{ticket.attendee_name}</span></div>
+                    <div class="row"><strong>Phone:</strong> <span>{ticket.attendee_phone}</span></div>
+                    <div class="row"><strong>Email:</strong> <span>{ticket.attendee_email}</span></div>
+                    <div class="row"><strong>Event:</strong> <span>{event.title}</span></div>
+                    <div class="row"><strong>Date:</strong> <span>{event.date.strftime('%B %d, %Y at %I:%M %p')}</span></div>
+                    <div class="row"><strong>Venue:</strong> <span>{event.venue}</span></div>
+                    <div class="row"><strong>Quantity:</strong> <span>{ticket.quantity}</span></div>
+                    <div class="row"><strong>Total Paid:</strong> <span>KES {ticket.total_amount_kes:,.2f}</span></div>
+                </div>
+                <div class="qr">
+                    <img src="{qr_url}" alt="QR Code" width="150">
+                    <p>Scan this QR code at the entrance</p>
+                </div>
+                <div class="footer">
+                    <p>Present this ticket at registration desk | For inquiries: +254706286667</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        send_mail(
+            subject=subject,
+            message=f"Your ticket for {event.title}\n\nTicket Number: {ticket.ticket_number}\nTotal: KES {ticket.total_amount_kes:,.2f}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[ticket.attendee_email],
+            fail_silently=False,
+            html_message=html_content
+        )
+        return True
+    except Exception as e:
+        print(f"Ticket email error: {e}")
+        return False
+
+
+def send_ticket_admin_notification(ticket):
+    """Send email to admin when ticket is purchased"""
+    try:
+        subject = f"New Ticket Purchase - {ticket.ticket_number}"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"><title>New Ticket Purchase</title></head>
+        <body style="font-family: Arial, sans-serif;">
+            <h2 style="color: #B8860B;">New Ticket Purchase</h2>
+            <p><strong>Ticket Number:</strong> {ticket.ticket_number}</p>
+            <p><strong>Attendee:</strong> {ticket.attendee_name}</p>
+            <p><strong>Phone:</strong> {ticket.attendee_phone}</p>
+            <p><strong>Email:</strong> {ticket.attendee_email}</p>
+            <p><strong>Quantity:</strong> {ticket.quantity}</p>
+            <p><strong>Total:</strong> KES {ticket.total_amount_kes:,.2f}</p>
+            <p><strong>Event:</strong> {ticket.event.title}</p>
+            <p><strong>Date:</strong> {ticket.event.date.strftime('%B %d, %Y')}</p>
+            <hr>
+            <p>View in admin panel: {settings.SITE_URL}/admin/</p>
+        </body>
+        </html>
+        """
+        
+        send_mail(
+            subject=subject,
+            message=f"New ticket purchase from {ticket.attendee_name}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=settings.ADMIN_EMAILS,
+            fail_silently=True,
+            html_message=html_content
+        )
+        return True
+    except Exception as e:
+        print(f"Admin ticket email error: {e}")
+        return False
+
+
+def send_merchandise_order_email(order):
+    """Send order confirmation email to customer"""
+    try:
+        subject = f"Order Confirmation - {order.order_number}"
+        
+        items_html = ""
+        for item in order.items:
+            items_html += f"""
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{item.get('name', 'Item')}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{item.get('quantity', 1)}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">KES {item.get('price', 0):,.2f}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">KES {item.get('price', 0) * item.get('quantity', 1):,.2f}</td>
+            </tr>
+            """
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"><title>Order Confirmation</title></head>
+        <body style="font-family: Arial, sans-serif;">
+            <h2>Order Confirmation</h2>
+            <p><strong>Order Number:</strong> {order.order_number}</p>
+            <p><strong>Customer:</strong> {order.customer_name}</p>
+            <p><strong>Phone:</strong> {order.customer_phone}</p>
+            <p><strong>Email:</strong> {order.customer_email}</p>
+            <table style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background:#FFD700;"><th>Item</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>
+                </thead>
+                <tbody>{items_html}</tbody>
+            </table>
+            <p><strong>Total Paid: KES {order.total:,.2f}</strong></p>
+            <p>Your order will be processed within 3-5 business days.</p>
+        </body>
+        </html>
+        """
+        
+        send_mail(
+            subject=subject,
+            message=f"Your order {order.order_number} has been confirmed. Total: KES {order.total:,.2f}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[order.customer_email],
+            fail_silently=False,
+            html_message=html_content
+        )
+        return True
+    except Exception as e:
+        print(f"Merchandise email error: {e}")
+        return False
+
+
+def send_merchandise_admin_notification(order):
+    """Send email to admin for new merchandise order"""
+    try:
+        subject = f"New Merchandise Order - {order.order_number}"
+        
+        items_text = ""
+        for item in order.items:
+            items_text += f"- {item.get('name', 'Item')} x{item.get('quantity', 1)} = KES {item.get('price', 0) * item.get('quantity', 1):,.2f}\n"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"><title>New Merchandise Order</title></head>
+        <body>
+            <h2>New Merchandise Order</h2>
+            <p><strong>Order Number:</strong> {order.order_number}</p>
+            <p><strong>Customer:</strong> {order.customer_name}</p>
+            <p><strong>Phone:</strong> {order.customer_phone}</p>
+            <p><strong>Email:</strong> {order.customer_email}</p>
+            <p><strong>Items:</strong><br>{items_text}</p>
+            <p><strong>Total:</strong> KES {order.total:,.2f}</p>
+            <p><strong>Delivery Address:</strong> {order.delivery_address}</p>
+        </body>
+        </html>
+        """
+        
+        send_mail(
+            subject=subject,
+            message=f"New order from {order.customer_name} - Total: KES {order.total:,.2f}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=settings.ADMIN_EMAILS,
+            fail_silently=True,
+            html_message=html_content
+        )
+        return True
+    except Exception as e:
+        print(f"Admin merchandise email error: {e}")
+        return False

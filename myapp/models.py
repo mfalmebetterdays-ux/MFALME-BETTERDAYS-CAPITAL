@@ -388,6 +388,8 @@ class PaymentTransaction(models.Model):
         ('deposit', 'Account Deposit'),
         ('withdrawal', 'Withdrawal'),
         ('course_purchase', 'Course Purchase'),
+        ('ticket', 'Event Ticket'),
+        ('merchandise', 'Merchandise'),
         ('other', 'Other'),
     ]
     
@@ -399,10 +401,8 @@ class PaymentTransaction(models.Model):
         ('bank_transfer', 'Bank Transfer'),
         ('equity_bank', 'Equity Bank'),
         ('manual', 'Manual Payment'),
-        ('paystack', 'Paystack'),
         ('sasapay', 'SasaPay'),
         ('pesapal', 'Pesapal'),
-        ('mpesa', 'M-PESA'),
         ('bank', 'Bank Transfer'),
         ('card', 'Card'),
     ]
@@ -428,7 +428,7 @@ class PaymentTransaction(models.Model):
     # SasaPay specific fields
     sasapay_transaction_id = models.CharField(max_length=100, blank=True, null=True)
     sasapay_checkout_id = models.CharField(max_length=100, blank=True, null=True)
-    sasapay_payment_method = models.CharField(max_length=50, blank=True, null=True)  # 'mpesa', 'card', etc.
+    sasapay_payment_method = models.CharField(max_length=50, blank=True, null=True)
     sasapay_raw_response = models.JSONField(blank=True, null=True)
     sasapay_status = models.CharField(max_length=20, blank=True, null=True)
     
@@ -574,6 +574,8 @@ class Package(models.Model):
         ('leveraging_package', 'Leveraging Package'),
         ('education_bundle', 'Education Bundle'),
         ('premium_signals', 'Premium Signals'),
+        ('ticket', 'Event Ticket'),
+        ('merchandise', 'Merchandise'),
     ]
     
     name = models.CharField(max_length=100)
@@ -829,7 +831,6 @@ class PartnershipProgram(models.Model):
     @property
     def image_url(self):
         """Get program image URL (if any)"""
-        # You can add an image field if needed
         return None
 
 
@@ -898,6 +899,8 @@ class Watchlist(models.Model):
         ('pdf', 'PDF'),
         ('course', 'Course'),
         ('package', 'Package'),
+        ('merchandise', 'Merchandise'),
+        ('event', 'Event'),
     ]
     
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='watchlist')
@@ -925,6 +928,10 @@ class Watchlist(models.Model):
             return Course.objects.filter(id=self.content_id).first()
         elif self.content_type == 'package':
             return Package.objects.filter(id=self.content_id).first()
+        elif self.content_type == 'merchandise':
+            return Merchandise.objects.filter(id=self.content_id).first()
+        elif self.content_type == 'event':
+            return Event.objects.filter(id=self.content_id).first()
         return None
 
 
@@ -1047,7 +1054,7 @@ class CommunityJoinRequest(models.Model):
     
     class Meta:
         ordering = ['-created_at']
-        unique_together = ['user', 'community']  # One pending request per community per user
+        unique_together = ['user', 'community']
         indexes = [
             models.Index(fields=['status', 'created_at']),
             models.Index(fields=['user', 'status']),
@@ -1567,6 +1574,8 @@ class ActivityLog(models.Model):
         ('COURSE_ACCESS_EXPIRED', 'Course Access Expired'),
         ('PDF_VIEWED', 'PDF Viewed'),
         ('VIDEO_WATCHED', 'Video Watched'),
+        ('TICKET_PURCHASED', 'Ticket Purchased'),
+        ('MERCHANDISE_PURCHASED', 'Merchandise Purchased'),
     ]
     
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='activity_logs')
@@ -1682,6 +1691,8 @@ class SupportTicket(models.Model):
         ('community', 'Community Access'),
         ('partnership', 'Partnership'),
         ('institute', 'Institute'),
+        ('tickets', 'Event Tickets'),
+        ('merchandise', 'Merchandise'),
         ('other', 'Other'),
     ]
     
@@ -1906,107 +1917,25 @@ class Logo(models.Model):
 
 # ==================== TRAINING VIDEO ====================
 class TrainingVideo(models.Model):
-    """Training videos managed by admin - OPTIMIZED FOR S3 DIRECT UPLOADS"""
-    
-    # ===== BASIC INFORMATION =====
     title = models.TextField()
     description = models.TextField(blank=True)
-    
-    # ===== VIDEO SOURCES =====
-    # PRIMARY: S3 Key for direct uploads (RECOMMENDED)
-    s3_key = models.CharField(
-        max_length=500,
-        blank=True,
-        null=True,
-        help_text="S3 key for videos uploaded directly to S3 (e.g., videos/20260310_123456_test.mp4)"
-    )
-    
-    # SECONDARY: External URL (YouTube, Vimeo, etc.)
-    external_url = models.URLField(
-        max_length=1000,
-        blank=True,
-        null=True,
-        help_text="External URL (YouTube, Vimeo, etc.)"
-    )
-    
-    # LEGACY: Uploaded file (kept for backward compatibility)
-    video_file = models.FileField(
-        upload_to='videos/', 
-        blank=True, 
-        null=True,
-        help_text="Upload video file directly (not recommended for large files)"
-    )
-    
-    # ===== THUMBNAIL SOURCES =====
-    # PRIMARY: S3 key for thumbnails
-    thumbnail_s3_key = models.CharField(
-        max_length=500,
-        blank=True,
-        null=True,
-        help_text="S3 key for thumbnails uploaded directly to S3"
-    )
-    
-    # LEGACY: Uploaded thumbnail file
-    thumbnail = models.ImageField(
-        upload_to='video_thumbnails/', 
-        blank=True, 
-        null=True
-    )
-    
-    # ===== MODULE/CHAPTER INFORMATION =====
-    module = models.CharField(
-        max_length=200,
-        blank=True,
-        null=True,
-        help_text="Module or chapter name (e.g., 'Chapter 1', 'Module 3')"
-    )
-    
-    # ===== CATEGORIZATION =====
-    category = models.CharField(
-        max_length=20, 
-        choices=[
-            ('PTM', 'PTM Series'),
-            ('POTM', 'POTM Series'),
-            ('PFTM', 'PFTM Series'),
-            ('Webinars', 'Webinars'),
-        ], 
-        default='PTM'
-    )
-    
-    course = models.ForeignKey(
-        'Course', 
-        on_delete=models.CASCADE, 
-        related_name='videos', 
-        null=True, 
-        blank=True
-    )
-    
-    # ===== PRICING & ACCESS =====
+    s3_key = models.CharField(max_length=500, blank=True, null=True)
+    external_url = models.URLField(max_length=1000, blank=True, null=True)
+    video_file = models.FileField(upload_to='videos/', blank=True, null=True)
+    thumbnail_s3_key = models.CharField(max_length=500, blank=True, null=True)
+    thumbnail = models.ImageField(upload_to='video_thumbnails/', blank=True, null=True)
+    module = models.CharField(max_length=200, blank=True, null=True)
+    category = models.CharField(max_length=20, default='PTM')
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='videos', null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    is_free = models.BooleanField(
-        default=False,
-        help_text="If checked, video is free for everyone"
-    )
-    
-    # ===== DURATION & ORDERING =====
-    duration = models.IntegerField(
-        default=30, 
-        help_text="Duration in minutes"
-    )
+    is_free = models.BooleanField(default=False)
+    duration = models.IntegerField(default=30)
     order = models.IntegerField(default=0)
-    
-    # ===== SECURITY SETTINGS =====
     allow_download = models.BooleanField(default=False)
     disable_screenshots = models.BooleanField(default=True)
-    
-    # ===== STATUS =====
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
-    
-    # ===== STATISTICS =====
     view_count = models.IntegerField(default=0)
-    
-    # ===== TIMESTAMPS =====
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -2022,97 +1951,63 @@ class TrainingVideo(models.Model):
         return self.title
     
     def save(self, *args, **kwargs):
-        """Override save to handle S3 keys and auto-set is_free"""
-        # Auto-set is_free based on price
         if self.price == 0:
             self.is_free = True
-        
-        # If bypass_validation is passed, skip file validation
         bypass_validation = kwargs.pop('bypass_validation', False)
-        
         if bypass_validation:
-            # For S3 uploads, we don't want Django to validate file existence
-            # Temporarily remove file fields from validation
             self._state.adding = not self.pk
             super().save(*args, **kwargs)
         else:
-            # Normal save with validation
             super().save(*args, **kwargs)
     
     @property
     def video_url(self):
-        """
-        Get the video URL with priority:
-        1. S3 Key (primary for direct uploads)
-        2. External URL (YouTube/Vimeo)
-        3. Uploaded file (legacy)
-        """
         from django.conf import settings
-        
-        # PRIMARY: S3 Key
         if self.s3_key:
             try:
                 if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
                     return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{self.s3_key}"
                 else:
                     return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.s3_key}"
-            except Exception as e:
-                print(f"⚠️ Error generating S3 URL: {e}")
-        
-        # SECONDARY: External URL
+            except:
+                pass
         if self.external_url:
             return self.external_url
-        
-        # LEGACY: Uploaded file
         if self.video_file and hasattr(self.video_file, 'url'):
             try:
                 return self.video_file.url
-            except Exception as e:
-                print(f"⚠️ Error getting video_file URL: {e}")
-        
+            except:
+                pass
         return None
     
     @property
     def thumbnail_url(self):
-        """
-        Get the thumbnail URL with priority:
-        1. S3 Key (primary for direct uploads)
-        2. Uploaded thumbnail (legacy)
-        """
         from django.conf import settings
-        
-        # PRIMARY: S3 Key
         if self.thumbnail_s3_key:
             try:
                 if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
                     return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{self.thumbnail_s3_key}"
                 else:
                     return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.thumbnail_s3_key}"
-            except Exception as e:
-                print(f"⚠️ Error generating thumbnail URL: {e}")
-        
-        # LEGACY: Uploaded thumbnail
+            except:
+                pass
         if self.thumbnail and hasattr(self.thumbnail, 'url'):
             try:
                 return self.thumbnail.url
-            except Exception as e:
-                print(f"⚠️ Error getting thumbnail URL: {e}")
-        
+            except:
+                pass
         return None
     
     @property
     def is_s3_video(self):
-        """Check if video is stored in S3"""
         return bool(self.s3_key)
     
     @property
     def is_external_video(self):
-        """Check if video is from external source"""
         return bool(self.external_url)
     
     @property
     def video_type(self):
-        """Get video type for display"""
         if self.s3_key:
             return "S3"
         elif self.external_url:
@@ -2120,66 +2015,11 @@ class TrainingVideo(models.Model):
         elif self.video_file:
             return "Uploaded"
         return "None"
-    
-    def increment_view_count(self):
-        """Increment view count safely"""
-        self.view_count += 1
-        self.save(update_fields=['view_count'])
-    
-    def get_duration_display(self):
-        """Get formatted duration (e.g., '45 min' or '1h 30m')"""
-        if self.duration < 60:
-            return f"{self.duration} min"
-        else:
-            hours = self.duration // 60
-            minutes = self.duration % 60
-            if minutes == 0:
-                return f"{hours}h"
-            else:
-                return f"{hours}h {minutes}m"
-    
-    def get_module_display(self):
-        """Get module display name"""
-        if self.module:
-            return self.module
-        return f"Module {self.order}"
-    
-    def get_course_name(self):
-        """Get course name safely"""
-        if self.course:
-            return self.course.title
-        return "Uncategorized"
-    
-    def to_dict(self):
-        """Convert to dictionary for API responses"""
-        return {
-            'id': self.id,
-            'title': self.title,
-            'description': self.description,
-            'video_url': self.video_url,
-            'thumbnail_url': self.thumbnail_url,
-            'course_id': self.course.id if self.course else None,
-            'course_name': self.get_course_name(),
-            'category': self.category,
-            'module': self.module,
-            'duration': self.duration,
-            'duration_display': self.get_duration_display(),
-            'price': float(self.price),
-            'is_free': self.is_free,
-            'order': self.order,
-            'is_active': self.is_active,
-            'is_featured': self.is_featured,
-            'view_count': self.view_count,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'video_type': self.video_type,
-            's3_key': self.s3_key,
-            'thumbnail_s3_key': self.thumbnail_s3_key,
-        }
+
 
 # ==================== USER VIDEO ACCESS ====================
 
 class UserVideoAccess(models.Model):
-    """Track which videos users have unlocked"""
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE)
     video = models.ForeignKey(TrainingVideo, on_delete=models.CASCADE)
     unlocked_at = models.DateTimeField(auto_now_add=True)
@@ -2187,9 +2027,6 @@ class UserVideoAccess(models.Model):
     
     class Meta:
         unique_together = ['user', 'video']
-        indexes = [
-            models.Index(fields=['user', 'video']),
-        ]
     
     def __str__(self):
         return f"{self.user.username} - {self.video.title}"
@@ -2198,33 +2035,24 @@ class UserVideoAccess(models.Model):
 # ==================== USER PDF ACCESS ====================
 
 class UserPDFAccess(models.Model):
-    """Track which PDFs users have unlocked - TRACK VIEWS NOT DOWNLOADS"""
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE)
     pdf = models.ForeignKey('PDF', on_delete=models.CASCADE)
     unlocked_at = models.DateTimeField(auto_now_add=True)
     payment = models.ForeignKey(PaymentTransaction, on_delete=models.SET_NULL, null=True, blank=True)
-    
-    # Change from download tracking to view tracking
     viewed = models.BooleanField(default=False)
     view_count = models.IntegerField(default=0)
     last_viewed = models.DateTimeField(null=True, blank=True)
-    
-    # Keep these for backward compatibility but mark as deprecated
     downloaded = models.BooleanField(default=False, editable=False)
     download_count = models.IntegerField(default=0, editable=False)
     last_downloaded = models.DateTimeField(null=True, blank=True, editable=False)
     
     class Meta:
         unique_together = ['user', 'pdf']
-        indexes = [
-            models.Index(fields=['user', 'pdf']),
-        ]
     
     def __str__(self):
         return f"{self.user.username} - {self.pdf.title}"
     
     def mark_viewed(self):
-        """Mark PDF as viewed and increment count"""
         self.viewed = True
         self.view_count += 1
         self.last_viewed = timezone.now()
@@ -2234,37 +2062,15 @@ class UserPDFAccess(models.Model):
 # ==================== COURSE ====================
 
 class Course(models.Model):
-    """Courses managed by admin - OPTIMIZED FOR S3 DIRECT UPLOADS"""
-    
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    
-    # ONE PRICE - This is all you need
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    
-    # Keep these for backward compatibility but don't use them
     price_1_month = models.DecimalField(max_digits=10, decimal_places=2, default=0, editable=False)
     price_12_months = models.DecimalField(max_digits=10, decimal_places=2, default=0, editable=False)
-    
     materials = models.JSONField(default=list, blank=True)
     duration_weeks = models.IntegerField(default=4)
-    
-    # ===== THUMBNAIL HANDLING - DUAL APPROACH =====
-    # PRIMARY: S3 key for direct uploads (RECOMMENDED)
-    thumbnail_s3_key = models.CharField(
-        max_length=500,
-        blank=True,
-        null=True,
-        help_text="S3 key for thumbnail uploaded directly to S3 (e.g., course_thumbnails/20260311_123456_abc123_image.jpg)"
-    )
-    
-    # LEGACY: Uploaded thumbnail file (kept for backward compatibility)
-    thumbnail = models.ImageField(
-        upload_to='course_thumbnails/', 
-        blank=True, 
-        null=True
-    )
-    
+    thumbnail_s3_key = models.CharField(max_length=500, blank=True, null=True)
+    thumbnail = models.ImageField(upload_to='course_thumbnails/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -2278,110 +2084,53 @@ class Course(models.Model):
         return self.title
     
     def save(self, *args, **kwargs):
-        # Keep price_1_month in sync with price for backward compatibility
         self.price_1_month = self.price
-        
-        # Check if we should bypass validation (for S3 uploads)
         bypass_validation = kwargs.pop('bypass_validation', False)
-        
         if bypass_validation:
-            # For S3 uploads, we don't want Django to validate file existence
             self._state.adding = not self.pk
             super().save(*args, **kwargs)
         else:
-            # Normal save with validation
             super().save(*args, **kwargs)
     
     @property
     def thumbnail_url(self):
-        """
-        Get the thumbnail URL with priority:
-        1. S3 Key (primary for direct uploads)
-        2. Uploaded thumbnail (legacy)
-        """
         from django.conf import settings
-        
-        # PRIMARY: S3 Key
         if self.thumbnail_s3_key:
             try:
                 if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
                     return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{self.thumbnail_s3_key}"
                 else:
                     return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.thumbnail_s3_key}"
-            except Exception as e:
-                print(f"⚠️ Error generating S3 thumbnail URL for course {self.id}: {e}")
-        
-        # LEGACY: Uploaded thumbnail
+            except:
+                pass
         if self.thumbnail and self.thumbnail.name:
             try:
-                # Let Django's storage system return the correct URL
                 return self.thumbnail.url
-            except Exception as e:
-                print(f"⚠️ Error getting legacy thumbnail URL for course {self.id}: {e}")
-        
+            except:
+                pass
         return None
     
     @property
     def is_s3_thumbnail(self):
-        """Check if thumbnail is stored in S3"""
         return bool(self.thumbnail_s3_key)
     
     def video_count(self):
-        """Get count of videos in this course"""
         return self.videos.count() if hasattr(self, 'videos') else 0
     
     def pdf_count(self):
-        """Get count of PDFs in this course"""
         return self.pdf_resources.count() if hasattr(self, 'pdf_resources') else 0
-    
-    def get_thumbnail_filename(self):
-        """Get just the filename from the thumbnail path"""
-        if self.thumbnail_s3_key:
-            return self.thumbnail_s3_key.split('/')[-1]
-        elif self.thumbnail and self.thumbnail.name:
-            return self.thumbnail.name.split('/')[-1]
-        return None
-    
-    def to_dict(self):
-        """Convert to dictionary for API responses"""
-        return {
-            'id': self.id,
-            'title': self.title,
-            'description': self.description,
-            'price': float(self.price),
-            'price_formatted': f"${float(self.price):,.2f}",
-            'duration_weeks': self.duration_weeks,
-            'thumbnail_url': self.thumbnail_url,
-            'thumbnail_s3_key': self.thumbnail_s3_key,
-            'is_s3_thumbnail': self.is_s3_thumbnail,
-            'is_active': self.is_active,
-            'videos_count': self.video_count(),
-            'pdfs_count': self.pdf_count(),
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-        }
-    
+
 
 # ==================== USER COURSE ====================
 class UserCourse(models.Model):
-    """Track user course enrollment and progress - WITH EXPIRATION"""
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     enrolled_at = models.DateTimeField(auto_now_add=True)
     payment = models.ForeignKey(PaymentTransaction, on_delete=models.SET_NULL, null=True, blank=True)
-    
-    # Track which pricing option they purchased
-    purchase_type = models.CharField(max_length=20, choices=[
-        ('1_month', '1 Month Access'),
-        ('12_months', '12 Months Access'),
-    ], default='1_month')
-    
-    # EXPIRATION FIELD
+    purchase_type = models.CharField(max_length=20, choices=[('1_month', '1 Month Access'), ('12_months', '12 Months Access')], default='12_months')
     access_expires_at = models.DateTimeField(null=True, blank=True)
-    
     progress = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     completed_lessons = models.JSONField(default=list, blank=True)
-    
-    # Add is_active field for quick filtering
     is_active = models.BooleanField(default=True)
     
     class Meta:
@@ -2396,264 +2145,59 @@ class UserCourse(models.Model):
         return f"{self.user.username} - {self.course.title}"
     
     def save(self, *args, **kwargs):
-        # PRODUCTION: Set expiration to 1 year from now if not set
         if not self.access_expires_at:
-            # 1 YEAR ACCESS (365 days) for all purchases
             self.access_expires_at = timezone.now() + timedelta(days=365)
-        
-        # Auto-update is_active based on expiration
         if self.access_expires_at and timezone.now() > self.access_expires_at:
             self.is_active = False
-        
-        # Auto-update progress if completed_lessons changed but progress wasn't updated
-        if self.pk:  # Only for existing records
-            try:
-                original = UserCourse.objects.get(pk=self.pk)
-                if original.completed_lessons != self.completed_lessons:
-                    self.update_progress()
-            except UserCourse.DoesNotExist:
-                pass
-        
         super().save(*args, **kwargs)
     
     def is_access_expired(self):
-        """Check if access has expired"""
         if not self.access_expires_at:
             return False
         return timezone.now() > self.access_expires_at
     
-    def time_until_expiry(self):
-        """Get time until access expires (human readable)"""
-        if not self.access_expires_at:
-            return None
-        delta = self.access_expires_at - timezone.now()
-        if delta.total_seconds() < 0:
-            return "Expired"
-        
-        days = delta.days
-        hours = delta.seconds // 3600
-        minutes = (delta.seconds % 3600) // 60
-        
-        if days > 0:
-            return f"{days} day{'s' if days != 1 else ''}"
-        elif hours > 0:
-            return f"{hours} hour{'s' if hours != 1 else ''}"
-        elif minutes > 0:
-            return f"{minutes} minute{'s' if minutes != 1 else ''}"
-        else:
-            return "Less than a minute"
-    
-    def days_until_expiry(self):
-        """Get days until access expires"""
-        if not self.access_expires_at:
-            return None
-        delta = self.access_expires_at - timezone.now()
-        return max(0, delta.days)
-    
     def get_video_access(self):
-        """Grant access to all videos in this course"""
         videos = self.course.videos.filter(is_active=True)
         for video in videos:
-            UserVideoAccess.objects.get_or_create(
-                user=self.user,
-                video=video,
-                defaults={'payment': self.payment}
-            )
+            UserVideoAccess.objects.get_or_create(user=self.user, video=video, defaults={'payment': self.payment})
     
     def get_pdf_access(self):
-        """Grant access to all PDFs in this course"""
         pdfs = self.course.pdf_resources.filter(is_active=True)
         for pdf in pdfs:
-            UserPDFAccess.objects.get_or_create(
-                user=self.user,
-                pdf=pdf,
-                defaults={'payment': self.payment}
-            )
-    
-    def mark_lesson_complete(self, lesson_type, lesson_id):
-        """Mark a lesson as complete and update progress"""
-        lesson_key = f"{lesson_type}_{lesson_id}"
-        
-        # Initialize if empty
-        if not self.completed_lessons:
-            self.completed_lessons = []
-        
-        # Don't add if already completed
-        if lesson_key in self.completed_lessons:
-            return False
-        
-        # Add to completed list
-        self.completed_lessons.append(lesson_key)
-        
-        # Recalculate progress
-        self.update_progress()
-        
-        # Save changes
-        self.save(update_fields=['completed_lessons', 'progress'])
-        
-        # Check if course is now complete
-        if self.progress == 100:
-            self.on_course_complete()
-        
-        return True
+            UserPDFAccess.objects.get_or_create(user=self.user, pdf=pdf, defaults={'payment': self.payment})
     
     def update_progress(self):
-        """Calculate progress percentage based on completed lessons"""
-        # Get total lessons in course
         total_videos = self.course.videos.count()
         total_pdfs = self.course.pdf_resources.count()
         total_lessons = total_videos + total_pdfs
-        
         if total_lessons == 0:
             self.progress = 0
             return
-        
         completed_count = len(self.completed_lessons) if self.completed_lessons else 0
         self.progress = int((completed_count / total_lessons) * 100)
-    
-    def get_completed_count(self):
-        """Get number of completed lessons"""
-        return len(self.completed_lessons) if self.completed_lessons else 0
-    
-    def get_total_lessons(self):
-        """Get total number of lessons in course"""
-        return self.course.videos.count() + self.course.pdf_resources.count()
-    
-    def is_lesson_completed(self, lesson_type, lesson_id):
-        """Check if a specific lesson is completed"""
-        lesson_key = f"{lesson_type}_{lesson_id}"
-        return self.completed_lessons and lesson_key in self.completed_lessons
-    
-    def get_next_lesson(self):
-        """Get the next incomplete lesson"""
-        from .models import TrainingVideo, PDF
-        
-        # Get all lessons ordered
-        videos = list(TrainingVideo.objects.filter(course=self.course).order_by('order'))
-        pdfs = list(PDF.objects.filter(course=self.course).order_by('order'))
-        
-        # Combine and sort by order
-        all_lessons = []
-        for v in videos:
-            all_lessons.append({'type': 'video', 'id': v.id, 'title': v.title, 'order': v.order})
-        for p in pdfs:
-            all_lessons.append({'type': 'pdf', 'id': p.id, 'title': p.title, 'order': p.order})
-        
-        all_lessons.sort(key=lambda x: x['order'])
-        
-        # If no completed lessons, return first lesson
-        if not self.completed_lessons:
-            return all_lessons[0] if all_lessons else None
-        
-        # Find first incomplete lesson
-        for lesson in all_lessons:
-            lesson_key = f"{lesson['type']}_{lesson['id']}"
-            if lesson_key not in self.completed_lessons:
-                return lesson
-        
-        return None  # All completed
-    
-    def get_lesson_statuses(self):
-        """Get status of all lessons (completed/incomplete)"""
-        from .models import TrainingVideo, PDF
-        
-        videos = TrainingVideo.objects.filter(course=self.course).order_by('order')
-        pdfs = PDF.objects.filter(course=self.course).order_by('order')
-        
-        statuses = []
-        
-        for video in videos:
-            statuses.append({
-                'type': 'video',
-                'id': video.id,
-                'title': video.title,
-                'completed': self.is_lesson_completed('video', video.id),
-                'order': video.order,
-                'url': f"/watch/{video.id}/"
-            })
-        
-        for pdf in pdfs:
-            statuses.append({
-                'type': 'pdf',
-                'id': pdf.id,
-                'title': pdf.title,
-                'completed': self.is_lesson_completed('pdf', pdf.id),
-                'order': pdf.order,
-                'url': f"/pdf/{pdf.id}/view/"
-            })
-        
-        statuses.sort(key=lambda x: x['order'])
-        return statuses
-    
-    def get_progress_percentage_display(self):
-        """Get progress percentage with nice formatting"""
-        return f"{self.progress}%"
-    
-    def get_remaining_lessons(self):
-        """Get count of remaining lessons"""
-        total = self.get_total_lessons()
-        completed = self.get_completed_count()
-        return total - completed
-    
-    def on_course_complete(self):
-        """Called when course reaches 100% completion"""
-        from .models import Notification
-        
-        # Create achievement notification
-        Notification.objects.create(
-            user=self.user,
-            title='Course Completed! 🎉',
-            message=f'Congratulations! You have completed {self.course.title}',
-            notification_type='SUCCESS',
-            related_object_type='course',
-            related_object_id=self.course.id
-        )
-        
-        # Log activity
-        ActivityLog.objects.create(
-            user=self.user,
-            action='COURSE_COMPLETED',
-            description=f'Completed course: {self.course.title}'
-        )
-    
-    def reset_progress(self):
-        """Reset all progress (admin only)"""
-        self.completed_lessons = []
-        self.progress = 0
-        self.save(update_fields=['completed_lessons', 'progress'])
 
 
 # ==================== MENTORSHIP PROGRAM ====================
 
 class MentorshipProgram(models.Model):
-    """Mentorship programs managed by admin"""
     title = models.CharField(max_length=200)
     mentor_name = models.CharField(max_length=100)
     mentor_role = models.CharField(max_length=100)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    
     sessions_per_week = models.IntegerField(default=1)
     duration_months = models.IntegerField(default=3)
-    
     is_available = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return f"{self.mentor_name} - {self.title}"
-    
-    @property
-    def image_url(self):
-        """Get program image URL (if any)"""
-        # You can add an image field if needed
-        return None
 
 
 # ==================== USER ACTIVITY ====================
 
 class UserActivity(models.Model):
-    """Log user activities"""
     ACTION_CHOICES = [
         ('login', 'User Login'),
         ('video_watch', 'Video Watched'),
@@ -2666,14 +2210,11 @@ class UserActivity(models.Model):
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE)
     action = models.CharField(max_length=50, choices=ACTION_CHOICES)
     description = models.CharField(max_length=255)
-    
     video = models.ForeignKey(TrainingVideo, on_delete=models.SET_NULL, null=True, blank=True)
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True)
     payment = models.ForeignKey(PaymentTransaction, on_delete=models.SET_NULL, null=True, blank=True)
-    
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
-    
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -2686,7 +2227,6 @@ class UserActivity(models.Model):
 # ==================== BLOG MODEL ====================
 
 class Blog(models.Model):
-    """Blog posts for the website"""
     CATEGORY_CHOICES = [
         ('market_analysis', 'Market Analysis'),
         ('trading_psychology', 'Trading Psychology'),
@@ -2708,27 +2248,21 @@ class Blog(models.Model):
     author = models.ForeignKey(MfalmeUsers, on_delete=models.SET_NULL, null=True, blank=True)
     content = models.TextField()
     excerpt = models.TextField(max_length=500, blank=True)
-    
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='general')
     tags = models.CharField(max_length=500, blank=True)
-    
     featured_image = models.ImageField(upload_to='blog/', blank=True, null=True)
     thumbnail = models.ImageField(upload_to='blog/thumbnails/', blank=True, null=True)
-    
     views = models.IntegerField(default=0)
     likes = models.IntegerField(default=0)
     shares = models.IntegerField(default=0)
     read_time = models.IntegerField(default=5)
-    
     meta_title = models.CharField(max_length=200, blank=True)
     meta_description = models.TextField(max_length=300, blank=True)
     meta_keywords = models.CharField(max_length=300, blank=True)
-    
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     is_featured = models.BooleanField(default=False)
     is_popular = models.BooleanField(default=False)
     allow_comments = models.BooleanField(default=True)
-    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
@@ -2752,10 +2286,8 @@ class Blog(models.Model):
             while Blog.objects.filter(slug=self.slug).exists():
                 self.slug = f"{original_slug}-{counter}"
                 counter += 1
-        
         if self.status == 'published' and not self.published_at:
             self.published_at = timezone.now()
-        
         super().save(*args, **kwargs)
     
     def increment_views(self):
@@ -2764,7 +2296,6 @@ class Blog(models.Model):
     
     @property
     def featured_image_url(self):
-        """Get featured image URL"""
         if not self.featured_image or not self.featured_image.name:
             return None
         try:
@@ -2776,8 +2307,6 @@ class Blog(models.Model):
 # ==================== PDF MODEL ====================
 
 class PDF(models.Model):
-    """PDF resources for VIEWING (not downloading) - OPTIMIZED FOR S3 DIRECT UPLOADS"""
-    
     CATEGORY_CHOICES = [
         ('course_material', 'Course Material'),
         ('ebook', 'E-Book'),
@@ -2799,56 +2328,26 @@ class PDF(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True, blank=True)
     description = models.TextField(blank=True)
-    
-    # ===== PDF FILE HANDLING - DUAL APPROACH =====
-    # PRIMARY: S3 key for direct uploads (RECOMMENDED)
-    pdf_s3_key = models.CharField(
-        max_length=500,
-        blank=True,
-        null=True,
-        help_text="S3 key for PDF uploaded directly to S3 (e.g., pdfs/20260311_123456_abc123_document.pdf)"
-    )
-    
-    # LEGACY: Uploaded PDF file (kept for backward compatibility)
+    pdf_s3_key = models.CharField(max_length=500, blank=True, null=True)
     pdf_file = models.FileField(upload_to='pdfs/', blank=True, null=True)
-    
-    # ===== COVER IMAGE HANDLING - DUAL APPROACH =====
-    # PRIMARY: S3 key for cover image
-    cover_s3_key = models.CharField(
-        max_length=500,
-        blank=True,
-        null=True,
-        help_text="S3 key for cover image uploaded directly to S3"
-    )
-    
-    # LEGACY: Uploaded cover image
+    cover_s3_key = models.CharField(max_length=500, blank=True, null=True)
     cover_image = models.ImageField(upload_to='pdfs/covers/', blank=True, null=True)
-    
     pages = models.IntegerField(default=0)
     file_size = models.CharField(max_length=20, blank=True)
     duration = models.CharField(max_length=50, blank=True)
-    
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
     tags = models.CharField(max_length=500, blank=True)
-    
     course = models.ForeignKey('Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='pdf_resources')
-    
     access_level = models.CharField(max_length=20, choices=ACCESS_LEVEL_CHOICES, default='free')
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_free = models.BooleanField(default=True)
-    
-    # Track VIEWS instead of downloads
     views = models.IntegerField(default=0)
     unique_viewers = models.IntegerField(default=0)
-    
-    # Keep downloads for backward compatibility but mark as deprecated
     downloads = models.IntegerField(default=0, editable=False)
-    
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
     is_new = models.BooleanField(default=False)
     order = models.IntegerField(default=0)
-    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(null=True, blank=True)
@@ -2874,262 +2373,63 @@ class PDF(models.Model):
             while PDF.objects.filter(slug=self.slug).exists():
                 self.slug = f"{original_slug}-{counter}"
                 counter += 1
-        
         self.is_free = (self.price == 0)
-        
         if not self.published_at:
             self.published_at = timezone.now()
-        
-        # Check if we should bypass validation (for S3 uploads)
         bypass_validation = kwargs.pop('bypass_validation', False)
-        
         if bypass_validation:
-            # For S3 uploads, we don't want Django to validate file existence
             self._state.adding = not self.pk
             super().save(*args, **kwargs)
         else:
-            # Normal save with validation
             super().save(*args, **kwargs)
     
     @property
     def file_url(self):
-        """Get PDF file URL with priority: S3 key first, then legacy file"""
         from django.conf import settings
-        
-        # PRIMARY: S3 Key
         if self.pdf_s3_key:
             try:
                 if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
                     return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{self.pdf_s3_key}"
                 else:
                     return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.pdf_s3_key}"
-            except Exception as e:
-                print(f"⚠️ Error generating S3 PDF URL for {self.id}: {e}")
-        
-        # LEGACY: Uploaded file
+            except:
+                pass
         if self.pdf_file and hasattr(self.pdf_file, 'url'):
             try:
                 return self.pdf_file.url
-            except Exception as e:
-                print(f"⚠️ Error getting legacy PDF URL for {self.id}: {e}")
-        
+            except:
+                pass
         return None
     
     @property
     def cover_url(self):
-        """Get cover image URL with priority: S3 key first, then legacy file"""
         from django.conf import settings
-        
-        # PRIMARY: S3 Key
         if self.cover_s3_key:
             try:
                 if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
                     return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{self.cover_s3_key}"
                 else:
                     return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.cover_s3_key}"
-            except Exception as e:
-                print(f"⚠️ Error generating S3 cover URL for {self.id}: {e}")
-        
-        # LEGACY: Uploaded cover
+            except:
+                pass
         if self.cover_image and hasattr(self.cover_image, 'url'):
             try:
                 return self.cover_image.url
-            except Exception as e:
-                print(f"⚠️ Error getting legacy cover URL for {self.id}: {e}")
-        
+            except:
+                pass
         return None
     
     @property
     def is_s3_pdf(self):
-        """Check if PDF is stored in S3"""
         return bool(self.pdf_s3_key)
     
     @property
     def is_s3_cover(self):
-        """Check if cover is stored in S3"""
         return bool(self.cover_s3_key)
     
     def increment_views(self):
-        """Increment view count when PDF is viewed"""
         self.views += 1
         self.save(update_fields=['views'])
-    
-    def increment_unique_viewers(self):
-        """Increment unique viewers count"""
-        self.unique_viewers += 1
-        self.save(update_fields=['unique_viewers'])
-    
-    def get_filename(self):
-        """Get just the filename from the PDF path"""
-        if self.pdf_s3_key:
-            return self.pdf_s3_key.split('/')[-1]
-        elif self.pdf_file and self.pdf_file.name:
-            return self.pdf_file.name.split('/')[-1]
-        return None
-    
-    def to_dict(self):
-        """Convert to dictionary for API responses"""
-        return {
-            'id': self.id,
-            'title': self.title,
-            'description': self.description,
-            'file_url': self.file_url,
-            'cover_url': self.cover_url,
-            'course_id': self.course.id if self.course else None,
-            'course_name': self.course.title if self.course else 'General',
-            'category': self.category,
-            'pages': self.pages,
-            'file_size': self.file_size,
-            'price': float(self.price),
-            'is_free': self.is_free,
-            'access_level': self.access_level,
-            'views': self.views,
-            'is_active': self.is_active,
-            'is_featured': self.is_featured,
-            'order': self.order,
-            'created_at': self.created_at.strftime('%Y-%m-%d') if self.created_at else None,
-            'pdf_s3_key': self.pdf_s3_key,
-            'cover_s3_key': self.cover_s3_key,
-            'is_s3_pdf': self.is_s3_pdf,
-        }
-
-
-# ==================== SIGNALS ====================
-
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-@receiver(post_save, sender=MfalmeUsers)
-def create_activity_log_for_new_user(sender, instance, created, **kwargs):
-    """Create activity log when a new user is created"""
-    if created:
-        ActivityLog.objects.create(
-            user=instance,
-            action='REGISTER',
-            description=f'New user registered: {instance.username}',
-            metadata={'email': instance.email}
-        )
-
-
-@receiver(post_save, sender=UserCourse)
-def grant_course_access(sender, instance, created, **kwargs):
-    """When a user enrolls in a course, grant access to all videos and PDFs"""
-    if created:
-        instance.get_video_access()
-        instance.get_pdf_access()
-        
-        # Create notification
-        Notification.objects.create(
-            user=instance.user,
-            title='Course Enrolled',
-            message=f'You have successfully enrolled in {instance.course.title}. All course materials are now accessible.',
-            notification_type='SUCCESS',
-            related_object_type='course',
-            related_object_id=instance.course.id
-        )
-
-
-@receiver(post_save, sender=Watchlist)
-def log_watchlist_add(sender, instance, created, **kwargs):
-    """Log when user adds item to watchlist"""
-    if created:
-        content = instance.get_content()
-        if content:
-            title = getattr(content, 'title', str(content))
-            ActivityLog.objects.create(
-                user=instance.user,
-                action='WATCHLIST_ADD',
-                description=f'Added to watchlist: {title}',
-                metadata={
-                    'content_type': instance.content_type,
-                    'content_id': instance.content_id
-                }
-            )
-
-
-@receiver(post_save, sender=InstituteApplication)
-def notify_admin_institute_application(sender, instance, created, **kwargs):
-    """Notify admin when new institute application is submitted"""
-    if created:
-        # Create admin notification (you'll need to decide how to notify admins)
-        # This could be an email or an in-app notification for admin users
-        pass
-
-
-@receiver(post_save, sender=CommunityJoinRequest)
-def notify_admin_community_request(sender, instance, created, **kwargs):
-    """Notify admin when new community join request is submitted"""
-    if created:
-        # Create admin notification
-        pass
-
-
-# ==================== ADMIN COMPATIBILITY ALIASES ====================
-
-# Create aliases for models your views expect
-Video = TrainingVideo
-Activity = ActivityLog
-Blog = Blog
-PDF = PDF
-Package = Package
-Order = None  # Order model doesn't exist yet
-Partnership = None  # Partnership model doesn't exist yet
-Course = Course
-SupportTicket = SupportTicket
-TicketReply = TicketReply
-UserVideoAccess = UserVideoAccess
-UserPDFAccess = UserPDFAccess
-UserCourseAccess = UserCourse
-
-
-# ==================== EXPORT ALL MODELS ====================
-
-__all__ = [
-    'MfalmeUsers',
-    'VerificationCode',
-    'PaymentTransaction',
-    'Subscription',
-    'Package',
-    'EducationProgram',
-    'UserEducationEnrollment',
-    'PartnershipProgram',
-    'UserPartnership',
-    'Watchlist',
-    'InstituteApplication',
-    'CommunityJoinRequest',
-    'Testimonial',
-    'FAQ',
-    'CommunityTier',
-    'UserCommunityMembership',
-    'Brokerage',
-    'ContactSubmission',
-    'SiteContent',
-    'SiteContentVersion',
-    'Statistic',
-    'Notification',
-    'ActivityLog',
-    'SystemSettings',
-    'SupportTicket',
-    'TicketReply',
-    'UserSession',
-    'HeroSlider',
-    'AboutSection',
-    'PaymentMethod',
-    'ContactInfo',
-    'Logo',
-    'TrainingVideo',
-    'UserVideoAccess',
-    'UserPDFAccess',
-    'Course',
-    'UserCourse',
-    'MentorshipProgram',
-    'UserActivity',
-    'Blog',
-    'PDF',
-    # Aliases
-    'Video',
-    'Activity',
-]
 
 
 # ========== MERCHANDISE MODELS ==========
@@ -3143,7 +2443,7 @@ class Merchandise(models.Model):
     
     name = models.CharField(max_length=200)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='apparel')
-    description = models.TextField()
+    description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.IntegerField(default=0)
     image = models.URLField(max_length=500, blank=True, null=True)
@@ -3198,7 +2498,7 @@ class MerchandiseOrder(models.Model):
 # ========== EVENT MODELS ==========
 class Event(models.Model):
     title = models.CharField(max_length=200, default="East & Central Africa Live Leveraging Summit")
-    description = models.TextField(default="The biggest trading event in East & Central Africa")
+    description = models.TextField(blank=True, default="")
     date = models.DateTimeField(default=datetime(2026, 8, 7, 9, 0, 0))
     venue = models.CharField(max_length=300, default="Safari Park Hotel, Nairobi")
     venue_address = models.TextField(blank=True)
@@ -3238,7 +2538,7 @@ class EventTicket(models.Model):
     attendee_email = models.EmailField()
     quantity = models.IntegerField(default=1)
     unit_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=249)
-    unit_price_kes = models.DecimalField(max_digits=10, decimal_places=2, default=31872)
+    unit_price_kes = models.DecimalField(max_digits=10, decimal_places=2, default=32121)
     total_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount_kes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     payment_method = models.CharField(max_length=50, default='sasapay')
@@ -3262,7 +2562,7 @@ class EventTicket(models.Model):
         return f"{self.ticket_number} - {self.attendee_name}"
 
 
-# ========== ORDER MODEL (for package purchases) ==========
+# ========== ORDER MODEL ==========
 class Order(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -3293,3 +2593,41 @@ class Order(models.Model):
     
     def __str__(self):
         return self.reference
+
+
+# ==================== SIGNALS ====================
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=MfalmeUsers)
+def create_activity_log_for_new_user(sender, instance, created, **kwargs):
+    if created:
+        ActivityLog.objects.create(
+            user=instance,
+            action='REGISTER',
+            description=f'New user registered: {instance.username}',
+            metadata={'email': instance.email}
+        )
+
+
+@receiver(post_save, sender=UserCourse)
+def grant_course_access(sender, instance, created, **kwargs):
+    if created:
+        instance.get_video_access()
+        instance.get_pdf_access()
+        Notification.objects.create(
+            user=instance.user,
+            title='Course Enrolled',
+            message=f'You have successfully enrolled in {instance.course.title}.',
+            notification_type='SUCCESS',
+            related_object_type='course',
+            related_object_id=instance.course.id
+        )
+
+
+# ==================== ADMIN COMPATIBILITY ALIASES ====================
+
+Video = TrainingVideo
+Activity = ActivityLog
+Partnership = PartnershipProgram

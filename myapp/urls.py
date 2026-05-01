@@ -2,6 +2,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
+from django.http import JsonResponse
 from . import views
 from . import admin_views  
 from . import s3_views 
@@ -14,12 +15,50 @@ from .views import (
     pesapal_callback,
     pesapal_ipn,
     payment_pending,
-    
 )
 
 urlpatterns = [
-    # ==================== PUBLIC SITE PAGES ====================
+    # ==================== DEBUG ENDPOINTS (ADD THESE FIRST) ====================
+    path('api/sasapay/debug/', lambda request: JsonResponse({
+        'status': 'SasaPay debug endpoint working', 
+        'method': request.method, 
+        'path': request.path,
+        'timestamp': __import__('time').time()
+    }), name='sasapay_debug'),
+    path('api/test/', lambda request: JsonResponse({'status': 'API working', 'message': 'Server is responding'}), name='api_test'),
     
+    # ==================== SASA PAYMENT ENDPOINTS ====================
+    # Ticket Payment
+    path('api/sasapay/ticket-payment', views.sasapay_ticket_payment, name='sasapay_ticket_payment'),
+    path('api/sasapay/ticket-payment/', views.sasapay_ticket_payment, name='sasapay_ticket_payment_slash'),
+    
+    # Merchandise Payment
+    path('api/sasapay/merchandise-payment', views.sasapay_merchandise_payment, name='sasapay_merchandise_payment'),
+    path('api/sasapay/merchandise-payment/', views.sasapay_merchandise_payment, name='sasapay_merchandise_payment_slash'),
+    
+    # Payment Status
+    path('api/sasapay/status/<str:transaction_id>', views.sasapay_payment_status, name='sasapay_payment_status'),
+    path('api/sasapay/status/<str:transaction_id>/', views.sasapay_payment_status, name='sasapay_payment_status_slash'),
+    
+    # Callback endpoints
+    path('api/sasapay/callback', views.sasapay_callback, name='sasapay_callback'),
+    path('api/sasapay/callback/', views.sasapay_callback, name='sasapay_callback_slash'),
+    
+    # STK Push
+    path('api/sasapay/stk-push', views.sasapay_stk_push, name='sasapay_stk_push'),
+    path('api/sasapay/stk-push/', views.sasapay_stk_push, name='sasapay_stk_push_slash'),
+    
+    # Check Status
+    path('api/sasapay/check-status/<str:checkout_id>', views.sasapay_check_status, name='sasapay_check_status'),
+    path('api/sasapay/check-status/<str:checkout_id>/', views.sasapay_check_status, name='sasapay_check_status_slash'),
+    
+    # SasaPay UI endpoints
+    path('sasapay/process/', views.sasapay_process_payment, name='sasapay_process_payment'),
+    path('sasapay/verify/', views.sasapay_verify, name='sasapay_verify'),
+    path('sasapay/status/<str:reference>/', views.sasapay_status, name='sasapay_status'),
+    path('test-sasapay/', views.test_sasapay_connection, name='test_sasapay'),
+    
+    # ==================== PUBLIC SITE PAGES ====================
     path('', views.index, name='index'),
     path('about/', views.about, name='about'),
     path('services/', views.services, name='services'),
@@ -33,7 +72,6 @@ urlpatterns = [
     path('seminars/', views.seminars, name='seminars'),
     path('faqs/', views.faqs, name='faqs'),
     path('booking/', views.booking, name='booking'),
-    path('test-sasapay/', views.test_sasapay_connection, name='test_sasapay'),
     
     # ==================== USER AUTHENTICATION ====================
     path('login/', views.login_page, name='login_page'),
@@ -62,7 +100,7 @@ urlpatterns = [
     path('my-courses/', views.my_courses, name='my_courses'),
     path('transactions/', views.transaction_history, name='transaction_history'),
 
-    #=============ADMIN DATA==========================
+    # ==================== ADMIN DATA EXPORTS ====================
     path('admin/api/users/export/', views.export_users, name='export_users'),
     path('admin/api/orders/export/', views.export_orders, name='export_orders'),
     path('admin/api/courses/export/', views.export_courses, name='export_courses'),
@@ -74,27 +112,19 @@ urlpatterns = [
     path('admin/api/reports/revenue/export/', views.export_revenue_report, name='export_revenue_report'),
     path('api/user/community/join/', views.api_community_join, name='api_community_join'),
 
-    
     # ==================== CONTENT VIEWING ====================
-    # Video viewing
     path('watch/<int:video_id>/', views.watch_video, name='watch_video'),
-    
-    # PDF viewing (NEW - view in browser instead of download)
     path('pdf/<int:pdf_id>/view/', views.view_pdf, name='view_pdf'),
-    
-    # Deprecated download endpoint - redirects to view
     path('pdf/<int:pdf_id>/download/', views.download_pdf, name='download_pdf'),
-    
-    # Course viewing
     path('course/<int:course_id>/', views.view_course, name='view_course'),
     path('course/<int:course_id>/complete/<str:lesson_type>/<int:lesson_id>/', 
          views.mark_lesson_complete, name='mark_lesson_complete'),
     path('api/initialize-payment/', views.initialize_package_payment, name='initialize_payment'),
     path('api/create-order/', views.api_create_order, name='api_create_order'),
     path('payment/success/<str:reference>/', views.payment_success, name='payment_success'),
-    path('sasapay/status/<str:reference>/', views.sasapay_status, name='sasapay_status'),
     path('education/pay/', views.education_payment, name='education_payment'),
 
+    # ==================== S3 UPLOAD ENDPOINTS ====================
     path('admin/api/get-s3-presigned-url/', s3_views.get_s3_presigned_url, name='get_s3_presigned_url'),
     path('admin/api/initiate-multipart-upload/', s3_views.initiate_multipart_upload, name='initiate_multipart_upload'),
     path('admin/api/complete-multipart-upload/', s3_views.complete_multipart_upload, name='complete_multipart_upload'),
@@ -111,21 +141,13 @@ urlpatterns = [
     path('payment/initiate/', views.initiate_payment, name='initiate_payment'),
     path('payment/process/', views.process_payment, name='process_payment'),
     path('payment/verify/<str:reference>/', views.verify_payment, name='verify_payment'),
-    path('payment/success/<str:reference>/', views.payment_success, name='payment_success'),
     path('payment/failed/', views.payment_failed, name='payment_failed'),
     path('paystack-webhook/', views.paystack_webhook, name='paystack_webhook'),
-    
-    # Payment without login (guest)
     path('pay-without-login/', views.pay_without_login, name='pay_without_login'),
     path('payment/guest-verify/<str:reference>/', views.verify_guest_payment, name='verify_guest_payment'),
-    
-    # Package Payments
-    path('payment/package/<str:package_type>/<int:amount>/', 
-         views.initiate_package_payment, name='initiate_package_payment'),
-    path('payment/education/<str:program_type>/<str:duration>/', 
-         views.initiate_education_payment, name='initiate_education_payment'),
-    path('payment/partnership/<str:tier>/', 
-         views.initiate_partnership_payment, name='initiate_partnership_payment'),
+    path('payment/package/<str:package_type>/<int:amount>/', views.initiate_package_payment, name='initiate_package_payment'),
+    path('payment/education/<str:program_type>/<str:duration>/', views.initiate_education_payment, name='initiate_education_payment'),
+    path('payment/partnership/<str:tier>/', views.initiate_partnership_payment, name='initiate_partnership_payment'),
     path('payment/custom/', views.initiate_custom_payment, name='initiate_custom_payment'),
     path('payment/video/<int:video_id>/', views.payment_video, name='payment_video'),
     path('initiate-video-payment/', views.initiate_video_payment, name='initiate_video_payment'),
@@ -139,10 +161,8 @@ urlpatterns = [
     path('api/user/stats/', views.api_user_stats, name='api_user_stats'),
     path('api/user/activities/', views.api_user_activities, name='api_user_activities'),
     path('api/user/notifications/', views.api_user_notifications, name='api_user_notifications'),
-    path('api/notifications/<int:notification_id>/read/', 
-         views.api_mark_notification_read, name='api_mark_notification_read'),
-    path('api/notifications/read-all/', 
-         views.api_mark_all_notifications_read, name='api_mark_all_notifications_read'),
+    path('api/notifications/<int:notification_id>/read/', views.api_mark_notification_read, name='api_mark_notification_read'),
+    path('api/notifications/read-all/', views.api_mark_all_notifications_read, name='api_mark_all_notifications_read'),
     
     # ==================== DASHBOARD API ENDPOINTS ====================
     path('api/user/courses/', views.api_user_courses, name='api_user_courses'),
@@ -155,7 +175,6 @@ urlpatterns = [
     path('api/user/watchlist/add/', views.api_watchlist_add, name='api_watchlist_add'),
     path('api/user/watchlist/remove/', views.api_watchlist_remove, name='api_watchlist_remove'),
     path('api/user/communities/', views.api_user_communities, name='api_user_communities'),
-    path('api/user/community/join/', views.api_community_join, name='api_community_join'),
     path('api/user/institute/eligibility/', views.api_institute_eligibility, name='api_institute_eligibility'),
     path('api/user/institute/apply/', views.api_institute_apply, name='api_institute_apply'),
     path('api/user/profile/update/', views.api_profile_update, name='api_profile_update'),
@@ -167,12 +186,8 @@ urlpatterns = [
     path('api/user/tickets/<int:ticket_id>/', views.api_ticket_detail, name='api_ticket_detail'),
     path('api/user/tickets/<int:ticket_id>/reply/', views.api_ticket_reply, name='api_ticket_reply'),
     
-    # ==================== PDF API ENDPOINTS (UPDATED) ====================
-    # NEW: PDF viewing API endpoint (returns view URL) - THIS REPLACES THE DOWNLOAD ENDPOINT
+    # ==================== PDF API ENDPOINTS ====================
     path('api/user/pdfs/<int:pdf_id>/view/', views.api_pdf_view, name='api_pdf_view'),
-    
-    # REMOVED: The download endpoint that was causing the error
-    # The old line 'path('api/user/pdfs/<int:pdf_id>/download/', views.api_download_pdf, ...)' has been deleted
     
     # ==================== CONTENT API ENDPOINTS ====================
     path('api/user/packages/', views.api_get_packages, name='api_get_packages'),
@@ -197,8 +212,6 @@ urlpatterns = [
     # ==================== ADMIN AUTHENTICATION ====================
     path('admin/login/', admin_views.admin_login_view, name='admin_login'),
     path('admin/logout/', admin_views.admin_logout_view, name='admin_logout'),
-    
-    # ==================== MAIN ADMIN DASHBOARD ====================
     path('admin/', admin_views.admin_dashboard_view, name='admin_dashboard'),
     path('admin/dashboard/', admin_views.admin_dashboard_view, name='admin_dashboard_alt'),
     path('admin/debug-courses-api/', admin_views.debug_courses_api, name='debug_courses_api'),
@@ -208,143 +221,67 @@ urlpatterns = [
     path('admin/test-access/', admin_views.test_admin_access, name='test_admin_access'),
     path('admin/debug-media/', admin_views.debug_media, name='debug_media'),
     
-    # ==================== ADMIN API - DASHBOARD ====================
-    path('admin/api/dashboard-stats/', admin_views.admin_api_dashboard_stats, 
-         name='admin_api_dashboard_stats'),
-    path('admin/api/activities/', admin_views.admin_api_activities, 
-         name='admin_api_activities'),
-    
-    # ==================== ADMIN API - USER MANAGEMENT ====================
+    # ==================== ADMIN API ====================
+    path('admin/api/dashboard-stats/', admin_views.admin_api_dashboard_stats, name='admin_api_dashboard_stats'),
+    path('admin/api/activities/', admin_views.admin_api_activities, name='admin_api_activities'),
     path('admin/api/users/', admin_views.admin_api_users, name='admin_api_users'),
-    path('admin/api/users/<int:user_id>/', admin_views.admin_api_user_detail, 
-         name='admin_api_user_detail'),
-    path('admin/api/users/create/', admin_views.admin_api_user_create, 
-         name='admin_api_user_create'),
-    path('admin/api/users/<int:user_id>/update/', admin_views.admin_api_user_update, 
-         name='admin_api_user_update'),
-    path('admin/api/users/<int:user_id>/delete/', admin_views.admin_api_user_delete, 
-         name='admin_api_user_delete'),
-    path('admin/api/users/<int:user_id>/activate/', admin_views.admin_api_user_activate, 
-         name='admin_api_user_activate'),
-    path('admin/api/users/export/', admin_views.admin_api_users_export, 
-         name='admin_api_users_export'),
-    
-    # ==================== ADMIN API - COURSE MANAGEMENT ====================
+    path('admin/api/users/<int:user_id>/', admin_views.admin_api_user_detail, name='admin_api_user_detail'),
+    path('admin/api/users/create/', admin_views.admin_api_user_create, name='admin_api_user_create'),
+    path('admin/api/users/<int:user_id>/update/', admin_views.admin_api_user_update, name='admin_api_user_update'),
+    path('admin/api/users/<int:user_id>/delete/', admin_views.admin_api_user_delete, name='admin_api_user_delete'),
+    path('admin/api/users/<int:user_id>/activate/', admin_views.admin_api_user_activate, name='admin_api_user_activate'),
+    path('admin/api/users/export/', admin_views.admin_api_users_export, name='admin_api_users_export'),
     path('admin/api/courses/', admin_views.admin_api_courses, name='admin_api_courses'),
-    path('admin/api/courses/<int:course_id>/', admin_views.admin_api_course_detail, 
-         name='admin_api_course_detail'),
-    path('admin/api/courses/create/', admin_views.admin_api_course_create, 
-         name='admin_api_course_create'),
-    path('admin/api/courses/<int:course_id>/update/', admin_views.admin_api_course_update, 
-         name='admin_api_course_update'),
-    path('admin/api/courses/<int:course_id>/delete/', admin_views.admin_api_course_delete, 
-         name='admin_api_course_delete'),
-    path('admin/api/courses/<int:course_id>/stats/', admin_views.admin_api_course_stats, 
-         name='admin_api_course_stats'),
-    path('admin/api/courses/<int:course_id>/enrollments/', admin_views.admin_api_course_enrollments, 
-         name='admin_api_course_enrollments'),
-    path('admin/api/courses/export/', admin_views.admin_api_courses_export, 
-         name='admin_api_courses_export'),
-    
-    # ==================== ADMIN API - VIDEO MANAGEMENT ====================
+    path('admin/api/courses/<int:course_id>/', admin_views.admin_api_course_detail, name='admin_api_course_detail'),
+    path('admin/api/courses/create/', admin_views.admin_api_course_create, name='admin_api_course_create'),
+    path('admin/api/courses/<int:course_id>/update/', admin_views.admin_api_course_update, name='admin_api_course_update'),
+    path('admin/api/courses/<int:course_id>/delete/', admin_views.admin_api_course_delete, name='admin_api_course_delete'),
+    path('admin/api/courses/<int:course_id>/stats/', admin_views.admin_api_course_stats, name='admin_api_course_stats'),
+    path('admin/api/courses/<int:course_id>/enrollments/', admin_views.admin_api_course_enrollments, name='admin_api_course_enrollments'),
+    path('admin/api/courses/export/', admin_views.admin_api_courses_export, name='admin_api_courses_export'),
     path('admin/api/videos/', admin_views.admin_api_videos, name='admin_api_videos'),
-    path('admin/api/videos/<int:video_id>/', admin_views.admin_api_video_detail, 
-         name='admin_api_video_detail'),
-    path('admin/api/videos/create/', admin_views.admin_api_video_create, 
-         name='admin_api_video_create'),
-    path('admin/api/videos/<int:video_id>/update/', admin_views.admin_api_video_update, 
-         name='admin_api_video_update'),
-    path('admin/api/videos/<int:video_id>/delete/', admin_views.admin_api_video_delete, 
-         name='admin_api_video_delete'),
-    path('admin/api/videos/upload/', admin_views.admin_api_video_upload, 
-         name='admin_api_video_upload'),
-    path('admin/api/videos/export/', admin_views.admin_api_videos_export, 
-         name='admin_api_videos_export'),
-    
-    # ==================== ADMIN API - PDF MANAGEMENT ====================
+    path('admin/api/videos/<int:video_id>/', admin_views.admin_api_video_detail, name='admin_api_video_detail'),
+    path('admin/api/videos/create/', admin_views.admin_api_video_create, name='admin_api_video_create'),
+    path('admin/api/videos/<int:video_id>/update/', admin_views.admin_api_video_update, name='admin_api_video_update'),
+    path('admin/api/videos/<int:video_id>/delete/', admin_views.admin_api_video_delete, name='admin_api_video_delete'),
+    path('admin/api/videos/upload/', admin_views.admin_api_video_upload, name='admin_api_video_upload'),
+    path('admin/api/videos/export/', admin_views.admin_api_videos_export, name='admin_api_videos_export'),
     path('admin/api/pdfs/', admin_views.admin_api_pdfs, name='admin_api_pdfs'),
-    path('admin/api/pdfs/<int:pdf_id>/', admin_views.admin_api_pdf_detail, 
-         name='admin_api_pdf_detail'),
-    path('admin/api/pdfs/create/', admin_views.admin_api_pdf_create, 
-         name='admin_api_pdf_create'),
-    path('admin/api/pdfs/<int:pdf_id>/update/', admin_views.admin_api_pdf_update, 
-         name='admin_api_pdf_update'),
-    path('admin/api/pdfs/<int:pdf_id>/delete/', admin_views.admin_api_pdf_delete, 
-         name='admin_api_pdf_delete'),
-    path('admin/api/pdfs/upload/', admin_views.admin_api_pdf_upload, 
-         name='admin_api_pdf_upload'),
-    path('admin/api/pdfs/<int:pdf_id>/fix-file/', admin_views.admin_api_pdf_fix_file, 
-         name='admin_api_pdf_fix_file'),
-    path('admin/api/pdfs/<int:pdf_id>/debug/', admin_views.admin_api_pdf_debug, 
-         name='admin_api_pdf_debug'),
-    path('admin/api/pdfs/export/', admin_views.admin_api_pdfs_export, 
-         name='admin_api_pdfs_export'),
-    
-    # ==================== ADMIN API - PACKAGE MANAGEMENT ====================
+    path('admin/api/pdfs/<int:pdf_id>/', admin_views.admin_api_pdf_detail, name='admin_api_pdf_detail'),
+    path('admin/api/pdfs/create/', admin_views.admin_api_pdf_create, name='admin_api_pdf_create'),
+    path('admin/api/pdfs/<int:pdf_id>/update/', admin_views.admin_api_pdf_update, name='admin_api_pdf_update'),
+    path('admin/api/pdfs/<int:pdf_id>/delete/', admin_views.admin_api_pdf_delete, name='admin_api_pdf_delete'),
+    path('admin/api/pdfs/upload/', admin_views.admin_api_pdf_upload, name='admin_api_pdf_upload'),
+    path('admin/api/pdfs/<int:pdf_id>/fix-file/', admin_views.admin_api_pdf_fix_file, name='admin_api_pdf_fix_file'),
+    path('admin/api/pdfs/<int:pdf_id>/debug/', admin_views.admin_api_pdf_debug, name='admin_api_pdf_debug'),
+    path('admin/api/pdfs/export/', admin_views.admin_api_pdfs_export, name='admin_api_pdfs_export'),
     path('admin/api/packages/', admin_views.admin_api_packages, name='admin_api_packages'),
-    path('admin/api/packages/<int:package_id>/', admin_views.admin_api_package_detail, 
-         name='admin_api_package_detail'),
-    path('admin/api/packages/create/', admin_views.admin_api_package_create, 
-         name='admin_api_package_create'),
-    path('admin/api/packages/<int:package_id>/update/', admin_views.admin_api_package_update, 
-         name='admin_api_package_update'),
-    path('admin/api/packages/<int:package_id>/delete/', admin_views.admin_api_package_delete, 
-         name='admin_api_package_delete'),
-    path('admin/api/packages/<int:package_id>/toggle-popular/', admin_views.admin_api_package_toggle_popular, 
-         name='admin_api_package_toggle_popular'),
-    path('admin/api/packages/export/', admin_views.admin_api_packages_export, 
-         name='admin_api_packages_export'),
-    
-    # ==================== ADMIN API - ORDER MANAGEMENT ====================
+    path('admin/api/packages/<int:package_id>/', admin_views.admin_api_package_detail, name='admin_api_package_detail'),
+    path('admin/api/packages/create/', admin_views.admin_api_package_create, name='admin_api_package_create'),
+    path('admin/api/packages/<int:package_id>/update/', admin_views.admin_api_package_update, name='admin_api_package_update'),
+    path('admin/api/packages/<int:package_id>/delete/', admin_views.admin_api_package_delete, name='admin_api_package_delete'),
+    path('admin/api/packages/<int:package_id>/toggle-popular/', admin_views.admin_api_package_toggle_popular, name='admin_api_package_toggle_popular'),
+    path('admin/api/packages/export/', admin_views.admin_api_packages_export, name='admin_api_packages_export'),
     path('admin/api/orders/', admin_views.admin_api_orders, name='admin_api_orders'),
-    path('admin/api/orders/<str:order_id>/', admin_views.admin_api_order_detail, 
-         name='admin_api_order_detail'),
-    path('admin/api/orders/export/', admin_views.admin_api_orders_export, 
-         name='admin_api_orders_export'),
-    
-    # ==================== ADMIN API - PARTNERSHIP MANAGEMENT ====================
-    path('admin/api/partnerships/', admin_views.admin_api_partnerships, 
-         name='admin_api_partnerships'),
-    path('admin/api/partnerships/<int:partnership_id>/update-status/', 
-         admin_views.admin_api_update_partnership_status, 
-         name='admin_api_update_partnership_status'),
-    path('admin/api/partnerships/export/', admin_views.admin_api_partnerships_export, 
-         name='admin_api_partnerships_export'),
-    
-    # ==================== ADMIN API - SUPPORT TICKETS ====================
-    path('admin/api/support/tickets/', admin_views.admin_api_support_tickets, 
-         name='admin_api_support_tickets'),
-    path('admin/api/support/tickets/<int:ticket_id>/', 
-         admin_views.admin_api_ticket_detail, name='admin_api_ticket_detail'),
-    path('admin/api/support/tickets/<int:ticket_id>/reply/', 
-         admin_views.admin_api_ticket_reply, name='admin_api_ticket_reply'),
-    path('admin/api/support/tickets/<int:ticket_id>/update-status/', 
-         admin_views.admin_api_ticket_update_status, name='admin_api_ticket_update_status'),
-    
-    # ==================== ADMIN API - BLOG MANAGEMENT ====================
+    path('admin/api/orders/<str:order_id>/', admin_views.admin_api_order_detail, name='admin_api_order_detail'),
+    path('admin/api/orders/export/', admin_views.admin_api_orders_export, name='admin_api_orders_export'),
+    path('admin/api/partnerships/', admin_views.admin_api_partnerships, name='admin_api_partnerships'),
+    path('admin/api/partnerships/<int:partnership_id>/update-status/', admin_views.admin_api_update_partnership_status, name='admin_api_update_partnership_status'),
+    path('admin/api/partnerships/export/', admin_views.admin_api_partnerships_export, name='admin_api_partnerships_export'),
+    path('admin/api/support/tickets/', admin_views.admin_api_support_tickets, name='admin_api_support_tickets'),
+    path('admin/api/support/tickets/<int:ticket_id>/', admin_views.admin_api_ticket_detail, name='admin_api_ticket_detail'),
+    path('admin/api/support/tickets/<int:ticket_id>/reply/', admin_views.admin_api_ticket_reply, name='admin_api_ticket_reply'),
+    path('admin/api/support/tickets/<int:ticket_id>/update-status/', admin_views.admin_api_ticket_update_status, name='admin_api_ticket_update_status'),
     path('admin/api/blogs/', admin_views.admin_api_blogs, name='admin_api_blogs'),
-    path('admin/api/blogs/<int:blog_id>/', admin_views.admin_api_blog_detail, 
-         name='admin_api_blog_detail'),
-    path('admin/api/blogs/create/', admin_views.admin_api_blog_create, 
-         name='admin_api_blog_create'),
-    path('admin/api/blogs/<int:blog_id>/update/', admin_views.admin_api_blog_update, 
-         name='admin_api_blog_update'),
-    path('admin/api/blogs/<int:blog_id>/delete/', admin_views.admin_api_blog_delete, 
-         name='admin_api_blog_delete'),
-    path('admin/api/blogs/export/', admin_views.admin_api_blogs_export, 
-         name='admin_api_blogs_export'),
-    
-    # ==================== ADMIN API - REPORTS ====================
-    path('admin/api/reports/revenue/', admin_views.admin_api_revenue_report, 
-         name='admin_api_revenue_report'),
-    path('admin/api/reports/users/', admin_views.admin_api_users_report, 
-         name='admin_api_users_report'),
-    path('admin/api/reports/revenue/export/', admin_views.admin_api_revenue_export, 
-         name='admin_api_revenue_export'),
-    
-    # ==================== ADMIN API - DELETE ITEM ====================
-    path('admin/api/<str:item_type>/<int:item_id>/delete/', 
-         admin_views.admin_api_delete_item, name='admin_api_delete_item'),
+    path('admin/api/blogs/<int:blog_id>/', admin_views.admin_api_blog_detail, name='admin_api_blog_detail'),
+    path('admin/api/blogs/create/', admin_views.admin_api_blog_create, name='admin_api_blog_create'),
+    path('admin/api/blogs/<int:blog_id>/update/', admin_views.admin_api_blog_update, name='admin_api_blog_update'),
+    path('admin/api/blogs/<int:blog_id>/delete/', admin_views.admin_api_blog_delete, name='admin_api_blog_delete'),
+    path('admin/api/blogs/export/', admin_views.admin_api_blogs_export, name='admin_api_blogs_export'),
+    path('admin/api/reports/revenue/', admin_views.admin_api_revenue_report, name='admin_api_revenue_report'),
+    path('admin/api/reports/users/', admin_views.admin_api_users_report, name='admin_api_users_report'),
+    path('admin/api/reports/revenue/export/', admin_views.admin_api_revenue_export, name='admin_api_revenue_export'),
+    path('admin/api/<str:item_type>/<int:item_id>/delete/', admin_views.admin_api_delete_item, name='admin_api_delete_item'),
     
     # ==================== COURSE PROGRESS APIS ====================
     path('api/course/lesson/complete/', api_mark_lesson_complete, name='api_mark_lesson_complete'),
@@ -357,55 +294,34 @@ urlpatterns = [
     path('test-smtp/', views.test_smtp_connection, name='test_smtp'),
     path('emergency-email-fix/', views.emergency_email_fix, name='emergency_email_fix'),
 
-
+    # ==================== PESAPAL PAYMENT ====================
     path('pesapal/initiate/', pesapal_initiate_payment, name='pesapal_initiate_payment'),
     path('pesapal/callback/', pesapal_callback, name='pesapal_callback'),
     path('pesapal/ipn/', pesapal_ipn, name='pesapal_ipn'),
-    path('payment/', views.payment, name='payment_page'),
 
+    # ==================== MERCHANDISE API ====================
+    path('api/merchandise/', views.get_merchandise, name='get_merchandise'),
+    path('api/merchandise/create/', views.create_merchandise, name='create_merchandise'),
+    path('api/merchandise/<int:id>/update/', views.update_merchandise, name='update_merchandise'),
+    path('api/merchandise/<int:id>/delete/', views.delete_merchandise, name='delete_merchandise'),
 
-    # SasaPay URLs - use views. prefix
-    path('sasapay/process/', views.sasapay_process_payment, name='sasapay_process_payment'),
-    path('sasapay/callback/', views.sasapay_callback, name='sasapay_callback'),
-    path('sasapay/verify/', views.sasapay_verify, name='sasapay_verify'),
-    path('sasapay/status/<str:reference>/', views.sasapay_status, name='sasapay_status'),
+    # ==================== MERCHANDISE ORDERS ====================
+    path('api/merchandise-orders/', views.get_merchandise_orders, name='get_merchandise_orders'),
+    path('api/merchandise-orders/<int:id>/update-status/', views.update_merchandise_order_status, name='update_merchandise_order_status'),
 
+    # ==================== EVENT API ====================
+    path('api/events/', views.get_events, name='get_events'),
+    path('api/events/<int:id>/', views.get_event_detail, name='get_event_detail'),
+    path('api/events/update/<int:id>/', views.update_event, name='update_event'),
 
-    # ==================== ADMIN API - VIDEO MANAGEMENT ====================
-    path('admin/api/videos/', admin_views.admin_api_videos, name='admin_api_videos'),
-    path('admin/api/videos/<int:video_id>/', admin_views.admin_api_video_detail, name='admin_api_video_detail'),
-    path('admin/api/videos/create/', admin_views.admin_api_video_create, name='admin_api_video_create'),
-    path('admin/api/videos/<int:video_id>/update/', admin_views.admin_api_video_update, name='admin_api_video_update'),
-    path('admin/api/videos/<int:video_id>/delete/', admin_views.admin_api_video_delete, name='admin_api_video_delete'),
-    path('admin/api/videos/upload/', admin_views.admin_api_video_upload, name='admin_api_video_upload'),
-    path('admin/api/videos/export/', admin_views.admin_api_videos_export, name='admin_api_videos_export'),
-    # Merchandise URLs
-path('api/merchandise/', views.get_merchandise, name='get_merchandise'),
-path('api/merchandise/create/', views.create_merchandise, name='create_merchandise'),
-path('api/merchandise/<int:id>/update/', views.update_merchandise, name='update_merchandise'),
-path('api/merchandise/<int:id>/delete/', views.delete_merchandise, name='delete_merchandise'),
+    # ==================== TICKET API ====================
+    path('api/tickets/', views.get_tickets, name='get_tickets'),
+    path('api/tickets/<int:id>/', views.get_ticket_detail, name='get_ticket_detail'),
+    path('api/tickets/<int:id>/resend/', views.resend_ticket_email, name='resend_ticket_email'),
+    path('api/tickets/<int:id>/checkin/', views.mark_ticket_checked_in, name='mark_ticket_checked_in'),
 
-# Merchandise Orders
-path('api/merchandise-orders/', views.get_merchandise_orders, name='get_merchandise_orders'),
-path('api/merchandise-orders/<int:id>/update-status/', views.update_merchandise_order_status, name='update_merchandise_order_status'),
-
-# Event URLs
-path('api/events/', views.get_events, name='get_events'),
-path('api/events/<int:id>/', views.get_event_detail, name='get_event_detail'),
-path('api/events/update/<int:id>/', views.update_event, name='update_event'),
-
-# Ticket URLs
-path('api/tickets/', views.get_tickets, name='get_tickets'),
-path('api/tickets/<int:id>/', views.get_ticket_detail, name='get_ticket_detail'),
-path('api/tickets/<int:id>/resend/', views.resend_ticket_email, name='resend_ticket_email'),
-path('api/tickets/<int:id>/checkin/', views.mark_ticket_checked_in, name='mark_ticket_checked_in'),
-
-# Order URLs (for payments)
-path('api/create-order/', views.create_order, name='create_order'),
-
-# SasaPay URLs
-path('api/sasapay/stk-push/', views.sasapay_stk_push, name='sasapay_stk_push'),
-path('api/sasapay/status/<str:checkout_id>/', views.sasapay_check_status, name='sasapay_check_status'),
+    # ==================== ORDER CREATION ====================
+    path('api/create-order/', views.create_order, name='create_order'),
 ]
 
 # ==================== MEDIA FILES SERVING ====================
