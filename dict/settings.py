@@ -49,6 +49,44 @@ if not SECRET_KEY:
         raise ValueError("SECRET_KEY must be set in production environment")
 
 # ================================================
+# FORCE BOTH HTTP AND HTTPS - FIX THE REDIRECT LOOP
+# ================================================
+# These settings OVERRIDE the production security settings for local development
+# They allow both HTTP and HTTPS without redirects
+FORCE_HTTP_DEV = DEBUG and not IS_RAILWAY
+
+if FORCE_HTTP_DEV:
+    # Disable all HTTPS redirects for local development
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+    SECURE_PROXY_SSL_HEADER = None
+    SECURE_SSL_HOST = None
+    SECURE_REDIRECT_EXEMPT = [r'^.*$']  # Exempt all paths from redirect
+    
+    # Allow mixed content in development
+    SECURE_REFERRER_POLICY = 'no-referrer-when-downgrade'
+    
+    print("🔓 HTTPS redirects DISABLED for local development")
+    print("   Access your site at: http://127.0.0.1:8000")
+else:
+    # Production security settings (only when DEBUG=False AND on Railway)
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+    X_FRAME_OPTIONS = 'DENY'
+
+# ================================================
 # AWS S3 CONFIGURATION - ALWAYS DEFINED
 # ================================================
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
@@ -113,7 +151,7 @@ else:
     os.makedirs(MEDIA_ROOT, exist_ok=True)
 
 # ================================================
-# HOSTS & SECURITY
+# HOSTS & SECURITY - MODIFIED FOR LOCAL DEV
 # ================================================
 ALLOWED_HOSTS = [
     'mfalmebetterdayscapital.com',
@@ -124,6 +162,10 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '[::1]',
 ]
+
+# Add HTTP and HTTPS for localhost in development
+if FORCE_HTTP_DEV:
+    ALLOWED_HOSTS.extend(['localhost', '127.0.0.1', '0.0.0.0'])
 
 railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
 if railway_domain:
@@ -138,24 +180,55 @@ CSRF_TRUSTED_ORIGINS = [
     'https://www.mfalmebetterdayscapital.com',
 ]
 
+# Add HTTP origins for local development
+if FORCE_HTTP_DEV:
+    CSRF_TRUSTED_ORIGINS.extend([
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'http://localhost',
+        'http://127.0.0.1',
+    ])
+
 if railway_domain:
     if not railway_domain.startswith('https://'):
         railway_domain = f'https://{railway_domain}'
     CSRF_TRUSTED_ORIGINS.append(railway_domain)
 
-# Security settings for production
-if not DEBUG:
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
-    X_FRAME_OPTIONS = 'DENY'
+# ================================================
+# MIDDLEWARE WITH OPTIONAL SECURITY FOR LOCAL DEV
+# ================================================
+MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Moved up for better performance
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+# For local development, add middleware to log HTTPS attempts (but not crash)
+if FORCE_HTTP_DEV:
+    # Create a custom middleware to handle HTTPS gracefully
+    class GracefulHTTPMiddleware:
+        """Middleware that logs but doesn't crash on HTTPS attempts"""
+        def __init__(self, get_response):
+            self.get_response = get_response
+        
+        def __call__(self, request):
+            # Check if request is HTTPS but we're in HTTP mode
+            if request.is_secure() and FORCE_HTTP_DEV:
+                # Log but don't crash - just treat as HTTP
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.debug(f"HTTPS request received but treating as HTTP: {request.path}")
+                # Force request to be treated as non-secure
+                request._is_secure = False
+            return self.get_response(request)
+    
+    # Insert our custom middleware at the beginning
+    MIDDLEWARE.insert(0, 'dict.settings.GracefulHTTPMiddleware')
 
 # ================================================
 # APPLICATION DEFINITION
@@ -168,20 +241,20 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'myapp',
+    # sslserver is added conditionally below - NO DUPLICATES!
     'whitenoise.runserver_nostatic',
     'storages',  # Required for S3
 ]
 
-MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
+# Add sslserver for local HTTPS development (optional)
+if FORCE_HTTP_DEV:
+    try:
+        import sslserver
+        INSTALLED_APPS.append('sslserver')
+        print("🔐 django-sslserver available for HTTPS testing")
+        print("   Run: python manage.py runsslserver to enable HTTPS")
+    except ImportError:
+        pass  # sslserver not installed, that's fine
 
 ROOT_URLCONF = 'dict.urls'
 
@@ -621,6 +694,23 @@ def get_active_database():
             return "SQLite"
     return "Unknown"
 
+# ================================================
+# DEVELOPER TIPS
+# ================================================
+if FORCE_HTTP_DEV:
+    print("\n" + "💡"*30)
+    print("DEVELOPMENT MODE - HTTPS Redirects DISABLED")
+    print("💡"*30)
+    print("✅ Access your site at: http://127.0.0.1:8000")
+    print("✅ If browser still forces HTTPS, clear HSTS:")
+    print("   - Chrome: chrome://net-internals/#hsts")
+    print("   - Edge: edge://net-internals/#hsts")
+    print("   - Delete 'localhost' from domain policies")
+    print("✅ Or use incognito/private window")
+    print("✅ To test HTTPS locally: pip install django-sslserver")
+    print("   Then run: python manage.py runsslserver")
+    print("💡"*30 + "\n")
+
 # Run database initialization
 if 'runserver' in sys.argv or 'gunicorn' in sys.argv:
     initialize_database()
@@ -632,6 +722,7 @@ print("\n" + "="*60)
 print("🚀 MFALME BETTERDAYS CAPITAL - Configuration Loaded")
 print("="*60)
 print(f"📦 Environment: {'PRODUCTION' if not DEBUG else 'DEVELOPMENT'}")
+print(f"🔒 HTTPS Mode: {'FORCED' if not FORCE_HTTP_DEV else 'DISABLED (HTTP only)'}")
 print(f"📍 Timezone: Africa/Nairobi")
 print(f"☁️  Storage: {'AWS S3' if USE_S3 else 'Local Filesystem'}")
 print(f"📧 Email: {'Configured' if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD else 'Not Configured'}")
