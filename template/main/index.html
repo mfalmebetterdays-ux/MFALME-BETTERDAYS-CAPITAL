@@ -4358,7 +4358,7 @@ window.closeModal = function() {
   </div>
 </section>
 
-<!-- ===== TICKET MODAL WITH +/- BUTTONS ===== -->
+<!-- ===== TICKET MODAL ===== -->
 <div id="ticketModal" class="modern-modal" style="display: none;">
   <div class="modern-modal-overlay"></div>
   <div class="modern-modal-content">
@@ -4394,7 +4394,6 @@ window.closeModal = function() {
           </div>
         </div>
         
-        <!-- Quantity Selector with +/- Buttons -->
         <div class="form-group">
           <label style="color:#FFEC8B; font-size:0.75rem; margin-bottom:8px; display:block;">Number of Tickets</label>
           <div class="quantity-selector">
@@ -4415,7 +4414,7 @@ window.closeModal = function() {
   </div>
 </div>
 
-<!-- ===== MERCHANDISE SECTION (REAL DATA FROM ADMIN) ===== -->
+<!-- ===== MERCHANDISE SECTION ===== -->
 <section class="merchandise-section" id="merchandise">
   <div class="container">
     <div class="section-header">
@@ -4441,52 +4440,53 @@ window.closeModal = function() {
   <div class="cart-drawer-items" id="cartDrawerItems"></div>
   <div class="cart-drawer-footer" id="cartDrawerFooter" style="display: none;">
     <div class="cart-total-row"><span>Total:</span><strong id="cartTotal">KES 0</strong></div>
-    <button class="checkout-btn" id="openCheckoutModalBtn"><i class="fas fa-mobile-alt"></i> Checkout</button>
+    <button class="checkout-btn" id="openMerchandiseModalBtn"><i class="fas fa-mobile-alt"></i> Checkout</button>
   </div>
 </div>
 
-<!-- ===== CHECKOUT MODAL ===== -->
-<div id="checkoutModal" class="modern-modal" style="display: none;">
+<!-- ===== MERCHANDISE CHECKOUT MODAL (SAME STYLE AS TICKET MODAL) ===== -->
+<div id="merchandiseModal" class="modern-modal" style="display: none;">
   <div class="modern-modal-overlay"></div>
   <div class="modern-modal-content" style="max-width: 550px;">
     <div class="modern-modal-header">
       <div class="modern-modal-icon"><i class="fas fa-shopping-bag"></i></div>
-      <h3>Complete Order</h3>
-      <button class="modern-modal-close" onclick="closeCheckoutModal()">×</button>
+      <h3>Complete Your Order</h3>
+      <button class="modern-modal-close" onclick="closeMerchandiseModal()">×</button>
     </div>
     <div class="modern-modal-body">
-      <div id="orderSummary" class="order-summary-mini"></div>
+      <div id="merchOrderSummary" class="order-summary-mini"></div>
       
-      <form id="checkoutForm">
+      <form id="merchandiseForm">
         {% csrf_token %}
         <div class="form-row">
           <div class="form-group">
-            <input type="text" id="checkoutName" placeholder="Full Name" required>
+            <input type="text" id="merchFullName" placeholder="Full Name" required>
           </div>
           <div class="form-group">
-            <input type="email" id="checkoutEmail" placeholder="Email" required>
+            <input type="email" id="merchEmail" placeholder="Email Address" required>
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <input type="tel" id="checkoutPhone" placeholder="Phone" required>
+            <input type="tel" id="merchPhone" placeholder="Phone Number" required>
           </div>
           <div class="form-group">
-            <input type="text" id="checkoutAddress" placeholder="Delivery Address" required>
+            <input type="text" id="merchAddress" placeholder="Delivery Address" required>
           </div>
         </div>
+        
         <div class="price-summary">
-          <div class="price-row"><span>Subtotal:</span><strong>KES <span id="modalSubtotal">0</span></strong></div>
+          <div class="price-row"><span>Subtotal:</span><strong>KES <span id="merchSubtotal">0</span></strong></div>
           <div class="price-row"><span>Shipping:</span><strong>KES 500</strong></div>
-          <div class="price-row total"><span>Total:</span><strong>KES <span id="modalTotal">0</span></strong></div>
+          <div class="price-row total"><span>Total:</span><strong>KES <span id="merchTotal">0</span></strong></div>
         </div>
-        <button type="submit" class="modal-submit-btn">Proceed to Payment →</button>
+        <button type="submit" class="modal-submit-btn">Continue to Payment →</button>
       </form>
     </div>
   </div>
 </div>
 
-<!-- ===== PAYMENT MODAL ===== -->
+<!-- ===== PAYMENT MODAL (ONLY SHOWS AFTER REDIRECT, BUT KEEP FOR REFERENCE) ===== -->
 <div id="paymentModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.96); backdrop-filter:blur(8px); z-index:20000; align-items:center; justify-content:center;">
   <div style="background:linear-gradient(145deg, #0f1a2a, #0a1220); border-radius:24px; width:90%; max-width:450px; border:1px solid rgba(255,215,0,0.3); box-shadow:0 25px 50px rgba(0,0,0,0.5); animation:modalSlideIn 0.3s ease;">
     <div style="padding:20px 24px; border-bottom:1px solid rgba(255,215,0,0.1); display:flex; justify-content:space-between; align-items:center;">
@@ -4556,7 +4556,7 @@ window.closeModal = function() {
   <div style="background:linear-gradient(145deg, #0f1a2a, #0a1220); border-radius:24px; width:90%; max-width:380px; padding:40px; text-align:center; border:1px solid rgba(16,185,129,0.3);">
     <i class="fas fa-check-circle" style="font-size:4rem; color:#10b981; margin-bottom:20px;"></i>
     <h3 style="color:#10b981; font-size:1.5rem; margin-bottom:12px;">Payment Successful!</h3>
-    <p id="successMessage" style="color:#ccc; margin-bottom:24px;">Your ticket has been sent to your email.</p>
+    <p id="successMessage" style="color:#ccc; margin-bottom:24px;">Your order has been confirmed.</p>
     <button onclick="closeSuccessModal()" style="background:linear-gradient(135deg, #10b981, #059669); border:none; color:white; padding:12px 30px; border-radius:40px; cursor:pointer; font-weight:600;">Continue</button>
   </div>
 </div>
@@ -4812,7 +4812,7 @@ window.closeModal = function() {
   border-radius: 12px;
   padding: 12px;
   margin-bottom: 20px;
-  max-height: 140px;
+  max-height: 160px;
   overflow-y: auto;
 }
 
@@ -5034,7 +5034,6 @@ function decrementTicketQty() {
 
 // ===== TICKET MODAL FUNCTIONS =====
 function openTicketModal() {
-  // Reset quantity to 1 when opening modal
   ticketQuantity = 1;
   document.getElementById('ticketQty').textContent = '1';
   updateTicketPrice();
@@ -5047,9 +5046,18 @@ function closeTicketModal() {
   document.body.style.overflow = '';
 }
 
-// Handle ticket form submission
+// ===== TICKET FORM SUBMIT =====
 document.getElementById('ticketForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();
+  
+  const fullName = document.getElementById('ticketFullName')?.value;
+  const email = document.getElementById('ticketEmail')?.value;
+  const phone = document.getElementById('ticketPhone')?.value;
+  
+  if (!fullName || !email || !phone) {
+    alert('Please fill in all fields');
+    return;
+  }
   
   const btn = this.querySelector('.modal-submit-btn');
   const originalText = btn.innerHTML;
@@ -5059,228 +5067,44 @@ document.getElementById('ticketForm')?.addEventListener('submit', async function
   try {
     const response = await fetch('/api/create-ticket-order/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+      headers: { 
+        'Content-Type': 'application/json', 
+        'X-CSRFToken': csrfToken 
+      },
       body: JSON.stringify({
-        full_name: document.getElementById('ticketFullName').value,
-        email: document.getElementById('ticketEmail').value,
-        phone: document.getElementById('ticketPhone').value,
-        quantity: ticketQuantity,
-        event_id: 1
+        full_name: fullName,
+        email: email,
+        phone: phone,
+        quantity: ticketQuantity
       })
     });
     
     const data = await response.json();
+    
     if (data.success) {
-      window.location.href = `/payment/ticket/${data.reference}/`;
+      closeTicketModal();
+      window.location.href = `/payment/initiate/?type=ticket&ref=${data.reference}`;
     } else {
       alert('Error: ' + (data.error || 'Failed to create order'));
       btn.disabled = false;
       btn.innerHTML = originalText;
     }
   } catch(err) {
+    console.error('Error:', err);
     alert('Network error. Please try again.');
     btn.disabled = false;
     btn.innerHTML = originalText;
   }
 });
 
-// ===== MODAL STATE =====
-let currentPaymentType = null;
-let currentCartData = null;
-let paymentInterval = null;
-
-// ===== OPEN PAYMENT MODAL =====
-function openTicketPaymentModal() {
-  currentPaymentType = 'ticket';
-  currentCartData = null;
-  const totalKes = TICKET_PRICE_USD * ticketQuantity * EXCHANGE_RATE;
-  document.getElementById('paymentAmount').innerHTML = 'KES ' + totalKes.toLocaleString();
-  document.getElementById('mpesaPhone').value = '';
-  document.getElementById('paymentModal').style.display = 'flex';
-  document.getElementById('mpesaForm').style.display = 'block';
-  document.getElementById('cardForm').style.display = 'none';
-  
-  document.querySelectorAll('.payment-method').forEach(m => {
-    m.style.borderColor = 'rgba(255,215,0,0.2)';
-  });
-  document.querySelector('.payment-method[data-method="mpesa"]').style.borderColor = '#FFD700';
-}
-
-function openMerchandisePaymentModal() {
-  if (!merchCart || merchCart.length === 0) {
-    alert('Your cart is empty');
-    return;
-  }
-  
-  currentPaymentType = 'merchandise';
-  const total = merchCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  currentCartData = [...merchCart];
-  document.getElementById('paymentAmount').innerHTML = 'KES ' + total.toLocaleString();
-  document.getElementById('mpesaPhone').value = '';
-  document.getElementById('paymentModal').style.display = 'flex';
-  document.getElementById('mpesaForm').style.display = 'block';
-  document.getElementById('cardForm').style.display = 'none';
-  
-  document.querySelectorAll('.payment-method').forEach(m => {
-    m.style.borderColor = 'rgba(255,215,0,0.2)';
-  });
-  document.querySelector('.payment-method[data-method="mpesa"]').style.borderColor = '#FFD700';
-}
-
-function closePaymentModal() {
-  if (paymentInterval) {
-    clearInterval(paymentInterval);
-    paymentInterval = null;
-  }
-  document.getElementById('paymentModal').style.display = 'none';
-}
-
-function closeSuccessModal() {
-  document.getElementById('successModal').style.display = 'none';
-  if (currentPaymentType === 'merchandise') {
-    merchCart = [];
-    localStorage.setItem('mbc_merch_cart', JSON.stringify(merchCart));
-    updateCartUI();
-    closeCartDrawer();
-  }
-  location.reload();
-}
-
-function showSuccessModal(message) {
-  document.getElementById('successMessage').innerHTML = message;
-  document.getElementById('successModal').style.display = 'flex';
-}
-
-// ===== PAYMENT METHOD SWITCH =====
-document.querySelectorAll('.payment-method').forEach(method => {
-  method.addEventListener('click', function() {
-    document.querySelectorAll('.payment-method').forEach(m => {
-      m.style.borderColor = 'rgba(255,215,0,0.2)';
-    });
-    this.style.borderColor = '#FFD700';
-    
-    const methodType = this.getAttribute('data-method');
-    if (methodType === 'mpesa') {
-      document.getElementById('mpesaForm').style.display = 'block';
-      document.getElementById('cardForm').style.display = 'none';
-    } else {
-      document.getElementById('mpesaForm').style.display = 'none';
-      document.getElementById('cardForm').style.display = 'block';
-    }
-  });
-});
-
-// ===== PROCESS PAYMENT =====
-async function processPayment() {
-  const phone = document.getElementById('mpesaPhone').value.trim();
-  
-  if (!phone) {
-    alert('Please enter your M-PESA phone number');
-    return;
-  }
-  
-  let formattedPhone = phone.replace(/[^0-9]/g, '');
-  if (formattedPhone.startsWith('0')) formattedPhone = '254' + formattedPhone.substring(1);
-  if (!formattedPhone.startsWith('254')) formattedPhone = '254' + formattedPhone;
-  
-  if (formattedPhone.length !== 12) {
-    alert('Please enter a valid phone number (e.g., 254712345678)');
-    return;
-  }
-  
-  const payBtn = document.getElementById('processPaymentBtn');
-  const originalText = payBtn.innerHTML;
-  payBtn.disabled = true;
-  payBtn.innerHTML = '<span style="display:inline-block; width:16px; height:16px; border:2px solid rgba(0,0,0,0.3); border-top-color:#0a1520; border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px;"></span> Processing...';
-  
-  let endpoint = '';
-  let payload = {};
-  
-  if (currentPaymentType === 'ticket') {
-    const amountKES = TICKET_PRICE_USD * ticketQuantity * EXCHANGE_RATE;
-    endpoint = '/api/sasapay/ticket-payment/';
-    payload = {
-      phone: formattedPhone,
-      amount: amountKES,
-      attendee_name: document.getElementById('ticketFullName')?.value || 'Guest',
-      attendee_email: document.getElementById('ticketEmail')?.value || 'guest@example.com'
-    };
-  } else if (currentPaymentType === 'merchandise') {
-    const total = currentCartData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    endpoint = '/api/sasapay/merchandise-payment/';
-    payload = {
-      phone: formattedPhone,
-      amount: total,
-      cart: currentCartData,
-      customer_name: document.getElementById('checkoutName')?.value || 'Guest',
-      customer_email: document.getElementById('checkoutEmail')?.value || 'guest@example.com'
-    };
-  }
-  
-  try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken
-      },
-      body: JSON.stringify(payload)
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      closePaymentModal();
-      
-      const processingDiv = document.createElement('div');
-      processingDiv.id = 'processingMsg';
-      processingDiv.innerHTML = '<div style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0a1520; padding:20px 40px; border-radius:12px; border:2px solid #FFD700; z-index:20001; color:white; text-align:center;"><i class="fas fa-spinner fa-pulse fa-2x"></i><br><br>Waiting for payment confirmation...<br><small>Check your phone for M-PESA prompt</small></div>';
-      document.body.appendChild(processingDiv);
-      
-      let attempts = 0;
-      paymentInterval = setInterval(async () => {
-        attempts++;
-        try {
-          const statusRes = await fetch(`/api/sasapay/status/${data.transaction_id}/`);
-          const statusData = await statusRes.json();
-          
-          if (statusData.status === 'completed') {
-            clearInterval(paymentInterval);
-            document.getElementById('processingMsg')?.remove();
-            showSuccessModal(currentPaymentType === 'ticket' 
-              ? '✅ Payment successful! Your ticket has been sent to your email.'
-              : '✅ Payment successful! Order confirmation sent to your email.');
-          } else if (statusData.status === 'failed' || attempts > 40) {
-            clearInterval(paymentInterval);
-            document.getElementById('processingMsg')?.remove();
-            alert('⚠️ Payment not confirmed. Please check your M-PESA statement.');
-          }
-        } catch (e) {
-          console.error('Status check error:', e);
-        }
-      }, 3000);
-      
-    } else {
-      alert('Error: ' + (data.error || 'Payment failed'));
-    }
-  } catch (err) {
-    console.error('Payment error:', err);
-    alert('Network error. Please try again.');
-  } finally {
-    payBtn.disabled = false;
-    payBtn.innerHTML = originalText;
-  }
-}
-
-// ===== MERCHANDISE STORE (REAL DATA FROM ADMIN) =====
+// ===== MERCHANDISE STORE =====
 let merchCart = JSON.parse(localStorage.getItem('mbc_merch_cart') || '[]');
 
 async function loadMerchandise() {
   try {
     const response = await fetch('/api/merchandise/');
     const data = await response.json();
-    const products = data.items || [];
-    renderMerchandise(products);
+    renderMerchandise(data.items || []);
   } catch(e) { 
     console.error('Error loading merchandise:', e);
   }
@@ -5293,9 +5117,19 @@ function renderMerchandise(products) {
   container.innerHTML = products.map(p => `
     <div class="merch-card">
       <div class="merch-img"><img src="${p.image || 'https://placehold.co/400x300/1a2a3a/FFD700?text=MBC'}" alt="${p.name}" onerror="this.src='https://placehold.co/400x300/1a2a3a/FFD700'"><div class="merch-badge">Official</div></div>
-      <div class="merch-info"><span class="merch-category">${p.category || 'Merchandise'}</span><h3 class="merch-name">${p.name}</h3><p class="merch-desc">${p.description || 'Premium quality merchandise'}</p><div class="merch-price-row"><span class="merch-price">KES ${parseFloat(p.price).toLocaleString()}</span><button class="add-to-cart" onclick="addToCart(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.price}, '${p.image || ''}')"><i class="fas fa-cart-plus"></i> Add</button></div></div>
+      <div class="merch-info"><span class="merch-category">${p.category || 'Merchandise'}</span><h3 class="merch-name">${escapeHtml(p.name)}</h3><p class="merch-desc">${escapeHtml(p.description || 'Premium quality merchandise')}</p><div class="merch-price-row"><span class="merch-price">KES ${parseFloat(p.price).toLocaleString()}</span><button class="add-to-cart" onclick='addToCart(${p.id}, "${escapeHtml(p.name).replace(/"/g, '&quot;')}", ${p.price}, "${escapeHtml(p.image || '')}")'><i class="fas fa-cart-plus"></i> Add</button></div></div>
     </div>
   `).join('');
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
 }
 
 function addToCart(id, name, price, image) {
@@ -5347,7 +5181,7 @@ function updateCartDrawer() {
     return `<div class="cart-item">
       <div class="cart-item-img"><img src="${item.image||'https://placehold.co/50/1a2a3a/FFD700'}" onerror="this.src='https://placehold.co/50/1a2a3a/FFD700'"></div>
       <div class="cart-item-details">
-        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-name">${escapeHtml(item.name)}</div>
         <div class="cart-item-price">KES ${(item.price).toLocaleString()}</div>
         <div class="cart-item-actions">
           <button class="cart-qty-btn" onclick="updateQuantity(${item.id},-1)">-</button>
@@ -5380,35 +5214,52 @@ function removeFromCart(id){
   updateCartUI(); 
 }
 
-// ===== CHECKOUT MODAL FUNCTIONS =====
-function openCheckoutModal() {
+// ===== MERCHANDISE CHECKOUT MODAL FUNCTIONS =====
+function openMerchandiseModal() {
   if (!merchCart.length) {
     alert('Your cart is empty');
     return;
   }
   
+  // Calculate totals
   let subtotal = 0;
   let itemsHtml = '';
   merchCart.forEach(item => {
     subtotal += item.price * item.quantity;
-    itemsHtml += `<div class="cart-item-mini"><span>${item.name} x${item.quantity}</span><span>KES ${(item.price * item.quantity).toLocaleString()}</span></div>`;
+    itemsHtml += `<div class="cart-item-mini"><span>${escapeHtml(item.name)} x${item.quantity}</span><span>KES ${(item.price * item.quantity).toLocaleString()}</span></div>`;
   });
-  document.getElementById('orderSummary').innerHTML = itemsHtml;
-  document.getElementById('modalSubtotal').textContent = subtotal.toLocaleString();
-  document.getElementById('modalTotal').textContent = (subtotal + 500).toLocaleString();
   
-  document.getElementById('checkoutModal').style.display = 'flex';
+  document.getElementById('merchOrderSummary').innerHTML = itemsHtml;
+  document.getElementById('merchSubtotal').textContent = subtotal.toLocaleString();
+  document.getElementById('merchTotal').textContent = (subtotal + 500).toLocaleString();
+  
+  document.getElementById('merchandiseModal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }
 
-function closeCheckoutModal() {
-  document.getElementById('checkoutModal').style.display = 'none';
+function closeMerchandiseModal() {
+  document.getElementById('merchandiseModal').style.display = 'none';
   document.body.style.overflow = '';
 }
 
-// Handle checkout form submission
-document.getElementById('checkoutForm')?.addEventListener('submit', async function(e) {
+// ===== MERCHANDISE FORM SUBMIT (SAME PATTERN AS TICKET) =====
+document.getElementById('merchandiseForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();
+  
+  const fullName = document.getElementById('merchFullName')?.value;
+  const email = document.getElementById('merchEmail')?.value;
+  const phone = document.getElementById('merchPhone')?.value;
+  const address = document.getElementById('merchAddress')?.value;
+  
+  if (!fullName || !email || !phone || !address) {
+    alert('Please fill in all fields');
+    return;
+  }
+  
+  if (!merchCart.length) {
+    alert('Your cart is empty');
+    return;
+  }
   
   const btn = this.querySelector('.modal-submit-btn');
   const originalText = btn.innerHTML;
@@ -5418,41 +5269,68 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async functi
   try {
     const response = await fetch('/api/create-merchandise-order/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+      headers: { 
+        'Content-Type': 'application/json', 
+        'X-CSRFToken': csrfToken 
+      },
       body: JSON.stringify({
-        full_name: document.getElementById('checkoutName').value,
-        email: document.getElementById('checkoutEmail').value,
-        phone: document.getElementById('checkoutPhone').value,
-        address: document.getElementById('checkoutAddress').value,
+        full_name: fullName,
+        email: email,
+        phone: phone,
+        address: address,
         cart: merchCart
       })
     });
     
     const data = await response.json();
+    
     if (data.success) {
-      window.location.href = `/payment/merchandise/${data.reference}/`;
+      // Close the merchandise modal
+      closeMerchandiseModal();
+      // Redirect to payment initiate page - SAME AS TICKET!
+      window.location.href = `/payment/initiate/?type=merchandise&ref=${data.reference}`;
     } else {
       alert('Error: ' + (data.error || 'Failed to create order'));
       btn.disabled = false;
       btn.innerHTML = originalText;
     }
   } catch(err) {
+    console.error('Error:', err);
     alert('Network error. Please try again.');
     btn.disabled = false;
     btn.innerHTML = originalText;
   }
 });
 
+// ===== SUCCESS MODAL =====
+let currentPaymentType = null;
+let paymentInterval = null;
+
+function closeSuccessModal() {
+  document.getElementById('successModal').style.display = 'none';
+  if (currentPaymentType === 'merchandise') {
+    merchCart = [];
+    localStorage.setItem('mbc_merch_cart', JSON.stringify(merchCart));
+    updateCartUI();
+    closeCartDrawer();
+  }
+  location.reload();
+}
+
+function showSuccessModal(message) {
+  document.getElementById('successMessage').innerHTML = message;
+  document.getElementById('successModal').style.display = 'flex';
+}
+
 // ===== ATTACH EVENT LISTENERS =====
 document.getElementById('openTicketModalBtn')?.addEventListener('click', openTicketModal);
-document.getElementById('openCheckoutModalBtn')?.addEventListener('click', openMerchandisePaymentModal);
-document.getElementById('processPaymentBtn')?.addEventListener('click', processPayment);
+document.getElementById('openMerchandiseModalBtn')?.addEventListener('click', openMerchandiseModal);
 
 // Close modals on backdrop click
 document.querySelectorAll('.modern-modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', function() {
     closeTicketModal();
-    closeCheckoutModal();
+    closeMerchandiseModal();
   });
 });
 
@@ -5460,7 +5338,7 @@ document.querySelectorAll('.modern-modal-overlay').forEach(overlay => {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     closeTicketModal();
-    closeCheckoutModal();
+    closeMerchandiseModal();
   }
 });
 

@@ -4460,6 +4460,11 @@ def sasapay_process_payment(request):
     phone = data.get('phone')
     payment_method = data.get('payment_method', 'c2b')
     
+    print(f"\n🔵 SasaPay Process Payment Called")
+    print(f"   Reference: {reference}")
+    print(f"   Phone: {phone}")
+    print(f"   Method: {payment_method}")
+    
     if not reference:
         return JsonResponse({'error': 'Reference required'}, status=400)
     
@@ -4471,30 +4476,56 @@ def sasapay_process_payment(request):
     order = None
     amount_kes = 0
     description = ''
+    customer_email = ''
+    customer_name = ''
     
     try:
         transaction = PaymentTransaction.objects.get(reference=reference)
         amount_kes = int(transaction.amount)
         description = transaction.description
+        customer_email = transaction.customer_email
+        customer_name = transaction.customer_name
+        print(f"✅ Found PaymentTransaction: {transaction.id}")
     except PaymentTransaction.DoesNotExist:
+        print(f"⚠️ No PaymentTransaction found, checking Order...")
         # If no transaction, check if it's an Order (ticket/merchandise)
         try:
             order = Order.objects.get(reference=reference)
             amount_kes = int(order.amount)
             description = f"{order.item_type.upper()} Order: {reference}"
+            customer_email = order.customer_email
+            customer_name = order.customer_name
+            print(f"✅ Found Order: {order.id} - Type: {order.item_type}")
         except Order.DoesNotExist:
+            print(f"❌ No Order found for reference: {reference}")
             return JsonResponse({'error': 'Transaction not found'}, status=404)
     
     from .sasapay_utils import initiate_c2b_payment, initiate_checkout
     
     if payment_method == 'c2b':
+        # Format phone number
+        formatted_phone = str(phone).strip()
+        formatted_phone = ''.join(filter(str.isdigit, formatted_phone))
+        if formatted_phone.startswith('0'):
+            formatted_phone = '254' + formatted_phone[1:]
+        elif formatted_phone.startswith('7') and len(formatted_phone) == 9:
+            formatted_phone = '254' + formatted_phone
+        elif formatted_phone.startswith('+'):
+            formatted_phone = formatted_phone[1:]
+        
+        print(f"📱 Formatted phone: {formatted_phone}")
+        print(f"💰 Amount: {amount_kes} KES")
+        print(f"📝 Description: {description}")
+        
         # REAL M-PESA STK Push
         result = initiate_c2b_payment(
-            phone=phone,
+            phone=formatted_phone,
             amount=amount_kes,
             reference=reference,
             description=description
         )
+        
+        print(f"📡 SasaPay Response: {result}")
         
         if result.get('success'):
             # Update transaction if found
@@ -4505,11 +4536,13 @@ def sasapay_process_payment(request):
                 transaction.sasapay_raw_response = result
                 transaction.status = 'pending'
                 transaction.save()
+                print(f"✅ Transaction updated with ID: {result.get('transaction_id')}")
             # Update order if found
             elif order:
                 order.payment_reference = result.get('transaction_id')
                 order.checkout_request_id = result.get('checkout_id')
                 order.save()
+                print(f"✅ Order updated with payment reference: {result.get('transaction_id')}")
             
             return JsonResponse({
                 'success': True,
@@ -4517,13 +4550,15 @@ def sasapay_process_payment(request):
                 'transaction_id': result.get('transaction_id')
             })
         else:
+            error_msg = result.get('error', 'Payment failed - Please try again')
+            print(f"❌ Payment failed: {error_msg}")
             return JsonResponse({
                 'success': False,
-                'error': result.get('error', 'Payment failed')
+                'error': error_msg
             })
     
     elif payment_method == 'checkout':
-        email = request.user.email if request.user.is_authenticated else 'customer@example.com'
+        email = request.user.email if request.user.is_authenticated else customer_email or 'customer@example.com'
         
         result = initiate_checkout(
             amount=amount_kes,
@@ -7967,7 +8002,7 @@ def send_merchandise_admin_notification(order):
 
 @csrf_exempt
 def api_create_ticket_order(request):
-    """Create ticket order and redirect to payment/initiate/"""
+    """Create ticket order and return JSON for frontend redirect"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
@@ -7991,6 +8026,9 @@ def api_create_ticket_order(request):
     reference = f"TKT-{uuid.uuid4().hex[:8].upper()}"
     
     from decimal import Decimal
+    from django.shortcuts import redirect
+    
+    # Create Order
     order = Order.objects.create(
         reference=reference,
         customer_name=full_name,
@@ -8006,14 +8044,46 @@ def api_create_ticket_order(request):
         }
     )
     
-    # DIRECT REDIRECT to your working payment page
-    from django.shortcuts import redirect
-    return redirect(f'/payment/initiate/?type=ticket&ref={reference}')
+    # ALSO CREATE PAYMENT TRANSACTION (CRITICAL FOR SasaPay)
+    transaction = PaymentTransaction.objects.create(
+        user=request.user if request.user.is_authenticated else None,
+        reference=reference,
+        amount=Decimal(str(amount_kes)),
+        currency='KES',
+        payment_type='ticket',
+        payment_method='sasapay',
+        description=f"Event Ticket - {quantity} Ticket(s)",
+        customer_email=email,
+        customer_name=full_name,
+        customer_phone=phone,
+        metadata={
+            'order_id': order.id,
+            'order_reference': reference,
+            'item_type': 'ticket',
+            'amount_usd': amount_usd,
+            'quantity': quantity
+        },
+        status='initiated',
+        ip_address=get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', ''),
+    )
+    
+    print(f"✅ Created Order: {order.reference}")
+    print(f"✅ Created PaymentTransaction: {transaction.reference}")
+    
+    # RETURN JSON - NOT REDIRECT!
+    # The frontend JavaScript will handle the redirect
+    return JsonResponse({
+        'success': True,
+        'reference': reference,
+        'amount_usd': amount_usd,
+        'amount_kes': float(amount_kes)
+    })
 
 
 @csrf_exempt
 def api_create_merchandise_order(request):
-    """Create merchandise order and redirect to payment/initiate/"""
+    """Create merchandise order and return JSON for frontend redirect"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
@@ -8042,6 +8112,8 @@ def api_create_merchandise_order(request):
     reference = f"ORD-{uuid.uuid4().hex[:8].upper()}"
     
     from decimal import Decimal
+    
+    # Create Order
     order = Order.objects.create(
         reference=reference,
         customer_name=full_name,
@@ -8058,9 +8130,44 @@ def api_create_merchandise_order(request):
         }
     )
     
-    # DIRECT REDIRECT to your working payment page
-    from django.shortcuts import redirect
-    return redirect(f'/payment/initiate/?type=merchandise&ref={reference}')
+    # Create PaymentTransaction (CRITICAL FOR SasaPay)
+    transaction = PaymentTransaction.objects.create(
+        user=request.user if request.user.is_authenticated else None,
+        reference=reference,
+        amount=Decimal(str(total)),
+        currency='KES',
+        payment_type='merchandise',
+        payment_method='sasapay',
+        description=f"Merchandise Order - {len(cart)} items",
+        customer_email=email,
+        customer_name=full_name,
+        customer_phone=phone,
+        metadata={
+            'order_id': order.id,
+            'order_reference': reference,
+            'item_type': 'merchandise',
+            'cart': cart,
+            'address': address,
+            'subtotal': subtotal,
+            'shipping': shipping
+        },
+        status='initiated',
+        ip_address=get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', ''),
+    )
+    
+    print(f"✅ Created Merchandise Order: {order.reference}")
+    print(f"✅ Created PaymentTransaction: {transaction.reference}")
+    
+    # RETURN JSON - NOT REDIRECT!
+    # The frontend JavaScript will handle the redirect
+    return JsonResponse({
+        'success': True,
+        'reference': reference,
+        'amount': float(total),
+        'subtotal': float(subtotal),
+        'shipping': float(shipping)
+    })
 
 def payment_ticket(request, reference):
     """Payment page for ticket order - FIXED VERSION"""
