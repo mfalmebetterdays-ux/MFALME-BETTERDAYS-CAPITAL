@@ -4447,7 +4447,7 @@ def payment_pending(request, reference):
 
 @csrf_exempt
 def sasapay_process_payment(request):
-    """Process payment with SasaPay - Handles both PaymentTransaction and Order"""
+    """Process payment with SasaPay - Handles guest users correctly"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
@@ -4468,43 +4468,49 @@ def sasapay_process_payment(request):
     if not reference:
         return JsonResponse({'error': 'Reference required'}, status=400)
     
-    if not phone and payment_method == 'c2b':
-        return JsonResponse({'error': 'Phone number required for M-PESA'}, status=400)
+    from .sasapay_utils import initiate_c2b_payment, initiate_checkout
     
-    # Try to find PaymentTransaction first
-    transaction = None
+    # IMPORTANT: Check Order FIRST (for tickets/merchandise from guest users)
     order = None
+    transaction = None
     amount_kes = 0
     description = ''
     customer_email = ''
     customer_name = ''
+    customer_phone = ''
     
     try:
-        transaction = PaymentTransaction.objects.get(reference=reference)
-        amount_kes = int(transaction.amount)
-        description = transaction.description
-        customer_email = transaction.customer_email
-        customer_name = transaction.customer_name
-        print(f"✅ Found PaymentTransaction: {transaction.id}")
-    except PaymentTransaction.DoesNotExist:
-        print(f"⚠️ No PaymentTransaction found, checking Order...")
-        # If no transaction, check if it's an Order (ticket/merchandise)
+        order = Order.objects.get(reference=reference)
+        amount_kes = int(order.amount)
+        description = f"{order.item_type.upper()} Order: {reference}"
+        customer_email = order.customer_email
+        customer_name = order.customer_name
+        customer_phone = order.customer_phone
+        print(f"✅ Found Order: {order.id} - Type: {order.item_type}")
+        print(f"   Customer: {customer_name} ({customer_email})")
+    except Order.DoesNotExist:
+        print(f"⚠️ No Order found, checking PaymentTransaction...")
         try:
-            order = Order.objects.get(reference=reference)
-            amount_kes = int(order.amount)
-            description = f"{order.item_type.upper()} Order: {reference}"
-            customer_email = order.customer_email
-            customer_name = order.customer_name
-            print(f"✅ Found Order: {order.id} - Type: {order.item_type}")
-        except Order.DoesNotExist:
-            print(f"❌ No Order found for reference: {reference}")
+            transaction = PaymentTransaction.objects.get(reference=reference)
+            amount_kes = int(transaction.amount)
+            description = transaction.description
+            customer_email = transaction.customer_email or ''
+            customer_name = transaction.customer_name or ''
+            customer_phone = transaction.customer_phone or ''
+            print(f"✅ Found PaymentTransaction: {transaction.id}")
+        except PaymentTransaction.DoesNotExist:
+            print(f"❌ No transaction found for reference: {reference}")
             return JsonResponse({'error': 'Transaction not found'}, status=404)
     
-    from .sasapay_utils import initiate_c2b_payment, initiate_checkout
-    
     if payment_method == 'c2b':
+        # Use phone from request or from order/transaction
+        phone_to_use = phone or customer_phone
+        
+        if not phone_to_use:
+            return JsonResponse({'error': 'Phone number required for M-PESA'}, status=400)
+        
         # Format phone number
-        formatted_phone = str(phone).strip()
+        formatted_phone = str(phone_to_use).strip()
         formatted_phone = ''.join(filter(str.isdigit, formatted_phone))
         if formatted_phone.startswith('0'):
             formatted_phone = '254' + formatted_phone[1:]
@@ -4513,11 +4519,14 @@ def sasapay_process_payment(request):
         elif formatted_phone.startswith('+'):
             formatted_phone = formatted_phone[1:]
         
+        if not formatted_phone.startswith('254'):
+            formatted_phone = '254' + formatted_phone
+        
         print(f"📱 Formatted phone: {formatted_phone}")
         print(f"💰 Amount: {amount_kes} KES")
         print(f"📝 Description: {description}")
         
-        # REAL M-PESA STK Push
+        # Initiate M-PESA STK Push
         result = initiate_c2b_payment(
             phone=formatted_phone,
             amount=amount_kes,
@@ -4528,21 +4537,19 @@ def sasapay_process_payment(request):
         print(f"📡 SasaPay Response: {result}")
         
         if result.get('success'):
-            # Update transaction if found
-            if transaction:
+            if order:
+                order.payment_reference = result.get('transaction_id')
+                order.checkout_request_id = result.get('checkout_id')
+                order.save()
+                print(f"✅ Order updated: {order.reference}")
+            elif transaction:
                 transaction.sasapay_transaction_id = result.get('transaction_id')
                 transaction.sasapay_checkout_id = result.get('checkout_id')
                 transaction.sasapay_payment_method = 'mpesa'
                 transaction.sasapay_raw_response = result
                 transaction.status = 'pending'
                 transaction.save()
-                print(f"✅ Transaction updated with ID: {result.get('transaction_id')}")
-            # Update order if found
-            elif order:
-                order.payment_reference = result.get('transaction_id')
-                order.checkout_request_id = result.get('checkout_id')
-                order.save()
-                print(f"✅ Order updated with payment reference: {result.get('transaction_id')}")
+                print(f"✅ Transaction updated: {transaction.reference}")
             
             return JsonResponse({
                 'success': True,
@@ -4555,30 +4562,35 @@ def sasapay_process_payment(request):
             return JsonResponse({
                 'success': False,
                 'error': error_msg
-            })
+            }, status=400)
     
     elif payment_method == 'checkout':
-        email = request.user.email if request.user.is_authenticated else customer_email or 'customer@example.com'
+        # NEVER use request.user.email - use customer data from order/transaction
+        email_to_use = customer_email
+        if not email_to_use:
+            email_to_use = 'customer@example.com'
+        
+        print(f"📧 Using email for checkout: {email_to_use}")
         
         result = initiate_checkout(
             amount=amount_kes,
             reference=reference,
             description=description,
-            email=email,
-            phone=phone
+            email=email_to_use,
+            phone=phone or customer_phone
         )
         
         if result.get('success'):
-            if transaction:
+            if order:
+                order.payment_reference = result.get('transaction_id') or result.get('checkout_id')
+                order.checkout_request_id = result.get('checkout_id')
+                order.save()
+            elif transaction:
                 transaction.sasapay_checkout_id = result.get('checkout_id')
                 transaction.sasapay_payment_method = 'checkout'
                 transaction.sasapay_raw_response = result
                 transaction.status = 'pending'
                 transaction.save()
-            elif order:
-                order.payment_reference = result.get('transaction_id') or result.get('checkout_id')
-                order.checkout_request_id = result.get('checkout_id')
-                order.save()
             
             return JsonResponse({
                 'success': True,
@@ -4589,7 +4601,7 @@ def sasapay_process_payment(request):
             return JsonResponse({
                 'success': False,
                 'error': result.get('error', 'Checkout failed')
-            })
+            }, status=400)
     
     return JsonResponse({'error': 'Invalid payment method'}, status=400)
 
@@ -4870,125 +4882,6 @@ def sasapay_status(request, reference):
 
 # ==================== SASAPAY PAYMENT VIEWS ====================
 
-
-@csrf_exempt
-def sasapay_process_payment(request):
-    """Process payment with SasaPay - Handles both PaymentTransaction AND Order"""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
-    
-    try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
-    reference = data.get('reference')
-    phone = data.get('phone')
-    payment_method = data.get('payment_method', 'c2b')
-    
-    if not reference:
-        return JsonResponse({'error': 'Reference required'}, status=400)
-    
-    if not phone and payment_method == 'c2b':
-        return JsonResponse({'error': 'Phone number required for M-PESA'}, status=400)
-    
-    from .sasapay_utils import initiate_c2b_payment, initiate_checkout
-    
-    # Try to find PaymentTransaction first (for videos/courses/packages)
-    transaction = None
-    order = None
-    amount_kes = 0
-    description = ''
-    email = ''
-    
-    try:
-        transaction = PaymentTransaction.objects.get(reference=reference)
-        amount_kes = int(transaction.amount)
-        description = transaction.description
-        email = transaction.user.email if transaction.user else request.user.email
-    except PaymentTransaction.DoesNotExist:
-        # If no transaction, check for Order (tickets/merchandise)
-        try:
-            order = Order.objects.get(reference=reference)
-            amount_kes = int(order.amount)
-            description = f"{order.item_type.upper()} Order: {reference}"
-            email = order.customer_email
-        except Order.DoesNotExist:
-            return JsonResponse({'error': 'Transaction not found'}, status=404)
-    
-    if payment_method == 'c2b' and phone:
-        # M-PESA STK Push
-        result = initiate_c2b_payment(
-            phone=phone,
-            amount=amount_kes,
-            reference=reference,
-            description=description
-        )
-        
-        if result.get('success'):
-            # Update PaymentTransaction if it exists
-            if transaction:
-                transaction.sasapay_transaction_id = result.get('transaction_id')
-                transaction.sasapay_checkout_id = result.get('checkout_id')
-                transaction.sasapay_payment_method = 'mpesa'
-                transaction.sasapay_raw_response = result
-                transaction.status = 'pending'
-                transaction.save()
-            
-            # Update Order if it exists
-            if order:
-                order.payment_reference = result.get('transaction_id')
-                order.checkout_request_id = result.get('checkout_id')
-                order.metadata = {**order.metadata, 'sasapay_response': result}
-                order.save()
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'STK Push sent. Check your phone.',
-                'transaction_id': result.get('transaction_id')
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': result.get('error', 'Payment failed')
-            })
-    
-    elif payment_method == 'checkout':
-        # Web checkout (card, etc.)
-        result = initiate_checkout(
-            amount=amount_kes,
-            reference=reference,
-            description=description,
-            email=email,
-            phone=phone
-        )
-        
-        if result.get('success'):
-            if transaction:
-                transaction.sasapay_checkout_id = result.get('checkout_id')
-                transaction.sasapay_payment_method = 'checkout'
-                transaction.sasapay_raw_response = result
-                transaction.status = 'pending'
-                transaction.save()
-            
-            if order:
-                order.payment_reference = result.get('checkout_id')
-                order.checkout_request_id = result.get('checkout_id')
-                order.metadata = {**order.metadata, 'sasapay_response': result}
-                order.save()
-            
-            return JsonResponse({
-                'success': True,
-                'checkout_url': result.get('checkout_url'),
-                'message': 'Redirecting to checkout...'
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': result.get('error', 'Checkout failed')
-            })
-    
-    return JsonResponse({'error': 'Invalid payment method'}, status=400)
 
 
 @csrf_exempt

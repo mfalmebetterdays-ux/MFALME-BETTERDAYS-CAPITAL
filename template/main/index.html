@@ -4444,7 +4444,7 @@ window.closeModal = function() {
   </div>
 </div>
 
-<!-- ===== MERCHANDISE CHECKOUT MODAL (SAME STYLE AS TICKET MODAL) ===== -->
+<!-- ===== MERCHANDISE CHECKOUT MODAL ===== -->
 <div id="merchandiseModal" class="modern-modal" style="display: none;">
   <div class="modern-modal-overlay"></div>
   <div class="modern-modal-content" style="max-width: 550px;">
@@ -4480,73 +4480,8 @@ window.closeModal = function() {
           <div class="price-row"><span>Shipping:</span><strong>KES 500</strong></div>
           <div class="price-row total"><span>Total:</span><strong>KES <span id="merchTotal">0</span></strong></div>
         </div>
-        <button type="submit" class="modal-submit-btn">Continue to Payment →</button>
+        <button type="submit" class="modal-submit-btn">Proceed to Payment →</button>
       </form>
-    </div>
-  </div>
-</div>
-
-<!-- ===== PAYMENT MODAL (ONLY SHOWS AFTER REDIRECT, BUT KEEP FOR REFERENCE) ===== -->
-<div id="paymentModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.96); backdrop-filter:blur(8px); z-index:20000; align-items:center; justify-content:center;">
-  <div style="background:linear-gradient(145deg, #0f1a2a, #0a1220); border-radius:24px; width:90%; max-width:450px; border:1px solid rgba(255,215,0,0.3); box-shadow:0 25px 50px rgba(0,0,0,0.5); animation:modalSlideIn 0.3s ease;">
-    <div style="padding:20px 24px; border-bottom:1px solid rgba(255,215,0,0.1); display:flex; justify-content:space-between; align-items:center;">
-      <h3 style="color:#FFD700; font-size:1.3rem; margin:0;"><i class="fas fa-credit-card"></i> Complete Payment</h3>
-      <button onclick="closePaymentModal()" style="background:none; border:none; color:#888; font-size:28px; cursor:pointer;">&times;</button>
-    </div>
-    <div style="padding:24px;">
-      <div style="background:rgba(255,215,0,0.05); border-radius:16px; padding:16px; text-align:center; margin-bottom:24px; border:1px solid rgba(255,215,0,0.1);">
-        <span style="display:block; color:#888; font-size:0.85rem; margin-bottom:8px;">Amount to Pay</span>
-        <span id="paymentAmount" style="display:block; color:#FFD700; font-size:2rem; font-weight:800;">KES 0</span>
-      </div>
-      
-      <div style="display:flex; gap:12px; margin-bottom:24px;">
-        <div class="payment-method" data-method="mpesa" style="flex:1; background:rgba(255,255,255,0.05); border:1.5px solid #FFD700; border-radius:12px; padding:12px; text-align:center; cursor:pointer;">
-          <i class="fas fa-mobile-alt" style="font-size:1.5rem; color:#FFD700; display:block; margin-bottom:8px;"></i>
-          <span style="color:#fff; font-size:0.8rem;">M-PESA</span>
-        </div>
-        <div class="payment-method" data-method="card" style="flex:1; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,215,0,0.2); border-radius:12px; padding:12px; text-align:center; cursor:pointer;">
-          <i class="fas fa-credit-card" style="font-size:1.5rem; color:#FFD700; display:block; margin-bottom:8px;"></i>
-          <span style="color:#fff; font-size:0.8rem;">Card</span>
-        </div>
-      </div>
-      
-      <div id="mpesaForm" style="margin-bottom:24px;">
-        <div style="margin-bottom:16px;">
-          <label style="display:block; color:#FFEC8B; font-size:0.8rem; margin-bottom:8px;"><i class="fas fa-phone"></i> M-PESA Phone Number</label>
-          <input type="tel" id="mpesaPhone" placeholder="254712345678" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,215,0,0.2); border-radius:10px; padding:12px 16px; color:#fff; font-size:1rem;">
-          <small style="display:block; color:#888; font-size:0.7rem; margin-top:6px;">Enter the phone number registered with M-PESA</small>
-        </div>
-      </div>
-      
-      <div id="cardForm" style="display:none; margin-bottom:24px;">
-        <div style="margin-bottom:16px;">
-          <label style="display:block; color:#FFEC8B; font-size:0.8rem; margin-bottom:8px;"><i class="fas fa-user"></i> Full Name</label>
-          <input type="text" id="cardName" placeholder="John Doe" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,215,0,0.2); border-radius:10px; padding:12px 16px; color:#fff;">
-        </div>
-        <div style="margin-bottom:16px;">
-          <label style="display:block; color:#FFEC8B; font-size:0.8rem; margin-bottom:8px;"><i class="fas fa-credit-card"></i> Card Number</label>
-          <input type="text" id="cardNumber" placeholder="4242 4242 4242 4242" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,215,0,0.2); border-radius:10px; padding:12px 16px; color:#fff;">
-        </div>
-        <div style="display:flex; gap:12px;">
-          <div style="flex:1;">
-            <label style="display:block; color:#FFEC8B; font-size:0.8rem; margin-bottom:8px;">Expiry Date</label>
-            <input type="text" id="cardExpiry" placeholder="MM/YY" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,215,0,0.2); border-radius:10px; padding:12px 16px; color:#fff;">
-          </div>
-          <div style="flex:1;">
-            <label style="display:block; color:#FFEC8B; font-size:0.8rem; margin-bottom:8px;">CVV</label>
-            <input type="text" id="cardCvv" placeholder="123" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,215,0,0.2); border-radius:10px; padding:12px 16px; color:#fff;">
-          </div>
-        </div>
-      </div>
-      
-      <div style="background:rgba(16,185,129,0.1); border-radius:10px; padding:12px; text-align:center; margin-top:16px;">
-        <i class="fas fa-lock" style="color:#10b981; margin-right:8px;"></i>
-        <span style="color:#aaa; font-size:0.75rem;">Secure payment powered by SasaPay</span>
-      </div>
-    </div>
-    <div style="padding:20px 24px; border-top:1px solid rgba(255,215,0,0.1); display:flex; gap:12px; justify-content:flex-end;">
-      <button onclick="closePaymentModal()" style="background:transparent; border:1.5px solid rgba(255,255,255,0.2); color:#fff; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:600;">Cancel</button>
-      <button id="processPaymentBtn" style="background:linear-gradient(135deg, #FFD700, #FFA500); border:none; color:#0a1520; padding:10px 28px; border-radius:10px; cursor:pointer; font-weight:800;">Pay Now</button>
     </div>
   </div>
 </div>
@@ -5046,7 +4981,7 @@ function closeTicketModal() {
   document.body.style.overflow = '';
 }
 
-// ===== TICKET FORM SUBMIT =====
+// ===== TICKET FORM SUBMIT - DIRECT REDIRECT =====
 document.getElementById('ticketForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();
   
@@ -5080,8 +5015,10 @@ document.getElementById('ticketForm')?.addEventListener('submit', async function
     });
     
     const data = await response.json();
+    console.log('Ticket order response:', data);
     
     if (data.success) {
+      // Close modal and redirect to payment page
       closeTicketModal();
       window.location.href = `/payment/initiate/?type=ticket&ref=${data.reference}`;
     } else {
@@ -5110,18 +5047,6 @@ async function loadMerchandise() {
   }
 }
 
-function renderMerchandise(products) {
-  const container = document.getElementById('merchandiseGrid');
-  if (!container) return;
-  if (!products.length) { container.innerHTML = '<div class="text-center" style="color:#ccc; padding:40px;">No products available</div>'; return; }
-  container.innerHTML = products.map(p => `
-    <div class="merch-card">
-      <div class="merch-img"><img src="${p.image || 'https://placehold.co/400x300/1a2a3a/FFD700?text=MBC'}" alt="${p.name}" onerror="this.src='https://placehold.co/400x300/1a2a3a/FFD700'"><div class="merch-badge">Official</div></div>
-      <div class="merch-info"><span class="merch-category">${p.category || 'Merchandise'}</span><h3 class="merch-name">${escapeHtml(p.name)}</h3><p class="merch-desc">${escapeHtml(p.description || 'Premium quality merchandise')}</p><div class="merch-price-row"><span class="merch-price">KES ${parseFloat(p.price).toLocaleString()}</span><button class="add-to-cart" onclick='addToCart(${p.id}, "${escapeHtml(p.name).replace(/"/g, '&quot;')}", ${p.price}, "${escapeHtml(p.image || '')}")'><i class="fas fa-cart-plus"></i> Add</button></div></div>
-    </div>
-  `).join('');
-}
-
 function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/[&<>]/g, function(m) {
@@ -5130,6 +5055,18 @@ function escapeHtml(str) {
     if (m === '>') return '&gt;';
     return m;
   });
+}
+
+function renderMerchandise(products) {
+  const container = document.getElementById('merchandiseGrid');
+  if (!container) return;
+  if (!products.length) { container.innerHTML = '<div class="text-center" style="color:#ccc; padding:40px;">No products available</div>'; return; }
+  container.innerHTML = products.map(p => `
+    <div class="merch-card">
+      <div class="merch-img"><img src="${p.image || 'https://placehold.co/400x300/1a2a3a/FFD700?text=MBC'}" alt="${escapeHtml(p.name)}" onerror="this.src='https://placehold.co/400x300/1a2a3a/FFD700'"><div class="merch-badge">Official</div></div>
+      <div class="merch-info"><span class="merch-category">${escapeHtml(p.category || 'Merchandise')}</span><h3 class="merch-name">${escapeHtml(p.name)}</h3><p class="merch-desc">${escapeHtml(p.description || 'Premium quality merchandise')}</p><div class="merch-price-row"><span class="merch-price">KES ${parseFloat(p.price).toLocaleString()}</span><button class="add-to-cart" onclick='addToCart(${p.id}, "${escapeHtml(p.name).replace(/"/g, '&quot;')}", ${p.price}, "${escapeHtml(p.image || '')}")'><i class="fas fa-cart-plus"></i> Add</button></div></div>
+    </div>
+  `).join('');
 }
 
 function addToCart(id, name, price, image) {
@@ -5142,19 +5079,19 @@ function addToCart(id, name, price, image) {
 }
 
 function showToast(msg) { 
-  const t=document.createElement('div'); 
+  const t = document.createElement('div'); 
   t.style.cssText = 'position:fixed; bottom:100px; right:30px; background:#10b981; color:white; padding:10px 18px; border-radius:10px; z-index:10000; animation:fadeInUp 0.3s ease; font-size:0.8rem;';
   t.innerHTML = `<i class="fas fa-check-circle"></i> ${msg}`; 
   document.body.appendChild(t); 
-  setTimeout(()=>t.remove(),2000); 
+  setTimeout(() => t.remove(), 2000); 
 }
 
 function updateCartUI() { 
-  const c = merchCart.reduce((s,i)=>s+i.quantity,0); 
+  const c = merchCart.reduce((s, i) => s + i.quantity, 0); 
   const btn = document.getElementById('floatingCart'); 
   const sp = document.getElementById('cartCount'); 
-  if(c>0){ btn.style.display='flex'; sp.textContent=c; } 
-  else { btn.style.display='none'; } 
+  if (c > 0) { btn.style.display = 'flex'; sp.textContent = c; } 
+  else { btn.style.display = 'none'; } 
   updateCartDrawer(); 
 }
 
@@ -5170,47 +5107,47 @@ function closeCartDrawer() {
 function updateCartDrawer() { 
   const container = document.getElementById('cartDrawerItems'); 
   const footer = document.getElementById('cartDrawerFooter'); 
-  if(merchCart.length===0){ 
-    container.innerHTML='<div class="empty-cart"><i class="fas fa-shopping-bag"></i><br>Your cart is empty</div>'; 
-    footer.style.display='none'; 
+  if (merchCart.length === 0) { 
+    container.innerHTML = '<div class="empty-cart"><i class="fas fa-shopping-bag"></i><br>Your cart is empty</div>'; 
+    footer.style.display = 'none'; 
     return; 
   } 
-  let total=0; 
-  container.innerHTML = merchCart.map(item=>{ 
-    total += item.price*item.quantity; 
+  let total = 0; 
+  container.innerHTML = merchCart.map(item => { 
+    total += item.price * item.quantity; 
     return `<div class="cart-item">
-      <div class="cart-item-img"><img src="${item.image||'https://placehold.co/50/1a2a3a/FFD700'}" onerror="this.src='https://placehold.co/50/1a2a3a/FFD700'"></div>
+      <div class="cart-item-img"><img src="${item.image || 'https://placehold.co/50/1a2a3a/FFD700'}" onerror="this.src='https://placehold.co/50/1a2a3a/FFD700'"></div>
       <div class="cart-item-details">
         <div class="cart-item-name">${escapeHtml(item.name)}</div>
         <div class="cart-item-price">KES ${(item.price).toLocaleString()}</div>
         <div class="cart-item-actions">
-          <button class="cart-qty-btn" onclick="updateQuantity(${item.id},-1)">-</button>
+          <button class="cart-qty-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
           <span class="cart-item-qty">${item.quantity}</span>
-          <button class="cart-qty-btn" onclick="updateQuantity(${item.id},1)">+</button>
+          <button class="cart-qty-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
         </div>
       </div>
       <button class="cart-remove" onclick="removeFromCart(${item.id})"><i class="fas fa-trash-alt"></i></button>
     </div>`; 
   }).join(''); 
   document.getElementById('cartTotal').innerHTML = `KES ${total.toLocaleString()}`; 
-  footer.style.display='block'; 
+  footer.style.display = 'block'; 
 }
 
-function updateQuantity(id,delta){ 
-  const item=merchCart.find(i=>i.id===id); 
-  if(item){ 
-    item.quantity+=delta; 
-    if(item.quantity<=0){ 
-      merchCart=merchCart.filter(i=>i.id!==id); 
+function updateQuantity(id, delta) { 
+  const item = merchCart.find(i => i.id === id); 
+  if (item) { 
+    item.quantity += delta; 
+    if (item.quantity <= 0) { 
+      merchCart = merchCart.filter(i => i.id !== id); 
     } 
-    localStorage.setItem('mbc_merch_cart',JSON.stringify(merchCart)); 
+    localStorage.setItem('mbc_merch_cart', JSON.stringify(merchCart)); 
     updateCartUI(); 
   } 
 }
 
-function removeFromCart(id){ 
-  merchCart=merchCart.filter(i=>i.id!==id); 
-  localStorage.setItem('mbc_merch_cart',JSON.stringify(merchCart)); 
+function removeFromCart(id) { 
+  merchCart = merchCart.filter(i => i.id !== id); 
+  localStorage.setItem('mbc_merch_cart', JSON.stringify(merchCart)); 
   updateCartUI(); 
 }
 
@@ -5221,7 +5158,6 @@ function openMerchandiseModal() {
     return;
   }
   
-  // Calculate totals
   let subtotal = 0;
   let itemsHtml = '';
   merchCart.forEach(item => {
@@ -5242,7 +5178,7 @@ function closeMerchandiseModal() {
   document.body.style.overflow = '';
 }
 
-// ===== MERCHANDISE FORM SUBMIT (SAME PATTERN AS TICKET) =====
+// ===== MERCHANDISE FORM SUBMIT - DIRECT REDIRECT =====
 document.getElementById('merchandiseForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();
   
@@ -5283,11 +5219,11 @@ document.getElementById('merchandiseForm')?.addEventListener('submit', async fun
     });
     
     const data = await response.json();
+    console.log('Merchandise order response:', data);
     
     if (data.success) {
-      // Close the merchandise modal
+      // Close modal and redirect to payment page
       closeMerchandiseModal();
-      // Redirect to payment initiate page - SAME AS TICKET!
       window.location.href = `/payment/initiate/?type=merchandise&ref=${data.reference}`;
     } else {
       alert('Error: ' + (data.error || 'Failed to create order'));
@@ -5304,7 +5240,6 @@ document.getElementById('merchandiseForm')?.addEventListener('submit', async fun
 
 // ===== SUCCESS MODAL =====
 let currentPaymentType = null;
-let paymentInterval = null;
 
 function closeSuccessModal() {
   document.getElementById('successModal').style.display = 'none';
@@ -5314,7 +5249,7 @@ function closeSuccessModal() {
     updateCartUI();
     closeCartDrawer();
   }
-  location.reload();
+  window.location.href = '/';
 }
 
 function showSuccessModal(message) {
@@ -5344,11 +5279,6 @@ document.addEventListener('keydown', function(e) {
 
 loadMerchandise();
 updateCartUI();
-
-// CSS animation
-const spinStyle = document.createElement('style');
-spinStyle.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
-document.head.appendChild(spinStyle);
 </script>
 
 <!-- ===== MFALME EDUCATION PROGRAMS SECTION ===== -->
