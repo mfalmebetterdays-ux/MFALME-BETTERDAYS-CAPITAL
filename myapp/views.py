@@ -3185,14 +3185,15 @@ def api_pdf_view(request, pdf_id):
 
 
 def initiate_payment(request):
-    """Initiate payment page - NOW WITH USD -> KES CONVERSION"""
+    """Initiate payment page - Handles tickets, merchandise, videos, courses, PDFs, packages"""
     package_type = request.GET.get('type')
     package_id = request.GET.get('id')
+    reference = request.GET.get('ref')
     
     context = {
         'package_type': package_type,
         'package_id': package_id,
-        'user': request.user,
+        'user': request.user if request.user.is_authenticated else None,
         'paystack_public_key': getattr(settings, 'PAYSTACK_PUBLIC_KEY', ''),
     }
     
@@ -3200,68 +3201,124 @@ def initiate_payment(request):
     amount_usd = 0
     amount_kes = 0
     title = ''
+    transaction = None
     
-    if package_type == 'video' and package_id:
+    # FIRST: Check if this is a ticket or merchandise order by reference
+    if reference:
         try:
-            item = TrainingVideo.objects.get(id=package_id)
-            amount_usd = float(item.price)
-            amount_kes = amount_usd * 129
-            title = item.title
-        except TrainingVideo.DoesNotExist:
+            # Check if it's an Order (ticket or merchandise)
+            order = Order.objects.get(reference=reference)
+            amount_kes = float(order.amount)
+            amount_usd = amount_kes / 129
+            
+            # ADD CUSTOMER DATA FOR DISPLAY IN TEMPLATE
+            context['customer_name'] = order.customer_name
+            context['customer_email'] = order.customer_email
+            context['customer_phone'] = order.customer_phone
+            
+            if order.item_type == 'ticket':
+                title = f"Event Ticket - {order.metadata.get('quantity', 1)} Ticket(s)"
+            elif order.item_type == 'merchandise':
+                title = f"Merchandise Order - {reference}"
+            else:
+                title = "Order Payment"
+            
+            # Create or get existing transaction
+            transaction, created = PaymentTransaction.objects.get_or_create(
+                reference=reference,
+                defaults={
+                    'user': request.user if request.user.is_authenticated else None,
+                    'amount': Decimal(str(amount_kes)),
+                    'currency': 'KES',
+                    'payment_type': order.item_type,
+                    'payment_method': 'sasapay',
+                    'description': title,
+                    'customer_email': order.customer_email,
+                    'customer_name': order.customer_name,
+                    'customer_phone': order.customer_phone,
+                    'metadata': {
+                        'order_id': order.id,
+                        'order_reference': reference,
+                        'item_type': order.item_type,
+                        'amount_usd': amount_usd,
+                        'quantity': order.metadata.get('quantity', 1)
+                    },
+                    'status': 'initiated',
+                    'ip_address': get_client_ip(request),
+                    'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+                }
+            )
+            
+            context['reference'] = reference
+            context['transaction'] = transaction
+            
+        except Order.DoesNotExist:
             pass
-    elif package_type == 'course' and package_id:
-        try:
-            item = Course.objects.get(id=package_id)
-            amount_usd = float(item.price)
-            amount_kes = amount_usd * 129
-            title = item.title
-        except Course.DoesNotExist:
-            pass
-    elif package_type == 'pdf' and package_id:
-        try:
-            item = PDF.objects.get(id=package_id)
-            amount_usd = float(item.price)
-            amount_kes = amount_usd * 129
-            title = item.title
-        except PDF.DoesNotExist:
-            pass
-    elif package_type == 'package' and package_id:
-        try:
-            item = Package.objects.get(id=package_id)
-            amount_usd = float(item.price)
-            amount_kes = amount_usd * 129
-            title = item.name
-        except Package.DoesNotExist:
-            pass
+    
+    # SECOND: If no reference, check by package_type and package_id (videos, courses, PDFs, packages)
+    if not transaction and package_type and package_id:
+        if package_type == 'video':
+            try:
+                item = TrainingVideo.objects.get(id=package_id)
+                amount_usd = float(item.price)
+                amount_kes = amount_usd * 129
+                title = item.title
+            except TrainingVideo.DoesNotExist:
+                pass
+        elif package_type == 'course':
+            try:
+                item = Course.objects.get(id=package_id)
+                amount_usd = float(item.price)
+                amount_kes = amount_usd * 129
+                title = item.title
+            except Course.DoesNotExist:
+                pass
+        elif package_type == 'pdf':
+            try:
+                item = PDF.objects.get(id=package_id)
+                amount_usd = float(item.price)
+                amount_kes = amount_usd * 129
+                title = item.title
+            except PDF.DoesNotExist:
+                pass
+        elif package_type == 'package':
+            try:
+                item = Package.objects.get(id=package_id)
+                amount_usd = float(item.price)
+                amount_kes = amount_usd * 129
+                title = item.name
+            except Package.DoesNotExist:
+                pass
+        
+        if item and amount_usd > 0:
+            transaction = PaymentTransaction.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                reference=generate_reference(),
+                amount=Decimal(str(amount_kes)),
+                currency='KES',
+                payment_type=f'{package_type}_purchase',
+                payment_method='sasapay',
+                description=f'Purchase: {title}',
+                customer_email=request.user.email if request.user.is_authenticated else None,
+                customer_name=request.user.get_full_name() if request.user.is_authenticated else None,
+                customer_phone=request.user.phone if request.user.is_authenticated else None,
+                metadata={
+                    'item_type': package_type,
+                    'item_id': package_id,
+                    'item_title': title,
+                    'amount_usd': amount_usd
+                },
+                status='initiated',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            )
+            context['reference'] = transaction.reference
+            context['transaction'] = transaction
     
     context['item'] = item
-    context['amount'] = amount_usd
     context['amount_usd'] = amount_usd
     context['amount_kes'] = amount_kes
     context['title'] = title
-    
-    # Create transaction
-    if item and amount_usd > 0:
-        transaction = PaymentTransaction.objects.create(
-            user=request.user,
-            reference=generate_reference(),
-            amount=Decimal(str(amount_kes)),  # Store KES
-            currency='KES',
-            payment_type=f'{package_type}_purchase',
-            payment_method='paystack',
-            description=f'Purchase: {title}',
-            metadata={
-                'item_type': package_type,
-                'item_id': package_id,
-                'item_title': title,
-                'amount_usd': amount_usd
-            },
-            status='initiated',
-            ip_address=get_client_ip(request),
-            user_agent=request.META.get('HTTP_USER_AGENT', ''),
-        )
-        context['transaction'] = transaction
-        context['reference'] = transaction.reference
     
     return render(request, 'payment/initiate_payment.html', context)
 
@@ -4390,7 +4447,7 @@ def payment_pending(request, reference):
 
 @csrf_exempt
 def sasapay_process_payment(request):
-    """Process payment with SasaPay"""
+    """Process payment with SasaPay - Handles both PaymentTransaction and Order"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
@@ -4400,7 +4457,7 @@ def sasapay_process_payment(request):
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     
     reference = data.get('reference')
-    phone = data.get('phone')  # ← REMOVED DEFAULT - USER MUST PROVIDE
+    phone = data.get('phone')
     payment_method = data.get('payment_method', 'c2b')
     
     if not reference:
@@ -4409,14 +4466,26 @@ def sasapay_process_payment(request):
     if not phone and payment_method == 'c2b':
         return JsonResponse({'error': 'Phone number required for M-PESA'}, status=400)
     
+    # Try to find PaymentTransaction first
+    transaction = None
+    order = None
+    amount_kes = 0
+    description = ''
+    
     try:
         transaction = PaymentTransaction.objects.get(reference=reference)
+        amount_kes = int(transaction.amount)
+        description = transaction.description
     except PaymentTransaction.DoesNotExist:
-        return JsonResponse({'error': 'Transaction not found'}, status=404)
+        # If no transaction, check if it's an Order (ticket/merchandise)
+        try:
+            order = Order.objects.get(reference=reference)
+            amount_kes = int(order.amount)
+            description = f"{order.item_type.upper()} Order: {reference}"
+        except Order.DoesNotExist:
+            return JsonResponse({'error': 'Transaction not found'}, status=404)
     
     from .sasapay_utils import initiate_c2b_payment, initiate_checkout
-    
-    amount_kes = int(transaction.amount)
     
     if payment_method == 'c2b':
         # REAL M-PESA STK Push
@@ -4424,22 +4493,28 @@ def sasapay_process_payment(request):
             phone=phone,
             amount=amount_kes,
             reference=reference,
-            description=transaction.description
+            description=description
         )
         
         if result.get('success'):
-            transaction.sasapay_transaction_id = result.get('transaction_id')
-            transaction.sasapay_checkout_id = result.get('checkout_id')
-            transaction.sasapay_payment_method = 'mpesa'
-            transaction.sasapay_raw_response = result
-            transaction.status = 'pending'
-            transaction.save()
+            # Update transaction if found
+            if transaction:
+                transaction.sasapay_transaction_id = result.get('transaction_id')
+                transaction.sasapay_checkout_id = result.get('checkout_id')
+                transaction.sasapay_payment_method = 'mpesa'
+                transaction.sasapay_raw_response = result
+                transaction.status = 'pending'
+                transaction.save()
+            # Update order if found
+            elif order:
+                order.payment_reference = result.get('transaction_id')
+                order.checkout_request_id = result.get('checkout_id')
+                order.save()
             
             return JsonResponse({
                 'success': True,
                 'message': 'STK Push sent. Check your phone.',
                 'transaction_id': result.get('transaction_id')
-                # ← NO mock FLAG!
             })
         else:
             return JsonResponse({
@@ -4448,26 +4523,32 @@ def sasapay_process_payment(request):
             })
     
     elif payment_method == 'checkout':
+        email = request.user.email if request.user.is_authenticated else 'customer@example.com'
+        
         result = initiate_checkout(
             amount=amount_kes,
             reference=reference,
-            description=transaction.description,
-            email=request.user.email,
+            description=description,
+            email=email,
             phone=phone
         )
         
         if result.get('success'):
-            transaction.sasapay_checkout_id = result.get('checkout_id')
-            transaction.sasapay_payment_method = 'checkout'
-            transaction.sasapay_raw_response = result
-            transaction.status = 'pending'
-            transaction.save()
+            if transaction:
+                transaction.sasapay_checkout_id = result.get('checkout_id')
+                transaction.sasapay_payment_method = 'checkout'
+                transaction.sasapay_raw_response = result
+                transaction.status = 'pending'
+                transaction.save()
+            elif order:
+                order.payment_reference = result.get('transaction_id') or result.get('checkout_id')
+                order.checkout_request_id = result.get('checkout_id')
+                order.save()
             
             return JsonResponse({
                 'success': True,
                 'checkout_url': result.get('checkout_url'),
                 'message': 'Redirecting to checkout...'
-                # ← NO mock FLAG!
             })
         else:
             return JsonResponse({
@@ -4757,7 +4838,7 @@ def sasapay_status(request, reference):
 
 @csrf_exempt
 def sasapay_process_payment(request):
-    """Process payment with SasaPay"""
+    """Process payment with SasaPay - Handles both PaymentTransaction AND Order"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
@@ -4768,20 +4849,37 @@ def sasapay_process_payment(request):
     
     reference = data.get('reference')
     phone = data.get('phone')
-    payment_method = data.get('payment_method', 'c2b')  # 'c2b' for M-PESA, 'checkout' for web
+    payment_method = data.get('payment_method', 'c2b')
     
     if not reference:
         return JsonResponse({'error': 'Reference required'}, status=400)
     
+    if not phone and payment_method == 'c2b':
+        return JsonResponse({'error': 'Phone number required for M-PESA'}, status=400)
+    
+    from .sasapay_utils import initiate_c2b_payment, initiate_checkout
+    
+    # Try to find PaymentTransaction first (for videos/courses/packages)
+    transaction = None
+    order = None
+    amount_kes = 0
+    description = ''
+    email = ''
+    
     try:
         transaction = PaymentTransaction.objects.get(reference=reference)
+        amount_kes = int(transaction.amount)
+        description = transaction.description
+        email = transaction.user.email if transaction.user else request.user.email
     except PaymentTransaction.DoesNotExist:
-        return JsonResponse({'error': 'Transaction not found'}, status=404)
-    
-    # Import sasapay utils
-    from .sasapay_utils import initiate_c2b_payment, process_sasapay_payment
-    
-    amount_kes = int(transaction.amount)  # Already in KES
+        # If no transaction, check for Order (tickets/merchandise)
+        try:
+            order = Order.objects.get(reference=reference)
+            amount_kes = int(order.amount)
+            description = f"{order.item_type.upper()} Order: {reference}"
+            email = order.customer_email
+        except Order.DoesNotExist:
+            return JsonResponse({'error': 'Transaction not found'}, status=404)
     
     if payment_method == 'c2b' and phone:
         # M-PESA STK Push
@@ -4789,16 +4887,25 @@ def sasapay_process_payment(request):
             phone=phone,
             amount=amount_kes,
             reference=reference,
-            description=transaction.description
+            description=description
         )
         
         if result.get('success'):
-            transaction.sasapay_transaction_id = result.get('transaction_id')
-            transaction.sasapay_checkout_id = result.get('checkout_id')
-            transaction.sasapay_payment_method = 'mpesa'
-            transaction.sasapay_raw_response = result
-            transaction.status = 'pending'
-            transaction.save()
+            # Update PaymentTransaction if it exists
+            if transaction:
+                transaction.sasapay_transaction_id = result.get('transaction_id')
+                transaction.sasapay_checkout_id = result.get('checkout_id')
+                transaction.sasapay_payment_method = 'mpesa'
+                transaction.sasapay_raw_response = result
+                transaction.status = 'pending'
+                transaction.save()
+            
+            # Update Order if it exists
+            if order:
+                order.payment_reference = result.get('transaction_id')
+                order.checkout_request_id = result.get('checkout_id')
+                order.metadata = {**order.metadata, 'sasapay_response': result}
+                order.save()
             
             return JsonResponse({
                 'success': True,
@@ -4816,17 +4923,24 @@ def sasapay_process_payment(request):
         result = initiate_checkout(
             amount=amount_kes,
             reference=reference,
-            description=transaction.description,
-            email=request.user.email,
+            description=description,
+            email=email,
             phone=phone
         )
         
         if result.get('success'):
-            transaction.sasapay_checkout_id = result.get('checkout_id')
-            transaction.sasapay_payment_method = 'checkout'
-            transaction.sasapay_raw_response = result
-            transaction.status = 'pending'
-            transaction.save()
+            if transaction:
+                transaction.sasapay_checkout_id = result.get('checkout_id')
+                transaction.sasapay_payment_method = 'checkout'
+                transaction.sasapay_raw_response = result
+                transaction.status = 'pending'
+                transaction.save()
+            
+            if order:
+                order.payment_reference = result.get('checkout_id')
+                order.checkout_request_id = result.get('checkout_id')
+                order.metadata = {**order.metadata, 'sasapay_response': result}
+                order.save()
             
             return JsonResponse({
                 'success': True,
@@ -7847,3 +7961,146 @@ def send_merchandise_admin_notification(order):
     except Exception as e:
         print(f"Admin merchandise email error: {e}")
         return False
+    
+
+
+
+@csrf_exempt
+def api_create_ticket_order(request):
+    """Create ticket order and redirect to payment/initiate/"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    full_name = data.get('full_name')
+    email = data.get('email')
+    phone = data.get('phone')
+    quantity = data.get('quantity', 1)
+    
+    if not all([full_name, email, phone]):
+        return JsonResponse({'error': 'All fields required'}, status=400)
+    
+    amount_usd = 249 * quantity
+    amount_kes = amount_usd * 129
+    
+    import uuid
+    reference = f"TKT-{uuid.uuid4().hex[:8].upper()}"
+    
+    from decimal import Decimal
+    order = Order.objects.create(
+        reference=reference,
+        customer_name=full_name,
+        customer_email=email,
+        customer_phone=phone,
+        item_type='ticket',
+        amount=Decimal(str(amount_kes)),
+        status='pending',
+        metadata={
+            'quantity': quantity,
+            'price_usd': amount_usd,
+            'price_kes': amount_kes
+        }
+    )
+    
+    # DIRECT REDIRECT to your working payment page
+    from django.shortcuts import redirect
+    return redirect(f'/payment/initiate/?type=ticket&ref={reference}')
+
+
+@csrf_exempt
+def api_create_merchandise_order(request):
+    """Create merchandise order and redirect to payment/initiate/"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    full_name = data.get('full_name')
+    email = data.get('email')
+    phone = data.get('phone')
+    address = data.get('address')
+    cart = data.get('cart', [])
+    
+    if not all([full_name, email, phone, address]):
+        return JsonResponse({'error': 'All fields required'}, status=400)
+    
+    if not cart:
+        return JsonResponse({'error': 'Cart is empty'}, status=400)
+    
+    subtotal = sum(float(item['price']) * int(item['quantity']) for item in cart)
+    shipping = 500
+    total = subtotal + shipping
+    
+    import uuid
+    reference = f"ORD-{uuid.uuid4().hex[:8].upper()}"
+    
+    from decimal import Decimal
+    order = Order.objects.create(
+        reference=reference,
+        customer_name=full_name,
+        customer_email=email,
+        customer_phone=phone,
+        item_type='merchandise',
+        items=cart,
+        amount=Decimal(str(total)),
+        status='pending',
+        metadata={
+            'address': address,
+            'shipping': shipping,
+            'subtotal': subtotal
+        }
+    )
+    
+    # DIRECT REDIRECT to your working payment page
+    from django.shortcuts import redirect
+    return redirect(f'/payment/initiate/?type=merchandise&ref={reference}')
+
+def payment_ticket(request, reference):
+    """Payment page for ticket order - FIXED VERSION"""
+    try:
+        order = Order.objects.get(reference=reference, item_type='ticket')  # ← FIXED: use 'reference'
+        amount_usd = float(order.amount) / 129
+        amount_kes = float(order.amount)
+        
+        context = {
+            'title': f"Event Ticket - {order.metadata.get('event_title', 'Mfalme Event')}",
+            'amount_usd': amount_usd,
+            'amount_kes': amount_kes,
+            'user': request.user if request.user.is_authenticated else None,
+            'reference': reference,
+            'payment_type': 'ticket',
+            'item_id': order.id
+        }
+        return render(request, 'payment.html', context)
+    except Order.DoesNotExist:
+        messages.error(request, 'Order not found')
+        return redirect('index')
+
+
+def payment_merchandise(request, reference):
+    """Payment page for merchandise order - FIXED VERSION"""
+    try:
+        order = Order.objects.get(reference=reference, item_type='merchandise')  # ← FIXED: use 'reference'
+        amount_usd = float(order.amount) / 129
+        amount_kes = float(order.amount)
+        
+        context = {
+            'title': f"Merchandise Order - {reference}",
+            'amount_usd': amount_usd,
+            'amount_kes': amount_kes,
+            'user': request.user if request.user.is_authenticated else None,
+            'reference': reference,
+            'payment_type': 'merchandise',
+            'item_id': order.id
+        }
+        return render(request, 'payment.html', context)
+    except Order.DoesNotExist:
+        messages.error(request, 'Order not found')
+        return redirect('index')

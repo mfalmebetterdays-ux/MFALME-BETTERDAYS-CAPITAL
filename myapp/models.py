@@ -414,7 +414,8 @@ class PaymentTransaction(models.Model):
         ('GBP', 'British Pound'),
     ]
     
-    user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='payment_transactions')
+    # CHANGED: Made user nullable for guest payments
+    user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='payment_transactions', null=True, blank=True)
     reference = models.CharField(max_length=100, unique=True, db_index=True)
     external_reference = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
@@ -486,7 +487,7 @@ class PaymentTransaction(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.reference} - {self.user.username if self.user else 'No User'} - ${self.amount}"
+        return f"{self.reference} - {self.user.username if self.user else 'Guest'} - ${self.amount}"
     
     def save(self, *args, **kwargs):
         if not self.reference:

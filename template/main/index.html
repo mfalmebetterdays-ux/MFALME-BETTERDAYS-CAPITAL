@@ -4337,7 +4337,6 @@ window.closeModal = function() {
           <span><i class="fas fa-coffee"></i> Lunch Included</span>
         </div>
         
-        <!-- Live Countdown -->
         <div class="countdown-premium">
           <div class="countdown-label"><i class="fas fa-hourglass-half"></i> Event Starts In</div>
           <div class="countdown-digits">
@@ -4359,7 +4358,64 @@ window.closeModal = function() {
   </div>
 </section>
 
-<!-- ===== MERCHANDISE SECTION ===== -->
+<!-- ===== TICKET MODAL WITH +/- BUTTONS ===== -->
+<div id="ticketModal" class="modern-modal" style="display: none;">
+  <div class="modern-modal-overlay"></div>
+  <div class="modern-modal-content">
+    <div class="modern-modal-header">
+      <div class="modern-modal-icon"><i class="fas fa-ticket-alt"></i></div>
+      <h3>Get Your Ticket</h3>
+      <button class="modern-modal-close" onclick="closeTicketModal()">×</button>
+    </div>
+    <div class="modern-modal-body">
+      <div class="event-mini-card">
+        <div class="event-mini-icon"><i class="fas fa-calendar-star"></i></div>
+        <div class="event-mini-info">
+          <h4>East & Central Africa Live Leveraging Summit</h4>
+          <div class="event-mini-meta">
+            <span><i class="far fa-calendar"></i> Aug 7, 2026</span>
+            <span><i class="far fa-clock"></i> 9AM - 5PM</span>
+            <span><i class="fas fa-map-pin"></i> Safari Park Hotel</span>
+          </div>
+        </div>
+      </div>
+      
+      <form id="ticketForm">
+        {% csrf_token %}
+        <div class="form-group">
+          <input type="text" id="ticketFullName" placeholder="Full Name" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <input type="email" id="ticketEmail" placeholder="Email Address" required>
+          </div>
+          <div class="form-group">
+            <input type="tel" id="ticketPhone" placeholder="Phone Number" required>
+          </div>
+        </div>
+        
+        <!-- Quantity Selector with +/- Buttons -->
+        <div class="form-group">
+          <label style="color:#FFEC8B; font-size:0.75rem; margin-bottom:8px; display:block;">Number of Tickets</label>
+          <div class="quantity-selector">
+            <button type="button" class="qty-btn" onclick="decrementTicketQty()">−</button>
+            <span id="ticketQty" class="qty-value">1</span>
+            <button type="button" class="qty-btn" onclick="incrementTicketQty()">+</button>
+          </div>
+        </div>
+        
+        <div class="price-summary">
+          <div class="price-row"><span>Price per Ticket:</span><strong>$249</strong></div>
+          <div class="price-row"><span>Total (USD):</span><strong>$<span id="totalUsd">249</span></strong></div>
+          <div class="price-row"><span>Total (KES):</span><strong>KES <span id="totalKes">32,121</span></strong></div>
+        </div>
+        <button type="submit" class="modal-submit-btn">Continue to Payment →</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MERCHANDISE SECTION (REAL DATA FROM ADMIN) ===== -->
 <section class="merchandise-section" id="merchandise">
   <div class="container">
     <div class="section-header">
@@ -4386,6 +4442,47 @@ window.closeModal = function() {
   <div class="cart-drawer-footer" id="cartDrawerFooter" style="display: none;">
     <div class="cart-total-row"><span>Total:</span><strong id="cartTotal">KES 0</strong></div>
     <button class="checkout-btn" id="openCheckoutModalBtn"><i class="fas fa-mobile-alt"></i> Checkout</button>
+  </div>
+</div>
+
+<!-- ===== CHECKOUT MODAL ===== -->
+<div id="checkoutModal" class="modern-modal" style="display: none;">
+  <div class="modern-modal-overlay"></div>
+  <div class="modern-modal-content" style="max-width: 550px;">
+    <div class="modern-modal-header">
+      <div class="modern-modal-icon"><i class="fas fa-shopping-bag"></i></div>
+      <h3>Complete Order</h3>
+      <button class="modern-modal-close" onclick="closeCheckoutModal()">×</button>
+    </div>
+    <div class="modern-modal-body">
+      <div id="orderSummary" class="order-summary-mini"></div>
+      
+      <form id="checkoutForm">
+        {% csrf_token %}
+        <div class="form-row">
+          <div class="form-group">
+            <input type="text" id="checkoutName" placeholder="Full Name" required>
+          </div>
+          <div class="form-group">
+            <input type="email" id="checkoutEmail" placeholder="Email" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <input type="tel" id="checkoutPhone" placeholder="Phone" required>
+          </div>
+          <div class="form-group">
+            <input type="text" id="checkoutAddress" placeholder="Delivery Address" required>
+          </div>
+        </div>
+        <div class="price-summary">
+          <div class="price-row"><span>Subtotal:</span><strong>KES <span id="modalSubtotal">0</span></strong></div>
+          <div class="price-row"><span>Shipping:</span><strong>KES 500</strong></div>
+          <div class="price-row total"><span>Total:</span><strong>KES <span id="modalTotal">0</span></strong></div>
+        </div>
+        <button type="submit" class="modal-submit-btn">Proceed to Payment →</button>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -4465,98 +4562,349 @@ window.closeModal = function() {
 </div>
 
 <style>
-/* ===== EVENT POSTER STYLES ===== */
-.event-premium-poster { 
-  padding: 20px; 
+/* ===== MODERN MODAL STYLES ===== */
+.modern-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20000;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.poster-wrapper {
-  position: relative;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 20px 35px rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,215,0,0.3);
-  max-width: 100%;
-  width: 100%;
-}
-.event-poster-img {
-  width: 100%;
-  max-width: 350px;
-  height: auto;
-  display: block;
-  margin: 0 auto;
-  object-fit: contain;
-}
-@media (min-width: 1200px) {
-  .event-poster-img { max-width: 320px; }
-}
-@media (max-width: 900px) {
-  .event-poster-img { max-width: 280px; }
-}
-@media (max-width: 576px) {
-  .event-poster-img { max-width: 100%; }
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
-/* Events Section */
-.events-premium-section {
-  padding: 80px 0;
-  background: linear-gradient(145deg, #0a1420, #0c1828);
+.modern-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
 }
-.event-premium-card {
-  display: grid;
-  grid-template-columns: 1fr 1.3fr;
-  gap: 40px;
-  background: rgba(10,21,32,0.6);
-  backdrop-filter: blur(10px);
+
+.modern-modal-content {
+  position: relative;
+  background: #0f172a;
   border-radius: 28px;
-  border: 1px solid rgba(255,215,0,0.2);
-  overflow: hidden;
-  margin-top: 50px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-@media (max-width: 900px) {
-  .event-premium-card { grid-template-columns: 1fr; }
-}
-.poster-date-badge {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  background: rgba(0,0,0,0.85);
-  backdrop-filter: blur(8px);
-  border-radius: 16px;
-  padding: 8px 16px;
-  text-align: center;
-  border-left: 3px solid #FFD700;
-}
-.poster-day { display: block; font-size: 1.4rem; font-weight: 800; color: #FFD700; line-height: 1; }
-.poster-month, .poster-year { font-size: 0.6rem; color: #f5f5f5; }
-.poster-seats-badge {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(239,68,68,0.9);
-  color: white;
-  padding: 5px 12px;
-  border-radius: 30px;
-  font-size: 0.65rem;
-  font-weight: 700;
+
+.modern-modal-content::-webkit-scrollbar { width: 5px; }
+.modern-modal-content::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
+.modern-modal-content::-webkit-scrollbar-thumb { background: #FFD700; border-radius: 3px; }
+
+.modern-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  background: #0f172a;
+  z-index: 10;
 }
+
+.modern-modal-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFD700;
+  font-size: 1.2rem;
+}
+
+.modern-modal-header h3 {
+  flex: 1;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.modern-modal-close {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  border-radius: 50%;
+  color: #aaa;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modern-modal-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.modern-modal-body {
+  padding: 24px;
+}
+
+/* Quantity Selector */
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 40px;
+  padding: 8px 16px;
+  width: fit-content;
+}
+
+.qty-btn {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 50%;
+  color: #FFD700;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.qty-btn:hover {
+  background: #FFD700;
+  color: #0a1520;
+  border-color: #FFD700;
+}
+
+.qty-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #fff;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Event Mini Card */
+.event-mini-card {
+  background: rgba(255, 215, 0, 0.05);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.event-mini-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: #FFD700;
+}
+
+.event-mini-info {
+  flex: 1;
+}
+
+.event-mini-info h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 6px 0;
+}
+
+.event-mini-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.event-mini-meta span {
+  font-size: 0.7rem;
+  color: #aaa;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.event-mini-meta span i {
+  color: #FFD700;
+  font-size: 0.65rem;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #fff;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #FFD700;
+  background: rgba(255, 215, 0, 0.05);
+}
+
+.form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Price Summary */
+.price-summary {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 20px 0;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  color: #ccc;
+  font-size: 0.85rem;
+}
+
+.price-row.total {
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+  margin-top: 6px;
+  padding-top: 10px;
+  color: #FFD700;
+  font-weight: bold;
+}
+
+/* Order Summary Mini */
+.order-summary-mini {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 20px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.cart-item-mini {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.8rem;
+  color: #fff;
+}
+
+/* Submit Button */
+.modal-submit-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  border: none;
+  padding: 14px;
+  border-radius: 40px;
+  font-weight: 700;
+  color: #0a1520;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.modal-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+}
+
+.modal-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Animation */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 550px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .modern-modal-content {
+    width: 95%;
+  }
+  .event-mini-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  .event-mini-icon {
+    margin: 0 auto;
+  }
+  .event-mini-meta {
+    justify-content: center;
+  }
+  .quantity-selector {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ===== EXISTING EVENT & MERCHANDISE STYLES ===== */
+.event-premium-poster { padding: 20px; display: flex; align-items: center; justify-content: center; }
+.poster-wrapper { position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 35px rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.3); max-width: 100%; width: 100%; }
+.event-poster-img { width: 100%; max-width: 350px; height: auto; display: block; margin: 0 auto; object-fit: contain; }
+@media (min-width: 1200px) { .event-poster-img { max-width: 320px; } }
+@media (max-width: 900px) { .event-poster-img { max-width: 280px; } }
+@media (max-width: 576px) { .event-poster-img { max-width: 100%; } }
+
+.events-premium-section { padding: 80px 0; background: linear-gradient(145deg, #0a1420, #0c1828); }
+.event-premium-card { display: grid; grid-template-columns: 1fr 1.3fr; gap: 40px; background: rgba(10,21,32,0.6); backdrop-filter: blur(10px); border-radius: 28px; border: 1px solid rgba(255,215,0,0.2); overflow: hidden; margin-top: 50px; }
+@media (max-width: 900px) { .event-premium-card { grid-template-columns: 1fr; } }
+.poster-date-badge { position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); border-radius: 16px; padding: 8px 16px; text-align: center; border-left: 3px solid #FFD700; }
+.poster-day { display: block; font-size: 1.4rem; font-weight: 800; color: #FFD700; line-height: 1; }
+.poster-month, .poster-year { font-size: 0.6rem; color: #f5f5f5; }
+.poster-seats-badge { position: absolute; top: 20px; right: 20px; background: rgba(239,68,68,0.9); color: white; padding: 5px 12px; border-radius: 30px; font-size: 0.65rem; font-weight: 700; display: flex; align-items: center; gap: 5px; }
 .event-premium-info { padding: 35px 35px 35px 0; }
 @media (max-width: 900px) { .event-premium-info { padding: 0 25px 35px 25px; } }
-.event-badge {
-  display: inline-block;
-  background: rgba(239,68,68,0.15);
-  color: #ef4444;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 20px;
-  margin-bottom: 15px;
-}
+.event-badge { display: inline-block; background: rgba(239,68,68,0.15); color: #ef4444; font-size: 0.7rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; margin-bottom: 15px; }
 .event-premium-info h2 { font-size: 1.6rem; font-weight: 800; color: #fff; margin-bottom: 20px; }
 .event-details-list { margin-bottom: 20px; }
 .event-detail { display: flex; align-items: center; gap: 12px; color: #ccc; font-size: 0.85rem; margin-bottom: 10px; }
@@ -4571,28 +4919,14 @@ window.closeModal = function() {
 .countdown-block span { display: block; font-size: 1.3rem; font-weight: 800; color: #FFD700; line-height: 1; }
 .countdown-block label { font-size: 0.6rem; color: #ccc; }
 .countdown-sep { font-size: 1.3rem; font-weight: 800; color: #FFD700; }
-.get-ticket-btn {
-  background: linear-gradient(135deg, #FFD700, #FFA500);
-  border: none;
-  padding: 12px 28px;
-  border-radius: 40px;
-  font-weight: 800;
-  color: #0a1520;
-  cursor: pointer;
-  font-size: 0.85rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
-}
+.get-ticket-btn { background: linear-gradient(135deg, #FFD700, #FFA500); border: none; padding: 12px 28px; border-radius: 40px; font-weight: 800; color: #0a1520; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
 .get-ticket-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(255,215,0,0.3); }
 
-/* Merchandise Styles */
-.merchandise-section { padding: 80px 0; background: var(--deep-navy); }
+.merchandise-section { padding: 80px 0; background: #0a1420; }
 .merchandise-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 50px; }
 @media (max-width: 992px) { .merchandise-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 576px) { .merchandise-grid { grid-template-columns: 1fr; } }
-.merch-card { background: var(--navy-light); border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,215,0,0.15); transition: all 0.3s ease; }
+.merch-card { background: #1a2a3a; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,215,0,0.15); transition: all 0.3s ease; }
 .merch-card:hover { transform: translateY(-5px); border-color: #FFD700; box-shadow: 0 20px 35px -10px rgba(0,0,0,0.3); }
 .merch-img { height: 200px; overflow: hidden; position: relative; }
 .merch-img img { width: 100%; height: 100%; object-fit: cover; }
@@ -4606,7 +4940,6 @@ window.closeModal = function() {
 .add-to-cart { background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3); color: #FFD700; padding: 6px 14px; border-radius: 30px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
 .add-to-cart:hover { background: linear-gradient(135deg, #FFD700, #FFA500); color: #0a1520; border-color: transparent; }
 
-/* Floating Cart & Drawer */
 .floating-cart { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; background: linear-gradient(135deg, #FFD700, #FFA500); border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 5px 20px rgba(255,215,0,0.4); z-index: 1000; }
 .floating-cart i { font-size: 1.3rem; color: #0a1520; }
 .cart-count { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 0.65rem; font-weight: 700; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
@@ -4631,11 +4964,7 @@ window.closeModal = function() {
 .cart-total-row { display: flex; justify-content: space-between; margin-bottom: 12px; }
 .cart-total-row strong { color: #FFD700; font-size: 1.2rem; }
 .checkout-btn { width: 100%; background: linear-gradient(135deg, #FFD700, #FFA500); border: none; padding: 10px; border-radius: 30px; font-weight: 800; color: #0a1520; cursor: pointer; }
-
-@keyframes modalSlideIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
+.checkout-btn:hover { transform: translateY(-2px); }
 </style>
 
 <script>
@@ -4677,6 +5006,84 @@ function getCSRFToken() {
 
 const csrfToken = getCSRFToken();
 
+// ===== TICKET QUANTITY FUNCTIONS =====
+let ticketQuantity = 1;
+const TICKET_PRICE_USD = 249;
+const EXCHANGE_RATE = 129;
+
+function updateTicketPrice() {
+  const totalUsd = TICKET_PRICE_USD * ticketQuantity;
+  const totalKes = totalUsd * EXCHANGE_RATE;
+  document.getElementById('totalUsd').textContent = totalUsd;
+  document.getElementById('totalKes').textContent = totalKes.toLocaleString();
+}
+
+function incrementTicketQty() {
+  ticketQuantity++;
+  document.getElementById('ticketQty').textContent = ticketQuantity;
+  updateTicketPrice();
+}
+
+function decrementTicketQty() {
+  if (ticketQuantity > 1) {
+    ticketQuantity--;
+    document.getElementById('ticketQty').textContent = ticketQuantity;
+    updateTicketPrice();
+  }
+}
+
+// ===== TICKET MODAL FUNCTIONS =====
+function openTicketModal() {
+  // Reset quantity to 1 when opening modal
+  ticketQuantity = 1;
+  document.getElementById('ticketQty').textContent = '1';
+  updateTicketPrice();
+  document.getElementById('ticketModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTicketModal() {
+  document.getElementById('ticketModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Handle ticket form submission
+document.getElementById('ticketForm')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const btn = this.querySelector('.modal-submit-btn');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+  
+  try {
+    const response = await fetch('/api/create-ticket-order/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+      body: JSON.stringify({
+        full_name: document.getElementById('ticketFullName').value,
+        email: document.getElementById('ticketEmail').value,
+        phone: document.getElementById('ticketPhone').value,
+        quantity: ticketQuantity,
+        event_id: 1
+      })
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      window.location.href = `/payment/ticket/${data.reference}/`;
+    } else {
+      alert('Error: ' + (data.error || 'Failed to create order'));
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
+  } catch(err) {
+    alert('Network error. Please try again.');
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+});
+
 // ===== MODAL STATE =====
 let currentPaymentType = null;
 let currentCartData = null;
@@ -4686,13 +5093,13 @@ let paymentInterval = null;
 function openTicketPaymentModal() {
   currentPaymentType = 'ticket';
   currentCartData = null;
-  document.getElementById('paymentAmount').innerHTML = 'KES ' + (249 * 129).toLocaleString();
+  const totalKes = TICKET_PRICE_USD * ticketQuantity * EXCHANGE_RATE;
+  document.getElementById('paymentAmount').innerHTML = 'KES ' + totalKes.toLocaleString();
   document.getElementById('mpesaPhone').value = '';
   document.getElementById('paymentModal').style.display = 'flex';
   document.getElementById('mpesaForm').style.display = 'block';
   document.getElementById('cardForm').style.display = 'none';
   
-  // Reset active method styling
   document.querySelectorAll('.payment-method').forEach(m => {
     m.style.borderColor = 'rgba(255,215,0,0.2)';
   });
@@ -4790,13 +5197,13 @@ async function processPayment() {
   let payload = {};
   
   if (currentPaymentType === 'ticket') {
-    const amountKES = 249 * 129;
+    const amountKES = TICKET_PRICE_USD * ticketQuantity * EXCHANGE_RATE;
     endpoint = '/api/sasapay/ticket-payment/';
     payload = {
       phone: formattedPhone,
       amount: amountKES,
-      attendee_name: 'Guest',
-      attendee_email: 'guest@example.com'
+      attendee_name: document.getElementById('ticketFullName')?.value || 'Guest',
+      attendee_email: document.getElementById('ticketEmail')?.value || 'guest@example.com'
     };
   } else if (currentPaymentType === 'merchandise') {
     const total = currentCartData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -4805,8 +5212,8 @@ async function processPayment() {
       phone: formattedPhone,
       amount: total,
       cart: currentCartData,
-      customer_name: 'Guest',
-      customer_email: 'guest@example.com'
+      customer_name: document.getElementById('checkoutName')?.value || 'Guest',
+      customer_email: document.getElementById('checkoutEmail')?.value || 'guest@example.com'
     };
   }
   
@@ -4825,7 +5232,6 @@ async function processPayment() {
     if (data.success) {
       closePaymentModal();
       
-      // Show processing message
       const processingDiv = document.createElement('div');
       processingDiv.id = 'processingMsg';
       processingDiv.innerHTML = '<div style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0a1520; padding:20px 40px; border-radius:12px; border:2px solid #FFD700; z-index:20001; color:white; text-align:center;"><i class="fas fa-spinner fa-pulse fa-2x"></i><br><br>Waiting for payment confirmation...<br><small>Check your phone for M-PESA prompt</small></div>';
@@ -4866,12 +5272,7 @@ async function processPayment() {
   }
 }
 
-// ===== ATTACH EVENT LISTENERS =====
-document.getElementById('openTicketModalBtn')?.addEventListener('click', openTicketPaymentModal);
-document.getElementById('openCheckoutModalBtn')?.addEventListener('click', openMerchandisePaymentModal);
-document.getElementById('processPaymentBtn')?.addEventListener('click', processPayment);
-
-// ===== MERCHANDISE STORE =====
+// ===== MERCHANDISE STORE (REAL DATA FROM ADMIN) =====
 let merchCart = JSON.parse(localStorage.getItem('mbc_merch_cart') || '[]');
 
 async function loadMerchandise() {
@@ -4881,13 +5282,7 @@ async function loadMerchandise() {
     const products = data.items || [];
     renderMerchandise(products);
   } catch(e) { 
-    console.error(e);
-    const sampleProducts = [
-      { id: 1, name: "Elite Trader Hoodie", category: "Apparel", price: 4599, image: "https://placehold.co/400x300/1a2a3a/FFD700?text=Hoodie", description: "Premium cotton hoodie with gold embroidery", stock: 15 },
-      { id: 2, name: "Mfalme Cap", category: "Accessories", price: 1999, image: "https://placehold.co/400x300/1a2a3a/FFD700?text=Cap", description: "Structured cap with metal logo badge", stock: 30 },
-      { id: 3, name: "Trading Journal", category: "Tools", price: 2999, image: "https://placehold.co/400x300/1a2a3a/FFD700?text=Journal", description: "Professional trading journal with analysis templates", stock: 50 }
-    ];
-    renderMerchandise(sampleProducts);
+    console.error('Error loading merchandise:', e);
   }
 }
 
@@ -4985,10 +5380,94 @@ function removeFromCart(id){
   updateCartUI(); 
 }
 
+// ===== CHECKOUT MODAL FUNCTIONS =====
+function openCheckoutModal() {
+  if (!merchCart.length) {
+    alert('Your cart is empty');
+    return;
+  }
+  
+  let subtotal = 0;
+  let itemsHtml = '';
+  merchCart.forEach(item => {
+    subtotal += item.price * item.quantity;
+    itemsHtml += `<div class="cart-item-mini"><span>${item.name} x${item.quantity}</span><span>KES ${(item.price * item.quantity).toLocaleString()}</span></div>`;
+  });
+  document.getElementById('orderSummary').innerHTML = itemsHtml;
+  document.getElementById('modalSubtotal').textContent = subtotal.toLocaleString();
+  document.getElementById('modalTotal').textContent = (subtotal + 500).toLocaleString();
+  
+  document.getElementById('checkoutModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCheckoutModal() {
+  document.getElementById('checkoutModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Handle checkout form submission
+document.getElementById('checkoutForm')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const btn = this.querySelector('.modal-submit-btn');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+  
+  try {
+    const response = await fetch('/api/create-merchandise-order/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+      body: JSON.stringify({
+        full_name: document.getElementById('checkoutName').value,
+        email: document.getElementById('checkoutEmail').value,
+        phone: document.getElementById('checkoutPhone').value,
+        address: document.getElementById('checkoutAddress').value,
+        cart: merchCart
+      })
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      window.location.href = `/payment/merchandise/${data.reference}/`;
+    } else {
+      alert('Error: ' + (data.error || 'Failed to create order'));
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
+  } catch(err) {
+    alert('Network error. Please try again.');
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+});
+
+// ===== ATTACH EVENT LISTENERS =====
+document.getElementById('openTicketModalBtn')?.addEventListener('click', openTicketModal);
+document.getElementById('openCheckoutModalBtn')?.addEventListener('click', openMerchandisePaymentModal);
+document.getElementById('processPaymentBtn')?.addEventListener('click', processPayment);
+
+// Close modals on backdrop click
+document.querySelectorAll('.modern-modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function() {
+    closeTicketModal();
+    closeCheckoutModal();
+  });
+});
+
+// Close modals with Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeTicketModal();
+    closeCheckoutModal();
+  }
+});
+
 loadMerchandise();
 updateCartUI();
 
-// CSS animation for spin
+// CSS animation
 const spinStyle = document.createElement('style');
 spinStyle.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
 document.head.appendChild(spinStyle);

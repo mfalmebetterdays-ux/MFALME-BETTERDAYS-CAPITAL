@@ -322,6 +322,11 @@ urlpatterns = [
 
     # ==================== ORDER CREATION ====================
     path('api/create-order/', views.create_order, name='create_order'),
+    # Ticket Order Creation
+    path('api/create-ticket-order/', views.api_create_ticket_order, name='api_create_ticket_order'),
+    path('api/create-merchandise-order/', views.api_create_merchandise_order, name='api_create_merchandise_order'),
+    path('payment/ticket/<str:reference>/', views.payment_ticket, name='payment_ticket'),
+    path('payment/merchandise/<str:reference>/', views.payment_merchandise, name='payment_merchandise'),
 ]
 
 # ==================== MEDIA FILES SERVING ====================

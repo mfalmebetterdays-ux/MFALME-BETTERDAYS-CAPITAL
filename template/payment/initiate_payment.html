@@ -517,18 +517,19 @@
                 </div>
             </div>
 
+            <!-- UPDATED: Shows order customer info for guests, user info for logged-in users -->
             <div class="user-section">
                 <div class="user-row">
                     <span>👤</span>
-                    <span>{{ user.get_full_name|default:user.username }}</span>
+                    <span>{{ customer_name|default:user.get_full_name|default:user.username|default:"Guest" }}</span>
                 </div>
                 <div class="user-row">
                     <span>📧</span>
-                    <span>{{ user.email }}</span>
+                    <span>{{ customer_email|default:user.email|default:"guest@example.com" }}</span>
                 </div>
                 <div class="user-row">
                     <span>📱</span>
-                    <span>{{ user.phone|default:"—" }}</span>
+                    <span>{{ customer_phone|default:user.phone|default:"—" }}</span>
                 </div>
             </div>
         </div>
@@ -632,7 +633,7 @@
                 </div>
 
                 <label class="phone-label">📱 Your M-PESA Number</label>
-                <input type="tel" class="phone-input" id="mpesaPhone" placeholder="0712345678" value="{{ user.phone }}">
+                <input type="tel" class="phone-input" id="mpesaPhone" placeholder="0712345678" value="{{ customer_phone|default:user.phone }}">
                 
                 <button class="action-btn" onclick="initiateMpesaPayment()">
                     Pay with M-PESA STK Push
@@ -730,7 +731,8 @@
         const csrftoken = document.querySelector('[name=csrf-token]').content;
         const reference = "{{ reference }}";
         const amountKes = {{ amount_kes }};
-        const email = "{{ user.email }}";
+        // UPDATED: Use customer_email from order or user.email, fallback to guest
+        const email = "{{ customer_email|default:user.email|default:'guest@example.com' }}";
         
         let selectedMethod = 'mpesa'; // Default to M-PESA since it's working
         let currentCrypto = 'btc';
