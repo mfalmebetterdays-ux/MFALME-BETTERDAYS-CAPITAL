@@ -174,165 +174,147 @@ def send_user_notification_email(user, subject, template, context):
 
 # ==================== EMAIL FUNCTIONS ====================
 
-def send_verification_email(user, code):
-    """Send verification email - Clean professional version"""
-    try:
-        subject = 'Verify Your Account - Mfalme Betterdays Capital'
+@require_GET
+def export_blogs(request):
+    """Export blogs to Excel"""
+    blogs = Blog.objects.all().order_by('-created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="blogs_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Blogs Export"
+    
+    headers = ['ID', 'Title', 'Author', 'Category', 'Views', 'Status', 'Published', 'Created']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    for row_num, blog in enumerate(blogs, 2):
+        ws.cell(row=row_num, column=1).value = blog.id
+        ws.cell(row=row_num, column=2).value = blog.title
+        ws.cell(row=row_num, column=3).value = blog.author.username if blog.author else 'Admin'
+        ws.cell(row=row_num, column=4).value = blog.category or 'General'
+        ws.cell(row=row_num, column=5).value = blog.views or 0
+        ws.cell(row=row_num, column=6).value = blog.status or 'draft'
+        ws.cell(row=row_num, column=7).value = blog.published_at.strftime('%Y-%m-%d') if blog.published_at else 'Not published'
+        ws.cell(row=row_num, column=8).value = blog.created_at.strftime('%Y-%m-%d') if blog.created_at else ''
+    
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    wb.save(response)
+    return response
+
+
+@require_GET
+def export_packages(request):
+    """Export packages to Excel"""
+    packages = Package.objects.all().order_by('-created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="packages_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Packages Export"
+    
+    headers = ['ID', 'Name', 'Price (KES)', 'Type', 'Sales', 'Revenue (KES)', 'Status', 'Created']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    for row_num, package in enumerate(packages, 2):
+        sales = Order.objects.filter(package=package, status='completed').count()
+        revenue = Order.objects.filter(package=package, status='completed').aggregate(Sum('amount'))['amount__sum'] or 0
         
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Verify Your Account</title>
-            <style>
-                body {{
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    line-height: 1.6;
-                    color: #1a1a1a;
-                    margin: 0;
-                    padding: 0;
-                    background-color: #f5f5f5;
-                }}
-                .container {{
-                    max-width: 480px;
-                    margin: 20px auto;
-                    background: white;
-                    border-radius: 12px;
-                    padding: 40px 32px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                }}
-                .logo {{
-                    text-align: center;
-                    margin-bottom: 32px;
-                }}
-                .logo h1 {{
-                    color: #B8860B;
-                    font-size: 1.5rem;
-                    font-weight: 600;
-                    margin: 0;
-                }}
-                h2 {{
-                    font-size: 1.3rem;
-                    font-weight: 500;
-                    margin-bottom: 24px;
-                    text-align: center;
-                }}
-                .code-box {{
-                    background: #f8f9fa;
-                    border: 1px solid #e9ecef;
-                    border-radius: 8px;
-                    padding: 24px;
-                    text-align: center;
-                    margin: 24px 0;
-                }}
-                .code {{
-                    font-size: 2.5rem;
-                    font-weight: 600;
-                    letter-spacing: 8px;
-                    color: #B8860B;
-                    font-family: monospace;
-                    margin: 16px 0;
-                }}
-                .button {{
-                    display: inline-block;
-                    background: #B8860B;
-                    color: white;
-                    text-decoration: none;
-                    padding: 12px 32px;
-                    border-radius: 40px;
-                    font-weight: 500;
-                    margin: 16px 0;
-                }}
-                .footer {{
-                    margin-top: 32px;
-                    padding-top: 20px;
-                    border-top: 1px solid #e9ecef;
-                    font-size: 0.8rem;
-                    color: #6c757d;
-                    text-align: center;
-                }}
-                .note {{
-                    background: #fff3cd;
-                    border: 1px solid #ffeeba;
-                    border-radius: 6px;
-                    padding: 12px;
-                    font-size: 0.9rem;
-                    color: #856404;
-                    margin: 20px 0;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="logo">
-                    <h1> Mfalme Betterdays Capital</h1>
-                </div>
-                
-                <h2>Verify your email address</h2>
-                
-                <p>Hello {user.username},</p>
-                
-                <p>Thank you for registering with Mfalme Betterdays Capital. Please use the verification code below to complete your account setup.</p>
-                
-                <div class="code-box">
-                    <div style="color: #6c757d; font-size: 0.9rem; margin-bottom: 8px;">Your verification code</div>
-                    <div class="code">{code}</div>
-                    
-                    <button onclick="navigator.clipboard.writeText('{code}')" style="background: none; border: 1px solid #B8860B; color: #B8860B; padding: 8px 24px; border-radius: 40px; cursor: pointer; font-size: 0.9rem;">
-                        Copy code
-                    </button>
-                </div>
-                
-                <div style="text-align: center;">
-                    <a href="{settings.SITE_URL}/verify/?email={user.email}" class="button">
-                        Verify Account
-                    </a>
-                </div>
-                
-                <div class="note">
-                    <strong>Note:</strong> This code will expire in 30 minutes. If you didn't request this verification, please ignore this email.
-                </div>
-                
-                <div class="footer">
-                    <p>© {timezone.now().year} Mfalme Betterdays Capital. All rights reserved.</p>
-                    <p>Nairobi, Kenya</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        text_content = f"""
-        Mfalme Betterdays Capital - Account Verification
-        
-        Hello {user.username},
-        
-        Your verification code is: {code}
-        
-        This code will expire in 30 minutes.
-        
-        If you didn't request this verification, please ignore this email.
-        
-        Best regards,
-        Mfalme Betterdays Capital Team
-        """
-        
-        msg = EmailMultiAlternatives(
-            subject,
-            text_content,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email]
-        )
-        msg.attach_alternative(html_content, "text/html")
-        msg.send()
-        
-        return True
-        
-    except Exception as e:
-        print(f"Email error: {e}")
-        return False
+        ws.cell(row=row_num, column=1).value = package.id
+        ws.cell(row=row_num, column=2).value = package.name
+        ws.cell(row=row_num, column=3).value = float(package.price) if package.price else 0
+        ws.cell(row=row_num, column=4).value = package.package_type or 'N/A'
+        ws.cell(row=row_num, column=5).value = sales
+        ws.cell(row=row_num, column=6).value = float(revenue)
+        ws.cell(row=row_num, column=7).value = package.status or 'inactive'
+        ws.cell(row=row_num, column=8).value = package.created_at.strftime('%Y-%m-%d') if package.created_at else ''
+    
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    wb.save(response)
+    return response
+
+
+@require_GET
+def export_partnerships(request):
+    """Export partnerships to Excel"""
+    partnerships = Partnership.objects.all().order_by('-created_at')
+    
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="partnerships_export_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Partnerships Export"
+    
+    headers = ['ID', 'Company', 'Contact Person', 'Email', 'Phone', 'Tier', 'Amount (KES)', 'NDA', 'Status', 'Applied']
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header
+        cell.font = Font(bold=True)
+        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        cell.font = Font(color="FFFFFF", bold=True)
+    
+    for row_num, p in enumerate(partnerships, 2):
+        ws.cell(row=row_num, column=1).value = p.id
+        ws.cell(row=row_num, column=2).value = p.company_name
+        ws.cell(row=row_num, column=3).value = p.contact_name
+        ws.cell(row=row_num, column=4).value = p.email
+        ws.cell(row=row_num, column=5).value = p.phone or ''
+        ws.cell(row=row_num, column=6).value = p.tier or 'N/A'
+        ws.cell(row=row_num, column=7).value = float(p.investment_amount) if p.investment_amount else 0
+        ws.cell(row=row_num, column=8).value = 'Signed' if p.nda_signed else 'Pending'
+        ws.cell(row=row_num, column=9).value = p.status or 'pending'
+        ws.cell(row=row_num, column=10).value = p.created_at.strftime('%Y-%m-%d') if p.created_at else ''
+    
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    wb.save(response)
+    return response
 
 def send_admin_notification(user):
     """Send admin notification when new user registers"""
