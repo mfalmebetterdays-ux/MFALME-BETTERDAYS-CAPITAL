@@ -6424,6 +6424,22 @@ def send_merchandise_order_email(order):
             </tr>
             """
         
+        # Build items text for plain text email - NO nested f-strings with backslashes!
+        items_text_list = []
+        for item in order.items:
+            item_name = item.get('name', 'Item')
+            item_qty = item.get('quantity', 1)
+            item_price = item.get('price', 0)
+            item_total = item_price * item_qty
+            items_text_list.append(f'- {item_name} x{item_qty} = KES {item_total:,.2f}')
+        items_text = '\n'.join(items_text_list)
+        
+        # Build items for admin notification table - NO nested f-strings with backslashes!
+        admin_items_rows = []
+        for item in order.items:
+            admin_items_rows.append(f'<tr><td>{item.get("name")}</td><td>{item.get("quantity")}</td><td style="text-align: right;">KES {item.get("price") * item.get("quantity"):,.2f}</td></tr>')
+        admin_items_html = ''.join(admin_items_rows)
+        
         # Customer email HTML
         customer_html = f"""
         <!DOCTYPE html>
@@ -6756,7 +6772,7 @@ def send_merchandise_order_email(order):
                                 </tr>
                             </thead>
                             <tbody>
-                                {''.join([f'<tr><td>{item.get("name")}</td><td>{item.get("quantity")}</td><td>KES {item.get("price") * item.get("quantity"):,.2f}</td></tr>' for item in order.items])}
+                                {admin_items_html}
                             </tbody>
                         </table>
                     </div>
@@ -6772,7 +6788,7 @@ def send_merchandise_order_email(order):
         </html>
         """
         
-        # Plain text version for customer
+        # Plain text version for customer - NO nested f-strings!
         text_content = f"""
         MFALME BETTERDAYS CAPITAL - ORDER CONFIRMATION
         {'='*50}
@@ -6785,7 +6801,7 @@ def send_merchandise_order_email(order):
         Delivery Address: {order.delivery_address}
         
         Items:
-        {''.join([f'- {item.get("name")} x{item.get("quantity")} = KES {item.get("price") * item.get("quantity"):,.2f}\n' for item in order.items])}
+        {items_text}
         
         Subtotal: KES {order.subtotal:,.2f}
         Shipping: KES {order.shipping_cost:,.2f}
