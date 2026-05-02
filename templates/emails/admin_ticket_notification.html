@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>New Ticket Purchase</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+        .container { max-width: 550px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; }
+        .header { background: linear-gradient(135deg, #FFD700, #FFA500); padding: 25px; text-align: center; }
+        .header h1 { margin: 0; color: #0a1520; font-size: 20px; }
+        .content { padding: 25px; }
+        h2 { color: #B8860B; text-align: center; margin-top: 0; }
+        .alert { background: #fff3cd; padding: 12px; margin-bottom: 20px; border-left: 4px solid #FFD700; }
+        .details { background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 20px; }
+        .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd; }
+        .label { color: #666; font-size: 12px; }
+        .value { font-weight: bold; color: #333; font-size: 14px; }
+        .value.highlight { color: #B8860B; font-size: 16px; }
+        .event-box { background: #0a1520; border-radius: 12px; padding: 15px; margin-bottom: 20px; }
+        .event-box h3 { color: #FFD700; margin: 0 0 10px 0; text-align: center; }
+        .event-row { display: flex; justify-content: space-between; padding: 6px 0; }
+        .event-label { color: #aaa; font-size: 12px; }
+        .event-value { color: white; font-size: 13px; }
+        .button { display: block; background: #FFD700; color: #0a1520; text-align: center; padding: 12px; border-radius: 40px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+        .footer { background: #1a1a2e; padding: 15px; text-align: center; font-size: 11px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>MFALME BETTERDAYS CAPITAL</h1></div>
+        <div class="content">
+            <h2>NEW TICKET PURCHASE</h2>
+            <div class="alert">A new ticket has been purchased. Review details below.</div>
+            <div class="details">
+                <div class="row"><span class="label">Ticket Number</span><span class="value highlight">{{ ticket.ticket_number }}</span></div>
+                <div class="row"><span class="label">Attendee</span><span class="value">{{ ticket.attendee_name }}</span></div>
+                <div class="row"><span class="label">Phone</span><span class="value">{{ ticket.attendee_phone }}</span></div>
+                <div class="row"><span class="label">Email</span><span class="value">{{ ticket.attendee_email }}</span></div>
+                <div class="row"><span class="label">Quantity</span><span class="value">{{ ticket.quantity }}</span></div>
+                <div class="row"><span class="label">Total</span><span class="value highlight">KES {{ ticket.total_amount_kes|floatformat:2 }}</span></div>
+            </div>
+            <div class="event-box">
+                <h3>EVENT DETAILS</h3>
+                <div class="event-row"><span class="event-label">Event</span><span class="event-value">{{ ticket.event.title }}</span></div>
+                <div class="event-row"><span class="event-label">Date</span><span class="event-value">{{ ticket.event.date|date:"l, F j, Y" }}</span></div>
+                <div class="event-row"><span class="event-label">Venue</span><span class="event-value">{{ ticket.event.venue }}</span></div>
+            </div>
+            <a href="{{ site_url }}/admin/" class="button">VIEW IN ADMIN</a>
+        </div>
+        <div class="footer">For inquiries: +254 706 286 667 | mfalmebetterdays@gmail.com</div>
+    </div>
+</body>
+</html>

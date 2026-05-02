@@ -1,113 +1,233 @@
+<!-- templates/emails/ticket_email.html - No download button, just beautiful ticket -->
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Your Ticket</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Ticket - Mfalme Betterdays Capital</title>
     <style>
-        .ticket-card {
-            border: 2px solid #E5C687;
-            border-radius: 16px;
-            margin-bottom: 20px;
-            overflow: hidden;
-            max-width: 500px;
-            background: white;
-        }
-        .ticket-header {
-            background: linear-gradient(135deg, #E5C687, #B8860B);
-            padding: 15px 20px;
-            color: #0B1A33;
-        }
-        .ticket-header h3 {
+        * {
             margin: 0;
-            font-size: 18px;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .ticket-header p {
-            margin: 5px 0 0;
-            font-size: 12px;
-            opacity: 0.8;
-        }
-        .ticket-body {
-            padding: 20px;
-            display: flex;
-            gap: 20px;
-        }
-        .ticket-details {
-            flex: 2;
-        }
-        .detail-row {
-            margin-bottom: 10px;
-        }
-        .detail-label {
-            font-size: 11px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .detail-value {
-            font-weight: 600;
-            font-size: 14px;
-        }
-        .ticket-qr {
-            flex: 1;
-            text-align: center;
-            border-left: 1px dashed #ddd;
-            padding-left: 15px;
-        }
-        .qr-placeholder {
-            width: 100px;
-            height: 100px;
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #f5f5f5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto;
-            border-radius: 8px;
+            padding: 40px 20px;
         }
-        .ticket-footer {
-            background: #f8f9fa;
-            padding: 10px 20px;
-            font-size: 10px;
-            color: #666;
+        
+        .ticket-card {
+            max-width: 550px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .ticket-header {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            padding: 24px 30px;
             text-align: center;
-            border-top: 1px solid #eee;
+        }
+        
+        .ticket-header h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 800;
+            color: #0a1520;
+        }
+        
+        .ticket-header .event-date {
+            margin: 8px 0 0;
+            font-size: 13px;
+            color: #0a1520;
+            opacity: 0.85;
+        }
+        
+        .ticket-body {
+            padding: 30px;
+        }
+        
+        .event-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #B8860B;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .detail-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 12px 14px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .detail-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #B8860B;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        
+        .detail-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        
+        .qr-section {
+            text-align: center;
+            padding: 24px;
+            background: #f8f9fa;
+            border-radius: 16px;
+            margin: 20px 0;
+            border: 2px dashed #FFD700;
+        }
+        
+        .qr-code img {
+            width: 140px;
+            height: 140px;
+            display: inline-block;
+        }
+        
+        .qr-section p {
+            font-size: 11px;
+            color: #6c757d;
+            margin-top: 12px;
+        }
+        
+        .badge-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: rgba(184, 134, 11, 0.1);
+            color: #B8860B;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .instruction-box {
+            background: rgba(239, 68, 68, 0.08);
+            border-radius: 12px;
+            padding: 12px 16px;
+            text-align: center;
+            margin-top: 20px;
+            border-left: 3px solid #ef4444;
+        }
+        
+        .instruction-box p {
+            font-size: 11px;
+            color: #ef4444;
+            font-weight: 500;
+        }
+        
+        .ticket-footer {
+            background: #1a1a2e;
+            padding: 16px 24px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 215, 0, 0.2);
+        }
+        
+        .ticket-footer p {
+            font-size: 10px;
+            color: #aaa;
+            margin: 4px 0;
+        }
+        
+        .ticket-footer a {
+            color: #FFD700;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 500px) {
+            .ticket-body { padding: 20px; }
+            .detail-grid { grid-template-columns: 1fr; gap: 12px; }
+            .ticket-header { padding: 20px; }
+            .ticket-header h1 { font-size: 18px; }
+            .event-title { font-size: 18px; }
         }
     </style>
 </head>
 <body>
     <div class="ticket-card">
         <div class="ticket-header">
-            <h3>🎫 {{ event.name }}</h3>
-            <p>{{ event.venue }} | {{ event.event_date|date:"F j, Y" }} at {{ event.event_date|date:"g:i A" }}</p>
+            <h1>MFALME BETTERDAYS CAPITAL</h1>
+            <div class="event-date">{{ event.date|date:"l, F j, Y" }} at {{ event.date|date:"g:i A" }}</div>
         </div>
+        
         <div class="ticket-body">
-            <div class="ticket-details">
-                <div class="detail-row">
-                    <div class="detail-label">Ticket Type</div>
-                    <div class="detail-value">{{ ticket_type.name }}</div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-label">Attendee</div>
-                    <div class="detail-value">{{ ticket.attendee_name }}</div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-label">Ticket Number</div>
+            <div class="event-title">{{ event.title }}</div>
+            
+            <div class="detail-grid">
+                <div class="detail-card">
+                    <div class="detail-label">TICKET NUMBER</div>
                     <div class="detail-value">{{ ticket.ticket_number }}</div>
                 </div>
-                <div class="detail-row">
-                    <div class="detail-label">Order Reference</div>
-                    <div class="detail-value">{{ ticket.order.order_number }}</div>
+                <div class="detail-card">
+                    <div class="detail-label">TICKET TYPE</div>
+                    <div class="detail-value">Premium Access</div>
+                </div>
+                <div class="detail-card">
+                    <div class="detail-label">ATTENDEE NAME</div>
+                    <div class="detail-value">{{ ticket.attendee_name }}</div>
+                </div>
+                <div class="detail-card">
+                    <div class="detail-label">QUANTITY</div>
+                    <div class="detail-value">{{ ticket.quantity }} Ticket(s)</div>
+                </div>
+                <div class="detail-card">
+                    <div class="detail-label">VENUE</div>
+                    <div class="detail-value">{{ event.venue }}</div>
+                </div>
+                <div class="detail-card">
+                    <div class="detail-label">AMOUNT PAID</div>
+                    <div class="detail-value">KES {{ ticket.total_amount_kes|floatformat:2 }}</div>
                 </div>
             </div>
-            <div class="ticket-qr">
-                <div class="qr-placeholder">
-                    <i class="fas fa-qrcode" style="font-size: 48px; color: #B8860B;"></i>
+            
+            <div class="qr-section">
+                <div class="qr-code">
+                    <img src="data:image/png;base64,{{ qr_base64 }}" alt="QR Code">
                 </div>
-                <small style="display: block; margin-top: 8px;">Scan to verify</small>
+                <p>Scan this QR code at the venue entrance for verification</p>
+            </div>
+            
+            <div class="badge-container">
+                <span class="badge">Lunch Included</span>
+                <span class="badge">Certificate of Attendance</span>
+                <span class="badge">Exclusive Giveaways</span>
+            </div>
+            
+            <div class="instruction-box">
+                <p>IMPORTANT: Please bring a valid government-issued ID for verification</p>
             </div>
         </div>
+        
         <div class="ticket-footer">
-            Please present this ticket (digital or printed) at the venue entrance.
-            ID verification may be required.
+            <p>For inquiries: +254 706 286 667 | info@mfalmebetterdays.capital</p>
+            <p>© 2026 Mfalme Betterdays Capital. All rights reserved.</p>
+            <p>Present this ticket (digital or printed) at registration desk</p>
         </div>
     </div>
 </body>

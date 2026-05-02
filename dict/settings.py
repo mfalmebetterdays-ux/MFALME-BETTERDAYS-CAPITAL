@@ -51,12 +51,9 @@ if not SECRET_KEY:
 # ================================================
 # FORCE BOTH HTTP AND HTTPS - FIX THE REDIRECT LOOP
 # ================================================
-# These settings OVERRIDE the production security settings for local development
-# They allow both HTTP and HTTPS without redirects
 FORCE_HTTP_DEV = DEBUG and not IS_RAILWAY
 
 if FORCE_HTTP_DEV:
-    # Disable all HTTPS redirects for local development
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
@@ -65,15 +62,12 @@ if FORCE_HTTP_DEV:
     SECURE_HSTS_PRELOAD = False
     SECURE_PROXY_SSL_HEADER = None
     SECURE_SSL_HOST = None
-    SECURE_REDIRECT_EXEMPT = [r'^.*$']  # Exempt all paths from redirect
-    
-    # Allow mixed content in development
+    SECURE_REDIRECT_EXEMPT = [r'^.*$']
     SECURE_REFERRER_POLICY = 'no-referrer-when-downgrade'
     
     print("🔓 HTTPS redirects DISABLED for local development")
     print("   Access your site at: http://127.0.0.1:8000")
 else:
-    # Production security settings (only when DEBUG=False AND on Railway)
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
@@ -87,20 +81,18 @@ else:
     X_FRAME_OPTIONS = 'DENY'
 
 # ================================================
-# AWS S3 CONFIGURATION - ALWAYS DEFINED
+# AWS S3 CONFIGURATION
 # ================================================
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME')
 
-# Define these OUTSIDE any condition so they're always available
 if AWS_STORAGE_BUCKET_NAME and AWS_S3_REGION_NAME:
     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
 else:
     AWS_S3_CUSTOM_DOMAIN = None
 
-# Determine if we should use S3 for Django storage
 AWS_CREDENTIALS_PRESENT = all([
     AWS_ACCESS_KEY_ID, 
     AWS_SECRET_ACCESS_KEY, 
@@ -114,44 +106,29 @@ USE_S3 = AWS_CREDENTIALS_PRESENT and not (DEBUG and not IS_RAILWAY)
 # STORAGE CONFIGURATION
 # ================================================
 if USE_S3:
-    # S3 Storage Settings
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    
-    # Make files publicly accessible
     AWS_S3_OBJECT_PARAMETERS = {
-        'CacheControl': 'max-age=86400',  # Cache for 24 hours
+        'CacheControl': 'max-age=86400',
     }
-    
-    # Performance optimizations
     AWS_S3_FILE_OVERWRITE = False
     AWS_S3_SIGNATURE_VERSION = 's3v4'
     AWS_S3_USE_SSL = True
     AWS_S3_VERIFY = True
     AWS_S3_MAX_ATTEMPTS = 3
-    
-    # Multipart upload settings for large files
-    AWS_S3_MULTIPART_THRESHOLD = 100 * 1024 * 1024  # 100MB
-    AWS_S3_MULTIPART_CHUNKSIZE = 50 * 1024 * 1024   # 50MB chunks
-    
-    # Disable query string auth for public URLs
+    AWS_S3_MULTIPART_THRESHOLD = 100 * 1024 * 1024
+    AWS_S3_MULTIPART_CHUNKSIZE = 50 * 1024 * 1024
     AWS_QUERYSTRING_AUTH = False
-    AWS_QUERYSTRING_EXPIRE = 86400  # 24 hours
-    
-    # Set DEFAULT_ACL based on bucket configuration
+    AWS_QUERYSTRING_EXPIRE = 86400
     AWS_DEFAULT_ACL = 'public-read'
-    
-    # Media URL
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
-    
 else:
-    # Local Storage Fallback
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
     MEDIA_URL = '/media/'
     os.makedirs(MEDIA_ROOT, exist_ok=True)
 
 # ================================================
-# HOSTS & SECURITY - MODIFIED FOR LOCAL DEV
+# HOSTS & SECURITY
 # ================================================
 ALLOWED_HOSTS = [
     'mfalmebetterdayscapital.com',
@@ -163,7 +140,6 @@ ALLOWED_HOSTS = [
     '[::1]',
 ]
 
-# Add HTTP and HTTPS for localhost in development
 if FORCE_HTTP_DEV:
     ALLOWED_HOSTS.extend(['localhost', '127.0.0.1', '0.0.0.0'])
 
@@ -180,7 +156,6 @@ CSRF_TRUSTED_ORIGINS = [
     'https://www.mfalmebetterdayscapital.com',
 ]
 
-# Add HTTP origins for local development
 if FORCE_HTTP_DEV:
     CSRF_TRUSTED_ORIGINS.extend([
         'http://localhost:8000',
@@ -195,10 +170,10 @@ if railway_domain:
     CSRF_TRUSTED_ORIGINS.append(railway_domain)
 
 # ================================================
-# MIDDLEWARE WITH OPTIONAL SECURITY FOR LOCAL DEV
+# MIDDLEWARE
 # ================================================
 MIDDLEWARE = [
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Moved up for better performance
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -208,26 +183,19 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# For local development, add middleware to log HTTPS attempts (but not crash)
 if FORCE_HTTP_DEV:
-    # Create a custom middleware to handle HTTPS gracefully
     class GracefulHTTPMiddleware:
-        """Middleware that logs but doesn't crash on HTTPS attempts"""
         def __init__(self, get_response):
             self.get_response = get_response
         
         def __call__(self, request):
-            # Check if request is HTTPS but we're in HTTP mode
             if request.is_secure() and FORCE_HTTP_DEV:
-                # Log but don't crash - just treat as HTTP
                 import logging
                 logger = logging.getLogger(__name__)
                 logger.debug(f"HTTPS request received but treating as HTTP: {request.path}")
-                # Force request to be treated as non-secure
                 request._is_secure = False
             return self.get_response(request)
     
-    # Insert our custom middleware at the beginning
     MIDDLEWARE.insert(0, 'dict.settings.GracefulHTTPMiddleware')
 
 # ================================================
@@ -241,12 +209,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'myapp',
-    # sslserver is added conditionally below - NO DUPLICATES!
     'whitenoise.runserver_nostatic',
-    'storages',  # Required for S3
+    'storages',
 ]
 
-# Add sslserver for local HTTPS development (optional)
 if FORCE_HTTP_DEV:
     try:
         import sslserver
@@ -254,7 +220,7 @@ if FORCE_HTTP_DEV:
         print("🔐 django-sslserver available for HTTPS testing")
         print("   Run: python manage.py runsslserver to enable HTTPS")
     except ImportError:
-        pass  # sslserver not installed, that's fine
+        pass
 
 ROOT_URLCONF = 'dict.urls'
 
@@ -280,34 +246,28 @@ TEMPLATES = [
 WSGI_APPLICATION = 'dict.wsgi.application'
 
 # ================================================
-# DATABASE CONFIGURATION - WITH AUTOMATIC FAILOVER
+# DATABASE CONFIGURATION
 # ================================================
-
-# Primary Database (Railway PostgreSQL)
 PRIMARY_DATABASE_URL = os.environ.get('DATABASE_URL')
 
-# Configure databases with a primary and fallback
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
         'CONN_MAX_AGE': 60,
         'OPTIONS': {
-            'timeout': 20,  # SQLite timeout
+            'timeout': 20,
         }
     }
 }
 
-# Try to configure PostgreSQL as primary if URL exists
 if PRIMARY_DATABASE_URL:
     try:
-        # Parse the database URL
         parsed_url = urllib.parse.urlparse(PRIMARY_DATABASE_URL)
         
-        # Extract connection details
         db_config = {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': parsed_url.path[1:],  # Remove leading slash
+            'NAME': parsed_url.path[1:],
             'USER': parsed_url.username,
             'PASSWORD': parsed_url.password,
             'HOST': parsed_url.hostname,
@@ -315,12 +275,11 @@ if PRIMARY_DATABASE_URL:
             'CONN_MAX_AGE': 180 if IS_RAILWAY else 60,
             'CONN_HEALTH_CHECKS': True,
             'OPTIONS': {
-                'connect_timeout': 5,  # Quick timeout for failover
+                'connect_timeout': 5,
                 'sslmode': 'require' if IS_RAILWAY else 'prefer',
             }
         }
         
-        # Test the connection briefly
         import psycopg2
         try:
             conn = psycopg2.connect(
@@ -332,46 +291,14 @@ if PRIMARY_DATABASE_URL:
                 connect_timeout=3
             )
             conn.close()
-            
-            # Connection successful - use PostgreSQL
             DATABASES['default'] = db_config
             print("✅ PostgreSQL database configured and connected")
-            
         except Exception as e:
             print(f"⚠️ PostgreSQL connection failed: {e}")
             print("✅ Falling back to SQLite database")
-            # Keep SQLite as default
-            
     except Exception as e:
         print(f"⚠️ Error parsing DATABASE_URL: {e}")
         print("✅ Using SQLite database")
-
-# For Railway production, we can also add a replica configuration
-if IS_RAILWAY and PRIMARY_DATABASE_URL:
-    # Add SQLite as a read replica fallback (optional)
-    DATABASES['sqlite_fallback'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        'CONN_MAX_AGE': 60,
-        'TEST': {
-            'MIRROR': 'default',  # Use for tests
-        }
-    }
-
-# ================================================
-# DATABASE CONNECTION POOLING & RETRY LOGIC
-# ================================================
-
-# Add connection pooling for PostgreSQL
-if 'default' in DATABASES and DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
-    DATABASES['default']['CONN_MAX_AGE'] = 180  # 3 minutes for Railway
-    DATABASES['default']['OPTIONS'].update({
-        'connect_timeout': 5,
-        'keepalives': 1,
-        'keepalives_idle': 30,
-        'keepalives_interval': 10,
-        'keepalives_count': 5,
-    })
 
 # ================================================
 # PASSWORD VALIDATION
@@ -401,7 +328,7 @@ USE_I18N = True
 USE_TZ = True
 
 # ================================================
-# STATIC FILES (WhiteNoise)
+# STATIC FILES
 # ================================================
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -420,11 +347,10 @@ WHITENOISE_AUTOREFRESH = DEBUG
 # CUSTOM USER MODEL
 # ================================================
 AUTH_USER_MODEL = 'myapp.MfalmeUsers'
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ================================================
-# EMAIL CONFIGURATION - NO HARDCODED PASSWORDS!
+# EMAIL CONFIGURATION - FIXED!
 # ================================================
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
@@ -436,14 +362,19 @@ if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_USE_TLS = True
     DEFAULT_FROM_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
     SERVER_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
-    ADMIN_EMAILS = [EMAIL_HOST_USER, 'support@mfalmebetterdayscapital.com']
+    
+    # Only use working email addresses
+    ADMIN_EMAILS = ['mfalmebetterdays@gmail.com']
+    
     EMAIL_TIMEOUT = 30
     EMAIL_CONNECTION_TIMEOUT = 30
 elif DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    ADMIN_EMAILS = ['admin@example.com']
     print("📧 Using console email backend (development)")
 else:
     print("⚠️ Email not configured - email functionality will fail!")
+    ADMIN_EMAILS = []
 
 # ================================================
 # SESSION CONFIGURATION
@@ -470,8 +401,8 @@ LOGOUT_REDIRECT_URL = '/'
 # ================================================
 # FILE UPLOAD SETTINGS
 # ================================================
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760
 FILE_UPLOAD_PERMISSIONS = 0o644
 FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o755
 
@@ -497,7 +428,7 @@ if os.environ.get('REDIS_URL'):
     }
 
 # ================================================
-# LOGGING - DON'T LOG SECRETS!
+# LOGGING
 # ================================================
 LOGGING = {
     'version': 1,
@@ -535,7 +466,7 @@ LOGGING = {
 SITE_NAME = "MFALME BETTERDAYS CAPITAL"
 SITE_URL = os.environ.get('SITE_URL', 'https://mfalmebetterdayscapital.com')
 SUPPORT_PHONE = os.environ.get('SUPPORT_PHONE', '+254 706 286 667')
-SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'support@mfalmebetterdayscapital.com')
+SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'mfalmebetterdays@gmail.com')
 
 MAX_FILE_UPLOAD_SIZE = 10 * 1024 * 1024
 ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
@@ -551,7 +482,7 @@ MAX_VERIFICATION_ATTEMPTS = 5
 HEALTH_CHECK_PATHS = ['/', '/health/', '/healthcheck/']
 
 # ================================================
-# SASAPAY CONFIGURATION - NO HARDCODED SECRETS!
+# SASAPAY CONFIGURATION
 # ================================================
 SASAPAY_ENVIRONMENT = os.environ.get('SASAPAY_ENVIRONMENT', 'sandbox' if DEBUG else 'live')
 SASAPAY_CLIENT_ID = os.environ.get('SASAPAY_CLIENT_ID')
@@ -566,7 +497,6 @@ SASAPAY_NETWORK_CODES = {
     'TKASH': '63907',
 }
 
-# Only configure SasaPay if credentials exist
 if SASAPAY_CLIENT_ID and SASAPAY_CLIENT_SECRET:
     SASAPAY_CONFIG = {
         'CLIENT_ID': SASAPAY_CLIENT_ID,
@@ -578,7 +508,6 @@ if SASAPAY_CLIENT_ID and SASAPAY_CLIENT_SECRET:
         'NETWORK_CODES': SASAPAY_NETWORK_CODES,
     }
 
-    # SasaPay API Endpoints
     if SASAPAY_ENVIRONMENT == 'sandbox':
         SASAPAY_BASE_URL = 'https://sandbox.sasapay.app'
     else:
@@ -636,21 +565,18 @@ if DEBUG:
     INTERNAL_IPS = ['127.0.0.1', 'localhost']
     ALLOWED_HOSTS = ['*']
     
-    # Create necessary directories
     os.makedirs(os.path.join(BASE_DIR, 'staticfiles'), exist_ok=True)
     os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
     os.makedirs(os.path.join(BASE_DIR, 'media'), exist_ok=True)
 
 # ================================================
-# DATABASE INITIALIZATION WITH RETRY
+# DATABASE INITIALIZATION
 # ================================================
 
 def initialize_database():
-    """Initialize database connection with retry logic"""
     if 'default' not in DATABASES:
         return
     
-    # If using PostgreSQL, try to connect with retries
     if DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
         max_retries = 3
         retry_delay = 2
@@ -669,19 +595,13 @@ def initialize_database():
                 else:
                     print(f"❌ PostgreSQL failed after {max_retries} attempts: {e}")
                     print("✅ Falling back to SQLite")
-                    # Switch to SQLite
                     DATABASES['default'] = {
                         'ENGINE': 'django.db.backends.sqlite3',
                         'NAME': BASE_DIR / 'db.sqlite3',
                         'CONN_MAX_AGE': 60,
                     }
 
-# ================================================
-# DATABASE HEALTH CHECK FUNCTION
-# ================================================
-
 def get_active_database():
-    """Return which database is currently active"""
     if 'default' in DATABASES:
         if DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
             try:
@@ -707,7 +627,7 @@ if FORCE_HTTP_DEV:
     print("   - Edge: edge://net-internals/#hsts")
     print("   - Delete 'localhost' from domain policies")
     print("✅ Or use incognito/private window")
-    print("✅ To test HTTPS locally: pip install django-sslserver")
+    print("🔐 To test HTTPS locally: pip install django-sslserver")
     print("   Then run: python manage.py runsslserver")
     print("💡"*30 + "\n")
 
@@ -716,7 +636,7 @@ if 'runserver' in sys.argv or 'gunicorn' in sys.argv:
     initialize_database()
 
 # ================================================
-# FINAL VERIFICATION (WITHOUT EXPOSING SECRETS!)
+# FINAL VERIFICATION
 # ================================================
 print("\n" + "="*60)
 print("🚀 MFALME BETTERDAYS CAPITAL - Configuration Loaded")
@@ -725,11 +645,11 @@ print(f"📦 Environment: {'PRODUCTION' if not DEBUG else 'DEVELOPMENT'}")
 print(f"🔒 HTTPS Mode: {'FORCED' if not FORCE_HTTP_DEV else 'DISABLED (HTTP only)'}")
 print(f"📍 Timezone: Africa/Nairobi")
 print(f"☁️  Storage: {'AWS S3' if USE_S3 else 'Local Filesystem'}")
-print(f"📧 Email: {'Configured' if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD else 'Not Configured'}")
-print(f"💰 SasaPay: {'Configured' if SASAPAY_CLIENT_ID and SASAPAY_CLIENT_SECRET else 'Not Configured'}")
-print(f"💳 Paystack: {'Configured' if PAYSTACK_PUBLIC_KEY and PAYSTACK_SECRET_KEY else 'Not Configured'}")
+print(f"📧 Email: {'✅ Configured' if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD else '⚠️ Not Configured'}")
+print(f"💰 SasaPay: {'✅ Configured' if SASAPAY_CLIENT_ID and SASAPAY_CLIENT_SECRET else '⚠️ Not Configured'}")
+print(f"💳 Paystack: {'✅ Configured' if PAYSTACK_PUBLIC_KEY and PAYSTACK_SECRET_KEY else '⚠️ Not Configured'}")
 print(f"💱 USD to KES Rate: {USD_TO_KES_RATE}")
-print(f"🚂 Railway: {'Yes' if IS_RAILWAY else 'No'}")
+print(f"🚂 Railway: {'✅ Yes' if IS_RAILWAY else 'No'}")
 print(f"🗄️  Database: {get_active_database()}")
 print("="*60 + "\n")
 

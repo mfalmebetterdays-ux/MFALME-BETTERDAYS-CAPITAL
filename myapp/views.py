@@ -6418,140 +6418,432 @@ def abort_multipart_upload(request):
 
     
 # ========== HELPER FUNCTIONS ==========
-def send_ticket_email(ticket):
-    """Send ticket email with downloadable ticket"""
-    subject = f"Your Ticket for {ticket.event.title} - {ticket.ticket_number}"
-    
-    # Generate QR code URL (using QR Server API)
-    qr_data = f"{ticket.ticket_number}|{ticket.attendee_name}|{ticket.event.title}|{ticket.event.date}"
-    qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={qr_data}"
-    
-    html_message = f"""
-    <!DOCTYPE html>
-    <html>
-    <head><style>
-        body {{ font-family: Arial, sans-serif; }}
-        .ticket {{ border: 2px solid #FFD700; border-radius: 10px; padding: 20px; max-width: 500px; margin: 0 auto; }}
-        .header {{ text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; }}
-        .details {{ margin: 20px 0; }}
-        .row {{ display: flex; justify-content: space-between; margin: 10px 0; }}
-        .qr {{ text-align: center; margin-top: 20px; }}
-        .footer {{ text-align: center; font-size: 12px; color: #666; margin-top: 20px; }}
-    </style></head>
-    <body>
-        <div class="ticket">
-            <div class="header">
-                <h2>MFALME BETTERDAYS CAPITAL</h2>
-                <p>Elite Trading & Investment</p>
-            </div>
-            <div class="details">
-                <div class="row"><strong>Ticket Number:</strong> <span>{ticket.ticket_number}</span></div>
-                <div class="row"><strong>Attendee:</strong> <span>{ticket.attendee_name}</span></div>
-                <div class="row"><strong>Phone:</strong> <span>{ticket.attendee_phone}</span></div>
-                <div class="row"><strong>Email:</strong> <span>{ticket.attendee_email}</span></div>
-                <div class="row"><strong>Event:</strong> <span>{ticket.event.title}</span></div>
-                <div class="row"><strong>Date:</strong> <span>{ticket.event.date.strftime('%B %d, %Y at %I:%M %p')}</span></div>
-                <div class="row"><strong>Venue:</strong> <span>{ticket.event.venue}</span></div>
-                <div class="row"><strong>Quantity:</strong> <span>{ticket.quantity}</span></div>
-                <div class="row"><strong>Total Paid:</strong> <span>KES {ticket.total_amount_kes:,.2f}</span></div>
-            </div>
-            <div class="qr">
-                <img src="{qr_url}" alt="QR Code" width="150">
-                <p>Scan this QR code at the entrance</p>
-            </div>
-            <div class="footer">
-                <p>Present this ticket at registration desk | For inquiries: +254706286667</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    
-    send_mail(
-        subject=subject,
-        message=f"Your ticket for {ticket.event.title}\n\nTicket Number: {ticket.ticket_number}\nTotal: KES {ticket.total_amount_kes:,.2f}\n\nPresent this ticket at the entrance.",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[ticket.attendee_email],
-        fail_silently=False,
-        html_message=html_message
-    )
-    
-    # Send admin notification
-    send_mail(
-        subject=f"New Ticket Purchase - {ticket.ticket_number}",
-        message=f"New ticket purchased!\n\nName: {ticket.attendee_name}\nPhone: {ticket.attendee_phone}\nEmail: {ticket.attendee_email}\nQuantity: {ticket.quantity}\nTotal: KES {ticket.total_amount_kes:,.2f}",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[settings.ADMIN_EMAIL],
-        fail_silently=True,
-    )
 
 
 def send_merchandise_order_email(order):
-    """Send merchandise order confirmation email"""
-    subject = f"Order Confirmation - {order.order_number}"
+    """Send merchandise order confirmation email to customer and admin"""
+    from django.core.mail import send_mail, EmailMultiAlternatives
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    import os
     
-    items_html = ""
-    for item in order.items:
-        items_html += f"<tr><td>{item['name']}</td><td>{item['quantity']}</td><td>KES {item['price']:,.2f}</td><td>KES {item['price'] * item['quantity']:,.2f}</td></tr>"
-    
-    html_message = f"""
-    <!DOCTYPE html>
-    <html>
-    <head><style>
-        body {{ font-family: Arial, sans-serif; }}
-        .order {{ max-width: 600px; margin: 0 auto; }}
-        .header {{ text-align: center; border-bottom: 2px solid #FFD700; padding-bottom: 10px; }}
-        .details {{ margin: 20px 0; }}
-        table {{ width: 100%; border-collapse: collapse; }}
-        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-        th {{ background: #FFD700; color: #0a1520; }}
-        .total {{ text-align: right; margin-top: 20px; font-size: 18px; }}
-    </style></head>
-    <body>
-        <div class="order">
-            <div class="header">
-                <h2>MFALME BETTERDAYS CAPITAL</h2>
-                <p>Order Confirmation</p>
+    try:
+        subject = f"Order Confirmation - {order.order_number}"
+        
+        # Build items HTML for customer
+        items_html = ""
+        for item in order.items:
+            items_html += f"""
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{item.get('name', 'Item')}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">{item.get('quantity', 1)}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">KES {item.get('price', 0):,.2f}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">KES {item.get('price', 0) * item.get('quantity', 1):,.2f}</td>
+            </tr>
+            """
+        
+        # Customer email HTML
+        customer_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Order Confirmation</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    background: #f5f5f5;
+                    margin: 0;
+                    padding: 20px;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background: white;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #FFD700, #FFA500);
+                    padding: 25px;
+                    text-align: center;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    color: #0a1520;
+                    font-size: 22px;
+                }}
+                .header p {{
+                    margin: 5px 0 0;
+                    color: #0a1520;
+                    font-size: 13px;
+                }}
+                .content {{
+                    padding: 25px;
+                }}
+                .order-details {{
+                    background: #f8f9fa;
+                    border-radius: 12px;
+                    padding: 15px;
+                    margin-bottom: 20px;
+                }}
+                .order-details p {{
+                    margin: 8px 0;
+                }}
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 20px;
+                }}
+                th {{
+                    background: #FFD700;
+                    padding: 10px;
+                    text-align: left;
+                    color: #0a1520;
+                }}
+                td {{
+                    padding: 10px;
+                    border-bottom: 1px solid #eee;
+                }}
+                .totals {{
+                    text-align: right;
+                    margin-top: 20px;
+                    padding-top: 15px;
+                    border-top: 2px solid #eee;
+                }}
+                .totals p {{
+                    margin: 5px 0;
+                }}
+                .totals .grand-total {{
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #B8860B;
+                }}
+                .footer {{
+                    background: #1a1a2e;
+                    padding: 15px;
+                    text-align: center;
+                    font-size: 11px;
+                    color: #aaa;
+                }}
+                .footer a {{
+                    color: #FFD700;
+                    text-decoration: none;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>MFALME BETTERDAYS CAPITAL</h1>
+                    <p>Order Confirmation</p>
+                </div>
+                <div class="content">
+                    <div class="order-details">
+                        <p><strong>Order Number:</strong> {order.order_number}</p>
+                        <p><strong>Order Date:</strong> {order.created_at.strftime('%B %d, %Y at %I:%M %p')}</p>
+                        <p><strong>Customer:</strong> {order.customer_name}</p>
+                        <p><strong>Phone:</strong> {order.customer_phone}</p>
+                        <p><strong>Email:</strong> {order.customer_email}</p>
+                        <p><strong>Delivery Address:</strong> {order.delivery_address}</p>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Qty</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {items_html}
+                        </tbody>
+                    </table>
+                    
+                    <div class="totals">
+                        <p><strong>Subtotal:</strong> KES {order.subtotal:,.2f}</p>
+                        <p><strong>Shipping:</strong> KES {order.shipping_cost:,.2f}</p>
+                        <p class="grand-total"><strong>Total:</strong> KES {order.total:,.2f}</p>
+                    </div>
+                    
+                    <p style="margin-top: 20px;">Your order will be processed and shipped within 3-5 business days.</p>
+                </div>
+                <div class="footer">
+                    <p>For inquiries: +254 706 286 667 | <a href="mailto:mfalmebetterdays@gmail.com">mfalmebetterdays@gmail.com</a></p>
+                    <p>2026 Mfalme Betterdays Capital. All rights reserved.</p>
+                </div>
             </div>
-            <div class="details">
-                <p><strong>Order Number:</strong> {order.order_number}</p>
-                <p><strong>Customer:</strong> {order.customer_name}</p>
-                <p><strong>Phone:</strong> {order.customer_phone}</p>
-                <p><strong>Delivery Address:</strong> {order.delivery_address}</p>
+        </body>
+        </html>
+        """
+        
+        # Admin email HTML - STYLED
+        admin_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>New Merchandise Order</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    background: #f5f5f5;
+                    margin: 0;
+                    padding: 20px;
+                }}
+                .container {{
+                    max-width: 550px;
+                    margin: 0 auto;
+                    background: white;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #FFD700, #FFA500);
+                    padding: 25px;
+                    text-align: center;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    color: #0a1520;
+                    font-size: 20px;
+                }}
+                .header p {{
+                    margin: 5px 0 0;
+                    color: #0a1520;
+                    font-size: 12px;
+                }}
+                .content {{
+                    padding: 25px;
+                }}
+                .alert {{
+                    background: #fff3cd;
+                    padding: 12px;
+                    margin-bottom: 20px;
+                    border-left: 4px solid #FFD700;
+                    border-radius: 8px;
+                }}
+                .alert p {{
+                    margin: 0;
+                    color: #856404;
+                    font-size: 13px;
+                }}
+                .details-card {{
+                    background: #f8f9fa;
+                    border-radius: 12px;
+                    padding: 15px;
+                    margin-bottom: 20px;
+                }}
+                .details-card h3 {{
+                    margin: 0 0 15px 0;
+                    color: #B8860B;
+                    font-size: 16px;
+                }}
+                .row {{
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px 0;
+                    border-bottom: 1px solid #ddd;
+                }}
+                .row:last-child {{
+                    border-bottom: none;
+                }}
+                .label {{
+                    color: #666;
+                    font-size: 12px;
+                }}
+                .value {{
+                    font-weight: bold;
+                    color: #333;
+                    font-size: 13px;
+                }}
+                .value.highlight {{
+                    color: #B8860B;
+                    font-size: 16px;
+                }}
+                .items-box {{
+                    background: #0a1520;
+                    border-radius: 12px;
+                    padding: 15px;
+                    margin-bottom: 20px;
+                }}
+                .items-box h3 {{
+                    margin: 0 0 15px 0;
+                    color: #FFD700;
+                    font-size: 14px;
+                    text-align: center;
+                }}
+                .items-table {{
+                    width: 100%;
+                    color: white;
+                }}
+                .items-table th {{
+                    color: #FFD700;
+                    padding: 5px;
+                    text-align: left;
+                    font-size: 12px;
+                }}
+                .items-table td {{
+                    padding: 5px;
+                    font-size: 12px;
+                }}
+                .items-table td:last-child {{
+                    text-align: right;
+                }}
+                .button {{
+                    display: block;
+                    background: #FFD700;
+                    color: #0a1520;
+                    text-align: center;
+                    padding: 12px;
+                    border-radius: 40px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    margin-top: 20px;
+                }}
+                .footer {{
+                    background: #1a1a2e;
+                    padding: 15px;
+                    text-align: center;
+                    font-size: 11px;
+                    color: #aaa;
+                }}
+                .footer a {{
+                    color: #FFD700;
+                    text-decoration: none;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>MFALME BETTERDAYS CAPITAL</h1>
+                    <p>New Merchandise Order</p>
+                </div>
+                <div class="content">
+                    <div class="alert">
+                        <p>A new merchandise order has been received. Please review the details below.</p>
+                    </div>
+                    
+                    <div class="details-card">
+                        <h3>ORDER DETAILS</h3>
+                        <div class="row">
+                            <span class="label">Order Number</span>
+                            <span class="value">{order.order_number}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Order Date</span>
+                            <span class="value">{order.created_at.strftime('%B %d, %Y at %I:%M %p')}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Customer Name</span>
+                            <span class="value">{order.customer_name}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Phone</span>
+                            <span class="value">{order.customer_phone}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Email</span>
+                            <span class="value">{order.customer_email}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Delivery Address</span>
+                            <span class="value">{order.delivery_address}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Total Amount</span>
+                            <span class="value highlight">KES {order.total:,.2f}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="items-box">
+                        <h3>ITEMS PURCHASED</h3>
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {''.join([f'<tr><td>{item.get("name")}</td><td>{item.get("quantity")}</td><td>KES {item.get("price") * item.get("quantity"):,.2f}</td></tr>' for item in order.items])}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <a href="{settings.SITE_URL}/admin/" class="button">VIEW IN ADMIN PANEL</a>
+                </div>
+                <div class="footer">
+                    <p>For inquiries: +254 706 286 667 | <a href="mailto:mfalmebetterdays@gmail.com">mfalmebetterdays@gmail.com</a></p>
+                    <p>2026 Mfalme Betterdays Capital. All rights reserved.</p>
+                </div>
             </div>
-            <table>
-                <tr><th>Item</th><th>Quantity</th><th>Unit Price</th><th>Total</th></tr>
-                {items_html}
-            </table>
-            <div class="total">
-                <p><strong>Subtotal: KES {order.subtotal:,.2f}</strong></p>
-                <p><strong>Shipping: KES {order.shipping_cost:,.2f}</strong></p>
-                <p><strong>Total: KES {order.total:,.2f}</strong></p>
-            </div>
-            <p>Your order will be processed and shipped within 3-5 business days.</p>
-            <p>For inquiries, contact +254706286667</p>
-        </div>
-    </body>
-    </html>
-    """
-    
-    send_mail(
-        subject=subject,
-        message=f"Your order {order.order_number} has been confirmed. Total: KES {order.total:,.2f}",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[order.customer_email],
-        fail_silently=False,
-        html_message=html_message
-    )
-    
-    # Send admin notification
-    send_mail(
-        subject=f"New Merchandise Order - {order.order_number}",
-        message=f"New order received!\n\nCustomer: {order.customer_name}\nPhone: {order.customer_phone}\nTotal: KES {order.total:,.2f}\n\nView in admin panel.",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[settings.ADMIN_EMAIL],
-        fail_silently=True,
-    )
+        </body>
+        </html>
+        """
+        
+        # Plain text version for customer
+        text_content = f"""
+        MFALME BETTERDAYS CAPITAL - ORDER CONFIRMATION
+        {'='*50}
+        
+        Order Number: {order.order_number}
+        Order Date: {order.created_at.strftime('%B %d, %Y at %I:%M %p')}
+        Customer: {order.customer_name}
+        Phone: {order.customer_phone}
+        Email: {order.customer_email}
+        Delivery Address: {order.delivery_address}
+        
+        Items:
+        {''.join([f'- {item.get("name")} x{item.get("quantity")} = KES {item.get("price") * item.get("quantity"):,.2f}\n' for item in order.items])}
+        
+        Subtotal: KES {order.subtotal:,.2f}
+        Shipping: KES {order.shipping_cost:,.2f}
+        TOTAL: KES {order.total:,.2f}
+        
+        Your order will be processed within 3-5 business days.
+        
+        For inquiries: +254 706 286 667
+        mfalmebetterdays@gmail.com
+        """
+        
+        # Send to customer
+        msg = EmailMultiAlternatives(
+            subject,
+            text_content,
+            settings.DEFAULT_FROM_EMAIL,
+            [order.customer_email]
+        )
+        msg.attach_alternative(customer_html, "text/html")
+        msg.send()
+        
+        # Send admin notification
+        send_mail(
+            subject=f"New Merchandise Order - {order.order_number}",
+            message=f"New order from {order.customer_name} - Total: KES {order.total:,.2f}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=settings.ADMIN_EMAILS,
+            fail_silently=True,
+            html_message=admin_html,
+        )
+        
+        print(f"Merchandise order email sent to {order.customer_email}")
+        print(f"Admin notification sent to {settings.ADMIN_EMAILS}")
+        return True
+        
+    except Exception as e:
+        print(f"Merchandise email error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 
 # ========== MERCHANDISE CRUD ==========
@@ -7692,71 +7984,175 @@ def sasapay_callback(request):
 # ========== EMAIL FUNCTIONS ==========
 
 def send_ticket_email(ticket):
-    """Send ticket email to customer"""
+    """Send ticket email with the ticket image attached"""
+    from django.core.mail import EmailMultiAlternatives, send_mail
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    import os
+    
     try:
         event = ticket.event
-        subject = f"Your Ticket for {event.title} - {ticket.ticket_number}"
         
-        # Generate QR code
-        qr_data = f"{ticket.ticket_number}|{ticket.attendee_name}|{event.title}|{event.date}"
-        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={qr_data}"
+        subject = f"Your Ticket for {event.title}"
         
-        html_content = f"""
+        # Simple HTML email - NO icons, NO emojis
+        html_content = f'''
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
-            <title>Your Ticket</title>
+            <title>Your Ticket - Mfalme Betterdays Capital</title>
             <style>
-                body {{ font-family: Arial, sans-serif; }}
-                .ticket {{ border: 2px solid #FFD700; border-radius: 10px; padding: 20px; max-width: 500px; margin: 0 auto; }}
-                .header {{ text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; }}
-                .details {{ margin: 20px 0; }}
-                .row {{ display: flex; justify-content: space-between; margin: 10px 0; }}
-                .qr {{ text-align: center; margin-top: 20px; }}
-                .footer {{ text-align: center; font-size: 12px; color: #666; margin-top: 20px; }}
+                body {{
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                    background: #f5f5f5;
+                    padding: 40px;
+                    margin: 0;
+                }}
+                .container {{
+                    max-width: 550px;
+                    margin: 0 auto;
+                    background: white;
+                    border-radius: 16px;
+                    padding: 30px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                }}
+                h2 {{
+                    color: #B8860B;
+                    margin-bottom: 10px;
+                }}
+                .ticket-image {{
+                    width: 100%;
+                    max-width: 500px;
+                    margin: 20px 0;
+                    border-radius: 12px;
+                }}
+                .details {{
+                    text-align: left;
+                    background: #f8f9fa;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin: 20px 0;
+                }}
+                .footer {{
+                    margin-top: 20px;
+                    padding-top: 15px;
+                    border-top: 1px solid #eee;
+                    font-size: 12px;
+                    color: #666;
+                }}
             </style>
         </head>
         <body>
-            <div class="ticket">
-                <div class="header">
-                    <h2>MFALME BETTERDAYS CAPITAL</h2>
-                    <p>Elite Trading & Investment</p>
-                </div>
+            <div class="container">
+                <h2>MFALME BETTERDAYS CAPITAL</h2>
+                <h3>{event.title}</h3>
+                
                 <div class="details">
-                    <div class="row"><strong>Ticket Number:</strong> <span>{ticket.ticket_number}</span></div>
-                    <div class="row"><strong>Attendee:</strong> <span>{ticket.attendee_name}</span></div>
-                    <div class="row"><strong>Phone:</strong> <span>{ticket.attendee_phone}</span></div>
-                    <div class="row"><strong>Email:</strong> <span>{ticket.attendee_email}</span></div>
-                    <div class="row"><strong>Event:</strong> <span>{event.title}</span></div>
-                    <div class="row"><strong>Date:</strong> <span>{event.date.strftime('%B %d, %Y at %I:%M %p')}</span></div>
-                    <div class="row"><strong>Venue:</strong> <span>{event.venue}</span></div>
-                    <div class="row"><strong>Quantity:</strong> <span>{ticket.quantity}</span></div>
-                    <div class="row"><strong>Total Paid:</strong> <span>KES {ticket.total_amount_kes:,.2f}</span></div>
+                    <p><strong>Attendee:</strong> {ticket.attendee_name}</p>
+                    <p><strong>Date:</strong> {event.date.strftime('%A, %B %d, %Y')}</p>
+                    <p><strong>Time:</strong> {event.date.strftime('%I:%M %p')} - 5:00 PM EAT</p>
+                    <p><strong>Venue:</strong> {event.venue}</p>
+                    <p><strong>Quantity:</strong> {ticket.quantity} Ticket(s)</p>
+                    <p><strong>Amount Paid:</strong> KES {ticket.total_amount_kes:,.2f}</p>
                 </div>
-                <div class="qr">
-                    <img src="{qr_url}" alt="QR Code" width="150">
-                    <p>Scan this QR code at the entrance</p>
-                </div>
+                
+                <img src="cid:ticket_image" alt="Your Ticket" class="ticket-image">
+                
                 <div class="footer">
-                    <p>Present this ticket at registration desk | For inquiries: +254706286667</p>
+                    <p>For inquiries: +254 706 286 667</p>
+                    <p>mfalmebetterdays@gmail.com</p>
+                    <p>2026 Mfalme Betterdays Capital. All rights reserved.</p>
                 </div>
             </div>
         </body>
         </html>
+        '''
+        
+        # Plain text version
+        text_content = f"""
+        MFALME BETTERDAYS CAPITAL
+        {'='*40}
+        
+        Event: {event.title}
+        Attendee: {ticket.attendee_name}
+        Date: {event.date.strftime('%B %d, %Y at %I:%M %p')}
+        Venue: {event.venue}
+        Quantity: {ticket.quantity}
+        Amount Paid: KES {ticket.total_amount_kes:,.2f}
+        
+        Your ticket image is attached to this email.
+        
+        For inquiries: +254 706 286 667
+        mfalmebetterdays@gmail.com
         """
         
-        send_mail(
-            subject=subject,
-            message=f"Your ticket for {event.title}\n\nTicket Number: {ticket.ticket_number}\nTotal: KES {ticket.total_amount_kes:,.2f}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[ticket.attendee_email],
-            fail_silently=False,
-            html_message=html_content
+        # Create email for customer
+        msg = EmailMultiAlternatives(
+            subject,
+            text_content,
+            settings.DEFAULT_FROM_EMAIL,
+            [ticket.attendee_email]
         )
+        msg.attach_alternative(html_content, "text/html")
+        
+        # Attach the ticket image
+        ticket_image_path = os.path.join(settings.BASE_DIR, 'static', 'assets', 'images', 'ticket.png')
+        
+        if os.path.exists(ticket_image_path):
+            with open(ticket_image_path, 'rb') as f:
+                msg.attach('Your_Ticket.png', f.read(), 'image/png')
+        else:
+            print(f"Warning: Ticket image not found at: {ticket_image_path}")
+        
+        # Send customer email
+        msg.send()
+        
+        # ==============================================
+        # ADMIN NOTIFICATION WITH HTML TEMPLATE
+        # ==============================================
+        
+        # Render the styled admin template
+        admin_html = render_to_string('emails/admin_ticket_notification.html', {
+            'ticket': ticket,
+            'site_url': settings.SITE_URL,
+        })
+        
+        # Plain text version for admin
+        admin_text = f"""
+        MFALME BETTERDAYS CAPITAL - NEW TICKET PURCHASE
+        
+        Ticket Number: {ticket.ticket_number}
+        Attendee: {ticket.attendee_name}
+        Phone: {ticket.attendee_phone}
+        Email: {ticket.attendee_email}
+        Quantity: {ticket.quantity}
+        Total: KES {ticket.total_amount_kes:,.2f}
+        Event: {event.title}
+        Date: {event.date.strftime('%B %d, %Y')}
+        
+        View in admin: {settings.SITE_URL}/admin/
+        """
+        
+        # Send styled admin email
+        send_mail(
+            subject=f"New Ticket Purchase - {ticket.ticket_number}",
+            message=admin_text,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=settings.ADMIN_EMAILS,
+            fail_silently=True,
+            html_message=admin_html,  # This sends the styled version
+        )
+        
+        print(f"Ticket email sent to {ticket.attendee_email}")
+        print(f"Admin notification sent to {settings.ADMIN_EMAILS}")
         return True
+        
     except Exception as e:
         print(f"Ticket email error: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
@@ -7799,56 +8195,7 @@ def send_ticket_admin_notification(ticket):
         return False
 
 
-def send_merchandise_order_email(order):
-    """Send order confirmation email to customer"""
-    try:
-        subject = f"Order Confirmation - {order.order_number}"
-        
-        items_html = ""
-        for item in order.items:
-            items_html += f"""
-            <tr>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">{item.get('name', 'Item')}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">{item.get('quantity', 1)}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">KES {item.get('price', 0):,.2f}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">KES {item.get('price', 0) * item.get('quantity', 1):,.2f}</td>
-            </tr>
-            """
-        
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head><meta charset="UTF-8"><title>Order Confirmation</title></head>
-        <body style="font-family: Arial, sans-serif;">
-            <h2>Order Confirmation</h2>
-            <p><strong>Order Number:</strong> {order.order_number}</p>
-            <p><strong>Customer:</strong> {order.customer_name}</p>
-            <p><strong>Phone:</strong> {order.customer_phone}</p>
-            <p><strong>Email:</strong> {order.customer_email}</p>
-            <table style="width:100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background:#FFD700;"><th>Item</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>
-                </thead>
-                <tbody>{items_html}</tbody>
-            </table>
-            <p><strong>Total Paid: KES {order.total:,.2f}</strong></p>
-            <p>Your order will be processed within 3-5 business days.</p>
-        </body>
-        </html>
-        """
-        
-        send_mail(
-            subject=subject,
-            message=f"Your order {order.order_number} has been confirmed. Total: KES {order.total:,.2f}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[order.customer_email],
-            fail_silently=False,
-            html_message=html_content
-        )
-        return True
-    except Exception as e:
-        print(f"Merchandise email error: {e}")
-        return False
+
 
 
 def send_merchandise_admin_notification(order):
