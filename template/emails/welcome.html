@@ -5,180 +5,145 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to Mfalme Betterdays Capital</title>
 </head>
-<body style="margin:0; padding:0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); background-color: #f5f5f5;">
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #F1F5F9; background-color: #f5f5f5;">
+<body style="margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #FFFFFF;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #FFFFFF;">
         <tr>
             <td align="center" style="padding:40px 20px;">
                 
-                <!-- MAIN CARD -->
-                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#0F172A; border-radius:24px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); overflow:hidden;">
+                <!-- MAIN CONTAINER -->
+                <table width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px; width:100%; background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px;">
                     
-                    <!-- GOLD ACCENT -->
-                    <tr>
-                        <td style="height:6px; background: linear-gradient(90deg, #FBBF24 0%, #F59E0B 100%);"></td>
-                    </tr>
-                    
-                    <!-- HEADER WITH WELCOME MESSAGE -->
-                    <tr>
-                        <td style="padding:40px 40px 20px 40px; text-align:center;">
-                            <div style="width:80px; height:80px; background: rgba(251,191,36,0.1); border-radius:50%; margin:0 auto 20px auto; display:flex; align-items:center; justify-content:center;">
-                                <span style="color:#FBBF24; font-size:36px;">🎉</span>
-                            </div>
-                            <h1 style="font-size:32px; font-weight:700; color:#FFFFFF; margin:0 0 8px 0; letter-spacing:-0.5px;">Welcome to the Elite</h1>
-                            <p style="font-size:18px; color:#FBBF24; margin:0; font-weight:500;">{{ username }}</p>
+                    <!-- HEADER -->
+                    <tr style="background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%);">
+                        <td style="padding:40px 40px 30px 40px; text-align:center;">
+                            <h1 style="font-size:24px; font-weight:700; color:#FFD700; margin:0 0 5px 0;">MFALME BETTERDAYS</h1>
+                            <p style="font-size:12px; color:#94A3B8; margin:0; letter-spacing:3px;">CAPITAL</p>
                         </td>
                     </tr>
                     
-                    <!-- CONTENT -->
+                    <!-- GREETING -->
                     <tr>
-                        <td style="padding:20px 40px 40px 40px;">
-                            
-                            <!-- HERO MESSAGE -->
-                            <p style="color:#F1F5F9; font-size:18px; line-height:1.6; margin:0 0 20px 0; text-align:center;">
-                                Your journey to financial excellence begins now.
-                            </p>
-                            
-                            <!-- SOLDIER ID - Premium Badge -->
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:30px 0;">
+                        <td style="padding:35px 40px 0 40px;">
+                            <p style="font-size:16px; color:#1E293B; line-height:1.5; margin:0;">Dear <strong style="color:#FFD700;">{{ username }}</strong>,</p>
+                            <p style="font-size:15px; color:#475569; line-height:1.6; margin:15px 0 0 0;">Your account has been successfully verified. Welcome to the Mfalme Betterdays Capital community.</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- SOLDIER ID -->
+                    <tr>
+                        <td style="padding:25px 40px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F1F5F9; border-radius:8px; border-left:4px solid #FFD700;">
                                 <tr>
-                                    <td align="center">
-                                        <table width="auto" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(145deg, #1E2937, #0F172A); border-radius:50px; border:1px solid rgba(251,191,36,0.3);">
-                                            <tr>
-                                                <td style="padding:12px 30px;">
-                                                    <span style="color:#94A3B8; font-size:14px; margin-right:10px;">SOLDIER ID</span>
-                                                    <span style="color:#FBBF24; font-size:24px; font-weight:700; letter-spacing:2px;">#{{ soldier_id }}</span>
-                                                </td>
-                                            </tr>
-                                        </table>
+                                    <td style="padding:16px 20px;">
+                                        <p style="font-size:11px; color:#64748B; margin:0 0 5px 0; letter-spacing:1px;">YOUR SOLDIER ID</p>
+                                        <p style="font-size:22px; color:#1E293B; margin:0; font-weight:600;">{{ soldier_id }}</p>
                                     </td>
                                 </tr>
                             </table>
-                            
-                            <!-- ACCOUNT DETAILS CARD -->
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(145deg, #1E2937, #0F172A); border-radius:20px; margin:30px 0; border:1px solid rgba(251,191,36,0.1);">
-                                <tr>
-                                    <td style="padding:30px;">
-                                        <p style="color:#F1F5F9; font-size:16px; font-weight:600; margin:0 0 20px 0;">📋 Account Details</p>
-                                        
-                                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                                            <tr>
-                                                <td width="50%" style="padding:8px 8px 8px 0;">
-                                                    <p style="color:#94A3B8; font-size:11px; margin:0 0 4px 0;">Username</p>
-                                                    <p style="color:#F1F5F9; font-size:15px; margin:0;">@{{ username }}</p>
-                                                </td>
-                                                <td width="50%" style="padding:8px 0 8px 8px;">
-                                                    <p style="color:#94A3B8; font-size:11px; margin:0 0 4px 0;">Email</p>
-                                                    <p style="color:#F1F5F9; font-size:15px; margin:0;">{{ email }}</p>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td width="50%" style="padding:8px 8px 8px 0;">
-                                                    <p style="color:#94A3B8; font-size:11px; margin:0 0 4px 0;">Phone</p>
-                                                    <p style="color:#F1F5F9; font-size:15px; margin:0;">{{ phone|default:"Not provided" }}</p>
-                                                </td>
-                                                <td width="50%" style="padding:8px 0 8px 8px;">
-                                                    <p style="color:#94A3B8; font-size:11px; margin:0 0 4px 0;">Member Since</p>
-                                                    <p style="color:#F1F5F9; font-size:15px; margin:0;">{{ signup_date }}</p>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
-                            
-                            <!-- NEXT STEPS - 3 Column Cards -->
-                            <p style="color:#F1F5F9; font-size:16px; font-weight:600; margin:30px 0 15px 0;">🚀 Your Journey Starts Here</p>
-                            
+                        </td>
+                    </tr>
+                    
+                    <!-- ACCOUNT DETAILS -->
+                    <tr>
+                        <td style="padding:0 40px;">
+                            <p style="font-size:12px; font-weight:600; color:#FFD700; margin:0 0 15px 0; letter-spacing:1px;">ACCOUNT DETAILS</p>
                             <table width="100%" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
-                                    <td width="33.33%" style="padding:5px;">
-                                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1E2937; border-radius:16px; border:1px solid rgba(251,191,36,0.1);">
-                                            <tr><td style="padding:20px 10px; text-align:center;">
-                                                <div style="width:40px; height:40px; background:rgba(251,191,36,0.1); border-radius:12px; margin:0 auto 12px auto; display:flex; align-items:center; justify-content:center;">
-                                                    <span style="color:#FBBF24; font-size:20px;">📊</span>
-                                                </div>
-                                                <p style="color:#F1F5F9; font-size:14px; font-weight:600; margin:0 0 5px 0;">Dashboard</p>
-                                                <p style="color:#94A3B8; font-size:11px; margin:0;">Access your portal</p>
-                                            </td></tr>
-                                        </table>
+                                    <td width="50%" style="padding:0 15px 12px 0;">
+                                        <p style="font-size:11px; color:#94A3B8; margin:0 0 4px 0;">EMAIL</p>
+                                        <p style="font-size:14px; color:#1E293B; margin:0;">{{ email }}</p>
                                     </td>
-                                    <td width="33.33%" style="padding:5px;">
-                                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1E2937; border-radius:16px; border:1px solid rgba(251,191,36,0.1);">
-                                            <tr><td style="padding:20px 10px; text-align:center;">
-                                                <div style="width:40px; height:40px; background:rgba(251,191,36,0.1); border-radius:12px; margin:0 auto 12px auto; display:flex; align-items:center; justify-content:center;">
-                                                    <span style="color:#FBBF24; font-size:20px;">🎓</span>
-                                                </div>
-                                                <p style="color:#F1F5F9; font-size:14px; font-weight:600; margin:0 0 5px 0;">Courses</p>
-                                                <p style="color:#94A3B8; font-size:11px; margin:0;">Start learning</p>
-                                            </td></tr>
-                                        </table>
-                                    </td>
-                                    <td width="33.33%" style="padding:5px;">
-                                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1E2937; border-radius:16px; border:1px solid rgba(251,191,36,0.1);">
-                                            <tr><td style="padding:20px 10px; text-align:center;">
-                                                <div style="width:40px; height:40px; background:rgba(251,191,36,0.1); border-radius:12px; margin:0 auto 12px auto; display:flex; align-items:center; justify-content:center;">
-                                                    <span style="color:#FBBF24; font-size:20px;">👥</span>
-                                                </div>
-                                                <p style="color:#F1F5F9; font-size:14px; font-weight:600; margin:0 0 5px 0;">Community</p>
-                                                <p style="color:#94A3B8; font-size:11px; margin:0;">Connect with peers</p>
-                                            </td></tr>
-                                        </table>
+                                    <td width="50%" style="padding:0 0 12px 15px;">
+                                        <p style="font-size:11px; color:#94A3B8; margin:0 0 4px 0;">PHONE</p>
+                                        <p style="font-size:14px; color:#1E293B; margin:0;">{{ phone|default:"Not provided" }}</p>
                                     </td>
                                 </tr>
-                            </table>
-                            
-                            <!-- CTA BUTTON -->
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:40px 0 20px 0;">
                                 <tr>
-                                    <td align="center">
-                                        <table cellpadding="0" cellspacing="0" border="0">
-                                            <tr>
-                                                <td style="background: linear-gradient(90deg, #FBBF24, #F59E0B); border-radius:12px; box-shadow:0 10px 15px -3px rgba(251,191,36,0.2);">
-                                                    <a href="{{ dashboard_url }}" style="display:inline-block; color:#0F172A; text-decoration:none; padding:16px 50px; font-size:16px; font-weight:600; border-radius:12px;">Go to Your Dashboard →</a>
-                                                </td>
-                                            </tr>
-                                        </table>
+                                    <td width="50%" style="padding:12px 15px 0 0;">
+                                        <p style="font-size:11px; color:#94A3B8; margin:0 0 4px 0;">MEMBER SINCE</p>
+                                        <p style="font-size:14px; color:#1E293B; margin:0;">{{ signup_date }}</p>
+                                    </td>
+                                    <td width="50%" style="padding:12px 0 0 15px;">
+                                        <p style="font-size:11px; color:#94A3B8; margin:0 0 4px 0;">STATUS</p>
+                                        <p style="font-size:14px; color:#10B981; margin:0;">Verified</p>
                                     </td>
                                 </tr>
                             </table>
-                            
-                            
-                            <!-- SECURITY NOTE -->
-                            <p style="color:#475569; font-size:12px; text-align:center; margin:20px 0 0 0;">
-                                🔐 Keep your credentials secure. We'll never ask for your password.
-                            </p>
-                            
                         </td>
                     </tr>
                     
-                    <!-- FOOTER -->
+                    <!-- DIVIDER -->
                     <tr>
-                        <td style="background:#0B1120; padding:30px 40px; text-align:center; border-top:1px solid rgba(251,191,36,0.1);">
-                            <p style="color:#FBBF24; font-size:16px; font-weight:600; margin:0 0 5px 0;">Mfalme Betterdays Capital</p>
-                            <p style="color:#94A3B8; font-size:13px; margin:0 0 15px 0;">Elite Trading Institute</p>
-                            
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:15px 0;">
-                                <tr>
-                                    <td align="center">
-                                        <a href="tel:+254706286667" style="color:#94A3B8; text-decoration:none; font-size:13px; margin:0 10px;">📞 +254 706 286 667</a>
-                                        <a href="mailto:support@mfalmebetterdayscapital.com" style="color:#94A3B8; text-decoration:none; font-size:13px; margin:0 10px;">✉️ support</a>
-                                    </td>
-                                </tr>
-                            </table>
-                            
-                            <p style="color:#475569; font-size:11px; margin:20px 0 0 0;">
-                                This email was intended for {{ username }}. If you received this in error, please disregard.<br>
-                                Trading involves significant risk. Only trade with capital you can afford to lose.<br>
-                                © {% now "Y" %} Mfalme Betterdays Capital. All rights reserved.
-                            </p>
+                        <td style="padding:30px 40px 0 40px;">
+                            <div style="height:1px; background:#E2E8F0;"></div>
                         </td>
                     </tr>
-                </table>
-                
-                <p style="color:#94A3B8; font-size:12px; margin-top:20px;">Welcome to the family, {{ username }}. Your success is our mission.</p>
-                
-            </td>
-        </tr>
-    </table>
-</body>
-</html>
+                    
+                    <!-- WHAT'S NEXT -->
+                    <tr>
+                        <td style="padding:25px 40px 0 40px;">
+                            <p style="font-size:12px; font-weight:600; color:#FFD700; margin:0 0 15px 0; letter-spacing:1px;">WHAT YOU CAN DO NEXT</p>
+                                
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                    <tr>
+                                        <td width="33.33%" style="padding:0 5px 0 0;">
+                                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F8FAFC; border-radius:8px;">
+                                                <tr>
+                                                    <td style="padding:20px 10px; text-align:center;">
+                                                        <p style="font-size:13px; font-weight:500; color:#1E293B; margin:0;">Dashboard</p>
+                                                        <p style="font-size:11px; color:#94A3B8; margin:8px 0 0 0;">View your stats</p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                        <td width="33.33%" style="padding:0 2.5px 0 2.5px;">
+                                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F8FAFC; border-radius:8px;">
+                                                <tr>
+                                                    <td style="padding:20px 10px; text-align:center;">
+                                                        <p style="font-size:13px; font-weight:500; color:#1E293B; margin:0;">Training</p>
+                                                        <p style="font-size:11px; color:#94A3B8; margin:8px 0 0 0;">Watch videos</p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                        <td width="33.33%" style="padding:0 0 0 5px;">
+                                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F8FAFC; border-radius:8px;">
+                                                <tr>
+                                                    <td style="padding:20px 10px; text-align:center;">
+                                                        <p style="font-size:13px; font-weight:500; color:#1E293B; margin:0;">Community</p>
+                                                        <p style="font-size:11px; color:#94A3B8; margin:8px 0 0 0;">Connect with others</p>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        
+                        <!-- BUTTON -->
+                        <tr>
+                            <td style="padding:35px 40px 20px 40px; text-align:center;">
+                                <a href="{{ dashboard_url }}" style="display:inline-block; background:#FFD700; color:#1A1A2E; text-decoration:none; padding:14px 35px; font-size:14px; font-weight:600; border-radius:6px;">GO TO YOUR DASHBOARD</a>
+                            </td>
+                        </tr>
+                        
+                        <!-- FOOTER -->
+                        <tr>
+                            <td style="padding:30px 40px 35px 40px; background:#F8FAFC; border-top:1px solid #E2E8F0;">
+                                <p style="font-size:12px; font-weight:500; color:#1E293B; margin:0;">Mfalme Betterdays Capital</p>
+                                <p style="font-size:11px; color:#FFD700; margin:5px 0 15px 0;">+254 706 286 667</p>
+                                <p style="font-size:10px; color:#94A3B8; line-height:1.5; margin:0;">
+                                    © {{ year }} Mfalme Betterdays Capital. All rights reserved.<br>
+                                    Trading involves risk. Please trade responsibly.
+                                </p>
+                            </td>
+                        </tr>
+                        
+                    </table>
+                    
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
