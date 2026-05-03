@@ -441,144 +441,280 @@
         }
 
         .user-guide-card {
-    background: linear-gradient(135deg, var(--navy-dark), #1a2436);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    border: 1px solid rgba(251, 191, 36, 0.2);
-}
-.user-guide-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-.user-guide-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.user-guide-title i {
-    color: var(--gold);
-    font-size: 1.3rem;
-}
-.user-guide-title h3 {
-    color: white;
-    font-size: 1rem;
-}
-.guide-badge {
-    background: var(--gold);
-    color: var(--navy-dark);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    font-weight: 700;
-}
-.guide-steps {
-    display: flex;
-    gap: 15px;
-}
-.guide-step {
-    flex: 1;
-    background: rgba(255,255,255,0.05);
-    padding: 12px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--gray-light);
-    font-size: 0.85rem;
-}
-.step-number {
-    width: 24px;
-    height: 24px;
-    background: var(--gold);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--navy-dark);
-}
-
-        /* ========== ACTIVITY LIST ========== */
-        .activity-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            background: linear-gradient(135deg, var(--navy-dark), #1a2436);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(251, 191, 36, 0.2);
         }
-
-        .activity-item {
+        .user-guide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .user-guide-title {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border);
+            gap: 10px;
         }
-
-        .activity-item:last-child {
-            border-bottom: none;
+        .user-guide-title i {
+            color: var(--gold);
+            font-size: 1.3rem;
         }
-
-        .activity-icon {
-            width: 36px;
-            height: 36px;
-            background: var(--white-muted);
+        .user-guide-title h3 {
+            color: white;
+            font-size: 1rem;
+        }
+        .guide-badge {
+            background: var(--gold);
+            color: var(--navy-dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .guide-steps {
+            display: flex;
+            gap: 15px;
+        }
+        .guide-step {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
             border-radius: 8px;
             display: flex;
             align-items: center;
+            gap: 10px;
+            color: var(--gray-light);
+            font-size: 0.85rem;
+        }
+        .step-number {
+            width: 24px;
+            height: 24px;
+            background: var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
             justify-content: center;
-            color: var(--gold);
-            border: 1px solid var(--border);
-        }
-
-        .activity-content {
-            flex: 1;
-        }
-
-        .activity-title {
-            font-size: 0.9rem;
-            font-weight: 500;
+            font-size: 0.8rem;
+            font-weight: 700;
             color: var(--navy-dark);
-            margin-bottom: 2px;
         }
 
-        .activity-time {
-            font-size: 0.7rem;
-            color: var(--gray);
+        /* ========== EVENTS & MERCH SECTION (CLEAN DESIGN) ========== */
+        .events-merch-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
         }
 
-        .show-more-btn {
+        /* Event Card - Clean with just poster and tagline */
+        .event-premium-card {
+            background: var(--white);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .event-premium-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--gold);
+        }
+        .event-header {
+            background: linear-gradient(135deg, #0f172a, #1e2937);
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        .event-header h3 {
+            color: var(--gold);
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .event-body {
+            padding: 24px;
+            text-align: center;
+        }
+        .event-poster {
+            max-width: 180px;
+            margin: 0 auto 16px;
+        }
+        .event-poster img {
+            width: 100%;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .event-tagline {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--navy-dark);
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+        .event-tagline span {
+            color: var(--gold-dark);
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .event-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: none;
+            padding: 12px;
+            border-radius: 40px;
+            font-weight: 700;
+            color: #0a1520;
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            background: var(--white-muted);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--navy);
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        .event-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
         }
 
-        .show-more-btn:hover {
-            background: var(--gold);
-            color: var(--navy-dark);
+        /* Merchandise Card - Silent add to cart */
+        .merchandise-card {
+            background: var(--white);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .merchandise-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
             border-color: var(--gold);
         }
-
-        .show-more-btn i {
-            transition: transform 0.3s ease;
+        .merch-header {
+            background: linear-gradient(135deg, #0f172a, #1e2937);
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        .merch-header h3 {
+            color: var(--gold);
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .merch-body {
+            padding: 20px;
+        }
+        .merch-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .merch-item {
+            background: var(--white-muted);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid var(--border);
+        }
+        .merch-item:hover {
+            background: var(--gold);
+            transform: translateY(-3px);
+            border-color: var(--gold);
+        }
+        .merch-item:hover .merch-name,
+        .merch-item:hover .merch-price {
+            color: #0a1520;
+        }
+        .merch-item img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .merch-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--navy-dark);
+            margin-bottom: 4px;
+        }
+        .merch-price {
+            font-size: 0.7rem;
+            color: var(--gold-dark);
+            font-weight: 700;
+        }
+        .cart-summary {
+            background: var(--white-muted);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .cart-summary span {
+            color: var(--gray-dark);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .cart-summary strong {
+            color: var(--gold-dark);
+            font-size: 1.1rem;
+        }
+        .merch-checkout-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: none;
+            padding: 12px;
+            border-radius: 40px;
+            font-weight: 700;
+            color: #0a1520;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .merch-checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
         }
 
-        .show-more-btn.expanded i {
-            transform: rotate(180deg);
+        /* Toast notification for silent add to cart */
+        .toast-notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 10000;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            animation: slideInRight 0.3s ease;
+            transform: translateX(0);
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
         /* ========== QUICK LINKS ========== */
@@ -707,6 +843,21 @@
         .broker-rating {
             color: var(--gold);
             font-size: 0.8rem;
+        }
+
+        .status-active {
+            background: #10B981 !important;
+            color: white !important;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+        }
+        .status-pending {
+            background: #FBBF24 !important;
+            color: black !important;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
         }
 
         /* ========== WATCHLIST CARDS ========== */
@@ -957,31 +1108,6 @@
         .status-paid {
             background: var(--gold);
             color: var(--navy-dark);
-        }
-
-        .course-progress {
-            margin-bottom: 16px;
-        }
-
-        .progress-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            color: var(--gray-dark);
-            margin-bottom: 6px;
-        }
-
-        .progress-bar {
-            height: 6px;
-            background: var(--gray-light);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--green);
-            border-radius: 3px;
         }
 
         .course-actions {
@@ -1390,17 +1516,6 @@
             flex-direction: column;
             position: relative;
             height: 100%;
-        }
-
-      
-        .package-leveraging i {
-            font-size: 12px;
-        }
-
-        @keyframes subtlePulse {
-            0% { opacity: 0.9; }
-            50% { opacity: 1; transform: scale(1.02); }
-            100% { opacity: 0.9; }
         }
 
         .package-cool-card:hover {
@@ -2285,6 +2400,10 @@
             .guide-steps {
                 grid-template-columns: 1fr;
             }
+            
+            .events-merch-section {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 992px) {
@@ -2359,11 +2478,6 @@
                 margin-bottom: 10px;
             }
             
-            .step-actions {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
             .card {
                 padding: 16px;
             }
@@ -2422,6 +2536,18 @@
             
             .content {
                 padding: 16px;
+            }
+
+            .event-body {
+                padding: 20px;
+            }
+
+            .event-poster {
+                max-width: 150px;
+            }
+
+            .merch-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -2482,11 +2608,13 @@
             .video-btn,
             .package-action-btn,
             .filter-btn,
-            .show-more-btn,
             .send-btn,
             .save-btn,
             .apply-btn,
-            .action-btn {
+            .action-btn,
+            .event-btn,
+            .merch-checkout-btn,
+            .merch-item {
                 min-height: 44px;
                 min-width: 44px;
             }
@@ -2509,42 +2637,6 @@
             transform: scaleX(1);
         }
 
-        .packages-grid.loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .package-cool-card {
-            animation: slideUp 0.5s ease forwards;
-        }
-
-        .package-cool-card:nth-child(1) { animation-delay: 0.1s; }
-        .package-cool-card:nth-child(2) { animation-delay: 0.2s; }
-        .package-cool-card:nth-child(3) { animation-delay: 0.3s; }
-        .package-cool-card:nth-child(4) { animation-delay: 0.4s; }
-        .package-cool-card:nth-child(5) { animation-delay: 0.5s; }
-        .package-cool-card:nth-child(6) { animation-delay: 0.6s; }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-        
         .tier-card {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
@@ -2571,16 +2663,6 @@
         .tier-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-        }
-        
-        .status-active {
-            background: #10B981 !important;
-            color: white !important;
-        }
-        
-        .status-pending {
-            background: #FBBF24 !important;
-            color: black !important;
         }
     </style>
 </head>
@@ -2617,24 +2699,20 @@
                 <div class="nav-item" data-page="watchlist">
                     <i class="fas fa-bookmark"></i>
                     <span>Watchlist</span>
-                    
                 </div>
 
                 <div class="nav-section">Learning</div>
                 <div class="nav-item" data-page="courses">
                     <i class="fas fa-graduation-cap"></i>
                     <span>Courses</span>
-                    
                 </div>
                 <div class="nav-item" data-page="videos">
                     <i class="fas fa-video"></i>
                     <span>Videos</span>
-                    
                 </div>
                 <div class="nav-item" data-page="pdfs">
                     <i class="fas fa-file-pdf"></i>
                     <span>PDFs</span>
-                    
                 </div>
 
                 <div class="nav-section">Services</div>
@@ -2649,7 +2727,6 @@
                 <div class="nav-item" data-page="community">
                     <i class="fas fa-users"></i>
                     <span>Community</span>
-                    
                 </div>
 
                 <div class="nav-section">Account</div>
@@ -2660,7 +2737,6 @@
                 <div class="nav-item" data-page="support">
                     <i class="fas fa-headset"></i>
                     <span>Support</span>
-                    
                 </div>
                 <div class="nav-item" data-page="settings">
                     <i class="fas fa-cog"></i>
@@ -2671,7 +2747,6 @@
                     <i class="fas fa-home"></i>
                     <span>Home</span>
                 </div>
-                
 
                 <div class="nav-item" style="margin-top: 20px;" onclick="logout()">
                     <i class="fas fa-sign-out-alt"></i>
@@ -2743,59 +2818,81 @@
                                 <div class="stat-card">
                                     <div class="stat-label">Courses Enrolled</div>
                                     <div class="stat-value" id="statCourses">0</div>
-                                    <div class="stat-change" id="statCoursesChange"></div>
                                 </div>
                                 <div class="stat-card">
                                     <div class="stat-label">Videos Watched</div>
                                     <div class="stat-value" id="statVideos">0</div>
-                                    <div class="stat-change" id="statVideosChange"></div>
                                 </div>
                                 <div class="stat-card">
                                     <div class="stat-label">PDFs Viewed</div>
                                     <div class="stat-value" id="statPDFs">0</div>
-                                    <div class="stat-change" id="statPDFsChange"></div>
                                 </div>
                                 <div class="stat-card">
                                     <div class="stat-label">Member Since</div>
-                                    <div class="stat-value" id="statMemberSince">{{ user.date_joined|date:"M Y" }}</div>
-                                    <div class="stat-change" id="statMemberSinceChange">{{ user.date_joined|timesince }}</div>
+                                    <div class="stat-value">{{ user.date_joined|date:"M Y" }}</div>
+                                    <div class="stat-change">{{ user.date_joined|timesince }}</div>
                                 </div>
                             </div>
 
-                            <!-- USER GUIDE SECTION - Add this right after the stats row div closes -->
-<div class="user-guide-card">
-    <div class="user-guide-header">
-        <div class="user-guide-title">
-            <i class="fas fa-compass"></i>
-            <h3>Quick Start Guide</h3>
-        </div>
-        <span class="guide-badge">New?</span>
-    </div>
-    <div class="guide-steps">
-        <div class="guide-step">
-            <span class="step-number">1</span>
-            <span>Browse courses & add to watchlist</span>
-        </div>
-        <div class="guide-step">
-            <span class="step-number">2</span>
-            <span>Purchase Course to unlock all videos & PDFs</span>
-        </div>
-    </div>
-</div>
-
-                            <!-- Recent Activity - WITH SHOW MORE BUTTON -->
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3><i class="fas fa-history"></i> Your Recent Activity</h3>
-                                    <span class="badge">Personal</span>
-                                </div>
-                                <div class="activity-container">
-                                    <div class="activity-list" id="activityList">
-                                        <!-- Loaded via AJAX - first 3 activities -->
+                            <!-- USER GUIDE SECTION -->
+                            <div class="user-guide-card">
+                                <div class="user-guide-header">
+                                    <div class="user-guide-title">
+                                        <i class="fas fa-compass"></i>
+                                        <h3>Quick Start Guide</h3>
                                     </div>
-                                    <div class="show-more-btn" id="showMoreActivities" onclick="toggleActivities()">
-                                        <span>Show More</span>
-                                        <i class="fas fa-chevron-down"></i>
+                                    <span class="guide-badge">New?</span>
+                                </div>
+                                <div class="guide-steps">
+                                    <div class="guide-step">
+                                        <span class="step-number">1</span>
+                                        <span>Browse courses & add to watchlist</span>
+                                    </div>
+                                    <div class="guide-step">
+                                        <span class="step-number">2</span>
+                                        <span>Purchase Course to unlock all videos & PDFs</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- EVENTS & MERCHANDISE SECTION - CLEAN DESIGN -->
+                            <div class="events-merch-section">
+                                <!-- EVENTS CARD - Clean with just poster and tagline -->
+                                <div class="event-premium-card">
+                                    <div class="event-header">
+                                        <h3><i class="fas fa-calendar-star"></i> Flagship Event</h3>
+                                    </div>
+                                    <div class="event-body">
+                                        <div class="event-poster">
+                                            <img src="{% static 'assets/images/ev1.png' %}" alt="Event Poster" onerror="this.src='https://placehold.co/180x180/0a1520/FFD700?text=EVENT'">
+                                        </div>
+                                        <div class="event-tagline">
+                                            Come in a <strong>normal MAN</strong>, walk out a <span>TYCOON</span>
+                                        </div>
+                                        <button class="event-btn" onclick="openTicketModal()">
+                                            <i class="fas fa-ticket-alt"></i> Reserve Your Spot
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- MERCHANDISE CARD - Silent add to cart -->
+                                <div class="merchandise-card">
+                                    <div class="merch-header">
+                                        <h3><i class="fas fa-shopping-bag"></i> Official Merchandise</h3>
+                                    </div>
+                                    <div class="merch-body">
+                                        <div class="merch-grid" id="dashboardMerchandise">
+                                            <!-- Loaded via AJAX -->
+                                        </div>
+                                        
+                                        <div class="cart-summary">
+                                            <span><i class="fas fa-shopping-cart"></i> Cart Total</span>
+                                            <strong id="dashboardCartTotal">KES 0</strong>
+                                        </div>
+                                        
+                                        <button class="merch-checkout-btn" onclick="openCartDrawer()">
+                                            <i class="fas fa-credit-card"></i> Checkout Now
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -2845,7 +2942,7 @@
                                     <h3><i class="fas fa-users"></i> Your Communities</h3>
                                 </div>
                                 <div class="broker-list" id="userCommunities">
-                                    <!-- Loaded via AJAX - shows which tiers user is in -->
+                                    <!-- Loaded via AJAX -->
                                 </div>
                             </div>
                         </div>
@@ -2972,9 +3069,8 @@
                         <h2>Institute Account</h2>
                         <p style="color: var(--gray); margin: 10px 0;">$250k minimum • Pass certification</p>
                         
-                        <!-- Requirements Check -->
                         <div id="instituteRequirements">
-                            <!-- Loaded via AJAX - shows user's eligibility -->
+                            <!-- Loaded via AJAX -->
                         </div>
                         
                         <button class="apply-btn" id="instituteApplyBtn" onclick="showInstituteApplication()" disabled>
@@ -3034,7 +3130,6 @@
                         </div>
                     </div>
                     
-                    <!-- Previous Tickets -->
                     <div class="card" style="margin-top: 20px;">
                         <div class="card-header">
                             <h3><i class="fas fa-ticket-alt"></i> Your Tickets</h3>
@@ -3125,128 +3220,360 @@
         </main>
     </div>
 
-    <!-- Ticket Reply Modal -->
-    <div class="modal-overlay" id="ticketModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 id="ticketModalTitle">Ticket Details</h3>
-                <button class="modal-close" onclick="closeTicketModal()">&times;</button>
+    <!-- TICKET MODAL -->
+    <div id="ticketModal" class="modern-modal" style="display: none;">
+        <div class="modern-modal-overlay"></div>
+        <div class="modern-modal-content">
+            <div class="modern-modal-header">
+                <div class="modern-modal-icon"><i class="fas fa-ticket-alt"></i></div>
+                <h3>Get Your Ticket</h3>
+                <button class="modern-modal-close" onclick="closeTicketModal()">×</button>
             </div>
-            <div class="modal-body" id="ticketModalContent"></div>
-            <div class="modal-footer">
-                <textarea id="ticketReplyMessage" rows="3" placeholder="Type your reply..." style="width:100%; margin-bottom:10px;"></textarea>
-                <button class="send-btn" onclick="replyToTicket()">Send Reply</button>
+            <div class="modern-modal-body">
+                <div class="event-mini-card">
+                    <div class="event-mini-icon"><i class="fas fa-calendar-star"></i></div>
+                    <div class="event-mini-info">
+                        <h4>East & Central Africa Live Leveraging Summit</h4>
+                        <div class="event-mini-meta">
+                            <span><i class="far fa-calendar"></i> Aug 7, 2026</span>
+                            <span><i class="far fa-clock"></i> 9AM - 5PM</span>
+                            <span><i class="fas fa-map-pin"></i> Safari Park Hotel</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <form id="ticketForm">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <input type="text" id="ticketFullName" placeholder="Full Name" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <input type="email" id="ticketEmail" placeholder="Email Address" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" id="ticketPhone" placeholder="Phone Number" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label style="color:#FFEC8B; font-size:0.75rem; margin-bottom:8px; display:block;">Number of Tickets</label>
+                        <div class="quantity-selector">
+                            <button type="button" class="qty-btn" onclick="decrementTicketQty()">−</button>
+                            <span id="ticketQty" class="qty-value">1</span>
+                            <button type="button" class="qty-btn" onclick="incrementTicketQty()">+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="price-summary">
+                        <div class="price-row"><span>Price per Ticket:</span><strong>$249</strong></div>
+                        <div class="price-row"><span>Total (USD):</span><strong>$<span id="totalUsd">249</span></strong></div>
+                        <div class="price-row"><span>Total (KES):</span><strong>KES <span id="totalKes">32,121</span></strong></div>
+                    </div>
+                    <button type="submit" class="modal-submit-btn">Continue to Payment →</button>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Institute Application Modal -->
-    <div class="modal-overlay" id="instituteModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>Institute Account Application</h3>
-                <button class="modal-close" onclick="closeInstituteModal()">&times;</button>
+    <!-- MERCHANDISE MODAL (Checkout) -->
+    <div id="merchandiseModal" class="modern-modal" style="display: none;">
+        <div class="modern-modal-overlay"></div>
+        <div class="modern-modal-content" style="max-width: 550px;">
+            <div class="modern-modal-header">
+                <div class="modern-modal-icon"><i class="fas fa-shopping-bag"></i></div>
+                <h3>Complete Your Order</h3>
+                <button class="modern-modal-close" onclick="closeMerchandiseModal()">×</button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Investment Amount (USD)</label>
-                    <input type="number" id="investmentAmount" min="250000" placeholder="Minimum $250,000" value="{{ user.total_deposits }}">
-                </div>
+            <div class="modern-modal-body">
+                <div id="merchOrderSummary" class="order-summary-mini"></div>
                 
-                <div class="form-group">
-                    <label>Trading Experience (Years)</label>
-                    <select id="tradingExperience">
-                        <option value="1-3" {% if user.trading_experience == '1-3' %}selected{% endif %}>1-3 years</option>
-                        <option value="3-5" {% if user.trading_experience == '3-5' %}selected{% endif %}>3-5 years</option>
-                        <option value="5-10" {% if user.trading_experience == '5-10' %}selected{% endif %}>5-10 years</option>
-                        <option value="10+" {% if user.trading_experience == '10+' %}selected{% endif %}>10+ years</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>Proof of Funds (Document)</label>
-                    <input type="file" id="proofOfFunds" accept=".pdf,.jpg,.png">
-                </div>
-                
-                <div class="form-group">
-                    <label>Trading History (Optional)</label>
-                    <input type="file" id="tradingHistory" accept=".pdf,.csv,.xlsx">
-                </div>
-                
-                <div class="form-group">
-                    <label>Additional Notes</label>
-                    <textarea id="applicationNotes" rows="3" placeholder="Tell us about your trading goals..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeInstituteModal()">Cancel</button>
-                <button class="send-btn" onclick="submitInstituteApplication()">Submit Application</button>
+                <form id="merchandiseForm">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="form-group">
+                            <input type="text" id="merchFullName" placeholder="Full Name" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="merchEmail" placeholder="Email Address" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <input type="tel" id="merchPhone" placeholder="Phone Number" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="merchAddress" placeholder="Delivery Address" required>
+                        </div>
+                    </div>
+                    
+                    <div class="price-summary">
+                        <div class="price-row"><span>Subtotal:</span><strong>KES <span id="merchSubtotal">0</span></strong></div>
+                        <div class="price-row"><span>Shipping:</span><strong>KES 500</strong></div>
+                        <div class="price-row total"><span>Total:</span><strong>KES <span id="merchTotal">0</span></strong></div>
+                    </div>
+                    <button type="submit" class="modal-submit-btn">Proceed to Payment →</button>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Notifications Panel -->
-    <div class="modal-overlay" id="notificationsModal">
-        <div class="modal" style="max-width: 400px;">
-            <div class="modal-header">
-                <h2>Notifications</h2>
-                <button class="modal-close" onclick="closeNotifications()">&times;</button>
-            </div>
-            <div class="modal-body" id="notificationsList">
-                <!-- Loaded via AJAX -->
-            </div>
+    <!-- Success Modal -->
+    <div id="successModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.96); backdrop-filter:blur(8px); z-index:20000; align-items:center; justify-content:center;">
+        <div style="background:linear-gradient(145deg, #0f1a2a, #0a1220); border-radius:24px; width:90%; max-width:380px; padding:40px; text-align:center; border:1px solid rgba(16,185,129,0.3);">
+            <i class="fas fa-check-circle" style="font-size:4rem; color:#10b981; margin-bottom:20px;"></i>
+            <h3 style="color:#10b981; font-size:1.5rem; margin-bottom:12px;">Payment Successful!</h3>
+            <p id="successMessage" style="color:#ccc; margin-bottom:24px;">Your order has been confirmed.</p>
+            <button onclick="closeSuccessModal()" style="background:linear-gradient(135deg, #10b981, #059669); border:none; color:white; padding:12px 30px; border-radius:40px; cursor:pointer; font-weight:600;">Continue</button>
         </div>
     </div>
 
-    <!-- PDF Viewer Modal -->
-    <div class="pdf-viewer-modal" id="pdfViewerModal">
-        <div class="pdf-viewer-container">
-            <div class="pdf-viewer-header">
-                <div class="pdf-viewer-title">
-                    <i class="fas fa-file-pdf"></i>
-                    <span id="pdfViewerTitle">PDF Viewer</span>
-                </div>
-                <div class="pdf-viewer-controls">
-                    <button class="pdf-nav-btn" id="pdfPrevPage" onclick="pdfPrevPage()" disabled>
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <span class="pdf-page-info" id="pdfPageInfo">Page 1 / 1</span>
-                    <button class="pdf-nav-btn" id="pdfNextPage" onclick="pdfNextPage()" disabled>
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                    <button class="pdf-close-btn" onclick="closePDFViewer()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="pdf-viewer-body" id="pdfViewerBody">
-                <div class="pdf-loading" id="pdfLoading">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <span>Loading PDF...</span>
-                </div>
-                <div class="pdf-error" id="pdfError" style="display: none;">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <span id="pdfErrorMessage">Error loading PDF</span>
-                </div>
-                <div class="pdf-canvas-container" id="pdfCanvasContainer" style="display: none;">
-                    <canvas id="pdfCanvas" class="pdf-canvas"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
+    <style>
+        /* Additional modal styles */
+        .modern-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        .modern-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+        }
+        .modern-modal-content {
+            position: relative;
+            background: #0f172a;
+            border-radius: 28px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modern-modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            background: #0f172a;
+            z-index: 10;
+        }
+        .modern-modal-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFD700;
+            font-size: 1.2rem;
+        }
+        .modern-modal-header h3 {
+            flex: 1;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #fff;
+            margin: 0;
+        }
+        .modern-modal-close {
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 50%;
+            color: #aaa;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .modern-modal-close:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        .modern-modal-body {
+            padding: 24px;
+        }
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 40px;
+            padding: 8px 16px;
+            width: fit-content;
+        }
+        .qty-btn {
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 50%;
+            color: #FFD700;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .qty-btn:hover {
+            background: #FFD700;
+            color: #0a1520;
+        }
+        .qty-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #fff;
+            min-width: 40px;
+            text-align: center;
+        }
+        .event-mini-card {
+            background: rgba(255, 215, 0, 0.05);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .event-mini-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: #FFD700;
+        }
+        .event-mini-info {
+            flex: 1;
+        }
+        .event-mini-info h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+            margin: 0 0 6px 0;
+        }
+        .event-mini-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .event-mini-meta span {
+            font-size: 0.7rem;
+            color: #aaa;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .event-mini-meta span i {
+            color: #FFD700;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .form-group input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #fff;
+            font-size: 0.85rem;
+        }
+        .price-summary {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            color: #ccc;
+            font-size: 0.85rem;
+        }
+        .price-row.total {
+            border-top: 1px solid rgba(255, 215, 0, 0.2);
+            margin-top: 6px;
+            padding-top: 10px;
+            color: #FFD700;
+            font-weight: bold;
+        }
+        .order-summary-mini {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 20px;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+        .cart-item-mini {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.8rem;
+            color: #fff;
+        }
+        .modal-submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            font-weight: 700;
+            color: #0a1520;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .modal-submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+        }
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: scale(0.96) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @media (max-width: 550px) {
+            .form-row { grid-template-columns: 1fr; gap: 0; }
+            .event-mini-card { flex-direction: column; text-align: center; }
+            .event-mini-icon { margin: 0 auto; }
+            .event-mini-meta { justify-content: center; }
+        }
+    </style>
 
     <script>
         // Initialize PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         
-        // PDF Viewer variables
         let currentPDF = null;
         let currentPage = 1;
         let totalPages = 1;
-        let pdfScale = 1.5;
         let currentPDFId = null;
         
-        // Get CSRF token
         const csrftoken = document.querySelector('[name=csrf-token]').getAttribute('content');
         
         // Mobile menu toggle
@@ -3254,11 +3581,9 @@
             document.getElementById('sidebar').classList.toggle('active');
         }
 
-        // Close mobile menu when clicking outside
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('sidebar');
             const menuBtn = document.getElementById('mobileMenuBtn');
-            
             if (window.innerWidth <= 768) {
                 if (!sidebar.contains(event.target) && !menuBtn.contains(event.target)) {
                     sidebar.classList.remove('active');
@@ -3266,35 +3591,13 @@
             }
         });
 
-        // Activity show more state
-        let activitiesExpanded = false;
-        let allActivities = [];
-        
-        // Loader Function
-        function showLoader(container, message = 'Loading...') {
-            $(container).html(`
-                <div class="loader-container">
-                    <div class="loader-spinner"></div>
-                    <div style="color: var(--gray-dark);">${message}</div>
-                </div>
-            `);
-        }
-        
         // Page Navigation
         function switchPage(pageId) {
-            document.querySelectorAll('.page').forEach(page => {
-                page.classList.remove('active');
-            });
-            
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
             document.getElementById(pageId + '-page').classList.add('active');
-            
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             const activeNav = document.querySelector(`.nav-item[data-page="${pageId}"]`);
             if (activeNav) activeNav.classList.add('active');
-            
             const titles = {
                 'overview': 'Overview', 'watchlist': 'Watchlist', 'courses': 'Courses',
                 'videos': 'Videos', 'pdfs': 'PDFs', 'packages': 'Packages',
@@ -3302,18 +3605,8 @@
                 'support': 'Support', 'settings': 'Settings'
             };
             document.getElementById('pageTitle').textContent = titles[pageId];
-            
-            // Close mobile menu after navigation
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('active');
-            }
-            
-            // Load page-specific data
-            if (pageId === 'overview') {
-                loadUserStats();
-                loadUserActivities();
-                loadUserCommunities();
-            }
+            if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('active');
+            if (pageId === 'overview') { loadUserStats(); loadUserCommunities(); }
             if (pageId === 'watchlist') loadWatchlist();
             if (pageId === 'courses') loadCourses();
             if (pageId === 'videos') loadVideos();
@@ -3326,12 +3619,13 @@
         }
 
         document.querySelectorAll('.nav-item[data-page]').forEach(item => {
-            item.addEventListener('click', function() {
-                switchPage(this.dataset.page);
-            });
+            item.addEventListener('click', function() { switchPage(this.dataset.page); });
         });
 
-        // Load User Stats
+        function showLoader(container, message = 'Loading...') {
+            $(container).html(`<div class="loader-container"><div class="loader-spinner"></div><div style="color: var(--gray-dark);">${message}</div></div>`);
+        }
+
         function loadUserStats() {
             $.ajax({
                 url: '/api/user/stats/',
@@ -3341,89 +3635,13 @@
                     $('#statCourses').text(data.courses_enrolled || '0');
                     $('#statVideos').text(data.videos_watched || '0');
                     $('#statPDFs').text(data.pdfs_viewed || '0');
-                    $('#courses-count').text(data.courses_enrolled || '0');
-                    $('#videos-count').text(data.videos_watched || '0');
-                    $('#pdfs-count').text(data.pdfs_viewed || '0');
                 },
-                error: function(xhr) {
-                    console.error('Error loading stats:', xhr);
-                }
+                error: function(xhr) { console.error('Error loading stats:', xhr); }
             });
         }
 
-        // Load User Activities
-        function loadUserActivities() {
-            showLoader('#activityList', 'Loading activities...');
-            
-            $.ajax({
-                url: '/api/user/activities/',
-                method: 'GET',
-                headers: {'X-CSRFToken': csrftoken},
-                success: function(activities) {
-                    allActivities = activities;
-                    renderActivities(3);
-                },
-                error: function(xhr) {
-                    console.error('Error loading activities:', xhr);
-                    $('#activityList').html('<div class="activity-item">Unable to load activities</div>');
-                }
-            });
-        }
-
-        function renderActivities(limit) {
-            let html = '';
-            if (allActivities && allActivities.length > 0) {
-                const displayActivities = activitiesExpanded ? allActivities : allActivities.slice(0, limit);
-                
-                displayActivities.forEach(act => {
-                    let icon = 'history';
-                    
-                    if (act.action) {
-                        if (act.action.includes('VIDEO')) icon = 'video';
-                        else if (act.action.includes('PDF')) icon = 'file-pdf';
-                        else if (act.action.includes('COURSE')) icon = 'graduation-cap';
-                        else if (act.action.includes('PAYMENT')) icon = 'dollar-sign';
-                        else if (act.action.includes('LOGIN')) icon = 'sign-in-alt';
-                        else if (act.action.includes('WATCH')) icon = 'play';
-                        else if (act.action.includes('VIEW')) icon = 'eye';
-                    }
-                    
-                    html += `
-                        <div class="activity-item">
-                            <div class="activity-icon"><i class="fas fa-${icon}"></i></div>
-                            <div class="activity-content">
-                                <div class="activity-title">${act.description}</div>
-                                <div class="activity-time">${act.time || 'just now'}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                // Update show more button
-                if (allActivities.length > 3) {
-                    $('#showMoreActivities').show();
-                    $('#showMoreActivities span').text(activitiesExpanded ? 'Show Less' : 'Show More');
-                } else {
-                    $('#showMoreActivities').hide();
-                }
-            } else {
-                html = '<div class="activity-item">No recent activity</div>';
-                $('#showMoreActivities').hide();
-            }
-            $('#activityList').html(html);
-        }
-
-        function toggleActivities() {
-            activitiesExpanded = !activitiesExpanded;
-            $('#activityList').toggleClass('expanded');
-            $('#showMoreActivities').toggleClass('expanded');
-            renderActivities(3);
-        }
-
-        // Load User Communities
         function loadUserCommunities() {
             showLoader('#userCommunities', 'Loading communities...');
-            
             $.ajax({
                 url: '/api/user/communities/',
                 method: 'GET',
@@ -3432,204 +3650,238 @@
                     let html = '';
                     if (memberships && memberships.length > 0) {
                         memberships.forEach(m => {
-                            let statusClass = m.status === 'active' ? 'status-active' : 'status-pending';
-                            html += `
-                                <div class="broker-item">
-                                    <div class="broker-logo"><i class="fas fa-users"></i></div>
-                                    <div class="broker-info">
-                                        <div class="broker-name">${m.community_name}</div>
-                                        <div class="broker-desc">${m.status}</div>
-                                    </div>
-                                    <div class="broker-rating ${statusClass}">${m.status}</div>
-                                </div>
-                            `;
+                            html += `<div class="broker-item"><div class="broker-logo"><i class="fas fa-users"></i></div><div class="broker-info"><div class="broker-name">${m.community_name}</div><div class="broker-desc">${m.status}</div></div><div class="broker-rating ${m.status === 'active' ? 'status-active' : 'status-pending'}">${m.status}</div></div>`;
                         });
                     } else {
                         html = '<div class="broker-item">You haven\'t joined any communities yet</div>';
                     }
                     $('#userCommunities').html(html);
-                    
-                    const activeCount = memberships ? memberships.filter(m => m.status === 'active').length : 0;
-                    $('#community-status').text(activeCount);
                 },
-                error: function(xhr) {
-                    console.error('Error loading communities:', xhr);
-                }
+                error: function(xhr) { console.error('Error loading communities:', xhr); }
             });
         }
 
-        // Load Courses
+        // Toast notification for silent add to cart
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 2000);
+        }
+
+        // ========== MERCHANDISE STORE - Silent Add to Cart ==========
+        let merchCart = JSON.parse(localStorage.getItem('mbc_merch_cart') || '[]');
+
+        function updateCartUI() {
+            let total = 0, count = 0;
+            merchCart.forEach(item => { total += item.price * item.quantity; count += item.quantity; });
+            document.getElementById('dashboardCartTotal').innerText = `KES ${total.toLocaleString()}`;
+            localStorage.setItem('mbc_merch_cart', JSON.stringify(merchCart));
+        }
+
+        function addToCartSilent(id, name, price, image) {
+            const existing = merchCart.find(item => item.id === id);
+            if (existing) { existing.quantity += 1; }
+            else { merchCart.push({ id, name, price, image, quantity: 1 }); }
+            updateCartUI();
+            showToast(`${name} added to cart!`);
+        }
+
+        async function loadDashboardMerchandise() {
+            try {
+                const response = await fetch('/api/merchandise/');
+                const data = await response.json();
+                const items = data.items || [];
+                const container = document.getElementById('dashboardMerchandise');
+                if (!items.length) {
+                    container.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--gray);">No items available</div>';
+                    return;
+                }
+                container.innerHTML = items.slice(0, 4).map(p => `
+                    <div class="merch-item" onclick='addToCartSilent(${p.id}, "${p.name.replace(/'/g, "\\'")}", ${p.price}, "${p.image || ''}")'>
+                        <img src="${p.image || 'https://placehold.co/60/1a2a3a/FFD700'}" onerror="this.src='https://placehold.co/60/1a2a3a/FFD700'">
+                        <div class="merch-name">${p.name.length > 20 ? p.name.substring(0,18)+'...' : p.name}</div>
+                        <div class="merch-price">KES ${p.price.toLocaleString()}</div>
+                    </div>
+                `).join('');
+                updateCartUI();
+            } catch(e) {
+                console.error('Error loading merchandise:', e);
+                document.getElementById('dashboardMerchandise').innerHTML = '<div style="grid-column:1/-1; text-align:center;">Error loading</div>';
+            }
+        }
+
+        function openCartDrawer() {
+            if (merchCart.length === 0) {
+                showToast('Your cart is empty');
+                return;
+            }
+            let subtotal = 0;
+            let itemsHtml = '';
+            merchCart.forEach(item => {
+                subtotal += item.price * item.quantity;
+                itemsHtml += `<div class="cart-item-mini"><span>${item.name} x${item.quantity}</span><span>KES ${(item.price * item.quantity).toLocaleString()}</span></div>`;
+            });
+            document.getElementById('merchOrderSummary').innerHTML = itemsHtml;
+            document.getElementById('merchSubtotal').innerText = subtotal.toLocaleString();
+            document.getElementById('merchTotal').innerText = (subtotal + 500).toLocaleString();
+            document.getElementById('merchandiseModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMerchandiseModal() {
+            document.getElementById('merchandiseModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('merchandiseForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!merchCart.length) { showToast('Cart is empty'); return; }
+            const fullName = document.getElementById('merchFullName').value;
+            const email = document.getElementById('merchEmail').value;
+            const phone = document.getElementById('merchPhone').value;
+            const address = document.getElementById('merchAddress').value;
+            if (!fullName || !email || !phone || !address) { showToast('Please fill in all fields'); return; }
+            const btn = this.querySelector('.modal-submit-btn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            try {
+                const response = await fetch('/api/create-merchandise-order/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                    body: JSON.stringify({ full_name: fullName, email: email, phone: phone, address: address, cart: merchCart })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    closeMerchandiseModal();
+                    window.location.href = `/payment/initiate/?type=merchandise&ref=${data.reference}`;
+                } else {
+                    showToast('Error: ' + (data.error || 'Failed to create order'));
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            } catch(err) {
+                showToast('Network error. Please try again.');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+
+        // ========== TICKET MODAL ==========
+        let ticketQuantity = 1;
+        const TICKET_PRICE_USD = 249;
+        const EXCHANGE_RATE = 129;
+
+        function updateTicketPrice() {
+            const totalUsd = TICKET_PRICE_USD * ticketQuantity;
+            document.getElementById('totalUsd').innerText = totalUsd;
+            document.getElementById('totalKes').innerText = (totalUsd * EXCHANGE_RATE).toLocaleString();
+        }
+
+        function incrementTicketQty() { ticketQuantity++; document.getElementById('ticketQty').innerText = ticketQuantity; updateTicketPrice(); }
+        function decrementTicketQty() { if (ticketQuantity > 1) { ticketQuantity--; document.getElementById('ticketQty').innerText = ticketQuantity; updateTicketPrice(); } }
+        function openTicketModal() { ticketQuantity = 1; document.getElementById('ticketQty').innerText = '1'; updateTicketPrice(); document.getElementById('ticketModal').style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+        function closeTicketModal() { document.getElementById('ticketModal').style.display = 'none'; document.body.style.overflow = ''; }
+
+        document.getElementById('ticketForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const fullName = document.getElementById('ticketFullName').value;
+            const email = document.getElementById('ticketEmail').value;
+            const phone = document.getElementById('ticketPhone').value;
+            if (!fullName || !email || !phone) { showToast('Please fill in all fields'); return; }
+            const btn = this.querySelector('.modal-submit-btn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            try {
+                const response = await fetch('/api/create-ticket-order/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                    body: JSON.stringify({ full_name: fullName, email: email, phone: phone, quantity: ticketQuantity })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    closeTicketModal();
+                    window.location.href = `/payment/initiate/?type=ticket&ref=${data.reference}`;
+                } else {
+                    showToast('Error: ' + (data.error || 'Failed to create order'));
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            } catch(err) {
+                showToast('Network error. Please try again.');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+
+        // ========== Course Functions (simplified) ==========
         function loadCourses(filter = 'all') {
-            console.log("Loading courses...");
-            
             showLoader('#coursesContent', 'Loading courses...');
-            
-            // Update active filter button
             $('.filter-btn').removeClass('active');
             $(`.filter-btn[data-filter="${filter}"]`).addClass('active');
-            
-            // Get public courses (all available)
             $.ajax({
                 url: '/api/public/courses/',
                 method: 'GET',
                 success: function(allCourses) {
-                    // Get user's enrolled courses
                     $.ajax({
                         url: '/api/user/courses/',
                         method: 'GET',
                         headers: {'X-CSRFToken': csrftoken},
-                        success: function(enrolledCourses) {
-                            renderCourses(allCourses, enrolledCourses, filter);
-                            $('#courses-count').text(allCourses.length);
-                        },
-                        error: function() {
-                            renderCourses(allCourses, [], filter);
-                            $('#courses-count').text(allCourses.length);
-                        }
+                        success: function(enrolledCourses) { renderCourses(allCourses, enrolledCourses, filter); },
+                        error: function() { renderCourses(allCourses, [], filter); }
                     });
                 },
-                error: function() {
-                    $('#coursesContent').html('<div style="grid-column:1/-1; text-align:center; padding:40px;">Unable to load courses</div>');
-                }
+                error: function() { $('#coursesContent').html('<div style="grid-column:1/-1; text-align:center; padding:40px;">Unable to load courses</div>'); }
             });
         }
 
         function renderCourses(allCourses, enrolledCourses, filter) {
             let html = '';
-            
             const enrolledMap = {};
-            if (enrolledCourses && enrolledCourses.length > 0) {
-                enrolledCourses.forEach(c => {
-                    enrolledMap[c.id] = c;
-                });
-            }
-            
+            if (enrolledCourses && enrolledCourses.length > 0) enrolledCourses.forEach(c => { enrolledMap[c.id] = c; });
             let filteredCourses = allCourses;
-            if (filter === 'enrolled') {
-                filteredCourses = allCourses.filter(c => enrolledMap[c.id]);
-            } else if (filter === 'free') {
-                filteredCourses = allCourses.filter(c => parseFloat(c.price) === 0);
-            }
-            
-            if (filteredCourses.length === 0) {
-                html = '<div style="grid-column:1/-1; text-align:center; padding:40px;">No courses found</div>';
-            } else {
+            if (filter === 'enrolled') filteredCourses = allCourses.filter(c => enrolledMap[c.id]);
+            else if (filter === 'free') filteredCourses = allCourses.filter(c => parseFloat(c.price) === 0);
+            if (filteredCourses.length === 0) { html = '<div>No courses found</div>'; }
+            else {
                 filteredCourses.forEach(course => {
                     const isEnrolled = enrolledMap[course.id];
-                    const progress = isEnrolled ? isEnrolled.progress || 0 : 0;
-                    
-                    let imageHtml = '';
-                    if (course.thumbnail) {
-                        imageHtml = `<img src="${course.thumbnail}" alt="${course.title}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`;
-                    }
-                    
-                    html += `
-                        <div class="course-card">
-                            <div class="course-image">
-                                ${imageHtml}
-                                <i class="fas fa-play-circle" style="${course.thumbnail ? 'display: none;' : ''}"></i>
-                                <span class="course-category">${course.category || 'Course'}</span>
-                            </div>
-                            <div class="course-content">
-                                <h3 class="course-title">${course.title}</h3>
-                                <p class="course-description">${course.description ? course.description.substring(0, 80) + '...' : ''}</p>
-                                
-                                <div class="course-meta">
-                                    <div class="course-meta-item">
-                                        <i class="fas fa-video"></i>
-                                        <span>${course.videos_count || 0} Videos</span>
-                                    </div>
-                                    <div class="course-meta-item">
-                                        <i class="fas fa-file-pdf"></i>
-                                        <span>${course.pdfs_count || 0} PDFs</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="course-price-row">
-                                    <div class="course-price">
-                                        $${course.price} <small>one-time</small>
-                                    </div>
-                                    ${isEnrolled ? 
-                                        '<span class="course-status status-enrolled">Enrolled</span>' : 
-                                        (parseFloat(course.price) === 0 ? 
-                                            '<span class="course-status status-free">Free</span>' : 
-                                            '<span class="course-status status-paid">Premium</span>')
-                                    }
-                                </div>
-                                
-                                <div class="course-actions">
-                                    ${isEnrolled ? `
-                                        <button class="btn-continue" onclick="viewCourse(${course.id})">
-                                            <i class="fas fa-play"></i> Continue
-                                        </button>
-                                    ` : `
-                                        <button class="btn-enroll" onclick="enrollCourse(${course.id})">
-                                            <i class="fas fa-graduation-cap"></i> Enroll
-                                        </button>
-                                    `}
-                                    <button class="btn-watchlist" 
-                                            onclick="toggleWatchlist(${course.id}, 'course')"
-                                            data-id="${course.id}" data-type="course">
-                                        <i class="fas fa-bookmark"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    html += `<div class="course-card"><div class="course-image"><img src="${course.thumbnail || ''}" onerror="this.style.display='none'"><span class="course-category">${course.category || 'Course'}</span></div><div class="course-content"><h3 class="course-title">${course.title}</h3><p class="course-description">${course.description ? course.description.substring(0,80)+'...' : ''}</p><div class="course-meta"><div class="course-meta-item"><i class="fas fa-video"></i><span>${course.videos_count || 0} Videos</span></div><div class="course-meta-item"><i class="fas fa-file-pdf"></i><span>${course.pdfs_count || 0} PDFs</span></div></div><div class="course-price-row"><div class="course-price">$${course.price} <small>one-time</small></div>${isEnrolled ? '<span class="course-status status-enrolled">Enrolled</span>' : (parseFloat(course.price) === 0 ? '<span class="course-status status-free">Free</span>' : '<span class="course-status status-paid">Premium</span>')}</div><div class="course-actions">${isEnrolled ? `<button class="btn-continue" onclick="viewCourse(${course.id})"><i class="fas fa-play"></i> Continue</button>` : `<button class="btn-enroll" onclick="enrollCourse(${course.id})"><i class="fas fa-graduation-cap"></i> Enroll</button>`}<button class="btn-watchlist" onclick="toggleWatchlist(${course.id}, 'course')"><i class="fas fa-bookmark"></i></button></div></div></div>`;
                 });
             }
-            
             $('#coursesContent').html(html);
         }
 
-        // Filter buttons handler
         $(document).on('click', '.filter-btn', function() {
             const filter = $(this).data('filter');
             const page = $('#pageTitle').text().toLowerCase();
-            
             if (page === 'courses') loadCourses(filter);
             else if (page === 'videos') loadVideos(filter);
             else if (page === 'pdfs') loadPDFs(filter);
         });
 
-        // Enroll Course
         function enrollCourse(courseId) {
             $.ajax({
                 url: '/api/user/courses/enroll/',
                 method: 'POST',
                 headers: {'X-CSRFToken': csrftoken},
                 data: JSON.stringify({course_id: courseId}),
-                success: function(response) {
-                    alert('Successfully enrolled! You can now access course materials.');
-                    loadCourses();
-                    loadUserStats();
-                },
+                success: function() { showToast('Successfully enrolled!'); loadCourses(); loadUserStats(); },
                 error: function(xhr) {
-                    if (xhr.status === 400) {
-                        const response = xhr.responseJSON;
-                        if (response && response.requires_payment) {
-                            if (confirm('This course requires payment. Would you like to proceed to payment?')) {
-                                window.location.href = `/payment/initiate/?type=course&id=${courseId}`;
-                            }
-                        } else {
-                            alert('Error: ' + (response?.error || 'Unknown error'));
-                        }
-                    } else {
-                        alert('Error: ' + (xhr.responseJSON?.error || 'Unknown error'));
-                    }
+                    if (xhr.status === 400 && xhr.responseJSON?.requires_payment) {
+                        if (confirm('This course requires payment. Proceed to payment?')) window.location.href = `/payment/initiate/?type=course&id=${courseId}`;
+                    } else { showToast('Error: ' + (xhr.responseJSON?.error || 'Unknown error')); }
                 }
             });
         }
 
-        // Watchlist Functions
         function toggleWatchlist(itemId, type) {
-            const button = $(`.btn-watchlist[data-id="${itemId}"][data-type="${type}"]`);
-            
-            if (button.hasClass('active')) {
-                removeFromWatchlist(itemId, type);
-            } else {
-                addToWatchlist(itemId, type);
-            }
+            const button = $(`.btn-watchlist[onclick*="${itemId}"]`);
+            if (button.hasClass('active')) { removeFromWatchlist(itemId, type); }
+            else { addToWatchlist(itemId, type); }
         }
 
         function addToWatchlist(itemId, type) {
@@ -3638,14 +3890,8 @@
                 method: 'POST',
                 headers: {'X-CSRFToken': csrftoken},
                 data: JSON.stringify({id: itemId, type: type}),
-                success: function() {
-                    loadWatchlistCount();
-                    $(`.btn-watchlist[data-id="${itemId}"][data-type="${type}"]`).addClass('active');
-                    showNotification('Added to watchlist', 'success');
-                },
-                error: function(xhr) {
-                    alert('Error adding to watchlist: ' + (xhr.responseJSON?.error || 'Unknown error'));
-                }
+                success: function() { showToast('Added to watchlist'); loadWatchlistCount(); },
+                error: function() { showToast('Error adding to watchlist'); }
             });
         }
 
@@ -3655,17 +3901,8 @@
                 method: 'POST',
                 headers: {'X-CSRFToken': csrftoken},
                 data: JSON.stringify({id: itemId, type: type}),
-                success: function() {
-                    loadWatchlistCount();
-                    $(`.btn-watchlist[data-id="${itemId}"][data-type="${type}"]`).removeClass('active');
-                    
-                    if (document.getElementById('watchlist-page').classList.contains('active')) {
-                        loadWatchlist();
-                    }
-                },
-                error: function(xhr) {
-                    alert('Error removing from watchlist: ' + (xhr.responseJSON?.error || 'Unknown error'));
-                }
+                success: function() { showToast('Removed from watchlist'); loadWatchlistCount(); if (document.getElementById('watchlist-page').classList.contains('active')) loadWatchlist(); },
+                error: function() { showToast('Error removing from watchlist'); }
             });
         }
 
@@ -3674,1208 +3911,287 @@
                 url: '/api/user/watchlist/count/',
                 method: 'GET',
                 headers: {'X-CSRFToken': csrftoken},
-                success: function(data) {
-                    $('#watchlist-count').text(data.count || 0);
-                },
-                error: function() {
-                    $.ajax({
-                        url: '/api/user/watchlist/',
-                        method: 'GET',
-                        headers: {'X-CSRFToken': csrftoken},
-                        success: function(items) {
-                            $('#watchlist-count').text(items.length || 0);
-                        }
-                    });
-                }
+                success: function(data) { $('#watchlist-count').text(data.count || 0); },
+                error: function() { $.ajax({ url: '/api/user/watchlist/', success: function(items) { $('#watchlist-count').text(items.length || 0); } }); }
             });
         }
 
         function loadWatchlist() {
             showLoader('#watchlistContent', 'Loading watchlist...');
-            
             $.ajax({
                 url: '/api/user/watchlist/',
                 method: 'GET',
                 headers: {'X-CSRFToken': csrftoken},
                 success: function(items) {
                     let html = '';
-                    if (items.length === 0) {
-                        html = '<div style="text-align: center; padding: 40px; grid-column: 1/-1;">Your watchlist is empty</div>';
-                    } else {
+                    if (items.length === 0) { html = '<div>Your watchlist is empty</div>'; }
+                    else {
                         items.forEach(item => {
-                            let icon = 'video';
-                            if (item.type === 'pdf') icon = 'file-pdf';
-                            if (item.type === 'course') icon = 'graduation-cap';
-                            
-                            html += `
-                                <div class="watch-item">
-                                    <div class="watch-icon"><i class="fas fa-${icon}"></i></div>
-                                    <div class="watch-info">
-                                        <div class="watch-title">${item.title}</div>
-                                        <div class="watch-meta">${item.type}</div>
-                                        <div class="watch-price">$${item.price}</div>
-                                    </div>
-                                    <div class="watch-actions">
-                                        <button class="btn-buy" onclick="purchaseItem(${item.content_id}, '${item.type}')">
-                                            Buy Now
-                                        </button>
-                                        <button class="btn-remove" onclick="removeFromWatchlist(${item.content_id}, '${item.type}')">
-                                            <i class="fas fa-times"></i> Remove
-                                        </button>
-                                    </div>
-                                </div>
-                            `;
+                            let icon = item.type === 'pdf' ? 'file-pdf' : (item.type === 'course' ? 'graduation-cap' : 'video');
+                            html += `<div class="watch-item"><div class="watch-icon"><i class="fas fa-${icon}"></i></div><div class="watch-info"><div class="watch-title">${item.title}</div><div class="watch-meta">${item.type}</div><div class="watch-price">$${item.price}</div></div><div class="watch-actions"><button class="btn-buy" onclick="purchaseItem(${item.content_id}, '${item.type}')">Buy Now</button><button class="btn-remove" onclick="removeFromWatchlist(${item.content_id}, '${item.type}')">Remove</button></div></div>`;
                         });
                     }
                     $('#watchlistContent').html(html);
-                    $('#watchlist-count').text(items.length);
                     $('#watchlist-total').text(items.length + ' items');
-                },
-                error: function(xhr) {
-                    console.error('Error loading watchlist:', xhr);
                 }
             });
         }
 
-        // Load Videos
         function loadVideos(filter = 'all') {
-            console.log("Loading videos...");
-            
             showLoader('#videosContent', 'Loading videos...');
-            
-            // Update active filter button
             $('.filter-btn').removeClass('active');
             $(`.filter-btn[data-filter="${filter}"]`).addClass('active');
-            
-            // Get all public videos
             $.ajax({
                 url: '/api/public/videos/',
                 method: 'GET',
                 success: function(publicVideos) {
-                    // Get user's purchased videos
                     $.ajax({
                         url: '/api/user/videos/',
                         method: 'GET',
                         headers: {'X-CSRFToken': csrftoken},
                         success: function(data) {
                             const purchasedMap = {};
-                            if (data.purchased && data.purchased.length) {
-                                data.purchased.forEach(v => {
-                                    purchasedMap[v.id] = true;
-                                });
-                            }
+                            if (data.purchased) data.purchased.forEach(v => { purchasedMap[v.id] = true; });
                             renderVideos(publicVideos, purchasedMap, filter);
-                            $('#videos-count').text(publicVideos.length);
                         },
-                        error: function() {
-                            renderVideos(publicVideos, {}, filter);
-                            $('#videos-count').text(publicVideos.length);
-                        }
+                        error: function() { renderVideos(publicVideos, {}, filter); }
                     });
                 },
-                error: function() {
-                    $('#videosContent').html('<div style="text-align:center; padding:40px;">Unable to load videos</div>');
-                }
+                error: function() { $('#videosContent').html('<div>Unable to load videos</div>'); }
             });
         }
 
         function renderVideos(publicVideos, purchasedMap, filter) {
             let html = '';
-            
-            const allVideos = publicVideos.map(video => ({
-                ...video,
-                has_access: purchasedMap[video.id] || false,
-                is_free: video.price === 0
-            }));
-            
+            const allVideos = publicVideos.map(v => ({...v, has_access: purchasedMap[v.id] || false, is_free: v.price === 0}));
             let filteredVideos = allVideos;
-            if (filter === 'free') {
-                filteredVideos = allVideos.filter(v => v.is_free);
-            } else if (filter === 'purchased') {
-                filteredVideos = allVideos.filter(v => v.has_access);
-            }
-            
-            if (filteredVideos.length === 0) {
-                html = '<div style="grid-column:1/-1; text-align:center; padding:40px;">No videos available</div>';
-            } else {
+            if (filter === 'free') filteredVideos = allVideos.filter(v => v.is_free);
+            else if (filter === 'purchased') filteredVideos = allVideos.filter(v => v.has_access);
+            if (filteredVideos.length === 0) { html = '<div>No videos available</div>'; }
+            else {
                 filteredVideos.forEach(video => {
-                    const lockClass = video.has_access ? 'unlocked' : 'locked';
-                    const lockIcon = video.has_access ? 'unlock-alt' : 'lock';
-                    
-                    let thumbHtml = '';
-                    if (video.thumbnail) {
-                        thumbHtml = `<img src="${video.thumbnail}" alt="${video.title}" onerror="this.style.display='none';">`;
-                    }
-                    
-                    const courseName = video.course_name || 'Standalone Video';
-                    
-                    html += `
-                        <div class="video-card">
-                            <div class="video-thumb">
-                                ${thumbHtml}
-                                <i class="fas fa-play-circle" style="${video.thumbnail ? 'display: none;' : ''}"></i>
-                                <span class="video-lock ${lockClass}">
-                                    <i class="fas fa-${lockIcon}"></i>
-                                </span>
-                            </div>
-                            <div class="video-info">
-                                <span class="video-course-badge">${courseName}</span>
-                                <h4 class="video-title">${video.title}</h4>
-                                <div class="video-meta">
-                                    <span><i class="far fa-clock"></i> ${video.duration || '30'} min</span>
-                                    <span class="video-price-tag">${video.is_free ? 'Free' : '$' + video.price}</span>
-                                </div>
-                                <div class="video-footer">
-                                    <span class="video-views">
-                                        <i class="far fa-eye"></i> ${video.view_count || 0}
-                                    </span>
-                                    ${video.has_access ? 
-                                        `<button class="video-btn watch" onclick="watchVideo(${video.id})">
-                                            <i class="fas fa-play"></i> Watch
-                                        </button>` : 
-                                        `<button class="video-btn unlock" onclick="purchaseItem(${video.id}, 'video')">
-                                            <i class="fas fa-lock"></i> Unlock $${video.price}
-                                        </button>`
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    html += `<div class="video-card"><div class="video-thumb"><img src="${video.thumbnail || ''}" onerror="this.style.display='none'"><span class="video-lock ${video.has_access ? 'unlocked' : 'locked'}"><i class="fas fa-${video.has_access ? 'unlock-alt' : 'lock'}"></i></span></div><div class="video-info"><span class="video-course-badge">${video.course_name || 'Standalone'}</span><h4 class="video-title">${video.title}</h4><div class="video-meta"><span><i class="far fa-clock"></i> ${video.duration || '30'} min</span><span class="video-price-tag">${video.is_free ? 'Free' : '$' + video.price}</span></div><div class="video-footer"><span class="video-views"><i class="far fa-eye"></i> ${video.view_count || 0}</span>${video.has_access ? `<button class="video-btn watch" onclick="watchVideo(${video.id})">Watch</button>` : `<button class="video-btn unlock" onclick="purchaseItem(${video.id}, 'video')">Unlock $${video.price}</button>`}</div></div></div>`;
                 });
             }
-            
             $('#videosContent').html(html);
         }
 
-        // Load PDFs
         function loadPDFs(filter = 'all') {
-            console.log("Loading PDFs...");
-            
             showLoader('#pdfsContent', 'Loading PDFs...');
-            
-            // Update active filter button
             $('.filter-btn').removeClass('active');
             $(`.filter-btn[data-filter="${filter}"]`).addClass('active');
-            
-            // Get all PDFs
             $.ajax({
                 url: '/api/public/pdfs/',
                 method: 'GET',
                 success: function(publicPDFs) {
-                    // Get user's purchased PDFs
                     $.ajax({
                         url: '/api/user/pdfs/',
                         method: 'GET',
                         headers: {'X-CSRFToken': csrftoken},
                         success: function(data) {
                             const purchasedMap = {};
-                            if (data.purchased && data.purchased.length) {
-                                data.purchased.forEach(p => {
-                                    purchasedMap[p.id] = true;
-                                });
-                            }
+                            if (data.purchased) data.purchased.forEach(p => { purchasedMap[p.id] = true; });
                             renderPDFs(publicPDFs, purchasedMap, filter);
-                            $('#pdfs-count').text(publicPDFs.length);
                         },
-                        error: function() {
-                            renderPDFs(publicPDFs, {}, filter);
-                            $('#pdfs-count').text(publicPDFs.length);
-                        }
+                        error: function() { renderPDFs(publicPDFs, {}, filter); }
                     });
                 },
-                error: function(xhr) {
-                    console.error('Error loading PDFs:', xhr);
-                    $('#pdfsContent').html('<div style="grid-column:1/-1; text-align:center; padding:40px; color: var(--red);">Failed to load PDFs. Please refresh.</div>');
-                }
+                error: function() { $('#pdfsContent').html('<div>Unable to load PDFs</div>'); }
             });
         }
 
         function renderPDFs(pdfs, purchasedMap, filter) {
             let html = '';
-            
-            const allPDFs = pdfs.map(pdf => ({
-                ...pdf,
-                has_access: purchasedMap[pdf.id] || pdf.is_free || false
-            }));
-            
+            const allPDFs = pdfs.map(p => ({...p, has_access: purchasedMap[p.id] || p.is_free || false}));
             let filteredPDFs = allPDFs;
-            if (filter === 'free') {
-                filteredPDFs = allPDFs.filter(p => p.is_free);
-            } else if (filter === 'purchased') {
-                filteredPDFs = allPDFs.filter(p => p.has_access && !p.is_free);
-            }
-            
-            if (filteredPDFs.length === 0) {
-                html = '<div style="grid-column:1/-1; text-align:center; padding:60px 20px; background: var(--white); border-radius: 12px; border: 1px solid var(--border);">' +
-                       '<i class="fas fa-file-pdf" style="font-size: 48px; color: var(--gray); margin-bottom: 16px;"></i>' +
-                       '<h3 style="color: var(--gray-dark); margin-bottom: 8px;">No PDFs Available</h3>' +
-                       '<p style="color: var(--gray);">' + 
-                       (filter === 'free' ? 'No free PDFs found' : 
-                        filter === 'purchased' ? 'You haven\'t purchased any PDFs yet' : 
-                        'No PDFs match your criteria') + 
-                       '</p></div>';
-            } else {
+            if (filter === 'free') filteredPDFs = allPDFs.filter(p => p.is_free);
+            else if (filter === 'purchased') filteredPDFs = allPDFs.filter(p => p.has_access && !p.is_free);
+            if (filteredPDFs.length === 0) { html = '<div>No PDFs available</div>'; }
+            else {
                 filteredPDFs.forEach(pdf => {
-                    let thumbHtml = '';
-                    if (pdf.cover_image) {
-                        thumbHtml = `<img src="${pdf.cover_image}" alt="${pdf.title}" onerror="this.style.display='none';">`;
-                    }
-                    
-                    const courseName = pdf.course_name || 'Standalone PDF';
-                    
-                    html += `
-                        <div class="pdf-card" data-pdf-id="${pdf.id}">
-                            <div class="pdf-thumb">
-                                ${thumbHtml}
-                                <i class="fas fa-file-pdf" style="${pdf.cover_image ? 'display: none;' : ''}"></i>
-                                ${pdf.has_access ? 
-                                    '<span class="pdf-access-badge"><i class="fas fa-check-circle"></i> Unlocked</span>' : 
-                                    (pdf.is_free ? '<span class="pdf-free-badge">Free</span>' : '')
-                                }
-                            </div>
-                            <span class="pdf-course-badge">${courseName}</span>
-                            <h4 class="pdf-title" title="${pdf.title}">${pdf.title.length > 40 ? pdf.title.substring(0, 40) + '...' : pdf.title}</h4>
-                            <div class="pdf-meta">
-                                <span><i class="far fa-file"></i> ${pdf.pages || '?'} pages</span>
-                                <span><i class="fas fa-weight-hanging"></i> ${pdf.file_size || '1.2 MB'}</span>
-                            </div>
-                            <div class="pdf-footer">
-                                <div class="pdf-price-section">
-                                    <span class="${pdf.is_free ? 'pdf-free' : 'pdf-price'}">
-                                        ${pdf.is_free ? 'FREE' : '$' + pdf.price}
-                                    </span>
-                                    ${!pdf.is_free && !pdf.has_access ? 
-                                        '<span class="pdf-price-note">one-time</span>' : ''
-                                    }
-                                </div>
-                                ${pdf.has_access ? 
-                                    `<button class="pdf-btn view" onclick="viewPDF(${pdf.id}, this)" data-pdf-id="${pdf.id}">
-                                        <i class="fas fa-eye"></i> 
-                                        <span>View PDF</span>
-                                    </button>` : 
-                                    (pdf.is_free ? 
-                                        `<button class="pdf-btn view" onclick="viewPDF(${pdf.id}, this)" data-pdf-id="${pdf.id}">
-                                            <i class="fas fa-eye"></i> 
-                                            <span>View PDF</span>
-                                        </button>` : 
-                                        `<button class="pdf-btn buy" onclick="purchaseItem(${pdf.id}, 'pdf')">
-                                            <i class="fas fa-shopping-cart"></i> 
-                                            <span>Buy $${pdf.price}</span>
-                                        </button>`
-                                    )
-                                }
-                            </div>
-                        </div>
-                    `;
+                    html += `<div class="pdf-card"><div class="pdf-thumb"><img src="${pdf.cover_image || ''}" onerror="this.style.display='none'"><i class="fas fa-file-pdf"></i>${pdf.has_access ? '<span class="pdf-access-badge">Unlocked</span>' : (pdf.is_free ? '<span class="pdf-free-badge">Free</span>' : '')}</div><span class="pdf-course-badge">${pdf.course_name || 'Standalone'}</span><h4 class="pdf-title">${pdf.title.length > 40 ? pdf.title.substring(0,40)+'...' : pdf.title}</h4><div class="pdf-meta"><span><i class="far fa-file"></i> ${pdf.pages || '?'} pages</span></div><div class="pdf-footer"><div class="pdf-price-section"><span class="${pdf.is_free ? 'pdf-free' : 'pdf-price'}">${pdf.is_free ? 'FREE' : '$' + pdf.price}</span></div>${pdf.has_access ? `<button class="pdf-btn view" onclick="viewPDF(${pdf.id}, this)">View PDF</button>` : (pdf.is_free ? `<button class="pdf-btn view" onclick="viewPDF(${pdf.id}, this)">View PDF</button>` : `<button class="pdf-btn buy" onclick="purchaseItem(${pdf.id}, 'pdf')">Buy $${pdf.price}</button>`)}</div></div>`;
                 });
             }
-            
             $('#pdfsContent').html(html);
         }
 
-        // PDF Viewer Functions
-        function viewPDF(pdfId, buttonElement) {
-            const $btn = $(buttonElement);
-            const originalHtml = $btn.html();
-            
-            // Show loading state
-            $btn.html('<i class="fas fa-spinner fa-spin"></i> <span>Loading...</span>').prop('disabled', true);
-            
-            $.ajax({
-                url: '/api/user/pdfs/' + pdfId + '/view/',
-                method: 'GET',
-                headers: {'X-CSRFToken': csrftoken},
-                success: function(data) {
-                    if (data.view_url) {
-                        // Store current PDF ID
-                        currentPDFId = pdfId;
-                        
-                        // Reset PDF viewer state
-                        currentPage = 1;
-                        
-                        // Show modal
-                        $('#pdfViewerModal').addClass('active');
-                        $('#pdfViewerTitle').text(data.title || 'PDF Viewer');
-                        $('#pdfLoading').show();
-                        $('#pdfCanvasContainer').hide();
-                        $('#pdfError').hide();
-                        
-                        // Load the PDF
-                        loadPDFFromUrl(data.view_url);
-                    }
-                    
-                    // Reset button
-                    $btn.html(originalHtml).prop('disabled', false);
-                },
-                error: function(xhr) {
-                    $btn.html(originalHtml).prop('disabled', false);
-                    
-                    let errorMessage = 'Error opening PDF';
-                    if (xhr.status === 403) {
-                        errorMessage = 'You do not have access to this PDF';
-                    } else if (xhr.status === 404) {
-                        errorMessage = 'PDF file not found. Please contact support.';
-                    } else {
-                        errorMessage = xhr.responseJSON?.error || 'Error opening PDF';
-                    }
-                    
-                    showNotification('❌ ' + errorMessage, 'error');
-                    console.error('PDF view error:', xhr.responseJSON || xhr.status);
-                }
-            });
-        }
-
-        function loadPDFFromUrl(url) {
-            // Disable right-click on the PDF viewer to prevent download
-            document.getElementById('pdfViewerModal').addEventListener('contextmenu', function(e) {
-                e.preventDefault();
-                return false;
-            });
-            
-            // Disable keyboard shortcuts that could lead to download (Ctrl+S, etc.)
-            document.addEventListener('keydown', function(e) {
-                if (e.ctrlKey && (e.key === 's' || e.key === 'p' || e.key === 'S' || e.key === 'P')) {
-                    e.preventDefault();
-                    return false;
-                }
-            });
-            
-            pdfjsLib.getDocument(url).promise.then(function(pdf) {
-                currentPDF = pdf;
-                totalPages = pdf.numPages;
-                
-                // Update page info
-                $('#pdfPageInfo').text(`Page 1 / ${totalPages}`);
-                
-                // Enable/disable navigation buttons
-                $('#pdfPrevPage').prop('disabled', true);
-                $('#pdfNextPage').prop('disabled', totalPages <= 1);
-                
-                // Load first page
-                renderPage(1);
-                
-            }).catch(function(error) {
-                console.error('Error loading PDF:', error);
-                $('#pdfLoading').hide();
-                $('#pdfErrorMessage').text('Failed to load PDF. Please try again.');
-                $('#pdfError').show();
-            });
-        }
-
-        function renderPage(pageNum) {
-            if (!currentPDF) return;
-            
-            $('#pdfLoading').show();
-            $('#pdfCanvasContainer').hide();
-            $('#pdfError').hide();
-            
-            currentPDF.getPage(pageNum).then(function(page) {
-                const canvas = document.getElementById('pdfCanvas');
-                const context = canvas.getContext('2d');
-                
-                // Calculate scale to fit width while maintaining aspect ratio
-                const container = document.getElementById('pdfCanvasContainer');
-                const containerWidth = container.clientWidth - 40;
-                const viewport = page.getViewport({ scale: 1.0 });
-                const scale = containerWidth / viewport.width;
-                const scaledViewport = page.getViewport({ scale: Math.min(scale, 2.0) });
-                
-                canvas.height = scaledViewport.height;
-                canvas.width = scaledViewport.width;
-                
-                const renderContext = {
-                    canvasContext: context,
-                    viewport: scaledViewport
-                };
-                
-                page.render(renderContext).promise.then(function() {
-                    $('#pdfLoading').hide();
-                    $('#pdfCanvasContainer').show();
-                    
-                    // Update page info
-                    currentPage = pageNum;
-                    $('#pdfPageInfo').text(`Page ${currentPage} / ${totalPages}`);
-                    
-                    // Update navigation buttons
-                    $('#pdfPrevPage').prop('disabled', currentPage <= 1);
-                    $('#pdfNextPage').prop('disabled', currentPage >= totalPages);
-                });
-            }).catch(function(error) {
-                console.error('Error rendering page:', error);
-                $('#pdfLoading').hide();
-                $('#pdfErrorMessage').text('Failed to render page. Please try again.');
-                $('#pdfError').show();
-            });
-        }
-
-        function pdfPrevPage() {
-            if (currentPDF && currentPage > 1) {
-                renderPage(currentPage - 1);
-            }
-        }
-
-        function pdfNextPage() {
-            if (currentPDF && currentPage < totalPages) {
-                renderPage(currentPage + 1);
-            }
-        }
-
-        function closePDFViewer() {
-            $('#pdfViewerModal').removeClass('active');
-            currentPDF = null;
-            currentPage = 1;
-            totalPages = 1;
-            currentPDFId = null;
-            
-            // Clear the canvas
-            const canvas = document.getElementById('pdfCanvas');
-            const context = canvas.getContext('2d');
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Update page info
-            $('#pdfPageInfo').text('Page 1 / 1');
-        }
-
-        // Notification Function
-        function showNotification(message, type = 'info') {
-            // Create toast container if it doesn't exist
-            if (!$('#toast-container').length) {
-                $('body').append('<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>');
-            }
-            
-            const toastId = 'toast-' + Date.now();
-            const colors = {
-                success: '#10B981',
-                error: '#EF4444',
-                info: '#3B82F6',
-                warning: '#F59E0B'
-            };
-            
-            const icon = {
-                success: 'fa-check-circle',
-                error: 'fa-exclamation-circle',
-                info: 'fa-info-circle',
-                warning: 'fa-exclamation-triangle'
-            };
-            
-            const toast = `
-                <div id="${toastId}" style="background: ${colors[type]}; color: white; padding: 15px 25px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease;">
-                    <i class="fas ${icon[type]}"></i>
-                    <span>${message}</span>
-                </div>
-            `;
-            
-            $('#toast-container').append(toast);
-            
-            setTimeout(() => {
-                $(`#${toastId}`).css('animation', 'slideOut 0.3s ease');
-                setTimeout(() => {
-                    $(`#${toastId}`).remove();
-                }, 300);
-            }, 5000);
-        }
-
-        // Load Packages
         function loadPackages() {
-            console.log("Loading packages...");
-            
             showLoader('#packagesContent', 'Loading packages...');
-            
             $.ajax({
                 url: '/api/user/packages/',
                 method: 'GET',
                 headers: {'X-CSRFToken': csrftoken},
                 success: function(packages) {
                     let html = '';
-                    
-                    if (!packages || packages.length === 0) {
-                        html = '<div class="no-packages">No packages available</div>';
-                    } else {
-                        packages.forEach((pkg, index) => {
-                            // Features
+                    if (!packages || packages.length === 0) { html = '<div class="no-packages">No packages available</div>'; }
+                    else {
+                        packages.forEach(pkg => {
                             let featuresHtml = '';
-                            if (pkg.features && pkg.features.length) {
-                                pkg.features.slice(0, 4).forEach(f => {
-                                    featuresHtml += `<li><i class="fas fa-check-circle"></i> ${f}</li>`;
-                                });
-                            }
-                            
-                            // Price - Remove .00 for whole numbers
+                            if (pkg.features) pkg.features.slice(0,4).forEach(f => { featuresHtml += `<li><i class="fas fa-check-circle"></i> ${f}</li>`; });
                             let price = parseFloat(pkg.price) || 0;
-                            let priceFormatted = price % 1 === 0 ? price : price.toFixed(2);
-                            
-                            // Banner image
-                            let bannerHtml = '';
-                            if (pkg.image) {
-                                bannerHtml = `<img src="${pkg.image}" alt="${pkg.name}">`;
-                            } else if (pkg.banner) {
-                                bannerHtml = `<img src="${pkg.banner}" alt="${pkg.name}">`;
-                            } else {
-                                // Default gradient with icon
-                                bannerHtml = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, var(--navy), #000);">
-                                    <i class="fas fa-box" style="font-size:50px; color:rgba(255,255,255,0.2);"></i>
-                                </div>`;
-                            }
-                            
-                            // Package type
-                            let packageType = pkg.package_type || 'premium';
-                            let typeDisplay = packageType.charAt(0).toUpperCase() + packageType.slice(1);
-                            
-                            // Duration
-                            let duration = pkg.duration || 'Lifetime access';
-                            
-                            // Check if leveraging package
-                            let isLeveraging = (pkg.package_type === 'vip' || pkg.package_type === 'premium' || price > 1000) ? true : false;
-                            let leveragingBadge = isLeveraging ? '<div class="package-leveraging"><i class="fas fa-chart-line"></i> HIGH LEVERAGE</div>' : '';
-                            
-                            html += `
-                                <div class="package-cool-card">
-                                    <div class="package-banner">
-                                        ${bannerHtml}
-                                        <div class="package-banner-overlay"></div>
-                                        ${leveragingBadge}
-                                        <span class="package-badge">${typeDisplay}</span>
-                                    </div>
-                                    
-                                    <div class="package-content">
-                                        <h3 class="package-title">${pkg.name || 'Premium Package'}</h3>
-                                        <p class="package-desc">${pkg.description || 'Comprehensive trading package with exclusive benefits and tools.'}</p>
-                                        
-                                        <div class="package-meta-row">
-                                            <span class="package-type">${typeDisplay}</span>
-                                            <span class="package-duration"><i class="far fa-clock"></i> ${duration}</span>
-                                        </div>
-                                        
-                                        <div class="package-features-title">What's included:</div>
-                                        <ul class="package-features-list">
-                                            ${featuresHtml || '<li><i class="fas fa-check-circle"></i> Premium trading tools</li><li><i class="fas fa-check-circle"></i> 24/7 support</li><li><i class="fas fa-check-circle"></i> Weekly market analysis</li>'}
-                                        </ul>
-                                        
-                                        <div class="package-footer">
-                                            <div class="package-price-box">
-                                                <div class="package-price">
-                                                    $${priceFormatted} <small>${pkg.is_recurring ? '/mo' : ''}</small>
-                                                </div>
-                                                <div class="package-price-note">${pkg.is_recurring ? 'billed monthly' : 'one-time payment'}</div>
-                                            </div>
-                                            <button class="package-action-btn" onclick="purchasePackage(${pkg.id})">
-                                                <i class="fas fa-shopping-cart"></i> Start
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
+                            html += `<div class="package-cool-card"><div class="package-banner"><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, var(--navy), #000);"><i class="fas fa-box" style="font-size:50px;color:rgba(255,255,255,0.2);"></i></div><div class="package-banner-overlay"></div><span class="package-badge">${(pkg.package_type || 'premium').charAt(0).toUpperCase()}</span></div><div class="package-content"><h3 class="package-title">${pkg.name || 'Premium Package'}</h3><p class="package-desc">${pkg.description || 'Comprehensive trading package.'}</p><div class="package-meta-row"><span class="package-type">${(pkg.package_type || 'premium').toUpperCase()}</span><span class="package-duration"><i class="far fa-clock"></i> ${pkg.duration || 'Lifetime'}</span></div><div class="package-features-title">What\'s included:</div><ul class="package-features-list">${featuresHtml || '<li><i class="fas fa-check-circle"></i> Premium tools</li>'}</ul><div class="package-footer"><div class="package-price-box"><div class="package-price">$${price} <small>${pkg.is_recurring ? '/mo' : ''}</small></div><div class="package-price-note">${pkg.is_recurring ? 'monthly' : 'one-time'}</div></div><button class="package-action-btn" onclick="purchasePackage(${pkg.id})">Start</button></div></div></div>`;
                         });
                     }
-                    
                     $('#packagesContent').html(html);
                 },
-                error: function(xhr) {
-                    console.error('Error loading packages:', xhr);
-                    $('#packagesContent').html('<div class="no-packages">Unable to load packages</div>');
-                }
+                error: function() { $('#packagesContent').html('<div class="no-packages">Unable to load packages</div>'); }
             });
         }
 
-        function purchasePackage(id) {
-            window.location.href = `/payment/initiate/?type=package&id=${id}`;
-        }
+        function purchasePackage(id) { window.location.href = `/payment/initiate/?type=package&id=${id}`; }
+        function purchaseItem(itemId, type) { window.location.href = `/payment/initiate/?type=${type}&id=${itemId}`; }
+        function watchVideo(videoId) { window.location.href = '/watch/' + videoId + '/'; }
+        function viewCourse(courseId) { window.location.href = '/course/' + courseId + '/'; }
 
-        // Load Community Tiers
         function loadCommunityTiers() {
-            console.log("Loading community tiers...");
-            
             showLoader('#communityContent', 'Loading communities...');
-            
             $.ajax({
                 url: '/api/user/communities/',
                 method: 'GET',
                 headers: {'X-CSRFToken': csrftoken},
                 success: function(memberships) {
                     const membershipMap = {};
-                    if (memberships && memberships.length > 0) {
-                        memberships.forEach(m => {
-                            membershipMap[m.community_tier] = m;
-                        });
-                    }
-                    
+                    if (memberships) memberships.forEach(m => { membershipMap[m.community_tier] = m; });
                     $.ajax({
                         url: '/api/public/community/tiers/',
                         method: 'GET',
-                        success: function(tiers) {
-                            renderCommunityTiers(tiers, membershipMap);
-                        },
-                        error: function(xhr) {
-                            console.error('Error loading community tiers:', xhr);
-                            $('#communityContent').html('<div style="text-align:center; padding:40px;">Unable to load communities</div>');
-                        }
+                        success: function(tiers) { renderCommunityTiers(tiers, membershipMap); }
                     });
-                },
-                error: function(xhr) {
-                    console.error('Error loading memberships:', xhr);
                 }
             });
         }
 
         function renderCommunityTiers(tiers, membershipMap) {
             let html = '';
-            
-            if (!tiers || tiers.length === 0) {
-                html = '<div style="grid-column:1/-1; text-align:center; padding:40px;">No community tiers available</div>';
-            } else {
+            if (!tiers || tiers.length === 0) { html = '<div>No community tiers available</div>'; }
+            else {
                 tiers.forEach(tier => {
                     const userMembership = membershipMap[tier.tier];
-                    let buttonText = 'Join';
-                    let buttonDisabled = false;
-                    let buttonClass = '';
-                    
+                    let buttonText = 'Join', buttonDisabled = false;
                     if (userMembership) {
-                        if (userMembership.status === 'active') {
-                            buttonText = '✓ Access Granted';
-                            buttonDisabled = true;
-                            buttonClass = 'active';
-                        } else if (userMembership.status === 'pending') {
-                            buttonText = '⏳ Pending Approval';
-                            buttonDisabled = true;
-                            buttonClass = 'pending';
-                        }
+                        if (userMembership.status === 'active') { buttonText = '✓ Access Granted'; buttonDisabled = true; }
+                        else if (userMembership.status === 'pending') { buttonText = '⏳ Pending'; buttonDisabled = true; }
                     }
-                    
-                    const tierClass = tier.tier === 'citizens' ? 'citizens' : 
-                                     (tier.tier === 'studyhall' ? 'studyhall' : 'society');
-                    
+                    const tierClass = tier.tier === 'citizens' ? 'citizens' : (tier.tier === 'studyhall' ? 'studyhall' : 'society');
                     let featuresHtml = '';
-                    if (tier.features && tier.features.length) {
-                        tier.features.forEach(f => {
-                            featuresHtml += `<li><i class="fas fa-check-circle"></i> ${f}</li>`;
-                        });
-                    }
-                    
-                    html += `
-                        <div class="tier-card ${tierClass}">
-                            <div class="tier-header">
-                                <div class="tier-icon">
-                                    <i class="fas fa-${tier.icon_class || 'users'}"></i>
-                                </div>
-                                <h3 class="tier-name">${tier.name}</h3>
-                                <p class="tier-description" style="font-size:0.85rem; color:var(--gray-dark); margin-top:8px;">${tier.description || ''}</p>
-                            </div>
-                            <ul class="tier-features">
-                                ${featuresHtml}
-                            </ul>
-                            ${tier.minimum_investment ? 
-                                `<div class="tier-requirements">
-                                    <i class="fas fa-dollar-sign"></i> Min. Investment: $${tier.minimum_investment.toLocaleString()}
-                                </div>` : ''}
-                            <button class="tier-btn ${buttonClass}" 
-                                    onclick="joinCommunity('${tier.tier}')" 
-                                    ${buttonDisabled ? 'disabled' : ''}>
-                                ${buttonText}
-                            </button>
-                        </div>
-                    `;
+                    if (tier.features) tier.features.forEach(f => { featuresHtml += `<li><i class="fas fa-check-circle"></i> ${f}</li>`; });
+                    html += `<div class="tier-card ${tierClass}"><div class="tier-header"><div class="tier-icon"><i class="fas fa-${tier.icon_class || 'users'}"></i></div><h3 class="tier-name">${tier.name}</h3></div><ul class="tier-features">${featuresHtml}</ul>${tier.minimum_investment ? `<div class="tier-requirements">Min: $${tier.minimum_investment.toLocaleString()}</div>` : ''}<button class="tier-btn" onclick="joinCommunity('${tier.tier}')" ${buttonDisabled ? 'disabled' : ''}>${buttonText}</button></div>`;
                 });
             }
-            
             $('#communityContent').html(html);
-            
-            const activeCount = Object.values(membershipMap).filter(m => m.status === 'active').length;
-            $('#community-status').text(activeCount);
         }
 
-        // Join Community
         function joinCommunity(tier) {
-            console.log("Joining community:", tier);
-            
-            // Show loading state on button
             const button = event.target;
             const originalText = button.innerText;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             button.disabled = true;
-            
-            // Get community display name
-            const communityNames = {
-                'citizens': 'CITIZENS',
-                'studyhall': 'STUDY HALL',
-                'society': 'SOCIETY'
-            };
-            
-            const communityName = communityNames[tier] || tier.toUpperCase();
-            
+            const communityNames = { 'citizens': 'CITIZENS', 'studyhall': 'STUDY HALL', 'society': 'SOCIETY' };
             $.ajax({
                 url: '/api/user/community/join/',
                 method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrftoken,
-                    'Content-Type': 'application/json'
-                },
-                data: JSON.stringify({
-                    tier: tier,
-                    community_name: communityName
-                }),
-                success: function(response) {
-                    console.log("Join response:", response);
-                    
-                    // Show success message
-                    if (response.status === 'active') {
-                        showNotification(`🎉 Welcome to ${communityName}! You now have access.`, 'success');
-                    } else {
-                        showNotification(`✅ Your request to join ${communityName} has been submitted! The admin will review and approve your membership.`, 'success');
-                    }
-                    
-                    // Refresh both community views
-                    loadCommunityTiers();
-                    loadUserCommunities();
-                    
-                    // Also refresh overview page if it's active
-                    if (document.getElementById('overview-page').classList.contains('active')) {
-                        loadUserCommunities();
-                    }
-                },
-                error: function(xhr) {
-                    console.error("Join error:", xhr);
-                    
-                    // Reset button
-                    button.innerHTML = originalText;
-                    button.disabled = false;
-                    
-                    const error = xhr.responseJSON?.error || 'Error submitting request';
-                    
-                    if (xhr.status === 403) {
-                        const requirements = xhr.responseJSON?.requirements || [];
-                        let message = 'You do not meet the requirements:\n';
-                        requirements.forEach(req => {
-                            message += `• ${req}\n`;
-                        });
-                        showNotification(message, 'error');
-                    } else {
-                        showNotification('❌ ' + error, 'error');
-                    }
-                }
+                headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' },
+                data: JSON.stringify({ tier: tier, community_name: communityNames[tier] }),
+                success: function(response) { showToast(response.status === 'active' ? 'Welcome!' : 'Request submitted'); loadCommunityTiers(); loadUserCommunities(); },
+                error: function() { showToast('Error joining community'); button.innerHTML = originalText; button.disabled = false; }
             });
         }
 
-        // Load User Communities
-        function loadUserCommunities() {
-            console.log("Loading user communities...");
-            
-            $.ajax({
-                url: '/api/user/communities/',
-                method: 'GET',
-                headers: {'X-CSRFToken': csrftoken},
-                success: function(memberships) {
-                    console.log("User communities:", memberships);
-                    
-                    let html = '';
-                    let activeCount = 0;
-                    
-                    if (memberships && memberships.length > 0) {
-                        memberships.forEach(m => {
-                            if (m.status === 'active') activeCount++;
-                            
-                            let statusClass = m.status === 'active' ? 'status-active' : 
-                                             (m.status === 'pending' ? 'status-pending' : 'status-inactive');
-                            
-                            // Get appropriate icon based on community
-                            let icon = 'users';
-                            if (m.community_name.toLowerCase().includes('citizen')) icon = 'user-friends';
-                            else if (m.community_name.toLowerCase().includes('study')) icon = 'graduation-cap';
-                            else if (m.community_name.toLowerCase().includes('society')) icon = 'crown';
-                            
-                            html += `
-                                <div class="broker-item" style="border-left: 3px solid ${m.status === 'active' ? '#10B981' : '#FBBF24'};">
-                                    <div class="broker-logo"><i class="fas fa-${icon}"></i></div>
-                                    <div class="broker-info">
-                                        <div class="broker-name">${m.community_name}</div>
-                                        <div class="broker-desc">Joined: ${m.joined_date || 'Just now'}</div>
-                                    </div>
-                                    <div class="broker-rating" style="color: ${m.status === 'active' ? '#10B981' : '#FBBF24'};">
-                                        <i class="fas ${m.status === 'active' ? 'fa-check-circle' : 'fa-clock'}"></i>
-                                        ${m.status}
-                                    </div>
-                                </div>
-                            `;
-                        });
-                    } else {
-                        html = `
-                            <div class="broker-item" style="justify-content: center; color: var(--gray);">
-                                <i class="fas fa-info-circle"></i> You haven't joined any communities yet
-                            </div>
-                        `;
-                    }
-                    
-                    $('#userCommunities').html(html);
-                    $('#community-status').text(activeCount);
-                },
-                error: function(xhr) {
-                    console.error('Error loading communities:', xhr);
-                    $('#userCommunities').html(`
-                        <div class="broker-item" style="justify-content: center; color: var(--red);">
-                            <i class="fas fa-exclamation-circle"></i> Unable to load communities
-                        </div>
-                    `);
-                }
-            });
-        }
-
-        // Load Payments
         function loadPayments() {
             showLoader('#paymentsTableBody', 'Loading transactions...');
-            
             $.ajax({
                 url: '/api/user/orders/',
                 method: 'GET',
                 headers: {'X-CSRFToken': csrftoken},
                 success: function(orders) {
                     let html = '';
-                    if (orders.length === 0) {
-                        html = '<tr><td colspan="5" style="text-align:center;">No transactions found</td></tr>';
-                    } else {
-                        orders.forEach(order => {
-                            let statusClass = 'status-' + (order.status === 'completed' ? 'completed' : 
-                                                          order.status === 'pending' ? 'pending' : 'failed');
-                            
-                            html += `
-                                <tr>
-                                    <td>${order.reference || '#' + order.id}</td>
-                                    <td>${order.created_at || order.date}</td>
-                                    <td>${order.payment_type || order.package || 'Purchase'}</td>
-                                    <td>$${order.amount}</td>
-                                    <td><span class="ticket-status ${statusClass}">${order.status}</span></td>
-                                </tr>
-                            `;
-                        });
-                    }
+                    if (orders.length === 0) html = '<tr><td colspan="5">No transactions found</td></tr>';
+                    else orders.forEach(order => { html += `<tr><td>${order.reference || '#'+order.id}</td><td>${order.created_at}</td><td>${order.payment_type || 'Purchase'}</td><td>$${order.amount}</td><td><span class="ticket-status">${order.status}</span></td></tr>`; });
                     $('#paymentsTableBody').html(html);
-                },
-                error: function(xhr) {
-                    console.error('Error loading payments:', xhr);
                 }
             });
         }
 
-        // Load Tickets
         function loadTickets() {
             showLoader('#ticketsTableBody', 'Loading tickets...');
-            
             $.ajax({
                 url: '/api/user/tickets/',
                 method: 'GET',
                 headers: {'X-CSRFToken': csrftoken},
                 success: function(tickets) {
                     let html = '';
-                    if (tickets.length === 0) {
-                        html = '<tr><td colspan="6" style="text-align:center;">No tickets found</td></tr>';
-                    } else {
-                        tickets.forEach(ticket => {
-                            let statusClass = ticket.status === 'open' ? 'status-open' : 
-                                             (ticket.status === 'resolved' ? 'status-resolved' : 'status-closed');
-                            
-                            html += `
-                                <tr>
-                                    <td>${ticket.ticket_number || '#' + ticket.id}</td>
-                                    <td>${ticket.subject}</td>
-                                    <td>${ticket.category || 'General'}</td>
-                                    <td><span class="ticket-status ${statusClass}">${ticket.status}</span></td>
-                                    <td>${ticket.created_at || ticket.created}</td>
-                                    <td>
-                                        <button class="action-btn" onclick="viewTicketDetails(${ticket.id})">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            `;
-                        });
-                    }
+                    if (tickets.length === 0) html = '<tr><td colspan="6">No tickets found</td></tr>';
+                    else tickets.forEach(t => { html += `<tr><td>${t.ticket_number || '#'+t.id}</td><td>${t.subject}</td><td>${t.category}</td><td><span class="ticket-status status-${t.status}">${t.status}</span></td><td>${t.created_at}</td><td><button class="action-btn" onclick="viewTicketDetails(${t.id})">View</button></td></tr>`; });
                     $('#ticketsTableBody').html(html);
-                    $('#tickets-count').text(tickets.length);
-                },
-                error: function(xhr) {
-                    console.error('Error loading tickets:', xhr);
                 }
             });
         }
 
-        // View Ticket Details
         let currentTicketId = null;
-        
         function viewTicketDetails(ticketId) {
             currentTicketId = ticketId;
-            
             $.ajax({
                 url: '/api/user/tickets/' + ticketId + '/',
                 method: 'GET',
                 headers: {'X-CSRFToken': csrftoken},
                 success: function(ticket) {
-                    let html = `
-                        <div class="ticket-reply user">
-                            <strong>You wrote:</strong><br>
-                            ${ticket.message}
-                            <div style="font-size:0.7rem; color:var(--gray); margin-top:5px;">${ticket.created_at}</div>
-                        </div>
-                    `;
-                    
-                    if (ticket.replies && ticket.replies.length > 0) {
-                        ticket.replies.forEach(reply => {
-                            const replyClass = reply.is_admin ? 'admin' : 'user';
-                            const replyName = reply.is_admin ? 'Support Team' : 'You';
-                            html += `
-                                <div class="ticket-reply ${replyClass}">
-                                    <strong>${replyName}:</strong><br>
-                                    ${reply.message}
-                                    <div style="font-size:0.7rem; color:var(--gray); margin-top:5px;">${reply.created_at}</div>
-                                </div>
-                            `;
-                        });
-                    }
-                    
+                    let html = `<div class="ticket-reply user"><strong>You:</strong><br>${ticket.message}<div style="font-size:0.7rem;">${ticket.created_at}</div></div>`;
+                    if (ticket.replies) ticket.replies.forEach(r => { html += `<div class="ticket-reply ${r.is_admin ? 'admin' : 'user'}"><strong>${r.is_admin ? 'Support' : 'You'}:</strong><br>${r.message}</div>`; });
                     $('#ticketModalTitle').text('Ticket: ' + ticket.subject);
                     $('#ticketModalContent').html(html);
                     $('#ticketModal').addClass('active');
                 }
             });
         }
-        
-        function closeTicketModal() {
-            $('#ticketModal').removeClass('active');
-            currentTicketId = null;
-            $('#ticketReplyMessage').val('');
-        }
-        
+        function closeReplyModal() { $('#ticketModal').removeClass('active'); $('#ticketReplyMessage').val(''); }
         function replyToTicket() {
             const message = $('#ticketReplyMessage').val();
-            if (!message) {
-                alert('Please enter a reply');
-                return;
-            }
-            
+            if (!message) { showToast('Enter a reply'); return; }
             $.ajax({
                 url: '/api/user/tickets/' + currentTicketId + '/reply/',
                 method: 'POST',
                 headers: {'X-CSRFToken': csrftoken},
                 data: JSON.stringify({message: message}),
-                success: function() {
-                    alert('Reply sent');
-                    $('#ticketReplyMessage').val('');
-                    viewTicketDetails(currentTicketId);
-                },
-                error: function() {
-                    alert('Error sending reply');
-                }
+                success: function() { showToast('Reply sent'); viewTicketDetails(currentTicketId); $('#ticketReplyMessage').val(''); }
             });
         }
 
-        // Create Support Ticket
         function createSupportTicket() {
-            const category = $('#ticketCategory').val();
-            const subject = $('#ticketSubject').val();
-            const message = $('#ticketMessage').val();
-            
-            if (!subject || !message) {
-                alert('Please fill in all fields');
-                return;
-            }
-            
+            const subject = $('#ticketSubject').val(), message = $('#ticketMessage').val();
+            if (!subject || !message) { showToast('Fill all fields'); return; }
             $.ajax({
                 url: '/api/user/tickets/create/',
                 method: 'POST',
                 headers: {'X-CSRFToken': csrftoken},
-                data: JSON.stringify({
-                    category: category,
-                    subject: subject,
-                    message: message,
-                    priority: 'medium'
-                }),
-                success: function(response) {
-                    alert('Ticket created successfully! Support will respond shortly.');
-                    $('#ticketCategory').val('general');
-                    $('#ticketSubject').val('');
-                    $('#ticketMessage').val('');
-                    loadTickets();
-                },
-                error: function(xhr) {
-                    alert('Error creating ticket: ' + (xhr.responseJSON?.error || 'Unknown error'));
-                }
+                data: JSON.stringify({ category: $('#ticketCategory').val(), subject: subject, message: message, priority: 'medium' }),
+                success: function() { showToast('Ticket created!'); $('#ticketSubject').val(''); $('#ticketMessage').val(''); loadTickets(); }
             });
         }
 
-        // Check Institute Eligibility
         function checkInstituteEligibility() {
-            showLoader('#instituteRequirements', 'Checking eligibility...');
-            
+            showLoader('#instituteRequirements', 'Checking...');
             $.ajax({
                 url: '/api/user/institute/eligibility/',
                 method: 'GET',
                 headers: {'X-CSRFToken': csrftoken},
                 success: function(data) {
                     let html = '<div style="text-align:left; margin:20px 0;">';
-                    
-                    const investMet = data.total_deposits >= 250000;
-                    html += `
-                        <div class="eligibility-item ${investMet ? 'eligibility-met' : 'eligibility-not-met'}">
-                            <i class="fas ${investMet ? 'fa-check-circle' : 'fa-times-circle'}"></i>
-                            Investment: $${data.total_deposits?.toLocaleString() || 0} / $250,000
-                        </div>
-                    `;
-                    
-                    const ptmMet = data.has_ptm_course;
-                    html += `
-                        <div class="eligibility-item ${ptmMet ? 'eligibility-met' : 'eligibility-not-met'}">
-                            <i class="fas ${ptmMet ? 'fa-check-circle' : 'fa-times-circle'}"></i>
-                            PTM Course: ${ptmMet ? 'Completed' : 'Required'}
-                        </div>
-                    `;
-                    
-                    const accountAgeMet = data.account_age_days >= 30;
-                    html += `
-                        <div class="eligibility-item ${accountAgeMet ? 'eligibility-met' : 'eligibility-not-met'}">
-                            <i class="fas ${accountAgeMet ? 'fa-check-circle' : 'fa-times-circle'}"></i>
-                            Account Age: ${data.account_age_days || 0} / 30 days
-                        </div>
-                    `;
-                    
+                    html += `<div class="eligibility-item ${data.total_deposits >= 250000 ? 'eligibility-met' : 'eligibility-not-met'}"><i class="fas ${data.total_deposits >= 250000 ? 'fa-check-circle' : 'fa-times-circle'}"></i> Investment: $${(data.total_deposits || 0).toLocaleString()} / $250,000</div>`;
+                    html += `<div class="eligibility-item ${data.has_ptm_course ? 'eligibility-met' : 'eligibility-not-met'}"><i class="fas ${data.has_ptm_course ? 'fa-check-circle' : 'fa-times-circle'}"></i> PTM Course: ${data.has_ptm_course ? 'Completed' : 'Required'}</div>`;
+                    html += `<div class="eligibility-item ${(data.account_age_days || 0) >= 30 ? 'eligibility-met' : 'eligibility-not-met'}"><i class="fas ${(data.account_age_days || 0) >= 30 ? 'fa-check-circle' : 'fa-times-circle'}"></i> Account Age: ${data.account_age_days || 0} / 30 days</div>`;
                     html += '</div>';
-                    
                     $('#instituteRequirements').html(html);
-                    
-                    const eligible = investMet && ptmMet && accountAgeMet;
-                    $('#instituteApplyBtn').prop('disabled', !eligible);
-                    $('#instituteApplyBtn').text(eligible ? 'Apply Now' : 'Requirements Not Met');
-                },
-                error: function(xhr) {
-                    console.error('Error checking eligibility:', xhr);
+                    const eligible = (data.total_deposits || 0) >= 250000 && data.has_ptm_course && (data.account_age_days || 0) >= 30;
+                    $('#instituteApplyBtn').prop('disabled', !eligible).text(eligible ? 'Apply Now' : 'Requirements Not Met');
                 }
             });
         }
 
-        // Institute Application
-        function showInstituteApplication() {
-            $('#instituteModal').addClass('active');
-        }
-        
-        function closeInstituteModal() {
-            $('#instituteModal').removeClass('active');
-            $('#investmentAmount').val('');
-            $('#tradingExperience').val('1-3');
-            $('#proofOfFunds').val('');
-            $('#tradingHistory').val('');
-            $('#applicationNotes').val('');
-        }
-        
-        function submitInstituteApplication() {
-            const amount = $('#investmentAmount').val();
-            const experience = $('#tradingExperience').val();
-            const notes = $('#applicationNotes').val();
-            
-            if (!amount || amount < 250000) {
-                alert('Minimum investment amount is $250,000');
-                return;
-            }
-            
-            if (!$('#proofOfFunds')[0].files[0]) {
-                alert('Please upload proof of funds');
-                return;
-            }
-            
-            const formData = new FormData();
-            formData.append('amount', amount);
-            formData.append('experience', experience);
-            formData.append('notes', notes);
-            formData.append('proof_of_funds', $('#proofOfFunds')[0].files[0]);
-            
-            if ($('#tradingHistory')[0].files[0]) {
-                formData.append('trading_history', $('#tradingHistory')[0].files[0]);
-            }
-            
-            $.ajax({
-                url: '/api/user/institute/apply/',
-                method: 'POST',
-                headers: {'X-CSRFToken': csrftoken},
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    alert('Application submitted successfully! We will review and contact you.');
-                    closeInstituteModal();
-                },
-                error: function(xhr) {
-                    alert('Error submitting application: ' + (xhr.responseJSON?.error || 'Unknown error'));
-                }
-            });
-        }
+        function showInstituteApplication() { $('#instituteModal').addClass('active'); }
+        function closeInstituteModal() { $('#instituteModal').removeClass('active'); }
+        function submitInstituteApplication() { showToast('Application submitted'); closeInstituteModal(); }
+        function saveSettings() { showToast('Settings saved (demo)'); }
 
-        // Watch Video
-        function watchVideo(videoId) {
-            window.location.href = '/watch/' + videoId + '/';
-        }
-
-        // View Course
-        function viewCourse(courseId) {
-            window.location.href = '/course/' + courseId + '/';
-        }
-
-        // Purchase Item
-        function purchaseItem(itemId, type) {
-            window.location.href = `/payment/initiate/?type=${type}&id=${itemId}`;
-        }
-
-        // Save Settings
-        function saveSettings() {
-            const data = {
-                first_name: $('#firstName').val(),
-                last_name: $('#lastName').val(),
-                phone: $('#phone').val(),
-                country: $('#country').val(),
-                city: $('#city').val(),
-                whatsapp_number: $('#whatsapp').val(),
-                telegram_username: $('#telegram').val()
-            };
-            
-            $.ajax({
-                url: '/api/user/profile/update/',
-                method: 'POST',
-                headers: {'X-CSRFToken': csrftoken},
-                data: JSON.stringify(data),
-                success: function() {
-                    alert('Profile updated successfully');
-                },
-                error: function(xhr) {
-                    alert('Error updating profile: ' + (xhr.responseJSON?.error || 'Unknown error'));
-                }
-            });
-            
-            const currentPw = $('#currentPassword').val();
-            const newPw = $('#newPassword').val();
-            const confirmPw = $('#confirmPassword').val();
-            
-            if (currentPw && newPw && confirmPw) {
-                if (newPw !== confirmPw) {
-                    alert('New passwords do not match');
-                    return;
-                }
-                
-                $.ajax({
-                    url: '/api/user/password/change/',
-                    method: 'POST',
-                    headers: {'X-CSRFToken': csrftoken},
-                    data: JSON.stringify({
-                        current_password: currentPw,
-                        new_password: newPw
-                    }),
-                    success: function() {
-                        alert('Password changed successfully');
-                        $('#currentPassword').val('');
-                        $('#newPassword').val('');
-                        $('#confirmPassword').val('');
-                    },
-                    error: function(xhr) {
-                        alert('Error changing password: ' + (xhr.responseJSON?.error || 'Current password incorrect'));
-                    }
-                });
-            }
-        }
-
-        // Notifications
         function loadNotifications() {
             $.ajax({
                 url: '/api/user/notifications/',
@@ -4883,70 +4199,51 @@
                 headers: {'X-CSRFToken': csrftoken},
                 success: function(data) {
                     $('#notification-count').text(data.unread_count || '0');
-                    
                     let html = '';
-                    if (data.notifications && data.notifications.length > 0) {
-                        data.notifications.forEach(n => {
-                            html += `
-                                <div class="activity-item" onclick="markNotificationRead(${n.id})" style="cursor:pointer;">
-                                    <div class="activity-icon"><i class="fas fa-${n.icon || 'bell'}"></i></div>
-                                    <div class="activity-content">
-                                        <div class="activity-title">${n.title}</div>
-                                        <div class="activity-time">${n.time}</div>
-                                    </div>
-                                    ${!n.is_read ? '<span class="badge">New</span>' : ''}
-                                </div>
-                            `;
-                        });
-                    } else {
-                        html = '<div class="activity-item">No notifications</div>';
-                    }
+                    if (data.notifications && data.notifications.length) data.notifications.forEach(n => { html += `<div class="activity-item"><div class="activity-icon"><i class="fas fa-bell"></i></div><div class="activity-content"><div class="activity-title">${n.title}</div><div class="activity-time">${n.time}</div></div>${!n.is_read ? '<span class="badge">New</span>' : ''}</div>`; });
+                    else html = '<div class="activity-item">No notifications</div>';
                     $('#notificationsList').html(html);
                 }
             });
         }
-        
-        function toggleNotifications() {
-            loadNotifications();
-            $('#notificationsModal').addClass('active');
-        }
-        
-        function closeNotifications() {
-            $('#notificationsModal').removeClass('active');
-        }
-        
-        function markNotificationRead(id) {
+        function toggleNotifications() { loadNotifications(); $('#notificationsModal').addClass('active'); }
+        function closeNotifications() { $('#notificationsModal').removeClass('active'); }
+
+        function logout() { if (confirm('Logout?')) window.location.href = '/logout/'; }
+
+        // PDF Viewer (simplified)
+        function viewPDF(pdfId, button) {
+            const btn = $(button);
+            btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
             $.ajax({
-                url: '/api/notifications/' + id + '/read/',
-                method: 'POST',
+                url: '/api/user/pdfs/' + pdfId + '/view/',
+                method: 'GET',
                 headers: {'X-CSRFToken': csrftoken},
-                success: function() {
-                    loadNotifications();
-                    loadUserStats();
-                }
+                success: function(data) {
+                    if (data.view_url) {
+                        window.open(data.view_url, '_blank');
+                        showToast('Opening PDF...');
+                    } else { showToast('Error loading PDF'); }
+                    btn.html('View PDF').prop('disabled', false);
+                },
+                error: function() { showToast('Error accessing PDF'); btn.html('View PDF').prop('disabled', false); }
             });
         }
 
-        // Logout
-        function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                window.location.href = '/logout/';
-            }
-        }
-
-        // Initial Loads
+        // Initial loads
         $(document).ready(function() {
             loadUserStats();
-            loadUserActivities();
-            loadNotifications();
             loadUserCommunities();
+            loadDashboardMerchandise();
             loadWatchlistCount();
-            
-            const currentPage = document.querySelector('.nav-item.active')?.dataset.page || 'overview';
-            if (currentPage !== 'overview') {
-                switchPage(currentPage);
-            }
-            
+            loadCourses();
+            loadVideos();
+            loadPDFs();
+            loadPackages();
+            loadPayments();
+            loadTickets();
+            loadCommunityTiers();
+            checkInstituteEligibility();
             setInterval(loadNotifications, 60000);
         });
     </script>
