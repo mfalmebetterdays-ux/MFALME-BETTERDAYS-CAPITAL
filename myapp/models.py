@@ -10,6 +10,8 @@ from django.utils.timezone import now
 from decimal import Decimal
 from django.conf import settings
 from datetime import datetime
+import random
+import string
 
 # ==================== CUSTOM USER MANAGER ====================
 
@@ -368,7 +370,7 @@ class VerificationCode(models.Model):
 # ==================== PAYMENT MODELS ====================
 
 class PaymentTransaction(models.Model):
-    """Track all payment transactions"""
+    """Track all payment transactions - PAYSTACK ONLY"""
     TRANSACTION_STATUS = [
         ('initiated', 'Initiated'),
         ('pending', 'Pending'),
@@ -390,48 +392,42 @@ class PaymentTransaction(models.Model):
         ('course_purchase', 'Course Purchase'),
         ('ticket', 'Event Ticket'),
         ('merchandise', 'Merchandise'),
+        ('book', 'Book Purchase'),
+        ('video_purchase', 'Video Purchase'),
+        ('pdf_purchase', 'PDF Purchase'),
+        ('package_purchase', 'Package Purchase'),
         ('other', 'Other'),
     ]
     
     PAYMENT_METHODS = [
         ('paystack', 'Paystack'),
-        ('mpesa', 'M-Pesa'),
-        ('bitcoin', 'Bitcoin'),
-        ('usdt', 'USDT'),
+        ('mpesa', 'M-Pesa via Paystack'),
+        ('card', 'Card via Paystack'),
         ('bank_transfer', 'Bank Transfer'),
-        ('equity_bank', 'Equity Bank'),
         ('manual', 'Manual Payment'),
-        ('sasapay', 'SasaPay'),
-        ('pesapal', 'Pesapal'),
-        ('bank', 'Bank Transfer'),
-        ('card', 'Card'),
     ]
     
     CURRENCIES = [
         ('USD', 'US Dollar'),
         ('KES', 'Kenyan Shilling'),
-        ('EUR', 'Euro'),
-        ('GBP', 'British Pound'),
     ]
     
-    # CHANGED: Made user nullable for guest payments
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='payment_transactions', null=True, blank=True)
     reference = models.CharField(max_length=100, unique=True, db_index=True)
     external_reference = models.CharField(max_length=100, blank=True, null=True, db_index=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
-    currency = models.CharField(max_length=3, choices=CURRENCIES, default='USD')
+    currency = models.CharField(max_length=3, choices=CURRENCIES, default='KES')
     status = models.CharField(max_length=20, choices=TRANSACTION_STATUS, default='initiated')
     payment_type = models.CharField(max_length=30, choices=PAYMENT_TYPES)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='paystack')
-    pesapal_tracking_id = models.CharField(max_length=100, blank=True, null=True)
-    pesapal_payment_method = models.CharField(max_length=50, blank=True, null=True)
-    pesapal_raw_response = models.JSONField(null=True, blank=True)
-    # SasaPay specific fields
-    sasapay_transaction_id = models.CharField(max_length=100, blank=True, null=True)
-    sasapay_checkout_id = models.CharField(max_length=100, blank=True, null=True)
-    sasapay_payment_method = models.CharField(max_length=50, blank=True, null=True)
-    sasapay_raw_response = models.JSONField(blank=True, null=True)
-    sasapay_status = models.CharField(max_length=20, blank=True, null=True)
+    
+    # Paystack specific fields
+    paystack_reference = models.CharField(max_length=100, blank=True, null=True)
+    paystack_access_code = models.CharField(max_length=100, blank=True, null=True)
+    paystack_data = models.JSONField(default=dict, blank=True)
+    paystack_status = models.CharField(max_length=50, blank=True, null=True)
+    paystack_message = models.TextField(blank=True, null=True)
+    authorization_url = models.URLField(max_length=500, blank=True, null=True)
     
     # Course-specific fields
     course = models.ForeignKey('Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='purchases')
@@ -446,11 +442,6 @@ class PaymentTransaction(models.Model):
     
     description = models.TextField(blank=True, null=True)
     service_details = models.JSONField(default=dict, blank=True)
-    paystack_data = models.JSONField(default=dict, blank=True)
-    paystack_status = models.CharField(max_length=50, blank=True, null=True)
-    paystack_message = models.TextField(blank=True, null=True)
-    authorization_url = models.URLField(max_length=500, blank=True, null=True)
-    access_code = models.CharField(max_length=100, blank=True, null=True)
     
     customer_email = models.EmailField(blank=True, null=True)
     customer_phone = models.CharField(max_length=20, blank=True, null=True)
@@ -487,11 +478,11 @@ class PaymentTransaction(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.reference} - {self.user.username if self.user else 'Guest'} - ${self.amount}"
+        return f"{self.reference} - {self.user.username if self.user else 'Guest'} - {self.amount}"
     
     def save(self, *args, **kwargs):
         if not self.reference:
-            self.reference = f"TXN{timezone.now().strftime('%Y%m%d')}{uuid.uuid4().hex[:8].upper()}"
+            self.reference = f"PAY{timezone.now().strftime('%Y%m%d')}{uuid.uuid4().hex[:8].upper()}"
         super().save(*args, **kwargs)
 
 
@@ -1577,6 +1568,7 @@ class ActivityLog(models.Model):
         ('VIDEO_WATCHED', 'Video Watched'),
         ('TICKET_PURCHASED', 'Ticket Purchased'),
         ('MERCHANDISE_PURCHASED', 'Merchandise Purchased'),
+        ('BOOK_PURCHASED', 'Book Purchased'),
     ]
     
     user = models.ForeignKey(MfalmeUsers, on_delete=models.CASCADE, related_name='activity_logs')
@@ -1694,6 +1686,7 @@ class SupportTicket(models.Model):
         ('institute', 'Institute'),
         ('tickets', 'Event Tickets'),
         ('merchandise', 'Merchandise'),
+        ('books', 'Books'),
         ('other', 'Other'),
     ]
     
@@ -2480,12 +2473,13 @@ class MerchandiseOrder(models.Model):
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    payment_method = models.CharField(max_length=50, default='sasapay')
+    payment_method = models.CharField(max_length=50, default='paystack')
     payment_reference = models.CharField(max_length=100, blank=True, null=True)
     order_reference = models.CharField(max_length=100, blank=True, null=True)
     status = models.CharField(max_length=20, default='pending', choices=STATUS_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
     
     def save(self, *args, **kwargs):
         if not self.order_number:
@@ -2497,13 +2491,15 @@ class MerchandiseOrder(models.Model):
 
 
 # ========== EVENT MODELS ==========
+
 class Event(models.Model):
+    """Event model for seminars and summits"""
     title = models.CharField(max_length=200, default="East & Central Africa Live Leveraging Summit")
     description = models.TextField(blank=True, default="")
     date = models.DateTimeField(default=datetime(2026, 8, 7, 9, 0, 0))
     venue = models.CharField(max_length=300, default="Safari Park Hotel, Nairobi")
     venue_address = models.TextField(blank=True)
-    ticket_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=249)
+    ticket_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Now FREE
     max_attendees = models.IntegerField(default=500)
     current_bookings = models.IntegerField(default=0)
     poster_image = models.URLField(max_length=500, blank=True, null=True)
@@ -2511,6 +2507,7 @@ class Event(models.Model):
     is_active = models.BooleanField(default=True)
     featured = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     @property
     def seats_remaining(self):
@@ -2522,11 +2519,19 @@ class Event(models.Model):
     
     def __str__(self):
         return self.title
+    
+    class Meta:
+        ordering = ['-date']
+        indexes = [
+            models.Index(fields=['is_active', 'date']),
+            models.Index(fields=['featured', 'is_active']),
+        ]
 
 
 class EventTicket(models.Model):
+    """Event tickets - FREE registration version"""
     STATUS_CHOICES = [
-        ('pending', 'Pending Payment'),
+        ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
         ('cancelled', 'Cancelled'),
         ('attended', 'Attended'),
@@ -2538,22 +2543,27 @@ class EventTicket(models.Model):
     attendee_phone = models.CharField(max_length=20)
     attendee_email = models.EmailField()
     quantity = models.IntegerField(default=1)
-    unit_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=249)
-    unit_price_kes = models.DecimalField(max_digits=10, decimal_places=2, default=32121)
+    unit_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    unit_price_kes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount_kes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    payment_method = models.CharField(max_length=50, default='sasapay')
+    payment_method = models.CharField(max_length=50, default='free')
     payment_reference = models.CharField(max_length=100, blank=True, null=True)
     order_reference = models.CharField(max_length=100, blank=True, null=True)
-    status = models.CharField(max_length=20, default='pending', choices=STATUS_CHOICES)
+    status = models.CharField(max_length=20, default='confirmed', choices=STATUS_CHOICES)
     qr_code = models.TextField(blank=True, null=True)
     checked_in = models.BooleanField(default=False)
     checked_in_at = models.DateTimeField(null=True, blank=True)
+    registration_ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     def save(self, *args, **kwargs):
         if not self.ticket_number:
-            self.ticket_number = f"MBC-TKT-{uuid.uuid4().hex[:8].upper()}"
+            # Generate unique ticket number
+            import uuid
+            self.ticket_number = f"MBC-FREE-{uuid.uuid4().hex[:8].upper()}"
         if self.quantity:
             self.total_amount_usd = self.quantity * self.unit_price_usd
             self.total_amount_kes = self.quantity * self.unit_price_kes
@@ -2561,6 +2571,15 @@ class EventTicket(models.Model):
     
     def __str__(self):
         return f"{self.ticket_number} - {self.attendee_name}"
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['ticket_number']),
+            models.Index(fields=['attendee_email']),
+            models.Index(fields=['attendee_phone']),
+            models.Index(fields=['event', 'status']),
+        ]
 
 
 # ========== ORDER MODEL ==========
@@ -2576,16 +2595,17 @@ class Order(models.Model):
     customer_name = models.CharField(max_length=200)
     customer_email = models.EmailField()
     customer_phone = models.CharField(max_length=20)
-    item_type = models.CharField(max_length=50, choices=[('ticket', 'Ticket'), ('merchandise', 'Merchandise'), ('package', 'Package')])
+    item_type = models.CharField(max_length=50, choices=[('ticket', 'Ticket'), ('merchandise', 'Merchandise'), ('package', 'Package'), ('book', 'Book')])
     items = models.JSONField(default=list)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_method = models.CharField(max_length=20, default='sasapay')
+    payment_method = models.CharField(max_length=20, default='paystack')
     payment_reference = models.CharField(max_length=100, blank=True, null=True)
     checkout_request_id = models.CharField(max_length=100, blank=True, null=True)
     status = models.CharField(max_length=20, default='pending', choices=STATUS_CHOICES)
     metadata = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
     
     def save(self, *args, **kwargs):
         if not self.reference:
@@ -2632,3 +2652,207 @@ def grant_course_access(sender, instance, created, **kwargs):
 Video = TrainingVideo
 Activity = ActivityLog
 Partnership = PartnershipProgram
+
+
+# ==================== BOOK MODEL ====================
+
+class Book(models.Model):
+    """The Mighty Elguago Book"""
+    BOOK_STATUS = [
+        ('preorder', 'Pre-Order'),
+        ('in_stock', 'In Stock'),
+        ('sold_out', 'Sold Out'),
+        ('coming_soon', 'Coming Soon'),
+    ]
+    
+    title = models.CharField(max_length=200, default="THE MIGHTY ELGUAGO")
+    subtitle = models.CharField(max_length=300, default="The Ultimate Roadmap to Financial Freedom")
+    author = models.CharField(max_length=200, default="Sir Levi Muriuki")
+    isbn = models.CharField(max_length=20, blank=True, null=True)
+    
+    description = models.TextField(default="""
+    Financial Markets, Strategy, Risk & Wealth Creation — A Complete Guide to Hands-On Financial Markets Experience.
+    
+    Crafted personally by Sir Levi Muriuki (CEO, Mfalme Betterdays Capital), "THE MIGHTY ELGUAGO" is the definitive guide to achieving financial freedom through hands-on market experience. This isn't just theory — it's the battle-tested framework forged through 13+ years of market victories and lessons.
+    """)
+    
+    price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=100)
+    price_kes = models.DecimalField(max_digits=10, decimal_places=2, default=12900)
+    
+    cover_image = models.ImageField(upload_to='books/covers/', blank=True, null=True)
+    cover_s3_key = models.CharField(max_length=500, blank=True, null=True)
+    cover_url = models.URLField(max_length=500, blank=True, null=True)
+    
+    pdf_file = models.FileField(upload_to='books/pdfs/', blank=True, null=True)
+    pdf_s3_key = models.CharField(max_length=500, blank=True, null=True)
+    pdf_url = models.URLField(max_length=500, blank=True, null=True)
+    
+    pages = models.IntegerField(default=350)
+    language = models.CharField(max_length=50, default="English")
+    edition = models.CharField(max_length=50, default="First Edition")
+    publication_date = models.DateField(null=True, blank=True)
+    
+    stock = models.IntegerField(default=1000)
+    preorder_stock = models.IntegerField(default=500)
+    sold_count = models.IntegerField(default=0)
+    
+    status = models.CharField(max_length=20, choices=BOOK_STATUS, default='preorder')
+    is_featured = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
+    
+    bonus_features = models.JSONField(default=list, blank=True, help_text="List of bonus features included")
+    
+    features = models.JSONField(default=list, blank=True)
+    
+    order = models.IntegerField(default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['order', '-created_at']
+        indexes = [
+            models.Index(fields=['status', 'is_active']),
+            models.Index(fields=['is_featured', 'is_active']),
+        ]
+    
+    def __str__(self):
+        return f"{self.title} - {self.author}"
+    
+    @property
+    def cover_image_url(self):
+        from django.conf import settings
+        if self.cover_s3_key:
+            try:
+                if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
+                    return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{self.cover_s3_key}"
+                else:
+                    return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.cover_s3_key}"
+            except:
+                pass
+        if self.cover_image and hasattr(self.cover_image, 'url'):
+            try:
+                return self.cover_image.url
+            except:
+                pass
+        if self.cover_url:
+            return self.cover_url
+        return None
+    
+    @property
+    def pdf_file_url(self):
+        from django.conf import settings
+        if self.pdf_s3_key:
+            try:
+                if hasattr(settings, 'AWS_S3_CUSTOM_DOMAIN') and settings.AWS_S3_CUSTOM_DOMAIN:
+                    return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{self.pdf_s3_key}"
+                else:
+                    return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{self.pdf_s3_key}"
+            except:
+                pass
+        if self.pdf_file and hasattr(self.pdf_file, 'url'):
+            try:
+                return self.pdf_file.url
+            except:
+                pass
+        if self.pdf_url:
+            return self.pdf_url
+        return None
+    
+    def decrement_stock(self, quantity=1):
+        if self.status == 'preorder':
+            self.preorder_stock -= quantity
+        else:
+            self.stock -= quantity
+        self.sold_count += quantity
+        self.save()
+    
+    def is_available(self, quantity=1):
+        if self.status == 'preorder':
+            return self.preorder_stock >= quantity
+        else:
+            return self.stock >= quantity
+
+
+class BookOrder(models.Model):
+    """Book orders"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending Payment'),
+        ('paid', 'Paid'),
+        ('processing', 'Processing'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
+        ('refunded', 'Refunded'),
+    ]
+    
+    DELIVERY_CHOICES = [
+        ('digital', 'Digital Download Only'),
+        ('physical', 'Physical + Digital'),
+    ]
+    
+    order_number = models.CharField(max_length=50, unique=True, editable=False)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='orders')
+    
+    customer_name = models.CharField(max_length=200)
+    customer_email = models.EmailField()
+    customer_phone = models.CharField(max_length=20)
+    delivery_address = models.TextField(blank=True, null=True)
+    delivery_type = models.CharField(max_length=20, choices=DELIVERY_CHOICES, default='digital')
+    
+    quantity = models.IntegerField(default=1)
+    unit_price_usd = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_price_kes = models.DecimalField(max_digits=10, decimal_places=2)
+    total_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_kes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    payment_method = models.CharField(max_length=50, default='paystack')
+    payment_reference = models.CharField(max_length=100, blank=True, null=True)
+    checkout_request_id = models.CharField(max_length=100, blank=True, null=True)
+    
+    status = models.CharField(max_length=20, default='pending', choices=STATUS_CHOICES)
+    
+    # Digital access fields
+    digital_access_granted = models.BooleanField(default=False)
+    digital_access_code = models.CharField(max_length=50, blank=True, null=True)
+    digital_access_expires = models.DateTimeField(null=True, blank=True)
+    
+    # Shipping fields
+    tracking_number = models.CharField(max_length=100, blank=True, null=True)
+    shipping_carrier = models.CharField(max_length=100, blank=True, null=True)
+    shipped_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+    
+    metadata = models.JSONField(default=dict, blank=True)
+    notes = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['order_number']),
+            models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['customer_email']),
+        ]
+    
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            self.order_number = f"MBC-BOOK-{uuid.uuid4().hex[:8].upper()}"
+        if self.quantity:
+            self.total_usd = self.quantity * self.unit_price_usd
+            self.total_kes = self.quantity * self.unit_price_kes
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.order_number} - {self.customer_name} - {self.quantity} book(s)"
+    
+    def generate_digital_access_code(self):
+        import random
+        import string
+        self.digital_access_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
+        self.digital_access_expires = timezone.now() + timedelta(days=365)
+        self.digital_access_granted = True
+        self.save()

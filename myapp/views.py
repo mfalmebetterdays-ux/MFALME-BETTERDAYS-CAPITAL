@@ -18,9 +18,9 @@ from django.db import connection
 from django.http import HttpResponse
 from django.conf import settings
 from .models import Order, MerchandiseOrder, EventTicket, Event
-from .sasapay_utils import initiate_c2b_payment
 import json
 from django.views.decorators.csrf import csrf_exempt
+from .models import Book, BookOrder
 from django.http import JsonResponse
 import boto3
 from botocore.client import Config
@@ -58,8 +58,8 @@ import socket
 import ssl
 import base64
 import urllib.parse
-from .pesapal_utils import get_pesapal_iframe_url, query_pesapal_status
 from django.views.decorators.http import require_http_methods
+
 
 from .models import (
     MfalmeUsers, PaymentTransaction, Package,
@@ -72,8 +72,543 @@ from .models import (
     MerchandiseOrder,
     Event,
     EventTicket,
-    Order
+    Order,
+    Book,
+    BookOrder
 )
+
+
+from .paystack_utils import (
+    initialize_paystack_transaction,
+    verify_paystack_transaction,
+    initiate_mpesa_payment,
+    verify_paystack_webhook_signature
+)
+
+
+# ==================== PAYSTACK PAYMENT VIEWS ====================
+
+@csrf_exempt
+def paystack_initiate_payment(request):
+    """
+    Initiate Paystack payment - REPLACES SasaPay
+    Takes user email and phone number, creates Paystack transaction
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    reference = data.get('reference')
+    email = data.get('email')
+    phone = data.get('phone')
+    
+    print(f"\n🔵 Paystack Initiate Payment")
+    print(f"   Reference: {reference}")
+    print(f"   Email: {email}")
+    print(f"   Phone: {phone}")
+    
+    if not reference:
+        return JsonResponse({'error': 'Reference required'}, status=400)
+    
+    if not email:
+        return JsonResponse({'error': 'Email is required for Paystack'}, status=400)
+    
+    try:
+        transaction = PaymentTransaction.objects.get(reference=reference)
+        
+        # Update transaction with phone and email
+        if phone:
+            transaction.customer_phone = phone
+        if email:
+            transaction.customer_email = email
+        transaction.save(update_fields=['customer_phone', 'customer_email'])
+        
+        # Prepare metadata for Paystack
+        metadata = {
+            'reference': reference,
+            'payment_type': transaction.payment_type,
+            'user_id': transaction.user.id if transaction.user else None,
+        }
+        if transaction.metadata:
+            metadata.update(transaction.metadata)
+        
+        # Initialize Paystack transaction
+        result = initialize_paystack_transaction(
+            amount=float(transaction.amount),
+            email=email,
+            reference=reference,
+            phone=phone,
+            metadata=metadata
+        )
+        
+        if result.get('success'):
+            transaction.paystack_reference = result.get('reference')
+            transaction.paystack_access_code = result.get('access_code')
+            transaction.status = 'pending'
+            transaction.save(update_fields=['paystack_reference', 'paystack_access_code', 'status'])
+            
+            return JsonResponse({
+                'success': True,
+                'authorization_url': result.get('authorization_url'),
+                'reference': reference,
+                'message': 'Redirect to Paystack to complete payment'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': result.get('error', 'Failed to initialize payment')
+            }, status=400)
+            
+    except PaymentTransaction.DoesNotExist:
+        return JsonResponse({'error': 'Transaction not found'}, status=404)
+    except Exception as e:
+        print(f"❌ Paystack init error: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def paystack_mpesa_stk_push(request):
+    """
+    Initiate M-PESA STK Push via Paystack
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    reference = data.get('reference')
+    phone = data.get('phone')
+    
+    print(f"\n🔵 Paystack M-PESA STK Push")
+    print(f"   Reference: {reference}")
+    print(f"   Phone: {phone}")
+    
+    if not reference:
+        return JsonResponse({'error': 'Reference required'}, status=400)
+    
+    if not phone:
+        return JsonResponse({'error': 'Phone number required for M-PESA'}, status=400)
+    
+    try:
+        transaction = PaymentTransaction.objects.get(reference=reference)
+        
+        # Get email (required by Paystack)
+        email = transaction.customer_email
+        if not email:
+            email = transaction.user.email if transaction.user else 'customer@example.com'
+        
+        # Format phone number
+        formatted_phone = str(phone).strip()
+        formatted_phone = ''.join(filter(str.isdigit, formatted_phone))
+        if formatted_phone.startswith('0'):
+            formatted_phone = '254' + formatted_phone[1:]
+        elif formatted_phone.startswith('7') and len(formatted_phone) == 9:
+            formatted_phone = '254' + formatted_phone
+        elif formatted_phone.startswith('+'):
+            formatted_phone = formatted_phone[1:]
+        
+        if not formatted_phone.startswith('254'):
+            formatted_phone = '254' + formatted_phone
+        
+        # Update transaction
+        transaction.customer_phone = formatted_phone
+        transaction.save(update_fields=['customer_phone'])
+        
+        # Initialize Paystack charge for M-PESA
+        result = initialize_paystack_transaction(
+            amount=float(transaction.amount),
+            email=email,
+            reference=reference,
+            phone=formatted_phone,
+            metadata=transaction.metadata
+        )
+        
+        if result.get('success'):
+            transaction.paystack_access_code = result.get('access_code')
+            transaction.status = 'pending'
+            transaction.save(update_fields=['paystack_access_code', 'status'])
+            
+            return JsonResponse({
+                'success': True,
+                'authorization_url': result.get('authorization_url'),
+                'reference': reference,
+                'message': 'Please complete payment on Paystack page'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': result.get('error', 'M-PESA payment failed')
+            }, status=400)
+            
+    except PaymentTransaction.DoesNotExist:
+        return JsonResponse({'error': 'Transaction not found'}, status=404)
+    except Exception as e:
+        print(f"❌ Paystack M-PESA error: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def paystack_verify_payment(request, reference):
+    """
+    Verify Paystack payment after redirect
+    """
+    print(f"\n🔵 Paystack Verify Payment: {reference}")
+    
+    try:
+        transaction = PaymentTransaction.objects.get(reference=reference)
+        
+        # Verify with Paystack
+        result = verify_paystack_transaction(reference)
+        
+        if result.get('success') and result.get('status') == 'completed':
+            # Update transaction
+            transaction.status = 'completed'
+            transaction.paid_at = timezone.now()
+            transaction.completed_at = timezone.now()
+            transaction.paystack_data = result
+            transaction.save(update_fields=['status', 'paid_at', 'completed_at', 'paystack_data'])
+            
+            # Grant access to purchased content
+            if transaction.user:
+                process_successful_payment(transaction, request)
+            
+            messages.success(request, 'Payment successful!')
+            return redirect('payment_success', reference=reference)
+        else:
+            transaction.status = 'failed'
+            transaction.save(update_fields=['status'])
+            messages.error(request, result.get('error', 'Payment verification failed'))
+            return redirect('payment_failed')
+            
+    except PaymentTransaction.DoesNotExist:
+        messages.error(request, 'Transaction not found')
+        return redirect('payment_failed')
+    except Exception as e:
+        print(f"❌ Paystack verify error: {e}")
+        messages.error(request, f'Verification error: {str(e)}')
+        return redirect('payment_failed')
+
+
+@csrf_exempt
+def paystack_webhook(request):
+    """
+    Paystack webhook endpoint for real-time payment updates
+    """
+    print("\n🔵 Paystack Webhook Received")
+    
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error'}, status=405)
+    
+    # Verify webhook signature
+    if not verify_paystack_webhook_signature(request):
+        print("❌ Invalid webhook signature")
+        return JsonResponse({'status': 'error', 'message': 'Invalid signature'}, status=401)
+    
+    try:
+        payload = json.loads(request.body)
+        event = payload.get('event')
+        data = payload.get('data', {})
+        
+        print(f"   Event: {event}")
+        print(f"   Reference: {data.get('reference')}")
+        
+        if event == 'charge.success':
+            reference = data.get('reference')
+            amount = data.get('amount', 0) / 100  # Convert from cents
+            
+            try:
+                transaction = PaymentTransaction.objects.get(reference=reference)
+                
+                # Check if already processed
+                if transaction.status == 'completed':
+                    return JsonResponse({'status': 'success'})
+                
+                # Update transaction
+                transaction.status = 'completed'
+                transaction.paid_at = timezone.now()
+                transaction.completed_at = timezone.now()
+                transaction.paystack_data = data
+                transaction.save()
+                
+                # Grant access
+                if transaction.user:
+                    process_successful_payment(transaction, None)
+                
+                print(f"✅ Webhook: Transaction {reference} marked as completed")
+                
+                # Send confirmation email if needed
+                if transaction.customer_email:
+                    send_payment_confirmation_email(transaction)
+                    
+            except PaymentTransaction.DoesNotExist:
+                print(f"⚠️ Webhook: Transaction {reference} not found")
+        
+        return JsonResponse({'status': 'success'})
+        
+    except json.JSONDecodeError as e:
+        print(f"❌ Webhook JSON decode error: {e}")
+        return JsonResponse({'status': 'error'}, status=400)
+    except Exception as e:
+        print(f"❌ Webhook error: {e}")
+        return JsonResponse({'status': 'error'}, status=500)
+
+
+def send_payment_confirmation_email(transaction):
+    """
+    Send payment confirmation email to customer
+    """
+    try:
+        subject = 'Payment Confirmation - Mfalme Betterdays Capital'
+        
+        amount_usd = transaction.metadata.get('amount_usd', float(transaction.amount / 129)) if transaction.metadata else float(transaction.amount / 129)
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"><title>Payment Confirmation</title></head>
+        <body style="font-family: Arial, sans-serif;">
+            <h2>Payment Confirmation - Mfalme Betterdays Capital</h2>
+            <p>Dear {transaction.customer_name or 'Valued Customer'},</p>
+            <p>Your payment has been successfully processed.</p>
+            <p><strong>Amount:</strong> KES {float(transaction.amount):,.2f} (${amount_usd:.2f} USD)</p>
+            <p><strong>Reference:</strong> {transaction.reference}</p>
+            <p><strong>Date:</strong> {transaction.paid_at.strftime('%B %d, %Y at %I:%M %p') if transaction.paid_at else timezone.now().strftime('%B %d, %Y')}</p>
+            <p><strong>Item:</strong> {transaction.description}</p>
+            <hr>
+            <p>Thank you for your business!</p>
+            <p>Mfalme Betterdays Capital</p>
+        </body>
+        </html>
+        """
+        
+        send_mail(
+            subject=subject,
+            message=f'Your payment of KES {transaction.amount:,.2f} was successful. Reference: {transaction.reference}',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[transaction.customer_email],
+            fail_silently=True,
+            html_message=html_content
+        )
+        
+        print(f"✅ Payment confirmation email sent to {transaction.customer_email}")
+    except Exception as e:
+        print(f"❌ Payment confirmation email error: {e}")
+
+
+def payment_pending(request, reference):
+    """Payment pending page"""
+    transaction = get_object_or_404(PaymentTransaction, reference=reference)
+    context = {
+        'transaction': transaction,
+        'reference': reference,
+    }
+    return render(request, 'payment/pending.html', context)
+
+
+def payment_success(request, reference):
+    """Payment success page - UPDATE EXISTING FUNCTION"""
+    transaction = get_object_or_404(PaymentTransaction, reference=reference)
+    amount_usd = float(transaction.amount / Decimal('129'))
+    
+    context = {
+        'transaction': transaction,
+        'amount_usd': amount_usd,
+        'amount': amount_usd,
+        'order_id': reference,
+        'payment_date': transaction.paid_at.strftime('%B %d, %Y') if transaction.paid_at else timezone.now().strftime('%B %d, %Y'),
+    }
+    return render(request, 'payment/success.html', context)
+
+
+def payment(request):
+    """Payment page - uses Paystack"""
+    reference = request.GET.get('ref')
+    
+    if not reference:
+        messages.error(request, 'No transaction reference provided')
+        return redirect('index')
+    
+    try:
+        transaction = PaymentTransaction.objects.get(reference=reference)
+        
+        if transaction.status == 'completed':
+            return redirect('payment_success', reference=reference)
+        
+        amount_usd = float(transaction.amount / Decimal('129'))
+        
+        context = {
+            'title': transaction.description or 'Payment',
+            'amount_usd': amount_usd,
+            'amount_kes': float(transaction.amount),
+            'user': request.user if request.user.is_authenticated else None,
+            'reference': reference,
+            'transaction': transaction,
+            'customer_name': transaction.customer_name,
+            'customer_email': transaction.customer_email,
+            'customer_phone': transaction.customer_phone,
+            'paystack_public_key': getattr(settings, 'PAYSTACK_PUBLIC_KEY', ''),
+        }
+        
+        return render(request, 'payment.html', context)
+        
+    except PaymentTransaction.DoesNotExist:
+        messages.error(request, 'Transaction not found')
+        return redirect('index')
+
+
+def payment_failed(request):
+    """Payment failed page"""
+    error_message = request.GET.get('message', 'Your payment could not be processed.')
+    return render(request, 'payment/failed.html', {'error_message': error_message})
+
+
+def process_successful_payment(transaction, request):
+    """Process successful payment - grant access to content"""
+    if not transaction.user:
+        return
+    
+    user = transaction.user
+    
+    # Update user balance
+    user.total_deposits += transaction.amount
+    user.account_balance += transaction.amount
+    user.save(update_fields=['total_deposits', 'account_balance'])
+    
+    # Process based on metadata
+    metadata = transaction.metadata
+    if metadata:
+        item_type = metadata.get('item_type')
+        item_id = metadata.get('item_id')
+        
+        if item_type == 'video':
+            try:
+                video = TrainingVideo.objects.get(id=item_id)
+                grant_video_access(user, video, transaction)
+            except TrainingVideo.DoesNotExist:
+                pass
+                
+        elif item_type == 'course':
+            try:
+                course = Course.objects.get(id=item_id)
+                enrollment = UserCourse.objects.create(
+                    user=user,
+                    course=course,
+                    payment=transaction,
+                    access_expires_at=timezone.now() + timedelta(days=365)
+                )
+                enrollment.get_video_access()
+                enrollment.get_pdf_access()
+                
+                Notification.objects.create(
+                    user=user,
+                    title='Course Access Granted',
+                    message=f'You now have 1 year access to {course.title}',
+                    notification_type='SUCCESS',
+                    related_object_type='course',
+                    related_object_id=course.id
+                )
+            except Course.DoesNotExist:
+                pass
+                
+        elif item_type == 'pdf':
+            try:
+                pdf = PDF.objects.get(id=item_id)
+                grant_pdf_access(user, pdf, transaction)
+            except PDF.DoesNotExist:
+                pass
+        
+        elif item_type == 'ticket':
+            try:
+                order = Order.objects.filter(reference=transaction.reference, item_type='ticket').first()
+                if order:
+                    event = Event.objects.filter(id=metadata.get('event_id')).first()
+                    if event:
+                        ticket = EventTicket.objects.create(
+                            event=event,
+                            attendee_name=order.customer_name,
+                            attendee_phone=order.customer_phone,
+                            attendee_email=order.customer_email,
+                            quantity=metadata.get('quantity', 1),
+                            unit_price_usd=249,
+                            unit_price_kes=249 * 129,
+                            order_reference=order.reference,
+                            payment_reference=transaction.reference,
+                            status='confirmed'
+                        )
+                        event.current_bookings += ticket.quantity
+                        event.save()
+                        send_ticket_email(ticket)
+            except Exception as e:
+                print(f"Ticket creation error: {e}")
+        
+        elif item_type == 'merchandise':
+            try:
+                order = Order.objects.filter(reference=transaction.reference, item_type='merchandise').first()
+                if order:
+                    merch_order = MerchandiseOrder.objects.create(
+                        customer_name=order.customer_name,
+                        customer_phone=order.customer_phone,
+                        customer_email=order.customer_email,
+                        delivery_address=metadata.get('address', ''),
+                        items=order.items,
+                        subtotal=order.amount,
+                        total=order.amount,
+                        payment_reference=transaction.reference,
+                        order_reference=order.reference,
+                        status='paid'
+                    )
+                    send_merchandise_order_email(merch_order)
+                    
+                    # Update stock
+                    for item in order.items:
+                        try:
+                            product = Merchandise.objects.get(id=item['id'])
+                            product.stock -= item['quantity']
+                            product.save()
+                        except:
+                            pass
+            except Exception as e:
+                print(f"Merchandise order error: {e}")
+        
+        elif item_type == 'book':
+            try:
+                book_order = BookOrder.objects.get(order_number=transaction.reference)
+                book_order.status = 'paid'
+                book_order.payment_reference = transaction.reference
+                book_order.save()
+                
+                if book_order.delivery_type == 'digital':
+                    book_order.generate_digital_access_code()
+                
+                send_book_purchase_email(book_order)
+            except Exception as e:
+                print(f"Book order error: {e}")
+    
+    # Create notification
+    amount_usd = metadata.get('amount_usd', float(transaction.amount / Decimal('129'))) if metadata else float(transaction.amount / Decimal('129'))
+    
+    Notification.objects.create(
+        user=user,
+        title='Payment Successful',
+        message=f'Your payment of ${amount_usd:.2f} was successful. Reference: {transaction.reference}',
+        notification_type='SUCCESS',
+        related_object_type='payment',
+        related_object_id=transaction.id,
+    )
+    
+    # Log activity
+    log_activity(
+        user,
+        'PAYMENT_COMPLETED',
+        f'Payment completed: ${amount_usd:.2f} (KES {transaction.amount})',
+        request
+    )
 
 # ==================== TEMPLATE FILTERS ====================
 register = Library()
@@ -2598,6 +3133,137 @@ def api_update_settings(request):
     return JsonResponse({'success': True})
 
 
+
+@csrf_exempt
+def initialize_course_payment(request):
+    """Initialize payment for a course - PAYSTACK VERSION"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            course_id = data.get('course_id')
+            course = get_object_or_404(Course, id=course_id)
+            
+            amount_usd = course.price
+            amount_kes = amount_usd * Decimal('129')
+            
+            transaction = PaymentTransaction.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                reference=generate_reference(),
+                amount=amount_kes,
+                currency='KES',
+                payment_type='course_purchase',
+                payment_method='paystack',  # CHANGED
+                description=f'Course: {course.title}',
+                metadata={
+                    'item_type': 'course',
+                    'item_id': course.id,
+                    'item_title': course.title,
+                    'amount_usd': float(amount_usd)
+                },
+                status='initiated',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'reference': transaction.reference,
+                'amount_kes': float(amount_kes),
+                'amount_usd': float(amount_usd)
+            })
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@csrf_exempt
+def initialize_video_payment(request):
+    """Initialize payment for a video - PAYSTACK VERSION"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            video_id = data.get('video_id')
+            video = get_object_or_404(TrainingVideo, id=video_id)
+            
+            amount_usd = video.price
+            amount_kes = amount_usd * Decimal('129')
+            
+            transaction = PaymentTransaction.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                reference=generate_reference(),
+                amount=amount_kes,
+                currency='KES',
+                payment_type='video_purchase',
+                payment_method='paystack',  # CHANGED
+                description=f'Video: {video.title}',
+                metadata={
+                    'item_type': 'video',
+                    'item_id': video.id,
+                    'item_title': video.title,
+                    'amount_usd': float(amount_usd)
+                },
+                status='initiated',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'reference': transaction.reference,
+                'amount_kes': float(amount_kes),
+                'amount_usd': float(amount_usd)
+            })
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@csrf_exempt
+def initialize_pdf_payment(request):
+    """Initialize payment for a PDF - PAYSTACK VERSION"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            pdf_id = data.get('pdf_id')
+            pdf = get_object_or_404(PDF, id=pdf_id)
+            
+            amount_usd = pdf.price
+            amount_kes = amount_usd * Decimal('129')
+            
+            transaction = PaymentTransaction.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                reference=generate_reference(),
+                amount=amount_kes,
+                currency='KES',
+                payment_type='pdf_purchase',
+                payment_method='paystack',  # CHANGED
+                description=f'PDF: {pdf.title}',
+                metadata={
+                    'item_type': 'pdf',
+                    'item_id': pdf.id,
+                    'item_title': pdf.title,
+                    'amount_usd': float(amount_usd)
+                },
+                status='initiated',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'reference': transaction.reference,
+                'amount_kes': float(amount_kes),
+                'amount_usd': float(amount_usd)
+            })
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+
 def api_user_orders(request):
     """Get user orders (JSON)"""
     user = request.user
@@ -4172,249 +4838,7 @@ def api_course_reset_progress(request, course_id):
     return JsonResponse({'success': True})
 
 
-def pesapal_initiate_payment(request):
-    """Initiate payment with Pesapal"""
-    package_type = request.GET.get('type')
-    package_id = request.GET.get('id')
-    
-    if request.method == 'POST':
-        # Get payment details from POST
-        amount_usd = Decimal(request.POST.get('amount', 0))
-        amount_kes = amount_usd * Decimal('129')  # Convert to KES
-        phone = request.POST.get('phone', request.user.phone)
-        email = request.POST.get('email', request.user.email)
-        first_name = request.POST.get('first_name', request.user.first_name)
-        last_name = request.POST.get('last_name', request.user.last_name)
-        
-        # Create transaction
-        transaction = PaymentTransaction.objects.create(
-            user=request.user,
-            reference=generate_reference(),
-            amount=amount_kes,
-            currency='KES',
-            payment_type=package_type or 'other',
-            payment_method='pesapal',
-            description=f'Payment for {package_type}',
-            metadata={
-                'item_type': package_type,
-                'item_id': package_id,
-                'amount_usd': float(amount_usd)
-            },
-            status='initiated',
-            ip_address=get_client_ip(request),
-            user_agent=request.META.get('HTTP_USER_AGENT', ''),
-        )
-        
-        # Prepare Pesapal parameters
-        params = {
-            'pesapal_transaction_type': 'MERCHANT',
-            'pesapal_merchant_reference': transaction.reference,
-            'pesapal_amount': str(int(amount_kes)),  # No decimals
-            'pesapal_currency': 'KES',
-            'pesapal_description': transaction.description[:100],
-            'pesapal_type': 'MERCHANT',
-            'pesapal_first_name': first_name,
-            'pesapal_last_name': last_name,
-            'pesapal_email_address': email,
-            'pesapal_phone_number': phone,
-            'pesapal_country_code': 'KE',
-        }
-        
-        # Get iframe URL
-        iframe_url = get_pesapal_iframe_url(
-            params,
-            settings.PESAPAL_CONFIG['CALLBACK_URL'],
-            settings.PESAPAL_CONFIG['CONSUMER_KEY'],
-            settings.PESAPAL_CONFIG['CONSUMER_SECRET']
-        )
-        
-        # Store in session
-        request.session['pesapal_transaction_id'] = transaction.id
-        
-        return JsonResponse({
-            'success': True,
-            'iframe_url': iframe_url,
-            'reference': transaction.reference
-        })
-    
-    # GET request - show payment form
-    context = {
-        'user': request.user,
-        'package_type': package_type,
-        'package_id': package_id,
-    }
-    return render(request, 'payment/pesapal_form.html', context)
 
-@csrf_exempt
-def pesapal_callback(request):
-    """Pesapal callback URL - user returns here after payment"""
-    # Get parameters from Pesapal
-    merchant_reference = request.GET.get('pesapal_merchant_reference')
-    tracking_id = request.GET.get('pesapal_transaction_tracking_id')
-    
-    if not merchant_reference:
-        messages.error(request, 'Invalid payment callback')
-        return redirect('payment_failed')
-    
-    try:
-        transaction = PaymentTransaction.objects.get(reference=merchant_reference)
-        
-        # Update transaction with tracking ID
-        transaction.pesapal_tracking_id = tracking_id
-        transaction.save(update_fields=['pesapal_tracking_id'])
-        
-        # Query payment status
-        status_response = query_pesapal_status(merchant_reference, tracking_id)
-        
-        # Parse status (Pesapal returns "PENDING", "COMPLETED", "FAILED")
-        if 'COMPLETED' in status_response:
-            transaction.status = 'completed'
-            transaction.paid_at = timezone.now()
-            transaction.completed_at = timezone.now()
-            transaction.save(update_fields=['status', 'paid_at', 'completed_at'])
-            
-            # Process successful payment
-            process_successful_payment(transaction, request)
-            
-            messages.success(request, 'Payment successful!')
-            return redirect('payment_success', reference=merchant_reference)
-        elif 'FAILED' in status_response:
-            transaction.status = 'failed'
-            transaction.save(update_fields=['status'])
-            messages.error(request, 'Payment failed')
-            return redirect('payment_failed')
-        else:
-            transaction.status = 'pending'
-            transaction.save(update_fields=['status'])
-            messages.info(request, 'Payment is being processed')
-            return redirect('payment_pending', reference=merchant_reference)
-            
-    except PaymentTransaction.DoesNotExist:
-        messages.error(request, 'Transaction not found')
-        return redirect('payment_failed')
-
-@csrf_exempt
-def pesapal_ipn(request):
-    """Pesapal Instant Payment Notification endpoint"""
-    if request.method != 'POST':
-        return HttpResponse('OK')
-    
-    # Get parameters from POST
-    merchant_reference = request.POST.get('pesapal_merchant_reference')
-    tracking_id = request.POST.get('pesapal_transaction_tracking_id')
-    notification_type = request.POST.get('pesapal_notification_type')
-    
-    if not merchant_reference:
-        return HttpResponse('OK')
-    
-    try:
-        transaction = PaymentTransaction.objects.get(reference=merchant_reference)
-        
-        # Update with tracking ID
-        transaction.pesapal_tracking_id = tracking_id
-        
-        # Query status
-        status_response = query_pesapal_status(merchant_reference, tracking_id)
-        
-        # Store raw response
-        transaction.pesapal_raw_response = {
-            'notification_type': notification_type,
-            'status_response': status_response
-        }
-        
-        # Update status
-        if 'COMPLETED' in status_response:
-            transaction.status = 'completed'
-            transaction.paid_at = timezone.now()
-            transaction.completed_at = timezone.now()
-        elif 'FAILED' in status_response:
-            transaction.status = 'failed'
-        
-        transaction.save()
-        
-        # Process if completed
-        if transaction.status == 'completed' and transaction.user:
-            process_successful_payment(transaction, None)
-        
-    except PaymentTransaction.DoesNotExist:
-        pass
-    
-    return HttpResponse('OK')
-
-def process_successful_payment(transaction, request):
-    """Helper function to process successful payments"""
-    if not transaction.user:
-        return
-    
-    user = transaction.user
-    
-    # Update user balance
-    user.total_deposits += transaction.amount
-    user.account_balance += transaction.amount
-    user.save(update_fields=['total_deposits', 'account_balance'])
-    
-    # Process based on metadata
-    metadata = transaction.metadata
-    if metadata:
-        item_type = metadata.get('item_type')
-        item_id = metadata.get('item_id')
-        
-        if item_type == 'video':
-            try:
-                video = TrainingVideo.objects.get(id=item_id)
-                grant_video_access(user, video, transaction)
-            except TrainingVideo.DoesNotExist:
-                pass
-                
-        elif item_type == 'course':
-            try:
-                course = Course.objects.get(id=item_id)
-                enrollment = UserCourse.objects.create(
-                    user=user,
-                    course=course,
-                    payment=transaction,
-                    access_expires_at=timezone.now() + timedelta(days=365)  # 1 YEAR
-                )
-                enrollment.get_video_access()
-                enrollment.get_pdf_access()
-                
-                Notification.objects.create(
-                    user=user,
-                    title='Course Access Granted',
-                    message=f'You now have 1 year access to {course.title}',
-                    notification_type='SUCCESS',
-                    related_object_type='course',
-                    related_object_id=course.id
-                )
-            except Course.DoesNotExist:
-                pass
-                
-        elif item_type == 'pdf':
-            try:
-                pdf = PDF.objects.get(id=item_id)
-                grant_pdf_access(user, pdf, transaction)
-            except PDF.DoesNotExist:
-                pass
-    
-    # Create notification
-    amount_usd = metadata.get('amount_usd', float(transaction.amount / Decimal('129'))) if metadata else float(transaction.amount / Decimal('129'))
-    
-    Notification.objects.create(
-        user=user,
-        title='Payment Successful',
-        message=f'Your payment of ${amount_usd:.2f} via Pesapal was successful. Reference: {transaction.reference}',
-        notification_type='SUCCESS',
-        related_object_type='payment',
-        related_object_id=transaction.id,
-    )
-    
-    # Log activity
-    log_activity(
-        user,
-        'PAYMENT_COMPLETED',
-        f'Payment completed via Pesapal: ${amount_usd:.2f} (KES {transaction.amount})',
-        request
-    )
 
 def payment_pending(request, reference):
     """Payment pending page"""
@@ -4427,568 +4851,7 @@ def payment_pending(request, reference):
 
 
 
-@csrf_exempt
-def sasapay_process_payment(request):
-    """Process payment with SasaPay - Handles guest users correctly"""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
-    
-    try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
-    reference = data.get('reference')
-    phone = data.get('phone')
-    payment_method = data.get('payment_method', 'c2b')
-    
-    print(f"\n🔵 SasaPay Process Payment Called")
-    print(f"   Reference: {reference}")
-    print(f"   Phone: {phone}")
-    print(f"   Method: {payment_method}")
-    
-    if not reference:
-        return JsonResponse({'error': 'Reference required'}, status=400)
-    
-    from .sasapay_utils import initiate_c2b_payment, initiate_checkout
-    
-    # IMPORTANT: Check Order FIRST (for tickets/merchandise from guest users)
-    order = None
-    transaction = None
-    amount_kes = 0
-    description = ''
-    customer_email = ''
-    customer_name = ''
-    customer_phone = ''
-    
-    try:
-        order = Order.objects.get(reference=reference)
-        amount_kes = int(order.amount)
-        description = f"{order.item_type.upper()} Order: {reference}"
-        customer_email = order.customer_email
-        customer_name = order.customer_name
-        customer_phone = order.customer_phone
-        print(f"✅ Found Order: {order.id} - Type: {order.item_type}")
-        print(f"   Customer: {customer_name} ({customer_email})")
-    except Order.DoesNotExist:
-        print(f"⚠️ No Order found, checking PaymentTransaction...")
-        try:
-            transaction = PaymentTransaction.objects.get(reference=reference)
-            amount_kes = int(transaction.amount)
-            description = transaction.description
-            customer_email = transaction.customer_email or ''
-            customer_name = transaction.customer_name or ''
-            customer_phone = transaction.customer_phone or ''
-            print(f"✅ Found PaymentTransaction: {transaction.id}")
-        except PaymentTransaction.DoesNotExist:
-            print(f"❌ No transaction found for reference: {reference}")
-            return JsonResponse({'error': 'Transaction not found'}, status=404)
-    
-    if payment_method == 'c2b':
-        # Use phone from request or from order/transaction
-        phone_to_use = phone or customer_phone
-        
-        if not phone_to_use:
-            return JsonResponse({'error': 'Phone number required for M-PESA'}, status=400)
-        
-        # Format phone number
-        formatted_phone = str(phone_to_use).strip()
-        formatted_phone = ''.join(filter(str.isdigit, formatted_phone))
-        if formatted_phone.startswith('0'):
-            formatted_phone = '254' + formatted_phone[1:]
-        elif formatted_phone.startswith('7') and len(formatted_phone) == 9:
-            formatted_phone = '254' + formatted_phone
-        elif formatted_phone.startswith('+'):
-            formatted_phone = formatted_phone[1:]
-        
-        if not formatted_phone.startswith('254'):
-            formatted_phone = '254' + formatted_phone
-        
-        print(f"📱 Formatted phone: {formatted_phone}")
-        print(f"💰 Amount: {amount_kes} KES")
-        print(f"📝 Description: {description}")
-        
-        # Initiate M-PESA STK Push
-        result = initiate_c2b_payment(
-            phone=formatted_phone,
-            amount=amount_kes,
-            reference=reference,
-            description=description
-        )
-        
-        print(f"📡 SasaPay Response: {result}")
-        
-        if result.get('success'):
-            if order:
-                order.payment_reference = result.get('transaction_id')
-                order.checkout_request_id = result.get('checkout_id')
-                order.save()
-                print(f"✅ Order updated: {order.reference}")
-            elif transaction:
-                transaction.sasapay_transaction_id = result.get('transaction_id')
-                transaction.sasapay_checkout_id = result.get('checkout_id')
-                transaction.sasapay_payment_method = 'mpesa'
-                transaction.sasapay_raw_response = result
-                transaction.status = 'pending'
-                transaction.save()
-                print(f"✅ Transaction updated: {transaction.reference}")
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'STK Push sent. Check your phone.',
-                'transaction_id': result.get('transaction_id')
-            })
-        else:
-            error_msg = result.get('error', 'Payment failed - Please try again')
-            print(f"❌ Payment failed: {error_msg}")
-            return JsonResponse({
-                'success': False,
-                'error': error_msg
-            }, status=400)
-    
-    elif payment_method == 'checkout':
-        # NEVER use request.user.email - use customer data from order/transaction
-        email_to_use = customer_email
-        if not email_to_use:
-            email_to_use = 'customer@example.com'
-        
-        print(f"📧 Using email for checkout: {email_to_use}")
-        
-        result = initiate_checkout(
-            amount=amount_kes,
-            reference=reference,
-            description=description,
-            email=email_to_use,
-            phone=phone or customer_phone
-        )
-        
-        if result.get('success'):
-            if order:
-                order.payment_reference = result.get('transaction_id') or result.get('checkout_id')
-                order.checkout_request_id = result.get('checkout_id')
-                order.save()
-            elif transaction:
-                transaction.sasapay_checkout_id = result.get('checkout_id')
-                transaction.sasapay_payment_method = 'checkout'
-                transaction.sasapay_raw_response = result
-                transaction.status = 'pending'
-                transaction.save()
-            
-            return JsonResponse({
-                'success': True,
-                'checkout_url': result.get('checkout_url'),
-                'message': 'Redirecting to checkout...'
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': result.get('error', 'Checkout failed')
-            }, status=400)
-    
-    return JsonResponse({'error': 'Invalid payment method'}, status=400)
-
-def test_sasapay_connection(request):
-    """Simple test connection to SasaPay"""
-    import requests
-    import socket
-    from django.conf import settings
-    
-    results = []
-    results.append("<h1>SasaPay Connection Test</h1>")
-    
-    # Test 1: Import requests
-    results.append("<h3>1. Library Check</h3>")
-    results.append(f"✅ requests version: {requests.__version__}")
-    
-    # Test 2: DNS
-    results.append("<h3>2. DNS Resolution</h3>")
-    try:
-        ip = socket.gethostbyname('sandbox.sasapay.com')
-        results.append(f"✅ sandbox.sasapay.com → {ip}")
-    except Exception as e:
-        results.append(f"❌ DNS Error: {str(e)}")
-    
-    # Test 3: Simple HTTP Request
-    results.append("<h3>3. HTTP Request</h3>")
-    try:
-        response = requests.get(
-            "https://sandbox.sasapay.com",
-            timeout=5,
-            verify=False
-        )
-        results.append(f"✅ Status: {response.status_code}")
-    except requests.exceptions.Timeout:
-        results.append("⏱️ Timeout - Server not responding")
-    except requests.exceptions.ConnectionError as e:
-        results.append(f"❌ Connection Error: {str(e)}")
-    except Exception as e:
-        results.append(f"❌ Error: {type(e).__name__} - {str(e)}")
-    
-    # Test 4: Config Values
-    results.append("<h3>4. Configuration</h3>")
-    results.append(f"Environment: {settings.SASAPAY_CONFIG.get('ENVIRONMENT', 'Not set')}")
-    results.append(f"Client ID: {settings.SASAPAY_CONFIG.get('CLIENT_ID', 'Not set')[:10]}...")
-    client_secret = settings.SASAPAY_CONFIG.get('CLIENT_SECRET', '')
-    results.append(f"Client Secret: {'*' * 10 if client_secret else 'Not set'}")
-    
-    return HttpResponse("<br>".join(results))
-
-def process_successful_payment(transaction, request):
-    """Process successful payment - grant access to content"""
-    if not transaction.user:
-        return
-    
-    user = transaction.user
-    
-    # Update user balance
-    user.total_deposits += transaction.amount
-    user.account_balance += transaction.amount
-    user.save(update_fields=['total_deposits', 'account_balance'])
-    
-    # Process based on metadata
-    metadata = transaction.metadata
-    if metadata:
-        item_type = metadata.get('item_type')
-        item_id = metadata.get('item_id')
-        
-        if item_type == 'video':
-            try:
-                video = TrainingVideo.objects.get(id=item_id)
-                grant_video_access(user, video, transaction)
-            except TrainingVideo.DoesNotExist:
-                pass
-                
-        elif item_type == 'course':
-            try:
-                course = Course.objects.get(id=item_id)
-                enrollment = UserCourse.objects.create(
-                    user=user,
-                    course=course,
-                    payment=transaction,
-                    access_expires_at=timezone.now() + timedelta(days=365)  # 1 YEAR
-                )
-                enrollment.get_video_access()
-                enrollment.get_pdf_access()
-                
-                Notification.objects.create(
-                    user=user,
-                    title='Course Access Granted',
-                    message=f'You now have 1 year access to {course.title}',
-                    notification_type='SUCCESS',
-                    related_object_type='course',
-                    related_object_id=course.id
-                )
-            except Course.DoesNotExist:
-                pass
-                
-        elif item_type == 'pdf':
-            try:
-                pdf = PDF.objects.get(id=item_id)
-                grant_pdf_access(user, pdf, transaction)
-            except PDF.DoesNotExist:
-                pass
-    
-    # Create notification
-    amount_usd = metadata.get('amount_usd', float(transaction.amount / Decimal('129'))) if metadata else float(transaction.amount / Decimal('129'))
-    
-    Notification.objects.create(
-        user=user,
-        title='Payment Successful',
-        message=f'Your payment of ${amount_usd:.2f} was successful. Reference: {transaction.reference}',
-        notification_type='SUCCESS',
-        related_object_type='payment',
-        related_object_id=transaction.id,
-    )
-    
-    # Log activity
-    log_activity(
-        user,
-        'PAYMENT_COMPLETED',
-        f'Payment completed: ${amount_usd:.2f} (KES {transaction.amount})',
-        request
-    )
-
-@csrf_exempt
-def sasapay_callback(request):
-    """Handle SasaPay callback after payment"""
-    import json
-    
-    if request.method == 'GET':
-        transaction_id = request.GET.get('transaction_id')
-        checkout_id = request.GET.get('checkout_id')
-        status = request.GET.get('status')
-        reference = request.GET.get('reference')
-        
-        if transaction_id:
-            return redirect(f'/sasapay/verify/?transaction_id={transaction_id}')
-        
-        return redirect('payment_failed')
-    
-    elif request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-        except:
-            data = request.POST.dict()
-        
-        transaction_id = data.get('transaction_id') or data.get('checkout_id')
-        checkout_id = data.get('checkout_id')
-        status = data.get('status')
-        reference = data.get('reference')
-        
-        if not transaction_id and not reference:
-            return HttpResponse('OK')
-        
-        # Process the payment
-        if status and status.lower() == 'completed':
-            # Find and update order
-            order = None
-            if reference:
-                order = Order.objects.filter(reference=reference).first()
-            if not order and transaction_id:
-                order = Order.objects.filter(payment_reference=transaction_id).first()
-            
-            if order and order.status != 'completed':
-                order.status = 'completed'
-                order.payment_reference = transaction_id
-                order.save()
-                
-                # Create ticket for ticket orders
-                if order.item_type == 'ticket':
-                    try:
-                        event = Event.objects.first()
-                        if event:
-                            ticket = EventTicket.objects.create(
-                                event=event,
-                                attendee_name=order.customer_name,
-                                attendee_phone=order.customer_phone,
-                                attendee_email=order.customer_email,
-                                quantity=order.metadata.get('quantity', 1),
-                                unit_price_usd=249,
-                                unit_price_kes=249 * 129,
-                                order_reference=order.reference,
-                                payment_reference=transaction_id,
-                                status='confirmed'
-                            )
-                            event.current_bookings += ticket.quantity
-                            event.save()
-                            send_ticket_email(ticket)
-                    except Exception as e:
-                        print(f"Ticket creation error: {e}")
-                
-                # Create merchandise order for merchandise purchases
-                elif order.item_type == 'merchandise':
-                    try:
-                        merch_order = MerchandiseOrder.objects.create(
-                            customer_name=order.customer_name,
-                            customer_phone=order.customer_phone,
-                            customer_email=order.customer_email,
-                            delivery_address=order.metadata.get('address', ''),
-                            items=order.items,
-                            subtotal=order.amount,
-                            total=order.amount,
-                            payment_reference=transaction_id,
-                            order_reference=order.reference,
-                            status='paid'
-                        )
-                        send_merchandise_order_email(merch_order)
-                        
-                        # Update stock
-                        for item in order.items:
-                            try:
-                                product = Merchandise.objects.get(id=item['id'])
-                                product.stock -= item['quantity']
-                                product.save()
-                            except:
-                                pass
-                    except Exception as e:
-                        print(f"Merchandise order error: {e}")
-        
-        return HttpResponse('OK')
-
-def sasapay_verify(request):
-    """Verify payment after redirect"""
-    transaction_id = request.GET.get('transaction_id')
-    
-    if not transaction_id:
-        return redirect('payment_failed')
-    
-    from .sasapay_utils import query_payment_status
-    
-    # Query status
-    result = query_payment_status(transaction_id)
-    
-    if result.get('status') == 'COMPLETED':
-        # Find transaction
-        try:
-            transaction = PaymentTransaction.objects.get(sasapay_transaction_id=transaction_id)
-            if transaction.status != 'completed':
-                transaction.status = 'completed'
-                transaction.paid_at = timezone.now()
-                transaction.completed_at = timezone.now()
-                transaction.save()
-                process_successful_payment(transaction, request)
-            
-            return redirect('payment_success', reference=transaction.reference)
-        except PaymentTransaction.DoesNotExist:
-            pass
-    
-    return redirect('payment_failed')
-
-def sasapay_status(request, reference):
-    """Check payment status (AJAX)"""
-    try:
-        transaction = PaymentTransaction.objects.get(reference=reference)
-        
-        # If still pending, query SasaPay
-        if transaction.status == 'pending' and transaction.sasapay_transaction_id:
-            from .sasapay_utils import query_payment_status
-            result = query_payment_status(transaction.sasapay_transaction_id)
-            
-            if result.get('status') == 'COMPLETED':
-                transaction.status = 'completed'
-                transaction.paid_at = timezone.now()
-                transaction.completed_at = timezone.now()
-                transaction.save()
-                process_successful_payment(transaction, None)
-            elif result.get('status') == 'FAILED':
-                transaction.status = 'failed'
-                transaction.save()
-        
-        return JsonResponse({
-            'status': transaction.status,
-            'success_url': f'/payment/success/{reference}/' if transaction.status == 'completed' else None
-        })
-    except PaymentTransaction.DoesNotExist:
-        return JsonResponse({'status': 'not_found'}, status=404)
-
-
-# ==================== SASAPAY PAYMENT VIEWS ====================
-
-
-
-@csrf_exempt
-def sasapay_callback(request):
-    """SasaPay callback endpoint - receives payment notifications"""
-    if request.method == 'GET':
-        # Redirect callback after checkout
-        transaction_id = request.GET.get('transaction_id')
-        checkout_id = request.GET.get('checkout_id')
-        status = request.GET.get('status')
-        
-        if transaction_id:
-            return redirect(f'/sasapay/verify/?transaction_id={transaction_id}')
-        
-        return redirect('payment_failed')
-    
-    elif request.method == 'POST':
-        # IPN callback
-        try:
-            data = json.loads(request.body)
-        except:
-            data = request.POST.dict()
-        
-        transaction_id = data.get('transaction_id')
-        checkout_id = data.get('checkout_id')
-        status = data.get('status')
-        reference = data.get('reference')
-        
-        if not transaction_id and not reference:
-            return HttpResponse('OK')
-        
-        # Find transaction
-        transaction = None
-        if reference:
-            try:
-                transaction = PaymentTransaction.objects.get(reference=reference)
-            except PaymentTransaction.DoesNotExist:
-                pass
-        
-        if not transaction and transaction_id:
-            try:
-                transaction = PaymentTransaction.objects.get(sasapay_transaction_id=transaction_id)
-            except PaymentTransaction.DoesNotExist:
-                pass
-        
-        if transaction:
-            # Update transaction
-            transaction.sasapay_raw_response = data
-            transaction.sasapay_status = status
-            
-            if status == 'COMPLETED':
-                transaction.status = 'completed'
-                transaction.paid_at = timezone.now()
-                transaction.completed_at = timezone.now()
-                transaction.save()
-                
-                # Process successful payment
-                process_successful_payment(transaction, request)
-                
-            elif status == 'FAILED':
-                transaction.status = 'failed'
-                transaction.save()
-            
-            else:
-                transaction.save()
-        
-        return HttpResponse('OK')
-
-
-def sasapay_verify(request):
-    """Verify payment after redirect"""
-    transaction_id = request.GET.get('transaction_id')
-    
-    if not transaction_id:
-        return redirect('payment_failed')
-    
-    from .sasapay_utils import query_payment_status
-    
-    # Query status
-    result = query_payment_status(transaction_id)
-    
-    if result.get('status') == 'COMPLETED':
-        # Find transaction
-        try:
-            transaction = PaymentTransaction.objects.get(sasapay_transaction_id=transaction_id)
-            if transaction.status != 'completed':
-                transaction.status = 'completed'
-                transaction.paid_at = timezone.now()
-                transaction.completed_at = timezone.now()
-                transaction.save()
-                process_successful_payment(transaction, request)
-            
-            return redirect('payment_success', reference=transaction.reference)
-        except PaymentTransaction.DoesNotExist:
-            pass
-    
-    return redirect('payment_failed')
-
-
-def sasapay_status(request, reference):
-    """Check payment status (AJAX)"""
-    try:
-        transaction = PaymentTransaction.objects.get(reference=reference)
-        
-        # If still pending, query SasaPay
-        if transaction.status == 'pending' and transaction.sasapay_transaction_id:
-            from .sasapay_utils import query_payment_status
-            result = query_payment_status(transaction.sasapay_transaction_id)
-            
-            if result.get('status') == 'COMPLETED':
-                transaction.status = 'completed'
-                transaction.paid_at = timezone.now()
-                transaction.completed_at = timezone.now()
-                transaction.save()
-                process_successful_payment(transaction, None)
-            elif result.get('status') == 'FAILED':
-                transaction.status = 'failed'
-                transaction.save()
-        
-        return JsonResponse({
-            'status': transaction.status,
-            'success_url': f'/payment/success/{reference}/' if transaction.status == 'completed' else None
-        })
-    except PaymentTransaction.DoesNotExist:
-        return JsonResponse({'status': 'not_found'}, status=404)        
+   
 
 
 # myapp/views.py - Add these functions at the end of your file
@@ -6926,6 +6789,11 @@ def update_merchandise_order_status(request, id):
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 
+
+
+
+
+
 # ========== EVENTS ==========
 @require_http_methods(["GET"])
 def get_events(request):
@@ -7061,923 +6929,7 @@ def create_order(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
-
-# ========== SASAPAY INTEGRATION ==========
-# Import SasaPay configuration from settings (Production)
-SASAPAY_API_URL = getattr(settings, 'SASAPAY_API_URL', 'https://api.sasapay.app/api/v1')
-SASAPAY_CLIENT_ID = getattr(settings, 'SASAPAY_CLIENT_ID', None)
-SASAPAY_CLIENT_SECRET = getattr(settings, 'SASAPAY_CLIENT_SECRET', None)
-SASAPAY_MERCHANT_CODE = getattr(settings, 'SASAPAY_MERCHANT_CODE', '600980')
-
-# Aliases for compatibility with existing code
-SASAPAY_API_KEY = SASAPAY_CLIENT_ID
-SASAPAY_API_SECRET = SASAPAY_CLIENT_SECRET  
-SASAPAY_SHORTCODE = SASAPAY_MERCHANT_CODE
-
-# Verify production configuration
-if not all([SASAPAY_CLIENT_ID, SASAPAY_CLIENT_SECRET]):
-    print("⚠️ WARNING: SasaPay production credentials not configured!")
-
-def generate_sasapay_signature(data):
-    """Generate HMAC SHA256 signature for SasaPay"""
-    secret = SASAPAY_API_SECRET
-    sorted_data = {k: data[k] for k in sorted(data.keys())}
-    sign_string = ""
-    for k, v in sorted_data.items():
-        sign_string += f"{k}{v}"
-    signature = hmac.new(secret.encode(), sign_string.encode(), hashlib.sha256).hexdigest()
-    return signature
-
-
-@require_http_methods(["POST"])
-def sasapay_stk_push(request):
-    try:
-        data = json.loads(request.body)
-        phone = data['phone'].strip()
-        amount = str(int(float(data['amount'])))
-        reference = data['reference']
-        description = data.get('description', 'MBC Payment')
-        
-        # Format phone number (remove 0 or +254 prefix)
-        if phone.startswith('0'):
-            phone = '254' + phone[1:]
-        elif phone.startswith('+'):
-            phone = phone[1:]
-        
-        payload = {
-            'shortcode': SASAPAY_SHORTCODE,
-            'amount': amount,
-            'phone': phone,
-            'reference': reference,
-            'description': description,
-            'callback_url': f"{settings.SITE_URL}/api/sasapay/callback/"
-        }
-        
-        payload['signature'] = generate_sasapay_signature(payload)
-        
-        response = requests.post(
-            f"{SASAPAY_API_URL}/stkpush",
-            json=payload,
-            headers={'Content-Type': 'application/json', 'Api-Key': SASAPAY_API_KEY},
-            timeout=30
-        )
-        
-        result = response.json()
-        
-        if result.get('success'):
-            # Update order with checkout_request_id
-            Order.objects.filter(reference=reference).update(
-                checkout_request_id=result.get('checkout_request_id'),
-                payment_reference=result.get('checkout_request_id')
-            )
-            return JsonResponse({
-                'success': True,
-                'checkout_request_id': result.get('checkout_request_id'),
-                'message': 'STK Push sent successfully'
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': result.get('message', 'STK Push failed')
-            }, status=400)
-            
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-@require_http_methods(["GET"])
-def sasapay_check_status(request, checkout_id):
-    try:
-        response = requests.get(
-            f"{SASAPAY_API_URL}/status/{checkout_id}",
-            headers={'Content-Type': 'application/json', 'Api-Key': SASAPAY_API_KEY},
-            timeout=30
-        )
-        result = response.json()
-        
-        return JsonResponse({
-            'status': result.get('status', 'pending'),
-            'message': result.get('message', ''),
-            'data': result
-        })
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-
-@csrf_exempt
-def sasapay_callback(request):
-    """Handle SasaPay callback after payment"""
-    try:
-        data = json.loads(request.body)
-        checkout_request_id = data.get('checkout_request_id')
-        status = data.get('status')
-        reference = data.get('reference')
-        
-        if status == 'completed':
-            # Update order
-            order = Order.objects.filter(checkout_request_id=checkout_request_id).first()
-            if order:
-                order.status = 'completed'
-                order.save()
-                
-                if order.item_type == 'ticket':
-                    # Create ticket record
-                    event = Event.objects.filter(is_active=True).first()
-                    if event:
-                        ticket = EventTicket.objects.create(
-                            event=event,
-                            attendee_name=order.customer_name,
-                            attendee_phone=order.customer_phone,
-                            attendee_email=order.customer_email,
-                            quantity=order.metadata.get('quantity', 1),
-                            unit_price_usd=249,
-                            unit_price_kes=249 * 128,
-                            order_reference=order.reference,
-                            payment_reference=checkout_request_id,
-                            status='confirmed'
-                        )
-                        event.current_bookings += ticket.quantity
-                        event.save()
-                        send_ticket_email(ticket)
-                        
-                elif order.item_type == 'merchandise':
-                    # Create merchandise order record
-                    merch_order = MerchandiseOrder.objects.create(
-                        customer_name=order.customer_name,
-                        customer_phone=order.customer_phone,
-                        customer_email=order.customer_email,
-                        delivery_address=order.metadata.get('address', ''),
-                        items=order.items,
-                        subtotal=order.amount,
-                        total=order.amount,
-                        payment_reference=checkout_request_id,
-                        order_reference=order.reference,
-                        status='paid'
-                    )
-                    send_merchandise_order_email(merch_order)
-                    
-                    # Update stock
-                    for item in order.items:
-                        try:
-                            product = Merchandise.objects.get(id=item['id'])
-                            product.stock -= item['quantity']
-                            product.save()
-                        except:
-                            pass
-        
-        return JsonResponse({'success': True})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
     
-
-    
-
-# ========== MERCHANDISE PAYMENT VIEW ==========
-@csrf_exempt
-def sasapay_merchandise_payment(request):
-    """Initiate merchandise payment via SasaPay"""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
-    
-    try:
-        data = json.loads(request.body)
-    except:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
-    phone = data.get('phone')
-    amount = data.get('amount')
-    cart = data.get('cart', [])
-    customer_name = data.get('customer_name', 'Guest')
-    customer_email = data.get('customer_email', '')
-    
-    if not phone or not amount:
-        return JsonResponse({'error': 'Phone and amount required'}, status=400)
-    
-    try:
-        # Create merchandise order
-        merch_order = MerchandiseOrder.objects.create(
-            customer_name=customer_name,
-            customer_phone=phone,
-            customer_email=customer_email,
-            delivery_address='To be confirmed',
-            items=cart,
-            subtotal=amount,
-            total=amount,
-            status='pending'
-        )
-        
-        # Initiate SasaPay STK Push
-        result = initiate_c2b_payment(
-            phone=phone,
-            amount=int(amount),
-            reference=merch_order.order_number,
-            description=f"Merchandise Order: {len(cart)} items"
-        )
-        
-        if result.get('success'):
-            merch_order.payment_reference = result.get('transaction_id')
-            merch_order.save()
-            
-            return JsonResponse({
-                'success': True,
-                'transaction_id': result.get('transaction_id'),
-                'reference': merch_order.order_number
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': result.get('error', 'Payment failed')
-            })
-            
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-# ========== PAYMENT STATUS VIEW ==========
-def sasapay_payment_status(request, transaction_id):
-    """Check payment status"""
-    result = query_payment_status(transaction_id)
-    
-    if result.get('status') == 'COMPLETED':
-        # Update order if needed
-        order = Order.objects.filter(payment_reference=transaction_id).first()
-        if order and order.status != 'completed':
-            order.status = 'completed'
-            order.save()
-            
-            # Create ticket if it's a ticket order
-            if order.item_type == 'ticket':
-                try:
-                    event = Event.objects.first()
-                    if event:
-                        ticket = EventTicket.objects.create(
-                            event=event,
-                            attendee_name=order.customer_name,
-                            attendee_phone=order.customer_phone,
-                            attendee_email=order.customer_email,
-                            quantity=order.metadata.get('quantity', 1),
-                            unit_price_usd=249,
-                            unit_price_kes=249 * 129,
-                            order_reference=order.reference,
-                            payment_reference=transaction_id,
-                            status='confirmed'
-                        )
-                        event.current_bookings += ticket.quantity
-                        event.save()
-                        send_ticket_email(ticket)
-                except Exception as e:
-                    print(f"Ticket creation error: {e}")
-        
-        # Update merchandise order
-        merch_order = MerchandiseOrder.objects.filter(payment_reference=transaction_id).first()
-        if merch_order and merch_order.status == 'pending':
-            merch_order.status = 'paid'
-            merch_order.save()
-            
-            # Update stock
-            for item in merch_order.items:
-                try:
-                    product = Merchandise.objects.get(id=item['id'])
-                    product.stock -= item['quantity']
-                    product.save()
-                except:
-                    pass
-            
-            send_merchandise_order_email(merch_order)
-        
-        return JsonResponse({'status': 'completed'})
-    elif result.get('status') == 'FAILED':
-        return JsonResponse({'status': 'failed'})
-    else:
-        return JsonResponse({'status': 'pending'})
-# ========== SASA PAYMENT HELPER FUNCTIONS ==========
-
-def initiate_c2b_payment(phone, amount, reference, description):
-    """
-    Initiate REAL SasaPay C2B (M-PESA STK Push) payment
-    """
-    import requests
-    import hmac
-    import hashlib
-    import json
-    import base64
-    from django.conf import settings
-    
-    print("\n" + "="*60)
-    print("🔵 INITIATING REAL SASAPAY STK PUSH")
-    print(f"Phone: {phone}")
-    print(f"Amount: {amount}")
-    print(f"Reference: {reference}")
-    print("="*60)
-    
-    # SasaPay Configuration
-    API_URL = getattr(settings, 'SASAPAY_API_URL', 'https://sandbox.sasapay.app/api/v1')
-    CLIENT_ID = getattr(settings, 'SASAPAY_CLIENT_ID', '')
-    CLIENT_SECRET = getattr(settings, 'SASAPAY_CLIENT_SECRET', '')
-    SHORTCODE = getattr(settings, 'SASAPAY_MERCHANT_CODE', '600980')
-    CALLBACK_URL = f"{getattr(settings, 'SITE_URL', 'http://127.0.0.1:8000')}/api/sasapay/callback/"
-    
-    print(f"Environment: {getattr(settings, 'SASAPAY_ENVIRONMENT', 'sandbox')}")
-    print(f"API URL: {API_URL}")
-    print(f"Client ID: {CLIENT_ID[:10] if CLIENT_ID else 'NOT SET'}...")
-    print(f"Shortcode: {SHORTCODE}")
-    
-    # Check credentials
-    if not CLIENT_ID or not CLIENT_SECRET:
-        print("❌ SasaPay credentials not configured!")
-        return {
-            'success': False,
-            'error': 'SasaPay not configured. Please check settings.py'
-        }
-    
-    # Format phone number (remove 0 or +254)
-    phone = str(phone).strip()
-    if phone.startswith('0'):
-        phone = '254' + phone[1:]
-    elif phone.startswith('+'):
-        phone = phone[1:]
-    
-    # Format phone for SasaPay (they expect 254XXXXXXXXX format)
-    if not phone.startswith('254'):
-        phone = '254' + phone
-    
-    # Prepare payload according to SasaPay API docs
-    payload = {
-        'shortcode': SHORTCODE,
-        'amount': str(amount),
-        'phone': phone,
-        'reference': reference,
-        'description': description[:100],
-        'callback_url': CALLBACK_URL
-    }
-    
-    print(f"📦 Payload: {json.dumps(payload, indent=2)}")
-    
-    # Generate Basic Auth instead of signature
-    auth_string = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
-    
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': f'Basic {auth_string}'
-    }
-    
-    print(f"🔐 Using Basic Auth (client ID: {CLIENT_ID[:10]}...)")
-    
-    # Make API request
-    try:
-        print(f"📡 Sending request to {API_URL}/stkpush...")
-        
-        response = requests.post(
-            f"{API_URL}/stkpush",
-            json=payload,
-            headers=headers,
-            timeout=30
-        )
-        
-        print(f"📡 Response Status: {response.status_code}")
-        print(f"📡 Response Headers: {dict(response.headers)}")
-        print(f"📡 Response Body: {response.text}")
-        
-        if response.status_code == 200:
-            try:
-                result = response.json()
-                print(f"✅ Parsed Response: {result}")
-                
-                # Check different response formats
-                if result.get('success') or result.get('status') in ['success', 'pending', 'completed']:
-                    return {
-                        'success': True,
-                        'transaction_id': result.get('transaction_id') or result.get('checkout_id') or result.get('data', {}).get('transaction_id'),
-                        'checkout_id': result.get('checkout_id') or result.get('transaction_id'),
-                        'raw_response': result
-                    }
-                else:
-                    return {
-                        'success': False,
-                        'error': result.get('message', result.get('error', 'STK Push failed')),
-                        'raw_response': result
-                    }
-            except json.JSONDecodeError as e:
-                return {
-                    'success': False,
-                    'error': f'Invalid JSON response: {response.text[:200]}'
-                }
-        elif response.status_code == 502:
-            print("❌ SasaPay API Gateway Error - Try using sandbox environment")
-            return {
-                'success': False,
-                'error': 'SasaPay service temporarily unavailable. Please try again in a few minutes.'
-            }
-        else:
-            return {
-                'success': False,
-                'error': f'HTTP {response.status_code}: {response.text[:200]}'
-            }
-            
-    except requests.exceptions.Timeout:
-        print("❌ Request timeout")
-        return {'success': False, 'error': 'Request timeout. Please try again.'}
-    except requests.exceptions.ConnectionError as e:
-        print(f"❌ Connection error: {e}")
-        return {'success': False, 'error': f'Cannot connect to SasaPay: {str(e)}'}
-    except Exception as e:
-        print(f"❌ Unexpected error: {e}")
-        import traceback
-        traceback.print_exc()
-        return {'success': False, 'error': str(e)}
-
-
-def query_payment_status(transaction_id):
-    """
-    Query SasaPay payment status
-    """
-    import requests
-    from django.conf import settings
-    
-    API_URL = getattr(settings, 'SASAPAY_API_URL', 'https://api.sasapay.app/api/v1')
-    CLIENT_ID = getattr(settings, 'SASAPAY_CLIENT_ID', '')
-    
-    try:
-        response = requests.get(
-            f"{API_URL}/status/{transaction_id}",
-            headers={
-                'Content-Type': 'application/json',
-                'Api-Key': CLIENT_ID
-            },
-            timeout=30
-        )
-        
-        result = response.json()
-        
-        status = result.get('status', 'pending')
-        if status.lower() == 'completed':
-            return {'status': 'COMPLETED'}
-        elif status.lower() == 'failed':
-            return {'status': 'FAILED'}
-        else:
-            return {'status': 'PENDING'}
-            
-    except Exception as e:
-        print(f"Status query error: {e}")
-        return {'status': 'PENDING'}
-
-
-def initiate_checkout(amount, reference, description, email, phone=None):
-    """
-    Initiate SasaPay checkout (for card payments)
-    """
-    import requests
-    import hmac
-    import hashlib
-    from django.conf import settings
-    
-    API_URL = getattr(settings, 'SASAPAY_API_URL', 'https://api.sasapay.app/api/v1')
-    CLIENT_ID = getattr(settings, 'SASAPAY_CLIENT_ID', '')
-    CLIENT_SECRET = getattr(settings, 'SASAPAY_CLIENT_SECRET', '')
-    CALLBACK_URL = f"{getattr(settings, 'SITE_URL', 'https://mfalmebetterdays.capital')}/api/sasapay/callback/"
-    
-    payload = {
-        'amount': str(amount),
-        'reference': reference,
-        'description': description[:100],
-        'email': email,
-        'callback_url': CALLBACK_URL,
-        'currency': 'KES'
-    }
-    
-    if phone:
-        phone = str(phone).strip()
-        if phone.startswith('0'):
-            phone = '254' + phone[1:]
-        elif phone.startswith('+'):
-            phone = phone[1:]
-        payload['phone'] = phone
-    
-    # Generate signature
-    sorted_data = {k: payload[k] for k in sorted(payload.keys())}
-    sign_string = ""
-    for k, v in sorted_data.items():
-        sign_string += f"{k}{v}"
-    
-    signature = hmac.new(
-        CLIENT_SECRET.encode(),
-        sign_string.encode(),
-        hashlib.sha256
-    ).hexdigest()
-    
-    payload['signature'] = signature
-    
-    try:
-        response = requests.post(
-            f"{API_URL}/checkout",
-            json=payload,
-            headers={
-                'Content-Type': 'application/json',
-                'Api-Key': CLIENT_ID
-            },
-            timeout=30
-        )
-        
-        result = response.json()
-        
-        if result.get('success') or result.get('status') in ['success', 'pending']:
-            return {
-                'success': True,
-                'checkout_url': result.get('checkout_url') or result.get('redirect_url'),
-                'checkout_id': result.get('checkout_id') or result.get('transaction_id')
-            }
-        else:
-            return {
-                'success': False,
-                'error': result.get('message', 'Checkout initiation failed')
-            }
-            
-    except Exception as e:
-        return {'success': False, 'error': str(e)}
-
-
-def create_checkout(amount, reference, description, email, phone=None, callback_url=None, success_url=None, failure_url=None):
-    """
-    Create SasaPay checkout session (alias for initiate_checkout)
-    """
-    return initiate_checkout(amount, reference, description, email, phone)
-
-
-def process_sasapay_payment(data):
-    """
-    Process SasaPay payment response
-    """
-    transaction_id = data.get('transaction_id')
-    status = data.get('status')
-    reference = data.get('reference')
-    
-    if status == 'completed':
-        # Update order
-        order = Order.objects.filter(reference=reference).first()
-        if order and order.status != 'completed':
-            order.status = 'completed'
-            order.payment_reference = transaction_id
-            order.save()
-            
-            # Create ticket if needed
-            if order.item_type == 'ticket':
-                try:
-                    event = Event.objects.first()
-                    if event:
-                        ticket = EventTicket.objects.create(
-                            event=event,
-                            attendee_name=order.customer_name,
-                            attendee_phone=order.customer_phone,
-                            attendee_email=order.customer_email,
-                            quantity=order.metadata.get('quantity', 1),
-                            unit_price_usd=249,
-                            unit_price_kes=249 * 129,
-                            order_reference=order.reference,
-                            payment_reference=transaction_id,
-                            status='confirmed'
-                        )
-                        event.current_bookings += ticket.quantity
-                        event.save()
-                        send_ticket_email(ticket)
-                except Exception as e:
-                    print(f"Ticket creation error: {e}")
-            
-            # Create merchandise order if needed
-            elif order.item_type == 'merchandise':
-                try:
-                    merch_order = MerchandiseOrder.objects.create(
-                        customer_name=order.customer_name,
-                        customer_phone=order.customer_phone,
-                        customer_email=order.customer_email,
-                        delivery_address=order.metadata.get('address', ''),
-                        items=order.items,
-                        subtotal=order.amount,
-                        total=order.amount,
-                        payment_reference=transaction_id,
-                        order_reference=order.reference,
-                        status='paid'
-                    )
-                    send_merchandise_order_email(merch_order)
-                except Exception as e:
-                    print(f"Merchandise order error: {e}")
-        
-        return True
-    
-    return False
-
-
-# ========== SINGLE WORKING SASAPAY PAYMENT VIEWS ==========
-
-
-@csrf_exempt
-def sasapay_ticket_payment(request):
-    """Initiate ticket payment with fallback to test mode"""
-    print("\n" + "="*60)
-    print("🔵 SASAPAY TICKET PAYMENT")
-    print("="*60)
-    
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
-    
-    try:
-        data = json.loads(request.body)
-    except:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
-    phone = data.get('phone')
-    amount = data.get('amount')
-    attendee_name = data.get('attendee_name', 'Guest')
-    attendee_email = data.get('attendee_email', 'guest@example.com')
-    
-    if not phone or not amount:
-        return JsonResponse({'error': 'Phone and amount required'}, status=400)
-    
-    try:
-        amount = int(float(amount))
-        
-        # Get or create event
-        event = Event.objects.first()
-        if not event:
-            event = Event.objects.create(
-                title="Mfalme Betterdays Live Summit",
-                venue="Safari Park Hotel, Nairobi",
-                date=timezone.now() + timedelta(days=90),
-                ticket_price_usd=249,
-                max_attendees=500,
-                is_active=True
-            )
-        
-        # Create order
-        order = Order.objects.create(
-            customer_name=attendee_name,
-            customer_email=attendee_email,
-            customer_phone=phone,
-            item_type='ticket',
-            amount=amount,
-            status='pending',
-            metadata={'event_id': event.id, 'quantity': 1}
-        )
-        
-        # Check if we should use test mode
-        if getattr(settings, 'SASAPAY_TEST_MODE', True):
-            print("⚠️ Using TEST MODE - No actual STK Push sent")
-            return JsonResponse({
-                'success': True,
-                'transaction_id': f"TEST_{order.reference}",
-                'reference': order.reference,
-                'test_mode': True,
-                'message': 'Test mode: No payment was processed. Set SASAPAY_TEST_MODE=False in production.'
-            })
-        
-        # Real SasaPay call
-        result = initiate_c2b_payment(
-            phone=phone,
-            amount=amount,
-            reference=order.reference,
-            description=f"Ticket: {event.title}"
-        )
-        
-        if result.get('success'):
-            order.payment_reference = result.get('transaction_id')
-            order.checkout_request_id = result.get('checkout_id')
-            order.save()
-            
-            return JsonResponse({
-                'success': True,
-                'transaction_id': result.get('transaction_id'),
-                'reference': order.reference
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': result.get('error', 'Payment failed')
-            }, status=400)
-            
-    except Exception as e:
-        print(f"❌ Error: {str(e)}")
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-@csrf_exempt
-def sasapay_merchandise_payment(request):
-    """Initiate merchandise payment via SasaPay - WORKING VERSION"""
-    print("\n" + "="*60)
-    print("🔵 SASAPAY MERCHANDISE PAYMENT CALLED")
-    print(f"Method: {request.method}")
-    print("="*60)
-    
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
-    
-    try:
-        data = json.loads(request.body)
-        print(f"📦 Received data: {data}")
-    except json.JSONDecodeError as e:
-        print(f"❌ JSON decode error: {e}")
-        return JsonResponse({'error': f'Invalid JSON: {str(e)}'}, status=400)
-    
-    phone = data.get('phone')
-    amount = data.get('amount')
-    cart = data.get('cart', [])
-    customer_name = data.get('customer_name', 'Guest')
-    customer_email = data.get('customer_email', 'guest@example.com')
-    
-    print(f"📞 Phone: {phone}")
-    print(f"💰 Amount: {amount}")
-    print(f"📦 Cart items: {len(cart)}")
-    
-    if not phone:
-        return JsonResponse({'error': 'Phone number required'}, status=400)
-    
-    if not amount:
-        return JsonResponse({'error': 'Amount required'}, status=400)
-    
-    try:
-        amount = int(float(amount))
-        
-        # Create merchandise order
-        merch_order = MerchandiseOrder.objects.create(
-            customer_name=customer_name,
-            customer_phone=phone,
-            customer_email=customer_email,
-            delivery_address='To be confirmed',
-            items=cart,
-            subtotal=amount,
-            total=amount,
-            status='pending'
-        )
-        
-        print(f"✅ Merchandise order created: {merch_order.order_number}")
-        
-        return JsonResponse({
-            'success': True,
-            'transaction_id': f"TEST_{merch_order.order_number}",
-            'reference': merch_order.order_number,
-            'message': 'Merchandise payment initiated successfully'
-        })
-        
-    except Exception as e:
-        print(f"❌ Error: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-def sasapay_payment_status(request, transaction_id):
-    """Check payment status - WORKING VERSION"""
-    print(f"\n🔵 STATUS CHECK: {transaction_id}")
-    
-    # Try to find order by reference or payment_reference
-    order = None
-    try:
-        order = Order.objects.filter(reference=transaction_id).first()
-        if not order:
-            order = Order.objects.filter(payment_reference=transaction_id).first()
-    except:
-        pass
-    
-    if order:
-        print(f"✅ Found order: {order.reference} - Status: {order.status}")
-        return JsonResponse({
-            'status': order.status,
-            'reference': order.reference
-        })
-    
-    # Check merchandise order
-    merch_order = None
-    try:
-        merch_order = MerchandiseOrder.objects.filter(order_number=transaction_id).first()
-        if not merch_order:
-            merch_order = MerchandiseOrder.objects.filter(payment_reference=transaction_id).first()
-    except:
-        pass
-    
-    if merch_order:
-        print(f"✅ Found merchandise order: {merch_order.order_number} - Status: {merch_order.status}")
-        return JsonResponse({
-            'status': merch_order.status,
-            'reference': merch_order.order_number
-        })
-    
-    # Default response
-    return JsonResponse({'status': 'pending', 'message': 'Transaction not found'})
-
-
-@csrf_exempt
-def sasapay_callback(request):
-    """Handle SasaPay callback - WORKING VERSION"""
-    print("\n" + "="*60)
-    print("🔵 SASAPAY CALLBACK RECEIVED")
-    print("="*60)
-    
-    if request.method == 'GET':
-        transaction_id = request.GET.get('transaction_id')
-        checkout_id = request.GET.get('checkout_id')
-        status = request.GET.get('status')
-        reference = request.GET.get('reference')
-        
-        print(f"📦 GET callback - transaction_id: {transaction_id}, reference: {reference}")
-        
-        if transaction_id:
-            # Update order if needed
-            order = Order.objects.filter(reference=transaction_id).first()
-            if order and order.status != 'completed':
-                order.status = 'completed'
-                order.paid_at = timezone.now()
-                order.save()
-                print(f"✅ Order {order.reference} marked as completed")
-                
-                # Create ticket
-                try:
-                    event = Event.objects.first()
-                    if event and order.item_type == 'ticket':
-                        ticket = EventTicket.objects.create(
-                            event=event,
-                            attendee_name=order.customer_name,
-                            attendee_phone=order.customer_phone,
-                            attendee_email=order.customer_email,
-                            quantity=1,
-                            unit_price_usd=249,
-                            unit_price_kes=249 * 129,
-                            order_reference=order.reference,
-                            payment_reference=transaction_id,
-                            status='confirmed'
-                        )
-                        event.current_bookings += 1
-                        event.save()
-                        print(f"✅ Ticket created: {ticket.ticket_number}")
-                        
-                        # Send email
-                        try:
-                            send_ticket_email(ticket)
-                        except Exception as e:
-                            print(f"Email error: {e}")
-                except Exception as e:
-                    print(f"Ticket creation error: {e}")
-            
-            return redirect(f'/payment/success/{transaction_id}/')
-        
-        return JsonResponse({'status': 'ok', 'message': 'Callback received'})
-    
-    elif request.method == 'POST':
-        try:
-            data = json.loads(request.body) if request.body else {}
-            print(f"📦 POST callback data: {data}")
-        except:
-            data = request.POST.dict()
-            print(f"📦 POST callback data (form): {data}")
-        
-        transaction_id = data.get('transaction_id') or data.get('checkout_id')
-        status = data.get('status')
-        reference = data.get('reference')
-        
-        if status and status.lower() == 'completed':
-            # Find and update order
-            order = None
-            if reference:
-                order = Order.objects.filter(reference=reference).first()
-            if not order and transaction_id:
-                order = Order.objects.filter(payment_reference=transaction_id).first()
-            
-            if order and order.status != 'completed':
-                order.status = 'completed'
-                order.payment_reference = transaction_id
-                order.paid_at = timezone.now()
-                order.save()
-                print(f"✅ Order {order.reference} marked as completed via POST callback")
-                
-                # Create ticket for ticket orders
-                if order.item_type == 'ticket':
-                    try:
-                        event = Event.objects.first()
-                        if event:
-                            ticket = EventTicket.objects.create(
-                                event=event,
-                                attendee_name=order.customer_name,
-                                attendee_phone=order.customer_phone,
-                                attendee_email=order.customer_email,
-                                quantity=order.metadata.get('quantity', 1),
-                                unit_price_usd=249,
-                                unit_price_kes=249 * 129,
-                                order_reference=order.reference,
-                                payment_reference=transaction_id,
-                                status='confirmed'
-                            )
-                            event.current_bookings += ticket.quantity
-                            event.save()
-                            print(f"✅ Ticket created: {ticket.ticket_number}")
-                            
-                            # Send email
-                            try:
-                                send_ticket_email(ticket)
-                            except Exception as e:
-                                print(f"Email error: {e}")
-                    except Exception as e:
-                        print(f"Ticket creation error: {e}")
-        
-        return JsonResponse({'status': 'received'})
-    
-    return JsonResponse({'status': 'ok'})
-
 
 # ========== EMAIL FUNCTIONS ==========
 
@@ -8096,11 +7048,11 @@ def send_ticket_email(ticket):
         msg.attach_alternative(html_content, "text/html")
         
         # Attach the ticket image
-        ticket_image_path = os.path.join(settings.BASE_DIR, 'static', 'assets', 'images', 'ticket.png')
+        ticket_image_path = os.path.join(settings.BASE_DIR, 'static', 'assets', 'images', 'tiko.png')
         
         if os.path.exists(ticket_image_path):
             with open(ticket_image_path, 'rb') as f:
-                msg.attach('Your_Ticket.png', f.read(), 'image/png')
+                msg.attach('tiko.png', f.read(), 'image/png')
         else:
             print(f"Warning: Ticket image not found at: {ticket_image_path}")
         
@@ -8240,7 +7192,7 @@ def send_merchandise_admin_notification(order):
 
 @csrf_exempt
 def api_create_ticket_order(request):
-    """Create ticket order and return JSON for frontend redirect"""
+    """Create ticket order and return JSON for frontend redirect - PAYSTACK VERSION"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
@@ -8260,11 +7212,7 @@ def api_create_ticket_order(request):
     amount_usd = 249 * quantity
     amount_kes = amount_usd * 129
     
-    import uuid
     reference = f"TKT-{uuid.uuid4().hex[:8].upper()}"
-    
-    from decimal import Decimal
-    from django.shortcuts import redirect
     
     # Create Order
     order = Order.objects.create(
@@ -8282,14 +7230,14 @@ def api_create_ticket_order(request):
         }
     )
     
-    # ALSO CREATE PAYMENT TRANSACTION (CRITICAL FOR SasaPay)
+    # Create PaymentTransaction with PAYSTACK
     transaction = PaymentTransaction.objects.create(
         user=request.user if request.user.is_authenticated else None,
         reference=reference,
         amount=Decimal(str(amount_kes)),
         currency='KES',
         payment_type='ticket',
-        payment_method='sasapay',
+        payment_method='paystack',  # CHANGED from 'sasapay'
         description=f"Event Ticket - {quantity} Ticket(s)",
         customer_email=email,
         customer_name=full_name,
@@ -8306,11 +7254,6 @@ def api_create_ticket_order(request):
         user_agent=request.META.get('HTTP_USER_AGENT', ''),
     )
     
-    print(f"✅ Created Order: {order.reference}")
-    print(f"✅ Created PaymentTransaction: {transaction.reference}")
-    
-    # RETURN JSON - NOT REDIRECT!
-    # The frontend JavaScript will handle the redirect
     return JsonResponse({
         'success': True,
         'reference': reference,
@@ -8321,7 +7264,7 @@ def api_create_ticket_order(request):
 
 @csrf_exempt
 def api_create_merchandise_order(request):
-    """Create merchandise order and return JSON for frontend redirect"""
+    """Create merchandise order and return JSON for frontend redirect - PAYSTACK VERSION"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
@@ -8346,10 +7289,7 @@ def api_create_merchandise_order(request):
     shipping = 500
     total = subtotal + shipping
     
-    import uuid
     reference = f"ORD-{uuid.uuid4().hex[:8].upper()}"
-    
-    from decimal import Decimal
     
     # Create Order
     order = Order.objects.create(
@@ -8368,14 +7308,14 @@ def api_create_merchandise_order(request):
         }
     )
     
-    # Create PaymentTransaction (CRITICAL FOR SasaPay)
+    # Create PaymentTransaction with PAYSTACK
     transaction = PaymentTransaction.objects.create(
         user=request.user if request.user.is_authenticated else None,
         reference=reference,
         amount=Decimal(str(total)),
         currency='KES',
         payment_type='merchandise',
-        payment_method='sasapay',
+        payment_method='paystack',  # CHANGED from 'sasapay'
         description=f"Merchandise Order - {len(cart)} items",
         customer_email=email,
         customer_name=full_name,
@@ -8394,11 +7334,6 @@ def api_create_merchandise_order(request):
         user_agent=request.META.get('HTTP_USER_AGENT', ''),
     )
     
-    print(f"✅ Created Merchandise Order: {order.reference}")
-    print(f"✅ Created PaymentTransaction: {transaction.reference}")
-    
-    # RETURN JSON - NOT REDIRECT!
-    # The frontend JavaScript will handle the redirect
     return JsonResponse({
         'success': True,
         'reference': reference,
@@ -8408,9 +7343,9 @@ def api_create_merchandise_order(request):
     })
 
 def payment_ticket(request, reference):
-    """Payment page for ticket order - FIXED VERSION"""
+    """Payment page for ticket order - UPDATED for Paystack"""
     try:
-        order = Order.objects.get(reference=reference, item_type='ticket')  # ← FIXED: use 'reference'
+        order = Order.objects.get(reference=reference, item_type='ticket')
         amount_usd = float(order.amount) / 129
         amount_kes = float(order.amount)
         
@@ -8421,7 +7356,11 @@ def payment_ticket(request, reference):
             'user': request.user if request.user.is_authenticated else None,
             'reference': reference,
             'payment_type': 'ticket',
-            'item_id': order.id
+            'item_id': order.id,
+            'customer_name': order.customer_name,
+            'customer_email': order.customer_email,
+            'customer_phone': order.customer_phone,
+            'paystack_public_key': getattr(settings, 'PAYSTACK_PUBLIC_KEY', ''),
         }
         return render(request, 'payment.html', context)
     except Order.DoesNotExist:
@@ -8430,9 +7369,9 @@ def payment_ticket(request, reference):
 
 
 def payment_merchandise(request, reference):
-    """Payment page for merchandise order - FIXED VERSION"""
+    """Payment page for merchandise order - UPDATED for Paystack"""
     try:
-        order = Order.objects.get(reference=reference, item_type='merchandise')  # ← FIXED: use 'reference'
+        order = Order.objects.get(reference=reference, item_type='merchandise')
         amount_usd = float(order.amount) / 129
         amount_kes = float(order.amount)
         
@@ -8443,7 +7382,11 @@ def payment_merchandise(request, reference):
             'user': request.user if request.user.is_authenticated else None,
             'reference': reference,
             'payment_type': 'merchandise',
-            'item_id': order.id
+            'item_id': order.id,
+            'customer_name': order.customer_name,
+            'customer_email': order.customer_email,
+            'customer_phone': order.customer_phone,
+            'paystack_public_key': getattr(settings, 'PAYSTACK_PUBLIC_KEY', ''),
         }
         return render(request, 'payment.html', context)
     except Order.DoesNotExist:
@@ -8518,3 +7461,1594 @@ def send_verification_email(user, verification_code):
         # User can see code in console for testing
         print(f"📝 Registration can continue with code: {verification_code}")
         return True
+
+
+
+# ==================== BOOK VIEWS ====================
+
+def get_books(request):
+    """Get book details (API)"""
+    try:
+        book = Book.objects.filter(is_active=True).first()
+        if not book:
+            return JsonResponse({'error': 'Book not found'}, status=404)
+        
+        data = {
+            'id': book.id,
+            'title': book.title,
+            'subtitle': book.subtitle,
+            'author': book.author,
+            'description': book.description,
+            'price_usd': float(book.price_usd),
+            'price_kes': float(book.price_kes),
+            'cover_image': book.cover_image_url,
+            'pages': book.pages,
+            'edition': book.edition,
+            'status': book.status,
+            'preorder_stock': book.preorder_stock,
+            'sold_count': book.sold_count,
+            'bonus_features': book.bonus_features,
+            'features': book.features,
+        }
+        return JsonResponse(data)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def api_create_book_order(request):
+    """Create book order and return JSON for frontend redirect - PAYSTACK VERSION"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    full_name = data.get('full_name')
+    email = data.get('email')
+    phone = data.get('phone')
+    quantity = data.get('quantity', 1)
+    delivery_type = data.get('delivery_type', 'digital')
+    address = data.get('address', '')
+    
+    if not all([full_name, email, phone]):
+        return JsonResponse({'error': 'All fields required'}, status=400)
+    
+    book = Book.objects.filter(is_active=True).first()
+    if not book:
+        return JsonResponse({'error': 'Book not found'}, status=404)
+    
+    if not book.is_available(quantity):
+        return JsonResponse({'error': 'Insufficient stock. Please reduce quantity.'}, status=400)
+    
+    if delivery_type == 'physical':
+        amount_usd = float(book.price_usd) * quantity + 29
+        amount_kes = float(book.price_kes) * quantity + (29 * 129)
+    else:
+        amount_usd = float(book.price_usd) * quantity
+        amount_kes = float(book.price_kes) * quantity
+    
+    book_order = BookOrder.objects.create(
+        book=book,
+        customer_name=full_name,
+        customer_email=email,
+        customer_phone=phone,
+        delivery_address=address if delivery_type == 'physical' else '',
+        delivery_type=delivery_type,
+        quantity=quantity,
+        unit_price_usd=book.price_usd,
+        unit_price_kes=book.price_kes,
+        total_usd=Decimal(str(amount_usd)),
+        total_kes=Decimal(str(amount_kes)),
+        status='pending'
+    )
+    
+    # Create PaymentTransaction with PAYSTACK
+    transaction = PaymentTransaction.objects.create(
+        user=request.user if request.user.is_authenticated else None,
+        reference=book_order.order_number,
+        amount=Decimal(str(amount_kes)),
+        currency='KES',
+        payment_type='book',
+        payment_method='paystack',  # CHANGED from 'sasapay'
+        description=f"Book: {book.title} x{quantity}",
+        customer_email=email,
+        customer_name=full_name,
+        customer_phone=phone,
+        metadata={
+            'order_id': book_order.id,
+            'order_reference': book_order.order_number,
+            'item_type': 'book',
+            'book_id': book.id,
+            'book_title': book.title,
+            'amount_usd': amount_usd,
+            'quantity': quantity,
+            'delivery_type': delivery_type,
+            'address': address
+        },
+        status='initiated',
+        ip_address=get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', ''),
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'reference': book_order.order_number,
+        'amount_usd': amount_usd,
+        'amount_kes': float(amount_kes),
+        'order_id': book_order.id
+    })
+
+def process_book_payment(order_reference, transaction_id):
+    """Process successful book payment"""
+    try:
+        book_order = BookOrder.objects.get(order_number=order_reference)
+        book = book_order.book
+        
+        if book_order.status == 'paid':
+            print(f"Book order {order_reference} already processed")
+            return True
+        
+        # Update order status
+        book_order.status = 'paid'
+        book_order.payment_reference = transaction_id
+        book_order.save()
+        
+        # Decrement stock
+        book.decrement_stock(book_order.quantity)
+        
+        # Generate digital access code
+        if book_order.delivery_type == 'digital':
+            book_order.generate_digital_access_code()
+        
+        # Send colorful emails
+        send_book_purchase_email(book_order)
+        send_book_admin_notification(book_order)
+        
+        print(f"✅ Book order {order_reference} processed successfully")
+        return True
+        
+    except BookOrder.DoesNotExist:
+        print(f"❌ Book order {order_reference} not found")
+        return False
+    except Exception as e:
+        print(f"❌ Error processing book order: {e}")
+        return False
+
+
+def send_book_purchase_email(book_order):
+    """Send colorful book purchase confirmation email to customer"""
+    from django.core.mail import EmailMultiAlternatives
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    import os
+    
+    book = book_order.book
+    
+    subject = f"Your Copy of '{book.title}' - Order Confirmation"
+    
+    # Build download URL if digital
+    download_link = ""
+    if book_order.delivery_type == 'digital' and book_order.digital_access_code:
+        download_link = f"{settings.SITE_URL}/book/download/{book_order.digital_access_code}/"
+    
+    # Colorful HTML email
+    html_content = f'''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Book Order Confirmation</title>
+        <style>
+            body {{
+                font-family: 'Georgia', 'Times New Roman', Times, serif;
+                background: linear-gradient(135deg, #0a1520 0%, #1a2a3a 100%);
+                margin: 0;
+                padding: 40px 20px;
+            }}
+            .container {{
+                max-width: 600px;
+                margin: 0 auto;
+                background: #ffffff;
+                border-radius: 24px;
+                overflow: hidden;
+                box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+                border: 1px solid rgba(255,215,0,0.3);
+            }}
+            .header {{
+                background: linear-gradient(135deg, #FFD700, #FFA500);
+                padding: 30px;
+                text-align: center;
+                position: relative;
+            }}
+            .header h1 {{
+                margin: 0;
+                color: #0a1520;
+                font-size: 24px;
+                letter-spacing: 2px;
+                font-weight: 800;
+            }}
+            .header p {{
+                margin: 8px 0 0;
+                color: #0a1520;
+                font-size: 13px;
+                opacity: 0.8;
+            }}
+            .gold-stripe {{
+                height: 4px;
+                background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700);
+            }}
+            .content {{
+                padding: 35px;
+            }}
+            .book-badge {{
+                text-align: center;
+                margin-bottom: 25px;
+            }}
+            .book-badge i {{
+                font-size: 48px;
+                color: #FFD700;
+                background: rgba(255,215,0,0.1);
+                padding: 15px;
+                border-radius: 50%;
+            }}
+            h2 {{
+                color: #B8860B;
+                font-size: 22px;
+                margin-bottom: 20px;
+                text-align: center;
+                border-bottom: 2px solid #FFD700;
+                display: inline-block;
+                padding-bottom: 8px;
+            }}
+            .order-details {{
+                background: #f8f9fa;
+                border-radius: 16px;
+                padding: 20px;
+                margin: 20px 0;
+                border-left: 4px solid #FFD700;
+            }}
+            .order-details p {{
+                margin: 10px 0;
+                color: #333;
+            }}
+            .order-details strong {{
+                color: #B8860B;
+            }}
+            .highlight {{
+                background: linear-gradient(135deg, #FFD70020, #FFA50020);
+                padding: 15px;
+                border-radius: 12px;
+                margin: 20px 0;
+                text-align: center;
+            }}
+            .highlight .amount {{
+                font-size: 28px;
+                font-weight: 800;
+                color: #B8860B;
+            }}
+            .bonus-box {{
+                background: linear-gradient(135deg, #667eea15, #764ba215);
+                border-radius: 12px;
+                padding: 15px;
+                margin: 20px 0;
+            }}
+            .bonus-box h4 {{
+                color: #764ba2;
+                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }}
+            .bonus-box ul {{
+                margin: 0;
+                padding-left: 20px;
+            }}
+            .bonus-box li {{
+                color: #555;
+                margin: 6px 0;
+            }}
+            .download-btn {{
+                display: inline-block;
+                background: linear-gradient(135deg, #FFD700, #FFA500);
+                color: #0a1520;
+                text-decoration: none;
+                padding: 14px 35px;
+                border-radius: 50px;
+                font-weight: 800;
+                font-size: 16px;
+                margin: 15px 0;
+                transition: transform 0.3s ease;
+            }}
+            .download-btn:hover {{
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(255,215,0,0.3);
+            }}
+            .footer {{
+                background: #1a1a2e;
+                padding: 20px;
+                text-align: center;
+                font-size: 12px;
+                color: #aaa;
+            }}
+            .footer a {{
+                color: #FFD700;
+                text-decoration: none;
+            }}
+            .gold-text {{
+                color: #B8860B;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="gold-stripe"></div>
+            <div class="header">
+                <h1>MFALME BETTERDAYS CAPITAL</h1>
+                <p>Elite Trading & Investment Solutions</p>
+            </div>
+            <div class="content">
+                <div class="book-badge">
+                    <i>📚</i>
+                </div>
+                
+                <h2>📖 Your Order is Confirmed!</h2>
+                
+                <p style="text-align: center; color: #555;">Thank you for pre-ordering <strong>"{book.title}"</strong> — the definitive guide to financial markets mastery.</p>
+                
+                <div class="order-details">
+                    <p><strong>📋 Order Number:</strong> {book_order.order_number}</p>
+                    <p><strong>👤 Customer:</strong> {book_order.customer_name}</p>
+                    <p><strong>📧 Email:</strong> {book_order.customer_email}</p>
+                    <p><strong>📞 Phone:</strong> {book_order.customer_phone}</p>
+                    <p><strong>📦 Quantity:</strong> {book_order.quantity} copy/ies</p>
+                    <p><strong>🚚 Delivery Type:</strong> {'Digital Download' if book_order.delivery_type == 'digital' else 'Physical + Digital'}</p>
+                    {'<p><strong>📍 Shipping Address:</strong> ' + book_order.delivery_address + '</p>' if book_order.delivery_address else ''}
+                </div>
+                
+                <div class="highlight">
+                    <span style="font-size: 14px; color: #666;">Total Amount Paid</span>
+                    <div class="amount">KES {book_order.total_kes:,.2f}</div>
+                    <span style="font-size: 12px; color: #888;">(${book_order.total_usd:.2f} USD)</span>
+                </div>
+                
+                <div class="bonus-box">
+                    <h4>🎁 Your Pre-Order Bonuses:</h4>
+                    <ul>
+                        <li>Exclusive webinar access with Sir Levi Muriuki</li>
+                        <li>The Elguago Strategy Cheatsheet (PDF)</li>
+                        <li>Private community access (3 months)</li>
+                        <li>Early access to future editions</li>
+                    </ul>
+                </div>
+                
+                {('<div style="text-align: center;">' +
+                  '<a href="' + download_link + '" class="download-btn">⬇️ Download Your Copy Now</a>' +
+                  '<p style="font-size: 12px; color: #888; margin-top: 10px;">Access expires in 365 days</p>' +
+                  '</div>') if book_order.delivery_type == 'digital' else ''}
+                
+                <div class="bonus-box" style="background: #e8f4f8;">
+                    <h4>📌 What's Next?</h4>
+                    <ul>
+                        <li>You will receive access to your digital copy within 24 hours</li>
+                        <li>Check your email for webinar registration details</li>
+                        <li>Join our community for ongoing support</li>
+                        <li>Physical copies will be shipped within 5-7 business days</li>
+                    </ul>
+                </div>
+                
+                <p style="text-align: center; font-size: 13px; color: #666; margin-top: 20px;">
+                    <strong>"The Mighty Elguago"</strong> — Financial Markets, Strategy, Risk & Wealth Creation
+                </p>
+            </div>
+            <div class="footer">
+                <p>For inquiries: <a href="tel:+254706286667">+254 706 286 667</a> | <a href="mailto:mfalmebetterdays@gmail.com">mfalmebetterdays@gmail.com</a></p>
+                <p>© 2026 Mfalme Betterdays Capital. All rights reserved.</p>
+                <p style="font-size: 10px;">This is a confirmation of your pre-order. You will receive updates as your order progresses.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    '''
+    
+    # Plain text version
+    text_content = f"""
+    MFALME BETTERDAYS CAPITAL - BOOK ORDER CONFIRMATION
+    {'='*50}
+    
+    Thank you for pre-ordering "{book.title}"!
+    
+    Order Details:
+    Order Number: {book_order.order_number}
+    Customer: {book_order.customer_name}
+    Quantity: {book_order.quantity} copy/ies
+    Total Paid: KES {book_order.total_kes:,.2f} (${book_order.total_usd:.2f})
+    Delivery Type: {'Digital Download' if book_order.delivery_type == 'digital' else 'Physical + Digital'}
+    
+    Pre-Order Bonuses:
+    - Exclusive webinar access
+    - Elguago Strategy Cheatsheet
+    - Private community access (3 months)
+    - Early access to future editions
+    
+    For inquiries: +254 706 286 667
+    mfalmebetterdays@gmail.com
+    
+    This is a confirmation of your pre-order.
+    """
+    
+    try:
+        msg = EmailMultiAlternatives(
+            subject,
+            text_content,
+            settings.DEFAULT_FROM_EMAIL,
+            [book_order.customer_email]
+        )
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+        print(f"✅ Book purchase email sent to {book_order.customer_email}")
+        return True
+    except Exception as e:
+        print(f"❌ Book email error: {e}")
+        return False
+
+
+def send_book_admin_notification(book_order):
+    """Send colorful book order notification to admin"""
+    from django.core.mail import send_mail
+    from django.conf import settings
+    
+    book = book_order.book
+    
+    subject = f"📚 NEW BOOK ORDER - {book_order.order_number}"
+    
+    html_content = f'''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>New Book Order</title>
+        <style>
+            body {{
+                font-family: 'Segoe UI', Arial, sans-serif;
+                background: #f0f2f5;
+                margin: 0;
+                padding: 20px;
+            }}
+            .container {{
+                max-width: 550px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }}
+            .header {{
+                background: linear-gradient(135deg, #FFD700, #FFA500);
+                padding: 20px;
+                text-align: center;
+            }}
+            .header h1 {{
+                margin: 0;
+                color: #0a1520;
+                font-size: 20px;
+            }}
+            .content {{
+                padding: 25px;
+            }}
+            .alert {{
+                background: #fff3cd;
+                padding: 12px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                border-left: 4px solid #FFD700;
+            }}
+            .details-card {{
+                background: #f8f9fa;
+                border-radius: 12px;
+                padding: 15px;
+                margin-bottom: 20px;
+            }}
+            .row {{
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid #eee;
+            }}
+            .row:last-child {{
+                border-bottom: none;
+            }}
+            .label {{
+                color: #666;
+                font-weight: 500;
+            }}
+            .value {{
+                font-weight: bold;
+                color: #333;
+            }}
+            .value.highlight {{
+                color: #B8860F;
+                font-size: 18px;
+            }}
+            .badge {{
+                display: inline-block;
+                background: #10B981;
+                color: white;
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 12px;
+            }}
+            .button {{
+                display: block;
+                background: linear-gradient(135deg, #FFD700, #FFA500);
+                color: #0a1520;
+                text-align: center;
+                padding: 12px;
+                border-radius: 40px;
+                text-decoration: none;
+                font-weight: bold;
+                margin-top: 20px;
+            }}
+            .footer {{
+                background: #1a1a2e;
+                padding: 15px;
+                text-align: center;
+                font-size: 11px;
+                color: #aaa;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📚 NEW BOOK ORDER</h1>
+            </div>
+            <div class="content">
+                <div class="alert">
+                    A new book order has been received. Please review the details below.
+                </div>
+                
+                <div class="details-card">
+                    <div class="row">
+                        <span class="label">Order Number</span>
+                        <span class="value">{book_order.order_number}</span>
+                    </div>
+                    <div class="row">
+                        <span class="label">Book</span>
+                        <span class="value">{book.title}</span>
+                    </div>
+                    <div class="row">
+                        <span class="label">Customer Name</span>
+                        <span class="value">{book_order.customer_name}</span>
+                    </div>
+                    <div class="row">
+                        <span class="label">Phone</span>
+                        <span class="value">{book_order.customer_phone}</span>
+                    </div>
+                    <div class="row">
+                        <span class="label">Email</span>
+                        <span class="value">{book_order.customer_email}</span>
+                    </div>
+                    <div class="row">
+                        <span class="label">Quantity</span>
+                        <span class="value">x{book_order.quantity}</span>
+                    </div>
+                    <div class="row">
+                        <span class="label">Delivery Type</span>
+                        <span class="value"><span class="badge">{'Digital' if book_order.delivery_type == 'digital' else 'Physical'}</span></span>
+                    </div>
+                    {'<div class="row"><span class="label">Address</span><span class="value">' + book_order.delivery_address + '</span></div>' if book_order.delivery_address else ''}
+                    <div class="row">
+                        <span class="label">Total Amount</span>
+                        <span class="value highlight">KES {book_order.total_kes:,.2f}</span>
+                    </div>
+                </div>
+                
+                <a href="{settings.SITE_URL}/admin/" class="button">🔍 VIEW IN ADMIN PANEL</a>
+            </div>
+            <div class="footer">
+                <p>Mfalme Betterdays Capital | Book Order Notification</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    '''
+    
+    try:
+        send_mail(
+            subject=subject,
+            message=f"New book order from {book_order.customer_name} - {book_order.quantity} copy/ies - Total: KES {book_order.total_kes:,.2f}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=settings.ADMIN_EMAILS,
+            fail_silently=True,
+            html_message=html_content
+        )
+        print(f"✅ Book admin notification sent")
+        return True
+    except Exception as e:
+        print(f"❌ Admin notification error: {e}")
+        return False
+
+
+def book_download(request, access_code):
+    """Download book PDF using access code"""
+    try:
+        book_order = BookOrder.objects.get(digital_access_code=access_code, digital_access_granted=True)
+        
+        if book_order.digital_access_expires and timezone.now() > book_order.digital_access_expires:
+            messages.error(request, 'Your download link has expired.')
+            return redirect('index')
+        
+        book = book_order.book
+        pdf_url = book.pdf_file_url
+        
+        if not pdf_url:
+            messages.error(request, 'Book PDF not available yet.')
+            return redirect('index')
+        
+        # Log download
+        ActivityLog.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            action='BOOK_DOWNLOAD',
+            description=f'Downloaded {book.title} - Order: {book_order.order_number}',
+            metadata={'order_id': book_order.id}
+        )
+        
+        return redirect(pdf_url)
+        
+    except BookOrder.DoesNotExist:
+        messages.error(request, 'Invalid or expired download link.')
+        return redirect('index')
+
+
+def payment_book(request, reference):
+    """Payment page for book order - UPDATED for Paystack"""
+    try:
+        book_order = BookOrder.objects.get(order_number=reference)
+        amount_usd = float(book_order.total_usd)
+        amount_kes = float(book_order.total_kes)
+        
+        context = {
+            'title': f"Book: {book_order.book.title}",
+            'amount_usd': amount_usd,
+            'amount_kes': amount_kes,
+            'user': request.user if request.user.is_authenticated else None,
+            'reference': reference,
+            'payment_type': 'book',
+            'item_id': book_order.id,
+            'customer_name': book_order.customer_name,
+            'customer_email': book_order.customer_email,
+            'customer_phone': book_order.customer_phone,
+            'paystack_public_key': getattr(settings, 'PAYSTACK_PUBLIC_KEY', ''),
+        }
+        return render(request, 'payment.html', context)
+    except BookOrder.DoesNotExist:
+        messages.error(request, 'Order not found')
+        return redirect('index')
+
+
+def api_books(request):
+    """Get all books for admin"""
+    books = Book.objects.all().order_by('order')
+    data = [{
+        'id': b.id,
+        'title': b.title,
+        'subtitle': b.subtitle,
+        'author': b.author,
+        'price_usd': float(b.price_usd),
+        'price_kes': float(b.price_kes),
+        'cover_image': b.cover_image_url,
+        'stock': b.stock,
+        'preorder_stock': b.preorder_stock,
+        'sold_count': b.sold_count,
+        'status': b.status,
+        'is_active': b.is_active,
+        'is_featured': b.is_featured,
+        'features': b.features,
+        'bonus_features': b.bonus_features,
+    } for b in books]
+    return JsonResponse({'books': data})
+
+
+@csrf_exempt
+def api_create_book(request):
+    """Create a new book (admin)"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    book = Book.objects.create(
+        title=data.get('title', 'THE MIGHTY ELGUAGO'),
+        subtitle=data.get('subtitle', 'The Ultimate Roadmap to Financial Freedom'),
+        author=data.get('author', 'Sir Levi Muriuki'),
+        description=data.get('description', ''),
+        price_usd=Decimal(data.get('price_usd', 100)),
+        price_kes=Decimal(data.get('price_kes', 12900)),
+        stock=data.get('stock', 1000),
+        preorder_stock=data.get('preorder_stock', 500),
+        status=data.get('status', 'preorder'),
+        is_active=data.get('is_active', True),
+        is_featured=data.get('is_featured', True),
+        features=data.get('features', []),
+        bonus_features=data.get('bonus_features', []),
+    )
+    
+    return JsonResponse({'success': True, 'id': book.id})
+
+
+@csrf_exempt
+def api_update_book(request, book_id):
+    """Update book (admin)"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        book = Book.objects.get(id=book_id)
+        data = json.loads(request.body)
+        
+        book.title = data.get('title', book.title)
+        book.subtitle = data.get('subtitle', book.subtitle)
+        book.author = data.get('author', book.author)
+        book.description = data.get('description', book.description)
+        book.price_usd = Decimal(data.get('price_usd', book.price_usd))
+        book.price_kes = Decimal(data.get('price_kes', book.price_kes))
+        book.stock = data.get('stock', book.stock)
+        book.preorder_stock = data.get('preorder_stock', book.preorder_stock)
+        book.status = data.get('status', book.status)
+        book.is_active = data.get('is_active', book.is_active)
+        book.is_featured = data.get('is_featured', book.is_featured)
+        book.features = data.get('features', book.features)
+        book.bonus_features = data.get('bonus_features', book.bonus_features)
+        book.save()
+        
+        return JsonResponse({'success': True})
+    except Book.DoesNotExist:
+        return JsonResponse({'error': 'Book not found'}, status=404)
+
+
+@csrf_exempt
+def api_delete_book(request, book_id):
+    """Delete book (admin)"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        Book.objects.get(id=book_id).delete()
+        return JsonResponse({'success': True})
+    except Book.DoesNotExist:
+        return JsonResponse({'error': 'Book not found'}, status=404)
+
+
+def api_book_orders(request):
+    """Get all book orders for admin"""
+    orders = BookOrder.objects.all().order_by('-created_at')
+    data = [{
+        'id': o.id,
+        'order_number': o.order_number,
+        'customer_name': o.customer_name,
+        'customer_email': o.customer_email,
+        'customer_phone': o.customer_phone,
+        'quantity': o.quantity,
+        'total_kes': float(o.total_kes),
+        'delivery_type': o.delivery_type,
+        'status': o.status,
+        'created_at': o.created_at.strftime('%Y-%m-%d %H:%M'),
+        'book_title': o.book.title,
+    } for o in orders]
+    return JsonResponse({'orders': data})
+
+
+@csrf_exempt
+def api_update_book_order_status(request, order_id):
+    """Update book order status (admin)"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        order = BookOrder.objects.get(id=order_id)
+        
+        order.status = data.get('status', order.status)
+        if data.get('tracking_number'):
+            order.tracking_number = data.get('tracking_number')
+            order.shipping_carrier = data.get('shipping_carrier', '')
+        
+        if order.status == 'shipped' and not order.shipped_at:
+            order.shipped_at = timezone.now()
+        elif order.status == 'delivered' and not order.delivered_at:
+            order.delivered_at = timezone.now()
+        
+        order.save()
+        
+        return JsonResponse({'success': True})
+    except BookOrder.DoesNotExist:
+        return JsonResponse({'error': 'Order not found'}, status=404)     
+
+
+# ==================== FREE EVENT REGISTRATION - COMPLETE VIEWS ====================
+
+@csrf_exempt
+def api_free_ticket_registration(request):
+    """
+    FREE ticket registration - NO PAYMENT REQUIRED
+    """
+    print("=" * 60)
+    print("FREE REGISTRATION DEBUG - REQUEST RECEIVED")
+    print(f"Method: {request.method}")
+    print(f"Body: {request.body}")
+    print("=" * 60)
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        print(f"Parsed data: {data}")
+    except json.JSONDecodeError as e:
+        print(f"JSON decode error: {e}")
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    # Support multiple field name formats from frontend
+    full_name = data.get('full_name', '') or data.get('name', '') or data.get('fullname', '')
+    full_name = full_name.strip()
+    
+    email = data.get('email', '').strip().lower()
+    
+    phone = data.get('phone', '') or data.get('phone_number', '')
+    phone = phone.strip()
+    
+    print(f"Extracted - Name: '{full_name}', Email: '{email}', Phone: '{phone}'")
+    
+    # Validation
+    if not all([full_name, email, phone]):
+        print("FAILED: Missing required fields")
+        return JsonResponse({'error': 'All fields are required (Full Name, Email, Phone)'}, status=400)
+    
+    # Email validation
+    if '@' not in email or '.' not in email or len(email) < 5:
+        print(f"FAILED: Invalid email - {email}")
+        return JsonResponse({'error': 'Invalid email address'}, status=400)
+    
+    # Phone validation - remove non-digits and check length
+    phone_digits = ''.join(filter(str.isdigit, phone))
+    if len(phone_digits) < 10:
+        print(f"FAILED: Invalid phone - {phone} (digits: {phone_digits})")
+        return JsonResponse({'error': 'Valid phone number required (minimum 10 digits)'}, status=400)
+    
+    print("Basic validation passed, checking database...")
+    
+    # Get or create the active event
+    from .models import Event, EventTicket
+    
+    event = Event.objects.filter(is_active=True).first()
+    if not event:
+        print("No active event found, creating one...")
+        event = Event.objects.create(
+            title="East & Central Africa Live Leveraging Summit",
+            date=datetime(2026, 8, 7, 9, 0, 0),
+            venue="Safari Park Hotel, Nairobi",
+            max_attendees=500,
+            current_bookings=0,
+            is_active=True,
+            featured=True,
+            ticket_price_usd=0,
+            ticket_price_kes=0
+        )
+        print(f"Created event with ID: {event.id}")
+    else:
+        print(f"Found existing event ID: {event.id}, current_bookings: {event.current_bookings}, max_attendees: {event.max_attendees}")
+    
+    try:
+        # Check if already registered by email
+        existing_by_email = EventTicket.objects.filter(
+            event=event,
+            attendee_email=email,
+            status='confirmed'
+        ).exclude(status='cancelled').exists()
+        
+        if existing_by_email:
+            print(f"FAILED: Duplicate email - {email}")
+            return JsonResponse({
+                'error': f'Email {email} is already registered for this event.',
+                'code': 'duplicate_email'
+            }, status=400)
+        
+        # Check if already registered by phone
+        existing_by_phone = EventTicket.objects.filter(
+            event=event,
+            attendee_phone=phone,
+            status='confirmed'
+        ).exclude(status='cancelled').exists()
+        
+        if existing_by_phone:
+            print(f"FAILED: Duplicate phone - {phone}")
+            return JsonResponse({
+                'error': f'Phone number {phone} is already registered for this event.',
+                'code': 'duplicate_phone'
+            }, status=400)
+        
+        # Check if event is sold out
+        if event.current_bookings >= event.max_attendees:
+            print(f"FAILED: Sold out - {event.current_bookings} >= {event.max_attendees}")
+            return JsonResponse({
+                'error': 'Event is sold out. No more seats available.',
+                'code': 'sold_out'
+            }, status=400)
+        
+        # Generate unique ticket number
+        ticket_number = f"FREE-{uuid.uuid4().hex[:8].upper()}"
+        print(f"Generated ticket number: {ticket_number}")
+        
+        # Create FREE ticket
+        print("Attempting to create ticket...")
+        ticket = EventTicket.objects.create(
+            event=event,
+            attendee_name=full_name,
+            attendee_phone=phone,
+            attendee_email=email,
+            quantity=1,
+            unit_price_usd=0,
+            unit_price_kes=0,
+            total_amount_usd=0,
+            total_amount_kes=0,
+            ticket_number=ticket_number,
+            payment_method='free',
+            status='confirmed',
+            registration_ip=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+        )
+        print(f"Ticket created successfully with ID: {ticket.id}")
+        
+        # Update event bookings count
+        event.current_bookings += 1
+        event.save(update_fields=['current_bookings'])
+        print(f"Updated event bookings to: {event.current_bookings}")
+        
+        # Send FREE ticket email (don't fail if email fails)
+        try:
+            send_free_ticket_email(ticket)
+            print("Email sent successfully")
+        except Exception as email_error:
+            print(f"Email failed but registration succeeded: {email_error}")
+        
+        print("=" * 60)
+        print("SUCCESS: Registration complete")
+        print("=" * 60)
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Registration successful! Check your email for your ticket.',
+            'ticket_number': ticket.ticket_number,
+            'ticket_id': ticket.id
+        })
+        
+    except Exception as e:
+        print(f"ERROR in ticket creation: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': f'Registration failed: {str(e)}'}, status=500)
+
+
+def send_free_ticket_email(ticket):
+    """
+    Send FREE ticket confirmation email to customer AND admin
+    Uses S3 image URL - NO file attachment needed
+    """
+    from django.core.mail import EmailMultiAlternatives, send_mail
+    from django.conf import settings
+    
+    try:
+        event = ticket.event
+        
+        # Your S3 ticket image URL
+        ticket_image_url = "https://s3-folderz.s3.eu-north-1.amazonaws.com/tiko.png"
+        
+        # ========== CUSTOMER EMAIL ==========
+        subject = f"Your FREE Ticket for {event.title} - Mfalme Betterdays Capital"
+        
+        # Plain text version
+        text_content = f"""
+MFALME BETTERDAYS CAPITAL - FREE TICKET CONFIRMATION
+{'='*50}
+
+Event: {event.title}
+Date: Friday, August 7, 2026
+Time: 9:00 AM - 5:00 PM EAT
+Venue: {event.venue}
+
+TICKET DETAILS:
+Ticket Number: {ticket.ticket_number}
+Attendee Name: {ticket.attendee_name}
+Email: {ticket.attendee_email}
+Phone: {ticket.attendee_phone}
+
+IMPORTANT:
+- Doors open at 8:00 AM
+- Bring valid ID for entry
+- You can show this email on your phone
+- Lunch and refreshments included
+
+For inquiries: +254 706 286 667 | mfalmebetterdays@gmail.com
+
+© 2026 MFALME BETTERDAYS CAPITAL
+        """
+        
+        # HTML version with embedded image from S3
+        html_content = f'''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Your FREE Ticket - Mfalme Betterdays Capital</title>
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    background: #f5f5f5;
+                    margin: 0;
+                    padding: 40px 20px;
+                }}
+                .container {{
+                    max-width: 550px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #FFD700, #FFA500);
+                    padding: 30px;
+                    text-align: center;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    color: #0a1520;
+                    font-size: 22px;
+                    font-weight: 800;
+                }}
+                .header p {{
+                    margin: 5px 0 0;
+                    color: #0a1520;
+                    opacity: 0.9;
+                    font-size: 14px;
+                }}
+                .content {{
+                    padding: 30px;
+                }}
+                .free-badge {{
+                    background: #10b981;
+                    color: white;
+                    padding: 8px 20px;
+                    border-radius: 40px;
+                    display: inline-block;
+                    margin-bottom: 20px;
+                    font-weight: bold;
+                    font-size: 14px;
+                }}
+                .ticket-image {{
+                    text-align: center;
+                    margin: 20px 0;
+                }}
+                .ticket-image img {{
+                    max-width: 100%;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                }}
+                .details {{
+                    background: #f8f9fa;
+                    border-radius: 12px;
+                    padding: 20px;
+                    margin: 20px 0;
+                }}
+                .details p {{
+                    margin: 12px 0;
+                    font-size: 14px;
+                    color: #333;
+                }}
+                .details strong {{
+                    color: #0a1520;
+                    font-weight: 700;
+                }}
+                .ticket-number {{
+                    font-family: monospace;
+                    font-size: 16px;
+                    background: #0a1520;
+                    color: #FFD700;
+                    padding: 6px 12px;
+                    border-radius: 5px;
+                    display: inline-block;
+                    letter-spacing: 1px;
+                }}
+                .info-box {{
+                    background: #e8f4f8;
+                    border-radius: 10px;
+                    padding: 15px;
+                    margin: 20px 0;
+                    border-left: 4px solid #FFD700;
+                }}
+                .info-box p {{
+                    margin: 8px 0;
+                    font-size: 13px;
+                    color: #333;
+                }}
+                .footer {{
+                    background: #1a1a2e;
+                    padding: 20px;
+                    text-align: center;
+                    font-size: 12px;
+                    color: #aaa;
+                }}
+                .footer a {{
+                    color: #FFD700;
+                    text-decoration: none;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>MFALME BETTERDAYS CAPITAL</h1>
+                    <p>East & Central Africa Live Leveraging Summit 2026</p>
+                </div>
+                <div class="content">
+                    <div style="text-align:center;">
+                        <div class="free-badge">FREE REGISTRATION CONFIRMED</div>
+                    </div>
+                    
+                    <div class="ticket-image">
+                        <img src="{ticket_image_url}" alt="Mfalme Betterdays Ticket">
+                    </div>
+                    
+                    <h2 style="text-align:center; color:#B8860B; font-size:20px; margin-bottom:15px;">{event.title}</h2>
+                    
+                    <div class="details">
+                        <p><strong>Ticket Number:</strong> <span class="ticket-number">{ticket.ticket_number}</span></p>
+                        <p><strong>Attendee Name:</strong> {ticket.attendee_name}</p>
+                        <p><strong>Email:</strong> {ticket.attendee_email}</p>
+                        <p><strong>Phone:</strong> {ticket.attendee_phone}</p>
+                        <p><strong>Date:</strong> Friday, August 7, 2026</p>
+                        <p><strong>Time:</strong> 9:00 AM - 5:00 PM EAT</p>
+                        <p><strong>Venue:</strong> {event.venue}</p>
+                    </div>
+                    
+                    <div class="info-box">
+                        <p><strong>Important Information:</strong></p>
+                        <p>• Doors open at 8:00 AM</p>
+                        <p>• Please bring a valid ID for entry</p>
+                        <p>• You can show this email on your phone or print it</p>
+                        <p>• Lunch and refreshments are included</p>
+                        <p>• Certificate of attendance will be provided</p>
+                        <p>• Seating is on a first-come, first-served basis</p>
+                    </div>
+                    
+                    <p style="text-align:center; margin-top:20px;">We look forward to seeing you at the summit!</p>
+                </div>
+                <div class="footer">
+                    <p>For inquiries: <a href="tel:+254706286667">+254 706 286 667</a> | <a href="mailto:mfalmebetterdays@gmail.com">mfalmebetterdays@gmail.com</a></p>
+                    <p>© 2026 MFALME BETTERDAYS CAPITAL - All Rights Reserved</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        '''
+        
+        # Send to CUSTOMER
+        customer_msg = EmailMultiAlternatives(
+            subject,
+            text_content,
+            settings.DEFAULT_FROM_EMAIL,
+            [ticket.attendee_email]
+        )
+        customer_msg.attach_alternative(html_content, "text/html")
+        customer_msg.send()
+        
+        print(f"✅ FREE ticket email sent to customer: {ticket.attendee_email}")
+        
+        # ========== ADMIN NOTIFICATION ==========
+        admin_subject = f"🔔 NEW FREE TICKET REGISTRATION - {ticket.ticket_number}"
+        
+        admin_text = f"""
+NEW FREE TICKET REGISTRATION
+
+Ticket: {ticket.ticket_number}
+Attendee: {ticket.attendee_name}
+Phone: {ticket.attendee_phone}
+Email: {ticket.attendee_email}
+Event: {event.title}
+Date: {event.date.strftime('%B %d, %Y')}
+
+View in admin: {settings.SITE_URL}/admin/
+        """
+        
+        admin_html = f'''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>New Free Ticket Registration</title>
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    background: #f0f2f5;
+                    margin: 0;
+                    padding: 20px;
+                }}
+                .container {{
+                    max-width: 550px;
+                    margin: 0 auto;
+                    background: white;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #10b981, #059669);
+                    padding: 20px;
+                    text-align: center;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    color: white;
+                    font-size: 20px;
+                }}
+                .content {{
+                    padding: 25px;
+                }}
+                .alert {{
+                    background: #d1fae5;
+                    padding: 12px;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                    border-left: 4px solid #10b981;
+                }}
+                .details-card {{
+                    background: #f8f9fa;
+                    border-radius: 12px;
+                    padding: 15px;
+                    margin-bottom: 20px;
+                }}
+                .row {{
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px 0;
+                    border-bottom: 1px solid #eee;
+                }}
+                .row:last-child {{
+                    border-bottom: none;
+                }}
+                .label {{
+                    color: #666;
+                    font-weight: 500;
+                }}
+                .value {{
+                    font-weight: bold;
+                    color: #333;
+                }}
+                .free-badge {{
+                    display: inline-block;
+                    background: #10b981;
+                    color: white;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                }}
+                .button {{
+                    display: block;
+                    background: #10b981;
+                    color: white;
+                    text-align: center;
+                    padding: 12px;
+                    border-radius: 40px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    margin-top: 20px;
+                }}
+                .footer {{
+                    background: #1a1a2e;
+                    padding: 15px;
+                    text-align: center;
+                    font-size: 11px;
+                    color: #aaa;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>MFALME BETTERDAYS CAPITAL</h1>
+                </div>
+                <div class="content">
+                    <div class="alert">
+                        A new FREE ticket registration has been received.
+                    </div>
+                    
+                    <div class="details-card">
+                        <div class="row">
+                            <span class="label">Ticket Number</span>
+                            <span class="value">{ticket.ticket_number}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Attendee Name</span>
+                            <span class="value">{ticket.attendee_name}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Phone</span>
+                            <span class="value">{ticket.attendee_phone}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Email</span>
+                            <span class="value">{ticket.attendee_email}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Event Date</span>
+                            <span class="value">{event.date.strftime('%B %d, 2026')}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Type</span>
+                            <span class="value"><span class="free-badge">FREE REGISTRATION</span></span>
+                        </div>
+                    </div>
+                    
+                    <a href="{settings.SITE_URL}/admin/" class="button">VIEW IN ADMIN PANEL</a>
+                </div>
+                <div class="footer">
+                    <p>Mfalme Betterdays Capital | Free Registration Notification</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        '''
+        
+        # Send to ADMIN
+        send_mail(
+            subject=admin_subject,
+            message=admin_text,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=settings.ADMIN_EMAILS,
+            fail_silently=True,
+            html_message=admin_html
+        )
+        
+        print(f"✅ Admin notification sent for free ticket")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Free ticket email error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+@require_http_methods(["GET"])
+def get_event_details(request):
+    """Get event details for frontend display including seat availability"""
+    try:
+        from .models import Event
+        
+        event = Event.objects.filter(is_active=True).first()
+        
+        if not event:
+            return JsonResponse({
+                'seats_remaining': 500,
+                'is_sold_out': False,
+                'current_bookings': 0,
+                'max_attendees': 500,
+                'event_exists': False
+            })
+        
+        seats_remaining = event.max_attendees - event.current_bookings
+        is_sold_out = seats_remaining <= 0
+        
+        return JsonResponse({
+            'id': event.id,
+            'title': event.title,
+            'seats_remaining': seats_remaining,
+            'is_sold_out': is_sold_out,
+            'current_bookings': event.current_bookings,
+            'max_attendees': event.max_attendees,
+            'venue': event.venue,
+            'event_exists': True,
+            'event_date': event.date.strftime('%Y-%m-%d %H:%M:%S') if event.date else None
+        })
+        
+    except Exception as e:
+        print(f"Error in get_event_details: {e}")
+        return JsonResponse({
+            'error': str(e),
+            'seats_remaining': 500,
+            'is_sold_out': False
+        }, status=500)
+
+
+@require_http_methods(["GET"])
+def get_event_tickets_admin(request):
+    """Get all tickets for admin panel"""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    try:
+        from .models import EventTicket
+        
+        tickets = EventTicket.objects.all().order_by('-created_at').select_related('event')
+        
+        data = [{
+            'id': t.id,
+            'ticket_number': t.ticket_number,
+            'attendee_name': t.attendee_name,
+            'attendee_email': t.attendee_email,
+            'attendee_phone': t.attendee_phone,
+            'event_title': t.event.title,
+            'event_date': t.event.date.strftime('%Y-%m-%d') if t.event.date else 'TBD',
+            'status': t.status,
+            'checked_in': t.checked_in,
+            'payment_method': t.payment_method,
+            'created_at': t.created_at.strftime('%Y-%m-%d %H:%M') if hasattr(t, 'created_at') else '',
+        } for t in tickets]
+        
+        return JsonResponse({
+            'tickets': data,
+            'total': tickets.count(),
+            'free_tickets': tickets.filter(payment_method='free').count(),
+            'paid_tickets': tickets.filter(payment_method='paid').count()
+        })
+        
+    except Exception as e:
+        print(f"Error in get_event_tickets_admin: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@require_http_methods(["POST"])
+def check_in_ticket(request, ticket_id):
+    """Mark ticket as checked in at event entrance"""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    try:
+        from .models import EventTicket
+        
+        ticket = EventTicket.objects.get(id=ticket_id)
+        
+        if ticket.checked_in:
+            return JsonResponse({
+                'error': 'Ticket already checked in',
+                'checked_in_at': str(ticket.checked_in_at) if ticket.checked_in_at else None
+            }, status=400)
+        
+        # Update ticket with check-in info
+        ticket.checked_in = True
+        ticket.checked_in_at = timezone.now()
+        ticket.status = 'attended'
+        ticket.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Ticket {ticket.ticket_number} checked in successfully',
+            'attendee': ticket.attendee_name,
+            'checked_in_at': str(ticket.checked_in_at)
+        })
+        
+    except EventTicket.DoesNotExist:
+        return JsonResponse({'error': 'Ticket not found'}, status=404)
+    except Exception as e:
+        print(f"Error in check_in_ticket: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def get_client_ip(request):
+    """Get client IP address from request"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
+# ==================== BULK REGISTRATION FOR TESTING ====================
+
+@csrf_exempt
+def bulk_free_registration(request):
+    """Bulk registration endpoint for testing purposes (admin only)"""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        registrations = data.get('registrations', [])
+        
+        if not registrations:
+            return JsonResponse({'error': 'No registrations provided'}, status=400)
+        
+        results = []
+        for reg in registrations:
+            # Create a mock request for each registration
+            class MockRequest:
+                META = {'HTTP_USER_AGENT': 'Bulk Upload', 'REMOTE_ADDR': '127.0.0.1'}
+            
+            mock_request = MockRequest()
+            
+            # Call the registration function for each
+            result = process_free_registration(
+                full_name=reg.get('name'),
+                email=reg.get('email'),
+                phone=reg.get('phone'),
+                request=mock_request
+            )
+            results.append(result)
+        
+        return JsonResponse({
+            'success': True,
+            'processed': len(results),
+            'results': results
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def process_free_registration(full_name, email, phone, request):
+    """Helper function to process a single free registration"""
+    from .models import Event, EventTicket
+    
+    try:
+        event = Event.objects.filter(is_active=True).first()
+        if not event:
+            event = Event.objects.create(
+                title="East & Central Africa Live Leveraging Summit",
+                date=datetime(2026, 8, 7, 9, 0, 0),
+                venue="Safari Park Hotel, Nairobi",
+                max_attendees=500,
+                current_bookings=0,
+                is_active=True,
+                featured=True,
+                ticket_price_usd=0,
+                ticket_price_kes=0
+            )
+        
+        # Check for duplicates
+        if EventTicket.objects.filter(attendee_email=email, status='confirmed').exists():
+            return {'success': False, 'email': email, 'error': 'Email already registered'}
+        
+        if EventTicket.objects.filter(attendee_phone=phone, status='confirmed').exists():
+            return {'success': False, 'email': email, 'error': 'Phone already registered'}
+        
+        if event.current_bookings >= event.max_attendees:
+            return {'success': False, 'email': email, 'error': 'Event sold out'}
+        
+        ticket_number = f"FREE-{uuid.uuid4().hex[:8].upper()}"
+        
+        ticket = EventTicket.objects.create(
+            event=event,
+            attendee_name=full_name,
+            attendee_phone=phone,
+            attendee_email=email,
+            quantity=1,
+            unit_price_usd=0,
+            unit_price_kes=0,
+            total_amount_usd=0,
+            total_amount_kes=0,
+            ticket_number=ticket_number,
+            payment_method='free',
+            status='confirmed',
+            registration_ip=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+        )
+        
+        event.current_bookings += 1
+        event.save(update_fields=['current_bookings'])
+        
+        return {'success': True, 'email': email, 'ticket_number': ticket_number}
+        
+    except Exception as e:
+        return {'success': False, 'email': email, 'error': str(e)}

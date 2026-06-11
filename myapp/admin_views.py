@@ -89,7 +89,7 @@ def get_admin_user(request):
     return admin_user
 
 # ==================== CUSTOM ADMIN AUTHENTICATION ====================
-# Hardcoded admin credentials - ONLY MESH AND MFALME
+# Hardcoded admin credentials - ONLY MESH AND MFALME 
 VALID_ADMINS = {
     'Mesh': '1234',
     'Mfalme': 'Mfalme@2026!'

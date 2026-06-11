@@ -11,52 +11,16 @@ from .views import (
     api_course_progress,
     api_course_next_lesson,
     api_course_reset_progress,
-    pesapal_initiate_payment,
-    pesapal_callback,
-    pesapal_ipn,
     payment_pending,
+    paystack_initiate_payment,
+    paystack_mpesa_stk_push,
+    paystack_verify_payment,
+    paystack_webhook,
 )
 
 urlpatterns = [
-    # ==================== DEBUG ENDPOINTS (ADD THESE FIRST) ====================
-    path('api/sasapay/debug/', lambda request: JsonResponse({
-        'status': 'SasaPay debug endpoint working', 
-        'method': request.method, 
-        'path': request.path,
-        'timestamp': __import__('time').time()
-    }), name='sasapay_debug'),
+    # ==================== TEST ENDPOINTS ====================
     path('api/test/', lambda request: JsonResponse({'status': 'API working', 'message': 'Server is responding'}), name='api_test'),
-    
-    # ==================== SASA PAYMENT ENDPOINTS ====================
-    # Ticket Payment
-    path('api/sasapay/ticket-payment', views.sasapay_ticket_payment, name='sasapay_ticket_payment'),
-    path('api/sasapay/ticket-payment/', views.sasapay_ticket_payment, name='sasapay_ticket_payment_slash'),
-    
-    # Merchandise Payment
-    path('api/sasapay/merchandise-payment', views.sasapay_merchandise_payment, name='sasapay_merchandise_payment'),
-    path('api/sasapay/merchandise-payment/', views.sasapay_merchandise_payment, name='sasapay_merchandise_payment_slash'),
-    
-    # Payment Status
-    path('api/sasapay/status/<str:transaction_id>', views.sasapay_payment_status, name='sasapay_payment_status'),
-    path('api/sasapay/status/<str:transaction_id>/', views.sasapay_payment_status, name='sasapay_payment_status_slash'),
-    
-    # Callback endpoints
-    path('api/sasapay/callback', views.sasapay_callback, name='sasapay_callback'),
-    path('api/sasapay/callback/', views.sasapay_callback, name='sasapay_callback_slash'),
-    
-    # STK Push
-    path('api/sasapay/stk-push', views.sasapay_stk_push, name='sasapay_stk_push'),
-    path('api/sasapay/stk-push/', views.sasapay_stk_push, name='sasapay_stk_push_slash'),
-    
-    # Check Status
-    path('api/sasapay/check-status/<str:checkout_id>', views.sasapay_check_status, name='sasapay_check_status'),
-    path('api/sasapay/check-status/<str:checkout_id>/', views.sasapay_check_status, name='sasapay_check_status_slash'),
-    
-    # SasaPay UI endpoints
-    path('sasapay/process/', views.sasapay_process_payment, name='sasapay_process_payment'),
-    path('sasapay/verify/', views.sasapay_verify, name='sasapay_verify'),
-    path('sasapay/status/<str:reference>/', views.sasapay_status, name='sasapay_status'),
-    path('test-sasapay/', views.test_sasapay_connection, name='test_sasapay'),
     
     # ==================== PUBLIC SITE PAGES ====================
     path('', views.index, name='index'),
@@ -136,13 +100,19 @@ urlpatterns = [
     path('support/tickets/create/', views.create_ticket, name='create_ticket'),
     path('support/tickets/<int:ticket_id>/', views.view_ticket, name='view_ticket'),
     path('support/tickets/<int:ticket_id>/close/', views.close_ticket, name='close_ticket'),
+
+    # ==================== PAYSTACK PAYMENT ROUTES ====================
+    path('paystack/initiate/', paystack_initiate_payment, name='paystack_initiate'),
+    path('paystack/mpesa/', paystack_mpesa_stk_push, name='paystack_mpesa'),
+    path('paystack/verify/<str:reference>/', paystack_verify_payment, name='paystack_verify'),
+    path('paystack/webhook/', paystack_webhook, name='paystack_webhook'),
     
     # ==================== PAYMENT ROUTES ====================
     path('payment/initiate/', views.initiate_payment, name='initiate_payment'),
     path('payment/process/', views.process_payment, name='process_payment'),
     path('payment/verify/<str:reference>/', views.verify_payment, name='verify_payment'),
     path('payment/failed/', views.payment_failed, name='payment_failed'),
-    path('paystack-webhook/', views.paystack_webhook, name='paystack_webhook'),
+    path('payment/pending/<str:reference>/', payment_pending, name='payment_pending'),
     path('pay-without-login/', views.pay_without_login, name='pay_without_login'),
     path('payment/guest-verify/<str:reference>/', views.verify_guest_payment, name='verify_guest_payment'),
     path('payment/package/<str:package_type>/<int:amount>/', views.initiate_package_payment, name='initiate_package_payment'),
@@ -294,11 +264,6 @@ urlpatterns = [
     path('test-smtp/', views.test_smtp_connection, name='test_smtp'),
     path('emergency-email-fix/', views.emergency_email_fix, name='emergency_email_fix'),
 
-    # ==================== PESAPAL PAYMENT ====================
-    path('pesapal/initiate/', pesapal_initiate_payment, name='pesapal_initiate_payment'),
-    path('pesapal/callback/', pesapal_callback, name='pesapal_callback'),
-    path('pesapal/ipn/', pesapal_ipn, name='pesapal_ipn'),
-
     # ==================== MERCHANDISE API ====================
     path('api/merchandise/', views.get_merchandise, name='get_merchandise'),
     path('api/merchandise/create/', views.create_merchandise, name='create_merchandise'),
@@ -322,11 +287,33 @@ urlpatterns = [
 
     # ==================== ORDER CREATION ====================
     path('api/create-order/', views.create_order, name='create_order'),
-    # Ticket Order Creation
-    path('api/create-ticket-order/', views.api_create_ticket_order, name='api_create_ticket_order'),
+    
+    # ==================== TICKET ORDER CREATION - DISABLED FOR FREE EVENT ====================
+    # COMMENTED OUT - FREE EVENT ONLY (No paid tickets)
+    # path('api/create-ticket-order/', views.api_create_ticket_order, name='api_create_ticket_order'),
+    # path('payment/ticket/<str:reference>/', views.payment_ticket, name='payment_ticket'),
+    
+    # ==================== OTHER ORDER CREATION (KEEP WORKING) ====================
     path('api/create-merchandise-order/', views.api_create_merchandise_order, name='api_create_merchandise_order'),
-    path('payment/ticket/<str:reference>/', views.payment_ticket, name='payment_ticket'),
     path('payment/merchandise/<str:reference>/', views.payment_merchandise, name='payment_merchandise'),
+
+    # ==================== BOOK URLS ====================
+    path('api/books/', views.api_books, name='api_books'),
+    path('api/books/create/', views.api_create_book, name='api_create_book'),
+    path('api/books/<int:book_id>/update/', views.api_update_book, name='api_update_book'),
+    path('api/books/<int:book_id>/delete/', views.api_delete_book, name='api_delete_book'),
+    path('api/book/orders/', views.api_book_orders, name='api_book_orders'),
+    path('api/book/orders/<int:order_id>/update-status/', views.api_update_book_order_status, name='api_update_book_order_status'),
+    path('api/get-books/', views.get_books, name='get_books'),
+    path('api/create-book-order/', views.api_create_book_order, name='api_create_book_order'),
+    path('payment/book/<str:reference>/', views.payment_book, name='payment_book'),
+    path('book/download/<str:access_code>/', views.book_download, name='book_download'),
+    
+    # ==================== FREE EVENT REGISTRATION URLS ====================
+    path('api/free-ticket-registration/', views.api_free_ticket_registration, name='free_ticket_registration'),
+    path('api/event/details/', views.get_event_details, name='get_event_details'),
+    path('api/admin/tickets/', views.get_event_tickets_admin, name='get_event_tickets_admin'),
+    path('api/admin/tickets/<int:ticket_id>/checkin/', views.check_in_ticket, name='check_in_ticket'),
 ]
 
 # ==================== MEDIA FILES SERVING ====================
