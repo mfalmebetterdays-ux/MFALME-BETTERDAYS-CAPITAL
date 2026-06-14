@@ -23,9 +23,31 @@ from .models import (
     PartnershipProgram, UserPartnership, ContactSubmission,
     Blog, FAQ, Testimonial, Statistic, EducationProgram,
     MentorshipProgram, CommunityTier, UserCommunityMembership,
-    VerificationCode
+    VerificationCode,
+    # Missing imports - ADD THESE:
+    Event,
+    EventTicket,
+    Merchandise,
+    MerchandiseOrder,
+    Order,
+    Book,
+    BookOrder,
+    Watchlist,
+    InstituteApplication,
+    CommunityJoinRequest,
+    SiteContent,
+    HeroSlider,
+    AboutSection,
+    Brokerage,
+    Subscription,
+    UserEducationEnrollment,
+    UserSession,
+    SystemSettings,
+    PaymentMethod,
+    ContactInfo,
+    Logo,
+    UserActivity
 )
-
 # ==================== HELPER FUNCTIONS ====================
 
 def sanitize_filename(filename):

@@ -140,10 +140,10 @@ if railway_domain:
     CSRF_TRUSTED_ORIGINS.append(railway_domain)
 
 # ================================================
-# MIDDLEWARE
+# MIDDLEWARE - WhiteNoise MUST be first
 # ================================================
 MIDDLEWARE = [
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # MUST be first for static files
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -189,19 +189,13 @@ TEMPLATES = [
 WSGI_APPLICATION = 'dict.wsgi.application'
 
 # ================================================
-# DATABASE CONFIGURATION - SQLITE LOCAL, POSTGRESQL PRODUCTION
+# DATABASE CONFIGURATION
 # ================================================
 
 def get_database_config():
-    """
-    Returns appropriate database configuration based on environment.
-    - Local development: SQLite
-    - Production (Railway): PostgreSQL
-    """
-    # Check if we're in production (Railway) AND have DATABASE_URL
+    """Returns appropriate database configuration based on environment."""
     if IS_RAILWAY and os.environ.get('DATABASE_URL'):
         try:
-            # Parse DATABASE_URL for PostgreSQL
             parsed_url = urllib.parse.urlparse(os.environ.get('DATABASE_URL'))
             
             db_config = {
@@ -219,7 +213,6 @@ def get_database_config():
                 }
             }
             
-            # Test connection
             import psycopg2
             test_conn = psycopg2.connect(
                 dbname=db_config['NAME'],
@@ -239,7 +232,6 @@ def get_database_config():
             print("✅ Falling back to SQLite database")
             return get_sqlite_config()
     
-    # Default: Use SQLite for local development
     print("✅ Using SQLite database (Local Development)")
     return get_sqlite_config()
 
@@ -254,7 +246,6 @@ def get_sqlite_config():
         }
     }
 
-# Set the database configuration
 DATABASES = {
     'default': get_database_config()
 }
@@ -278,13 +269,36 @@ USE_I18N = True
 USE_TZ = True
 
 # ================================================
-# STATIC FILES
+# STATIC FILES - UPDATED FOR RAILWAY
 # ================================================
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] if os.path.exists(os.path.join(BASE_DIR, 'static')) else []
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-WHITENOISE_MAX_AGE = 31536000
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+# Create static directory if it doesn't exist
+os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
+os.makedirs(STATIC_ROOT, exist_ok=True)
+
+# WhiteNoise configuration for static files
+WHITENOISE_MAX_AGE = 31536000  # 1 year
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_MANIFEST_STRICT = False
+WHITENOISE_ALLOW_ALL_ORIGINS = True
+
+# Use appropriate storage based on environment
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+else:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
+# ================================================
+# MEDIA FILES
+# ================================================
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+os.makedirs(MEDIA_ROOT, exist_ok=True)
 
 # ================================================
 # CUSTOM USER MODEL
@@ -365,6 +379,9 @@ LOGGING = {
     },
 }
 
+# Create logs directory
+os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
+
 # ================================================
 # SITE SETTINGS
 # ================================================
@@ -380,7 +397,7 @@ MAX_VERIFICATION_ATTEMPTS = 5
 HEALTH_CHECK_PATHS = ['/', '/health/', '/healthcheck/']
 
 # ================================================
-# PAYSTACK CONFIGURATION - ONLY PAYMENT GATEWAY (SASAPAY REMOVED)
+# PAYSTACK CONFIGURATION
 # ================================================
 PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY')
 PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY')
@@ -402,6 +419,10 @@ USD_TO_KES_RATE = int(os.environ.get('USD_TO_KES_RATE', 129))
 if IS_RAILWAY:
     WHITENOISE_ROOT = STATIC_ROOT
     FILE_UPLOAD_TEMP_DIR = '/tmp'
+    
+    # Ensure static files are properly collected on Railway
+    if not DEBUG:
+        print("🚂 Railway Production Mode - Static files will be served via WhiteNoise")
 
 # ================================================
 # DEVELOPMENT SETTINGS
@@ -410,14 +431,7 @@ if DEBUG:
     INTERNAL_IPS = ['127.0.0.1', 'localhost']
     ALLOWED_HOSTS = ['*']
     os.makedirs(os.path.join(BASE_DIR, 'staticfiles'), exist_ok=True)
-    os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
     os.makedirs(os.path.join(BASE_DIR, 'media'), exist_ok=True)
-
-# ================================================
-# ENSURE DIRECTORIES EXIST
-# ================================================
-for directory in ['staticfiles', 'logs']:
-    os.makedirs(os.path.join(BASE_DIR, directory), exist_ok=True)
 
 # ================================================
 # STARTUP VERIFICATION
@@ -433,4 +447,7 @@ print(f"💳 Paystack: {'✅ Configured' if PAYSTACK_PUBLIC_KEY and PAYSTACK_SEC
 print(f"💱 USD to KES: {USD_TO_KES_RATE}")
 print(f"🚂 Railway: {'✅ Yes' if IS_RAILWAY else 'No'}")
 print(f"🗄️  Database: {DATABASES['default']['ENGINE'].split('.')[-1]}")
+print(f"📁 Static Root: {STATIC_ROOT}")
+print(f"📁 Static Root Exists: {os.path.exists(STATIC_ROOT)}")
+print(f"📁 Static Dirs: {STATICFILES_DIRS}")
 print("="*60 + "\n")
