@@ -7,6 +7,7 @@ import sys
 import urllib.parse
 from pathlib import Path
 from dotenv import load_dotenv 
+import dj_database_url  # ← ADD THIS LINE - FIXES THE ERROR
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -226,9 +227,13 @@ if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     DEFAULT_FROM_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
+    ADMIN_EMAILS = ['mfalmebetterdays@gmail.com']
 elif DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    ADMIN_EMAILS = ['admin@example.com']
     print("📧 Using console email backend (development)")
+else:
+    ADMIN_EMAILS = []
 
 # ================================================
 # SESSION CONFIGURATION
@@ -261,6 +266,11 @@ PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY')
 PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY')
 PAYSTACK_API_URL = 'https://api.paystack.co'
 
+if PAYSTACK_PUBLIC_KEY and PAYSTACK_SECRET_KEY:
+    print("✅ Paystack configured successfully")
+else:
+    print("⚠️ Paystack credentials not configured")
+
 # ================================================
 # USD TO KES
 # ================================================
@@ -273,6 +283,13 @@ SITE_NAME = "MFALME BETTERDAYS CAPITAL"
 SITE_URL = os.environ.get('SITE_URL', 'https://mfalmebetterdayscapital.com')
 SUPPORT_PHONE = os.environ.get('SUPPORT_PHONE', '+254 706 286 667')
 SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'mfalmebetterdays@gmail.com')
+
+# ================================================
+# VERIFICATION SETTINGS
+# ================================================
+VERIFICATION_CODE_EXPIRY_MINUTES = 30
+VERIFICATION_CODE_LENGTH = 6
+MAX_VERIFICATION_ATTEMPTS = 5
 
 # ================================================
 # LOGGING
@@ -291,6 +308,12 @@ LOGGING = {
 }
 
 # ================================================
+# CREATE NECESSARY DIRECTORIES
+# ================================================
+for directory in ['staticfiles', 'media', 'logs']:
+    os.makedirs(os.path.join(BASE_DIR, directory), exist_ok=True)
+
+# ================================================
 # STARTUP VERIFICATION
 # ================================================
 print("\n" + "="*60)
@@ -301,6 +324,9 @@ print(f"🔒 HTTPS Mode: DISABLED (HTTP only)")
 print(f"☁️  Storage: {'AWS S3' if USE_S3 else 'Local Filesystem'}")
 print(f"📧 Email: {'✅ Configured' if EMAIL_HOST_USER else '⚠️ Not Configured'}")
 print(f"💳 Paystack: {'✅ Configured' if PAYSTACK_PUBLIC_KEY else '⚠️ Not Configured'}")
+print(f"💰 USD to KES: {USD_TO_KES_RATE}")
 print(f"🚂 Railway: {'✅ Yes' if IS_RAILWAY else 'No'}")
-print(f"🗄️  Database: {'PostgreSQL' if IS_RAILWAY else 'SQLite'}")
+print(f"🗄️  Database: {'PostgreSQL' if IS_RAILWAY and os.environ.get('DATABASE_URL') else 'SQLite'}")
+print(f"📁 Static Root: {STATIC_ROOT}")
+print(f"📁 Static Dirs: {STATICFILES_DIRS}")
 print("="*60 + "\n")
