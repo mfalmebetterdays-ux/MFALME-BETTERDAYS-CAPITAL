@@ -4,18 +4,9 @@ Django settings for dict project - MFALME BETTERDAYS CAPITAL
 
 import os
 import sys
-import time
 import urllib.parse
 from pathlib import Path
-import dj_database_url
-import ssl
-from datetime import datetime, timedelta
 from dotenv import load_dotenv 
-
-try:
-    ssl._create_default_https_context = ssl._create_unverified_context
-except:
-    pass
 
 # Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,7 +21,7 @@ load_dotenv(dotenv_path=env_path, override=True)
 # ENVIRONMENT DETECTION
 # ================================================
 IS_RAILWAY = os.environ.get('RAILWAY', 'false').lower() == 'true' or 'RAILWAY_ENVIRONMENT' in os.environ
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'  # Changed to True by default
 
 # ================================================
 # SECRET KEY
@@ -38,39 +29,24 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 if not SECRET_KEY:
-    is_local = 'runserver' in sys.argv or 'manage.py' in sys.argv
-    if DEBUG or is_local:
-        SECRET_KEY = 'django-insecure-dev-key-do-not-use-in-production'
-        print("⚠️ WARNING: Using development SECRET_KEY")
-    else:
-        raise ValueError("SECRET_KEY must be set in production environment")
+    SECRET_KEY = 'django-insecure-dev-key-do-not-use-in-production'
+    print("⚠️ WARNING: Using development SECRET_KEY")
 
 # ================================================
-# HTTPS CONFIGURATION
+# HTTPS CONFIGURATION - DISABLED FOR LOCAL DEV
 # ================================================
-FORCE_HTTP_DEV = DEBUG and not IS_RAILWAY
+# Simple: No HTTPS for local development
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SECURE_HSTS_SECONDS = 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+SECURE_PROXY_SSL_HEADER = None
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+X_FRAME_OPTIONS = 'DENY'
 
-if FORCE_HTTP_DEV:
-    SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
-    SECURE_HSTS_SECONDS = 0
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-    SECURE_HSTS_PRELOAD = False
-    SECURE_PROXY_SSL_HEADER = None
-    print("🔓 Development mode - HTTPS disabled")
-else:
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
-    X_FRAME_OPTIONS = 'DENY'
+print("🔓 HTTP mode - HTTPS disabled for local development")
 
 # ================================================
 # AWS S3 CONFIGURATION
@@ -89,7 +65,10 @@ AWS_CREDENTIALS_PRESENT = all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STO
 USE_S3 = AWS_CREDENTIALS_PRESENT and not (DEBUG and not IS_RAILWAY)
 
 if USE_S3:
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STORAGES = {
+        "default": {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"},
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+    }
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
     AWS_S3_FILE_OVERWRITE = False
     AWS_S3_SIGNATURE_VERSION = 's3v4'
@@ -99,7 +78,6 @@ if USE_S3:
     AWS_DEFAULT_ACL = 'public-read'
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
 else:
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
     MEDIA_URL = '/media/'
     os.makedirs(MEDIA_ROOT, exist_ok=True)
@@ -107,43 +85,24 @@ else:
 # ================================================
 # HOSTS & SECURITY
 # ================================================
-ALLOWED_HOSTS = [
-    'mfalmebetterdayscapital.com',
-    'www.mfalmebetterdayscapital.com',
-    '.railway.app',
-    '.up.railway.app',
-    'localhost',
-    '127.0.0.1',
-    '[::1]',
-]
-
-if FORCE_HTTP_DEV:
-    ALLOWED_HOSTS.extend(['localhost', '127.0.0.1', '0.0.0.0'])
-
-railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
-if railway_domain:
-    ALLOWED_HOSTS.append(railway_domain)
+ALLOWED_HOSTS = ['*']  # Allow all hosts for development
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://*.railway.app',
-    'https://*.up.railway.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
     'https://mfalmebetterdayscapital.com',
     'https://www.mfalmebetterdayscapital.com',
 ]
 
-if FORCE_HTTP_DEV:
-    CSRF_TRUSTED_ORIGINS.extend(['http://localhost:8000', 'http://127.0.0.1:8000'])
-
-if railway_domain:
-    if not railway_domain.startswith('https://'):
-        railway_domain = f'https://{railway_domain}'
-    CSRF_TRUSTED_ORIGINS.append(railway_domain)
+if IS_RAILWAY:
+    ALLOWED_HOSTS.extend(['.railway.app', '.up.railway.app'])
+    CSRF_TRUSTED_ORIGINS.extend(['https://*.railway.app', 'https://*.up.railway.app'])
 
 # ================================================
-# MIDDLEWARE - WhiteNoise MUST be first
+# MIDDLEWARE
 # ================================================
 MIDDLEWARE = [
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # MUST be first for static files
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -191,64 +150,24 @@ WSGI_APPLICATION = 'dict.wsgi.application'
 # ================================================
 # DATABASE CONFIGURATION
 # ================================================
-
-def get_database_config():
-    """Returns appropriate database configuration based on environment."""
-    if IS_RAILWAY and os.environ.get('DATABASE_URL'):
-        try:
-            parsed_url = urllib.parse.urlparse(os.environ.get('DATABASE_URL'))
-            
-            db_config = {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': parsed_url.path[1:],
-                'USER': parsed_url.username,
-                'PASSWORD': parsed_url.password,
-                'HOST': parsed_url.hostname,
-                'PORT': parsed_url.port or '5432',
-                'CONN_MAX_AGE': 180,
-                'CONN_HEALTH_CHECKS': True,
-                'OPTIONS': {
-                    'connect_timeout': 10,
-                    'sslmode': 'require',
-                }
-            }
-            
-            import psycopg2
-            test_conn = psycopg2.connect(
-                dbname=db_config['NAME'],
-                user=db_config['USER'],
-                password=db_config['PASSWORD'],
-                host=db_config['HOST'],
-                port=db_config['PORT'],
-                connect_timeout=5
-            )
-            test_conn.close()
-            
-            print("✅ Using PostgreSQL database (Production)")
-            return db_config
-            
-        except Exception as e:
-            print(f"⚠️ PostgreSQL connection failed: {e}")
-            print("✅ Falling back to SQLite database")
-            return get_sqlite_config()
-    
-    print("✅ Using SQLite database (Local Development)")
-    return get_sqlite_config()
-
-def get_sqlite_config():
-    """Returns SQLite database configuration"""
-    return {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        'CONN_MAX_AGE': 60,
-        'OPTIONS': {
-            'timeout': 20,
+if IS_RAILWAY and os.environ.get('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True,
+        )
+    }
+    print("✅ Using PostgreSQL database (Production)")
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-
-DATABASES = {
-    'default': get_database_config()
-}
+    print("✅ Using SQLite database (Local Development)")
 
 # ================================================
 # PASSWORD VALIDATION
@@ -269,29 +188,18 @@ USE_I18N = True
 USE_TZ = True
 
 # ================================================
-# STATIC FILES - UPDATED FOR RAILWAY
+# STATIC FILES
 # ================================================
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
-# Create static directory if it doesn't exist
 os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
 os.makedirs(STATIC_ROOT, exist_ok=True)
 
-# WhiteNoise configuration for static files
-WHITENOISE_MAX_AGE = 31536000  # 1 year
+WHITENOISE_MAX_AGE = 31536000
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_MANIFEST_STRICT = False
-WHITENOISE_ALLOW_ALL_ORIGINS = True
-
-# Use appropriate storage based on environment
-if not DEBUG:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-else:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # ================================================
 # MEDIA FILES
@@ -318,14 +226,9 @@ if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     DEFAULT_FROM_EMAIL = f'MFALME BETTERDAYS CAPITAL <{EMAIL_HOST_USER}>'
-    ADMIN_EMAILS = ['mfalmebetterdays@gmail.com']
 elif DEBUG:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    ADMIN_EMAILS = ['admin@example.com']
     print("📧 Using console email backend (development)")
-else:
-    print("⚠️ Email not configured")
-    ADMIN_EMAILS = []
 
 # ================================================
 # SESSION CONFIGURATION
@@ -339,48 +242,29 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_SAVE_EVERY_REQUEST = True
 
 # ================================================
-# AUTHENTICATION
+# LOGIN/LOGOUT
 # ================================================
-AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
 
 # ================================================
-# FILE UPLOAD SETTINGS
+# FILE UPLOAD
 # ================================================
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760
 
 # ================================================
-# CACHING
+# PAYSTACK
 # ================================================
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-mfalme-cache',
-    }
-}
+PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY')
+PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY')
+PAYSTACK_API_URL = 'https://api.paystack.co'
 
 # ================================================
-# LOGGING
+# USD TO KES
 # ================================================
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {'verbose': {'format': '[{asctime}] {levelname} {module} {message}', 'style': '{', 'datefmt': '%Y-%m-%d %H:%M:%S'}},
-    'handlers': {
-        'console': {'class': 'logging.StreamHandler', 'formatter': 'verbose', 'stream': sys.stdout},
-        'file': {'class': 'logging.FileHandler', 'filename': os.path.join(BASE_DIR, 'logs/django.log'), 'formatter': 'verbose'},
-    },
-    'loggers': {
-        'django': {'handlers': ['console', 'file'], 'level': 'INFO'},
-        'myapp': {'handlers': ['console', 'file'], 'level': 'DEBUG' if DEBUG else 'INFO'},
-    },
-}
-
-# Create logs directory
-os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
+USD_TO_KES_RATE = int(os.environ.get('USD_TO_KES_RATE', 129))
 
 # ================================================
 # SITE SETTINGS
@@ -390,48 +274,21 @@ SITE_URL = os.environ.get('SITE_URL', 'https://mfalmebetterdayscapital.com')
 SUPPORT_PHONE = os.environ.get('SUPPORT_PHONE', '+254 706 286 667')
 SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'mfalmebetterdays@gmail.com')
 
-VERIFICATION_CODE_EXPIRY_MINUTES = 30
-VERIFICATION_CODE_LENGTH = 6
-MAX_VERIFICATION_ATTEMPTS = 5
-
-HEALTH_CHECK_PATHS = ['/', '/health/', '/healthcheck/']
-
 # ================================================
-# PAYSTACK CONFIGURATION
+# LOGGING
 # ================================================
-PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY')
-PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY')
-PAYSTACK_API_URL = 'https://api.paystack.co'
-
-if PAYSTACK_PUBLIC_KEY and PAYSTACK_SECRET_KEY:
-    print("✅ Paystack configured successfully")
-else:
-    print("⚠️ WARNING: Paystack credentials not configured!")
-
-# ================================================
-# USD TO KES CONVERSION RATE
-# ================================================
-USD_TO_KES_RATE = int(os.environ.get('USD_TO_KES_RATE', 129))
-
-# ================================================
-# RAILWAY OPTIMIZATIONS
-# ================================================
-if IS_RAILWAY:
-    WHITENOISE_ROOT = STATIC_ROOT
-    FILE_UPLOAD_TEMP_DIR = '/tmp'
-    
-    # Ensure static files are properly collected on Railway
-    if not DEBUG:
-        print("🚂 Railway Production Mode - Static files will be served via WhiteNoise")
-
-# ================================================
-# DEVELOPMENT SETTINGS
-# ================================================
-if DEBUG:
-    INTERNAL_IPS = ['127.0.0.1', 'localhost']
-    ALLOWED_HOSTS = ['*']
-    os.makedirs(os.path.join(BASE_DIR, 'staticfiles'), exist_ok=True)
-    os.makedirs(os.path.join(BASE_DIR, 'media'), exist_ok=True)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {'verbose': {'format': '[{asctime}] {levelname} {module} {message}', 'style': '{'}},
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler', 'formatter': 'verbose'},
+    },
+    'loggers': {
+        'django': {'handlers': ['console'], 'level': 'INFO'},
+        'myapp': {'handlers': ['console'], 'level': 'DEBUG' if DEBUG else 'INFO'},
+    },
+}
 
 # ================================================
 # STARTUP VERIFICATION
@@ -440,14 +297,10 @@ print("\n" + "="*60)
 print("🚀 MFALME BETTERDAYS CAPITAL - Configuration Loaded")
 print("="*60)
 print(f"📦 Environment: {'PRODUCTION' if not DEBUG else 'DEVELOPMENT'}")
-print(f"🔒 HTTPS Mode: {'FORCED' if not FORCE_HTTP_DEV else 'DISABLED'}")
+print(f"🔒 HTTPS Mode: DISABLED (HTTP only)")
 print(f"☁️  Storage: {'AWS S3' if USE_S3 else 'Local Filesystem'}")
 print(f"📧 Email: {'✅ Configured' if EMAIL_HOST_USER else '⚠️ Not Configured'}")
-print(f"💳 Paystack: {'✅ Configured' if PAYSTACK_PUBLIC_KEY and PAYSTACK_SECRET_KEY else '⚠️ Not Configured'}")
-print(f"💱 USD to KES: {USD_TO_KES_RATE}")
+print(f"💳 Paystack: {'✅ Configured' if PAYSTACK_PUBLIC_KEY else '⚠️ Not Configured'}")
 print(f"🚂 Railway: {'✅ Yes' if IS_RAILWAY else 'No'}")
-print(f"🗄️  Database: {DATABASES['default']['ENGINE'].split('.')[-1]}")
-print(f"📁 Static Root: {STATIC_ROOT}")
-print(f"📁 Static Root Exists: {os.path.exists(STATIC_ROOT)}")
-print(f"📁 Static Dirs: {STATICFILES_DIRS}")
+print(f"🗄️  Database: {'PostgreSQL' if IS_RAILWAY else 'SQLite'}")
 print("="*60 + "\n")
