@@ -469,7 +469,7 @@ def payment_failed(request):
 
 
 def process_successful_payment(transaction, request):
-    """Process successful payment - grant access to content"""
+    """Process successful payment - grant access to content and create tickets/orders"""
     if not transaction.user:
         return
     
@@ -486,13 +486,16 @@ def process_successful_payment(transaction, request):
         item_type = metadata.get('item_type')
         item_id = metadata.get('item_id')
         
+        # ========== VIDEO PURCHASE ==========
         if item_type == 'video':
             try:
                 video = TrainingVideo.objects.get(id=item_id)
                 grant_video_access(user, video, transaction)
+                print(f"✅ Video access granted: {video.title}")
             except TrainingVideo.DoesNotExist:
-                pass
+                print(f"❌ Video not found: {item_id}")
                 
+        # ========== COURSE PURCHASE ==========
         elif item_type == 'course':
             try:
                 course = Course.objects.get(id=item_id)
@@ -500,7 +503,7 @@ def process_successful_payment(transaction, request):
                     user=user,
                     course=course,
                     payment=transaction,
-                    access_expires_at=timezone.now() + timedelta(days=365)
+                    access_expires_at=timezone.now() + timedelta(days=365)  # 1 YEAR
                 )
                 enrollment.get_video_access()
                 enrollment.get_pdf_access()
@@ -513,40 +516,76 @@ def process_successful_payment(transaction, request):
                     related_object_type='course',
                     related_object_id=course.id
                 )
+                print(f"✅ Course access granted: {course.title}")
             except Course.DoesNotExist:
-                pass
+                print(f"❌ Course not found: {item_id}")
                 
+        # ========== PDF PURCHASE ==========
         elif item_type == 'pdf':
             try:
                 pdf = PDF.objects.get(id=item_id)
                 grant_pdf_access(user, pdf, transaction)
+                print(f"✅ PDF access granted: {pdf.title}")
             except PDF.DoesNotExist:
-                pass
+                print(f"❌ PDF not found: {item_id}")
         
+        # ========== EVENT TICKET PURCHASE ==========
         elif item_type == 'ticket':
             try:
+                # Get the order associated with this transaction
                 order = Order.objects.filter(reference=transaction.reference, item_type='ticket').first()
+                
                 if order:
-                    event = Event.objects.filter(id=metadata.get('event_id')).first()
+                    # Get the event ID from metadata or find the active event
+                    event_id = metadata.get('event_id')
+                    event = None
+                    
+                    if event_id:
+                        event = Event.objects.filter(id=event_id).first()
+                    else:
+                        event = Event.objects.filter(is_active=True).first()
+                    
                     if event:
+                        quantity = metadata.get('quantity', 1)
+                        amount_usd = metadata.get('amount_usd', 249 * quantity)
+                        amount_kes = float(transaction.amount)
+                        
+                        # Create the ticket
                         ticket = EventTicket.objects.create(
                             event=event,
                             attendee_name=order.customer_name,
                             attendee_phone=order.customer_phone,
                             attendee_email=order.customer_email,
-                            quantity=metadata.get('quantity', 1),
-                            unit_price_usd=249,
-                            unit_price_kes=249 * 129,
+                            quantity=quantity,
+                            unit_price_usd=metadata.get('unit_price_usd', 249),
+                            unit_price_kes=metadata.get('unit_price_kes', 249 * 129),
+                            total_amount_usd=amount_usd,
+                            total_amount_kes=amount_kes,
                             order_reference=order.reference,
                             payment_reference=transaction.reference,
+                            payment_method='paystack',
                             status='confirmed'
                         )
-                        event.current_bookings += ticket.quantity
-                        event.save()
+                        
+                        # Update event bookings count
+                        event.current_bookings += quantity
+                        event.save(update_fields=['current_bookings'])
+                        
+                        # Send ticket email to customer and admin
                         send_ticket_email(ticket)
+                        
+                        print(f"✅ Ticket created for {order.customer_name} - {quantity} ticket(s)")
+                    else:
+                        print(f"❌ No active event found for ticket creation")
+                else:
+                    print(f"❌ No order found for transaction: {transaction.reference}")
+                    
             except Exception as e:
-                print(f"Ticket creation error: {e}")
+                print(f"❌ Ticket creation error: {e}")
+                import traceback
+                traceback.print_exc()
         
+        # ========== MERCHANDISE ORDER ==========
         elif item_type == 'merchandise':
             try:
                 order = Order.objects.filter(reference=transaction.reference, item_type='merchandise').first()
@@ -557,40 +596,97 @@ def process_successful_payment(transaction, request):
                         customer_email=order.customer_email,
                         delivery_address=metadata.get('address', ''),
                         items=order.items,
-                        subtotal=order.amount,
+                        subtotal=metadata.get('subtotal', order.amount),
+                        shipping_cost=metadata.get('shipping', 0),
                         total=order.amount,
                         payment_reference=transaction.reference,
                         order_reference=order.reference,
-                        status='paid'
+                        status='paid',
+                        paid_at=timezone.now()
                     )
+                    
+                    # Send merchandise order email
                     send_merchandise_order_email(merch_order)
                     
-                    # Update stock
+                    # Update stock for each item
                     for item in order.items:
                         try:
-                            product = Merchandise.objects.get(id=item['id'])
-                            product.stock -= item['quantity']
+                            product = Merchandise.objects.get(id=item.get('id'))
+                            product.stock -= item.get('quantity', 1)
                             product.save()
-                        except:
-                            pass
+                            print(f"✅ Stock updated for {product.name}: {product.stock} remaining")
+                        except Merchandise.DoesNotExist:
+                            print(f"❌ Product not found: {item.get('id')}")
+                        except Exception as e:
+                            print(f"❌ Error updating stock: {e}")
+                    
+                    print(f"✅ Merchandise order created: {merch_order.order_number}")
+                else:
+                    print(f"❌ No merchandise order found for transaction: {transaction.reference}")
+                    
             except Exception as e:
-                print(f"Merchandise order error: {e}")
+                print(f"❌ Merchandise order error: {e}")
+                import traceback
+                traceback.print_exc()
         
+        # ========== BOOK PURCHASE ==========
         elif item_type == 'book':
             try:
                 book_order = BookOrder.objects.get(order_number=transaction.reference)
                 book_order.status = 'paid'
                 book_order.payment_reference = transaction.reference
-                book_order.save()
+                book_order.paid_at = timezone.now()
+                book_order.save(update_fields=['status', 'payment_reference', 'paid_at'])
                 
+                # Decrement book stock
+                book = book_order.book
+                book.decrement_stock(book_order.quantity)
+                
+                # Generate digital access code if digital delivery
                 if book_order.delivery_type == 'digital':
                     book_order.generate_digital_access_code()
                 
+                # Send book purchase email
                 send_book_purchase_email(book_order)
+                send_book_admin_notification(book_order)
+                
+                print(f"✅ Book order completed: {book_order.order_number}")
+                
+            except BookOrder.DoesNotExist:
+                print(f"❌ Book order not found: {transaction.reference}")
             except Exception as e:
-                print(f"Book order error: {e}")
+                print(f"❌ Book order error: {e}")
+        
+        # ========== PACKAGE PURCHASE ==========
+        elif item_type == 'package':
+            try:
+                package_id = metadata.get('package_id')
+                if package_id:
+                    package = Package.objects.get(id=package_id)
+                    
+                    # Update package sales
+                    package.total_sales += 1
+                    package.total_revenue += transaction.amount
+                    package.save(update_fields=['total_sales', 'total_revenue'])
+                    
+                    # Create notification
+                    Notification.objects.create(
+                        user=user,
+                        title='Package Purchase Successful',
+                        message=f'You have successfully purchased {package.name}',
+                        notification_type='SUCCESS',
+                        related_object_type='package',
+                        related_object_id=package.id
+                    )
+                    
+                    print(f"✅ Package purchase recorded: {package.name}")
+                    
+            except Package.DoesNotExist:
+                print(f"❌ Package not found: {package_id}")
+            except Exception as e:
+                print(f"❌ Package order error: {e}")
     
-    # Create notification
+    # Create notification for the user
     amount_usd = metadata.get('amount_usd', float(transaction.amount / Decimal('129'))) if metadata else float(transaction.amount / Decimal('129'))
     
     Notification.objects.create(
@@ -606,9 +702,11 @@ def process_successful_payment(transaction, request):
     log_activity(
         user,
         'PAYMENT_COMPLETED',
-        f'Payment completed: ${amount_usd:.2f} (KES {transaction.amount})',
+        f'Payment completed: ${amount_usd:.2f} (KES {transaction.amount:,.2f}) - Type: {item_type if metadata else "Unknown"}',
         request
     )
+    
+    print(f"✅ Payment processing completed for {transaction.reference}")
 
 # ==================== TEMPLATE FILTERS ====================
 register = Library()
@@ -6934,7 +7032,7 @@ def create_order(request):
 # ========== EMAIL FUNCTIONS ==========
 
 def send_ticket_email(ticket):
-    """Send ticket email with the ticket image attached"""
+    """Send PAID ticket confirmation email to customer and admin"""
     from django.core.mail import EmailMultiAlternatives, send_mail
     from django.template.loader import render_to_string
     from django.conf import settings
@@ -6943,77 +7041,160 @@ def send_ticket_email(ticket):
     try:
         event = ticket.event
         
-        subject = f"Your Ticket for {event.title}"
+        subject = f"Your Ticket Confirmation - {event.title}"
         
-        # Simple HTML email - NO icons, NO emojis
+        # HTML email for PAID ticket
         html_content = f'''
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
-            <title>Your Ticket - Mfalme Betterdays Capital</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Ticket Confirmation - Mfalme Betterdays Capital</title>
             <style>
                 body {{
-                    font-family: Arial, sans-serif;
-                    text-align: center;
+                    font-family: 'Segoe UI', Arial, sans-serif;
                     background: #f5f5f5;
-                    padding: 40px;
                     margin: 0;
+                    padding: 40px 20px;
                 }}
                 .container {{
                     max-width: 550px;
                     margin: 0 auto;
-                    background: white;
+                    background: #ffffff;
                     border-radius: 16px;
-                    padding: 30px;
+                    overflow: hidden;
                     box-shadow: 0 4px 20px rgba(0,0,0,0.1);
                 }}
-                h2 {{
-                    color: #B8860B;
-                    margin-bottom: 10px;
+                .header {{
+                    background: linear-gradient(135deg, #FFD700, #FFA500);
+                    padding: 30px;
+                    text-align: center;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    color: #0a1520;
+                    font-size: 22px;
+                    font-weight: 800;
+                }}
+                .header p {{
+                    margin: 5px 0 0;
+                    color: #0a1520;
+                    opacity: 0.9;
+                }}
+                .content {{
+                    padding: 30px;
+                }}
+                .paid-badge {{
+                    background: #10b981;
+                    color: white;
+                    padding: 8px 20px;
+                    border-radius: 40px;
+                    display: inline-block;
+                    margin-bottom: 20px;
+                    font-weight: bold;
                 }}
                 .ticket-image {{
-                    width: 100%;
-                    max-width: 500px;
+                    text-align: center;
                     margin: 20px 0;
+                }}
+                .ticket-image img {{
+                    max-width: 100%;
                     border-radius: 12px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
                 }}
                 .details {{
-                    text-align: left;
                     background: #f8f9fa;
-                    padding: 15px;
-                    border-radius: 8px;
+                    border-radius: 12px;
+                    padding: 20px;
                     margin: 20px 0;
                 }}
+                .details p {{
+                    margin: 12px 0;
+                    font-size: 14px;
+                    color: #333;
+                }}
+                .details strong {{
+                    color: #0a1520;
+                }}
+                .ticket-number {{
+                    font-family: monospace;
+                    font-size: 16px;
+                    background: #0a1520;
+                    color: #FFD700;
+                    padding: 6px 12px;
+                    border-radius: 5px;
+                    display: inline-block;
+                    letter-spacing: 1px;
+                }}
+                .amount {{
+                    font-size: 24px;
+                    font-weight: 800;
+                    color: #B8860B;
+                }}
+                .info-box {{
+                    background: #e8f4f8;
+                    border-radius: 10px;
+                    padding: 15px;
+                    margin: 20px 0;
+                    border-left: 4px solid #FFD700;
+                }}
                 .footer {{
-                    margin-top: 20px;
-                    padding-top: 15px;
-                    border-top: 1px solid #eee;
+                    background: #1a1a2e;
+                    padding: 20px;
+                    text-align: center;
                     font-size: 12px;
-                    color: #666;
+                    color: #aaa;
+                }}
+                .footer a {{
+                    color: #FFD700;
+                    text-decoration: none;
                 }}
             </style>
         </head>
         <body>
             <div class="container">
-                <h2>MFALME BETTERDAYS CAPITAL</h2>
-                <h3>{event.title}</h3>
-                
-                <div class="details">
-                    <p><strong>Attendee:</strong> {ticket.attendee_name}</p>
-                    <p><strong>Date:</strong> {event.date.strftime('%A, %B %d, %Y')}</p>
-                    <p><strong>Time:</strong> {event.date.strftime('%I:%M %p')} - 5:00 PM EAT</p>
-                    <p><strong>Venue:</strong> {event.venue}</p>
-                    <p><strong>Quantity:</strong> {ticket.quantity} Ticket(s)</p>
-                    <p><strong>Amount Paid:</strong> KES {ticket.total_amount_kes:,.2f}</p>
+                <div class="header">
+                    <h1>MFALME BETTERDAYS CAPITAL</h1>
+                    <p>East & Central Africa Live Leveraging Summit 2026</p>
                 </div>
-                
-                <img src="cid:ticket_image" alt="Your Ticket" class="ticket-image">
-                
+                <div class="content">
+                    <div style="text-align:center;">
+                        <div class="paid-badge">✓ PAYMENT CONFIRMED</div>
+                    </div>
+                    
+                    <div class="ticket-image">
+                        <img src="https://s3-folderz.s3.eu-north-1.amazonaws.com/tiko.png" alt="Mfalme Betterdays Ticket" style="max-width:100%; border-radius:12px;">
+                    </div>
+                    
+                    <h2 style="text-align:center; color:#B8860B; font-size:20px; margin-bottom:15px;">{event.title}</h2>
+                    
+                    <div class="details">
+                        <p><strong>Ticket Number:</strong> <span class="ticket-number">{ticket.ticket_number}</span></p>
+                        <p><strong>Attendee Name:</strong> {ticket.attendee_name}</p>
+                        <p><strong>Email:</strong> {ticket.attendee_email}</p>
+                        <p><strong>Phone:</strong> {ticket.attendee_phone}</p>
+                        <p><strong>Quantity:</strong> {ticket.quantity} Ticket(s)</p>
+                        <p><strong>Date:</strong> {event.date.strftime('%A, %B %d, %Y')}</p>
+                        <p><strong>Time:</strong> 9:00 AM - 5:00 PM EAT</p>
+                        <p><strong>Venue:</strong> {event.venue}</p>
+                        <p><strong>Amount Paid:</strong> <span class="amount">KES {ticket.total_amount_kes:,.2f}</span> (${ticket.total_amount_usd:.2f} USD)</p>
+                    </div>
+                    
+                    <div class="info-box">
+                        <p><strong>Important Information:</strong></p>
+                        <p>• Doors open at 8:00 AM</p>
+                        <p>• Please bring a valid ID for entry</p>
+                        <p>• You can show this email on your phone or print it</p>
+                        <p>• Lunch and refreshments are included</p>
+                        <p>• Certificate of attendance will be provided</p>
+                    </div>
+                    
+                    <p style="text-align:center; margin-top:20px;">We look forward to seeing you at the summit!</p>
+                </div>
                 <div class="footer">
-                    <p>For inquiries: +254 706 286 667</p>
-                    <p>mfalmebetterdays@gmail.com</p>
-                    <p>2026 Mfalme Betterdays Capital. All rights reserved.</p>
+                    <p>For inquiries: <a href="tel:+254706286667">+254 706 286 667</a> | <a href="mailto:mfalmebetterdays@gmail.com">mfalmebetterdays@gmail.com</a></p>
+                    <p>© 2026 MFALME BETTERDAYS CAPITAL - All Rights Reserved</p>
                 </div>
             </div>
         </body>
@@ -7022,131 +7203,232 @@ def send_ticket_email(ticket):
         
         # Plain text version
         text_content = f"""
-        MFALME BETTERDAYS CAPITAL
-        {'='*40}
-        
-        Event: {event.title}
-        Attendee: {ticket.attendee_name}
-        Date: {event.date.strftime('%B %d, %Y at %I:%M %p')}
-        Venue: {event.venue}
-        Quantity: {ticket.quantity}
-        Amount Paid: KES {ticket.total_amount_kes:,.2f}
-        
-        Your ticket image is attached to this email.
-        
-        For inquiries: +254 706 286 667
-        mfalmebetterdays@gmail.com
+MFALME BETTERDAYS CAPITAL - PAID TICKET CONFIRMATION
+{'='*50}
+
+Event: {event.title}
+Date: {event.date.strftime('%A, %B %d, %Y')}
+Time: 9:00 AM - 5:00 PM EAT
+Venue: {event.venue}
+
+TICKET DETAILS:
+Ticket Number: {ticket.ticket_number}
+Attendee Name: {ticket.attendee_name}
+Email: {ticket.attendee_email}
+Phone: {ticket.attendee_phone}
+Quantity: {ticket.quantity} Ticket(s)
+Amount Paid: KES {ticket.total_amount_kes:,.2f} (${ticket.total_amount_usd:.2f} USD)
+
+IMPORTANT:
+- Doors open at 8:00 AM
+- Bring valid ID for entry
+- You can show this email on your phone
+- Lunch and refreshments included
+
+For inquiries: +254 706 286 667 | mfalmebetterdays@gmail.com
+
+© 2026 MFALME BETTERDAYS CAPITAL
         """
         
-        # Create email for customer
-        msg = EmailMultiAlternatives(
+        # Send to CUSTOMER
+        customer_msg = EmailMultiAlternatives(
             subject,
             text_content,
             settings.DEFAULT_FROM_EMAIL,
             [ticket.attendee_email]
         )
-        msg.attach_alternative(html_content, "text/html")
+        customer_msg.attach_alternative(html_content, "text/html")
+        customer_msg.send()
         
-        # Attach the ticket image
-        ticket_image_path = os.path.join(settings.BASE_DIR, 'static', 'assets', 'images', 'tiko.png')
+        print(f"✅ Paid ticket email sent to customer: {ticket.attendee_email}")
         
-        if os.path.exists(ticket_image_path):
-            with open(ticket_image_path, 'rb') as f:
-                msg.attach('tiko.png', f.read(), 'image/png')
-        else:
-            print(f"Warning: Ticket image not found at: {ticket_image_path}")
+        # ========== ADMIN NOTIFICATION ==========
+        admin_subject = f"💰 NEW PAID TICKET PURCHASE - {ticket.ticket_number}"
         
-        # Send customer email
-        msg.send()
-        
-        # ==============================================
-        # ADMIN NOTIFICATION WITH HTML TEMPLATE
-        # ==============================================
-        
-        # Render the styled admin template
-        admin_html = render_to_string('emails/admin_ticket_notification.html', {
-            'ticket': ticket,
-            'site_url': settings.SITE_URL,
-        })
-        
-        # Plain text version for admin
         admin_text = f"""
-        MFALME BETTERDAYS CAPITAL - NEW TICKET PURCHASE
-        
-        Ticket Number: {ticket.ticket_number}
-        Attendee: {ticket.attendee_name}
-        Phone: {ticket.attendee_phone}
-        Email: {ticket.attendee_email}
-        Quantity: {ticket.quantity}
-        Total: KES {ticket.total_amount_kes:,.2f}
-        Event: {event.title}
-        Date: {event.date.strftime('%B %d, %Y')}
-        
-        View in admin: {settings.SITE_URL}/admin/
+NEW PAID TICKET PURCHASE
+
+Ticket Number: {ticket.ticket_number}
+Attendee: {ticket.attendee_name}
+Phone: {ticket.attendee_phone}
+Email: {ticket.attendee_email}
+Quantity: {ticket.quantity}
+Amount Paid: KES {ticket.total_amount_kes:,.2f} (${ticket.total_amount_usd:.2f})
+Event: {event.title}
+Date: {event.date.strftime('%B %d, %Y')}
+
+View in admin: {settings.SITE_URL}/admin/
         """
         
-        # Send styled admin email
+        admin_html = f'''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>New Paid Ticket Purchase</title>
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    background: #f0f2f5;
+                    margin: 0;
+                    padding: 20px;
+                }}
+                .container {{
+                    max-width: 550px;
+                    margin: 0 auto;
+                    background: white;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #FFD700, #FFA500);
+                    padding: 20px;
+                    text-align: center;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    color: #0a1520;
+                    font-size: 20px;
+                }}
+                .content {{
+                    padding: 25px;
+                }}
+                .alert {{
+                    background: #fff3cd;
+                    padding: 12px;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                    border-left: 4px solid #FFD700;
+                }}
+                .details-card {{
+                    background: #f8f9fa;
+                    border-radius: 12px;
+                    padding: 15px;
+                    margin-bottom: 20px;
+                }}
+                .row {{
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px 0;
+                    border-bottom: 1px solid #eee;
+                }}
+                .row:last-child {{
+                    border-bottom: none;
+                }}
+                .label {{
+                    color: #666;
+                    font-weight: 500;
+                }}
+                .value {{
+                    font-weight: bold;
+                    color: #333;
+                }}
+                .value.highlight {{
+                    color: #B8860F;
+                    font-size: 18px;
+                }}
+                .badge {{
+                    display: inline-block;
+                    background: #10B981;
+                    color: white;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                }}
+                .button {{
+                    display: block;
+                    background: linear-gradient(135deg, #FFD700, #FFA500);
+                    color: #0a1520;
+                    text-align: center;
+                    padding: 12px;
+                    border-radius: 40px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    margin-top: 20px;
+                }}
+                .footer {{
+                    background: #1a1a2e;
+                    padding: 15px;
+                    text-align: center;
+                    font-size: 11px;
+                    color: #aaa;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>MFALME BETTERDAYS CAPITAL</h1>
+                </div>
+                <div class="content">
+                    <div class="alert">
+                        A new PAID ticket purchase has been received.
+                    </div>
+                    
+                    <div class="details-card">
+                        <div class="row">
+                            <span class="label">Ticket Number</span>
+                            <span class="value">{ticket.ticket_number}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Attendee Name</span>
+                            <span class="value">{ticket.attendee_name}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Phone</span>
+                            <span class="value">{ticket.attendee_phone}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Email</span>
+                            <span class="value">{ticket.attendee_email}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Quantity</span>
+                            <span class="value">{ticket.quantity}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Total Amount</span>
+                            <span class="value highlight">KES {ticket.total_amount_kes:,.2f}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Event</span>
+                            <span class="value">{event.title}</span>
+                        </div>
+                        <div class="row">
+                            <span class="label">Event Date</span>
+                            <span class="value">{event.date.strftime('%B %d, 2026')}</span>
+                        </div>
+                    </div>
+                    
+                    <a href="{settings.SITE_URL}/admin/" class="button">VIEW IN ADMIN PANEL</a>
+                </div>
+                <div class="footer">
+                    <p>Mfalme Betterdays Capital | Paid Ticket Notification</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        '''
+        
+        # Send to ADMIN
         send_mail(
-            subject=f"New Ticket Purchase - {ticket.ticket_number}",
+            subject=admin_subject,
             message=admin_text,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=settings.ADMIN_EMAILS,
             fail_silently=True,
-            html_message=admin_html,  # This sends the styled version
+            html_message=admin_html
         )
         
-        print(f"Ticket email sent to {ticket.attendee_email}")
-        print(f"Admin notification sent to {settings.ADMIN_EMAILS}")
+        print(f"✅ Admin notification sent for paid ticket")
         return True
         
     except Exception as e:
-        print(f"Ticket email error: {e}")
+        print(f"❌ Ticket email error: {e}")
         import traceback
         traceback.print_exc()
         return False
-
-
-def send_ticket_admin_notification(ticket):
-    """Send email to admin when ticket is purchased"""
-    try:
-        subject = f"New Ticket Purchase - {ticket.ticket_number}"
-        
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head><meta charset="UTF-8"><title>New Ticket Purchase</title></head>
-        <body style="font-family: Arial, sans-serif;">
-            <h2 style="color: #B8860B;">New Ticket Purchase</h2>
-            <p><strong>Ticket Number:</strong> {ticket.ticket_number}</p>
-            <p><strong>Attendee:</strong> {ticket.attendee_name}</p>
-            <p><strong>Phone:</strong> {ticket.attendee_phone}</p>
-            <p><strong>Email:</strong> {ticket.attendee_email}</p>
-            <p><strong>Quantity:</strong> {ticket.quantity}</p>
-            <p><strong>Total:</strong> KES {ticket.total_amount_kes:,.2f}</p>
-            <p><strong>Event:</strong> {ticket.event.title}</p>
-            <p><strong>Date:</strong> {ticket.event.date.strftime('%B %d, %Y')}</p>
-            <hr>
-            <p>View in admin panel: {settings.SITE_URL}/admin/</p>
-        </body>
-        </html>
-        """
-        
-        send_mail(
-            subject=subject,
-            message=f"New ticket purchase from {ticket.attendee_name}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=settings.ADMIN_EMAILS,
-            fail_silently=True,
-            html_message=html_content
-        )
-        return True
-    except Exception as e:
-        print(f"Admin ticket email error: {e}")
-        return False
-
-
-
-
 
 def send_merchandise_admin_notification(order):
     """Send email to admin for new merchandise order"""
@@ -7192,27 +7474,68 @@ def send_merchandise_admin_notification(order):
 
 @csrf_exempt
 def api_create_ticket_order(request):
-    """Create ticket order and return JSON for frontend redirect - PAYSTACK VERSION"""
+    """Create ticket order for PAID event - $249 USD per ticket"""
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
+    print("=" * 60)
+    print("🎫 CREATE TICKET ORDER CALLED")
+    print("=" * 60)
+    
     try:
         data = json.loads(request.body)
-    except:
+        print(f"📦 Request data: {data}")
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON decode error: {e}")
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     
-    full_name = data.get('full_name')
-    email = data.get('email')
-    phone = data.get('phone')
+    full_name = data.get('full_name', '').strip()
+    email = data.get('email', '').strip().lower()
+    phone = data.get('phone', '').strip()
     quantity = data.get('quantity', 1)
     
+    print(f"📝 Extracted data:")
+    print(f"   Name: {full_name}")
+    print(f"   Email: {email}")
+    print(f"   Phone: {phone}")
+    print(f"   Quantity: {quantity}")
+    
     if not all([full_name, email, phone]):
+        print("❌ Missing required fields")
         return JsonResponse({'error': 'All fields required'}, status=400)
     
-    amount_usd = 249 * quantity
-    amount_kes = amount_usd * 129
+    # GET THE EVENT (should be active)
+    event = Event.objects.filter(is_active=True).first()
+    if not event:
+        print("❌ No active event found in database!")
+        return JsonResponse({'error': 'Event not found'}, status=404)
+    
+    print(f"✅ Event found: {event.title}")
+    print(f"   Ticket Price USD: ${event.ticket_price_usd}")
+    print(f"   Ticket Price KES: KES {event.ticket_price_kes}")
+    print(f"   Current bookings: {event.current_bookings}")
+    print(f"   Max attendees: {event.max_attendees}")
+    
+    # Check if sold out
+    if event.current_bookings + quantity > event.max_attendees:
+        print(f"❌ Not enough seats! Requested: {quantity}, Available: {event.max_attendees - event.current_bookings}")
+        return JsonResponse({'error': 'Not enough seats available'}, status=400)
+    
+    # Calculate amounts - USE event.ticket_price_kes directly
+    amount_usd = float(event.ticket_price_usd) * quantity
+    amount_kes = float(event.ticket_price_kes) * quantity
+    
+    print(f"💰 Amount calculation:")
+    print(f"   Price USD: ${event.ticket_price_usd} x {quantity} = ${amount_usd}")
+    print(f"   Price KES: KES {event.ticket_price_kes} x {quantity} = KES {amount_kes}")
+    
+    # Validate amount is not zero
+    if amount_kes <= 0:
+        print(f"❌ ERROR: Amount is zero! Check event.ticket_price_kes value: {event.ticket_price_kes}")
+        return JsonResponse({'error': 'Invalid ticket price. Please contact support.'}, status=400)
     
     reference = f"TKT-{uuid.uuid4().hex[:8].upper()}"
+    print(f"📋 Generated reference: {reference}")
     
     # Create Order
     order = Order.objects.create(
@@ -7226,9 +7549,14 @@ def api_create_ticket_order(request):
         metadata={
             'quantity': quantity,
             'price_usd': amount_usd,
-            'price_kes': amount_kes
+            'price_kes': amount_kes,
+            'event_id': event.id,
+            'event_title': event.title,
+            'unit_price_usd': float(event.ticket_price_usd),
+            'unit_price_kes': float(event.ticket_price_kes)
         }
     )
+    print(f"✅ Order created: {order.id}")
     
     # Create PaymentTransaction with PAYSTACK
     transaction = PaymentTransaction.objects.create(
@@ -7237,8 +7565,8 @@ def api_create_ticket_order(request):
         amount=Decimal(str(amount_kes)),
         currency='KES',
         payment_type='ticket',
-        payment_method='paystack',  # CHANGED from 'sasapay'
-        description=f"Event Ticket - {quantity} Ticket(s)",
+        payment_method='paystack',
+        description=f"Event Ticket - {event.title} x{quantity}",
         customer_email=email,
         customer_name=full_name,
         customer_phone=phone,
@@ -7247,12 +7575,25 @@ def api_create_ticket_order(request):
             'order_reference': reference,
             'item_type': 'ticket',
             'amount_usd': amount_usd,
-            'quantity': quantity
+            'amount_kes': amount_kes,
+            'quantity': quantity,
+            'event_id': event.id,
+            'event_title': event.title,
+            'unit_price_usd': float(event.ticket_price_usd),
+            'unit_price_kes': float(event.ticket_price_kes)
         },
         status='initiated',
         ip_address=get_client_ip(request),
-        user_agent=request.META.get('HTTP_USER_AGENT', ''),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
     )
+    print(f"✅ PaymentTransaction created: {transaction.reference}")
+    
+    print("=" * 60)
+    print(f"✅ SUCCESS! Returning response")
+    print(f"   Reference: {reference}")
+    print(f"   Amount USD: ${amount_usd}")
+    print(f"   Amount KES: KES {amount_kes}")
+    print("=" * 60)
     
     return JsonResponse({
         'success': True,
@@ -7498,80 +7839,176 @@ def get_books(request):
 @csrf_exempt
 def api_create_book_order(request):
     """Create book order and return JSON for frontend redirect - PAYSTACK VERSION"""
+    
+    # ========== DEBUG CHECKERS - TO VERIFY FUNCTION IS BEING CALLED ==========
+    print("=" * 70)
+    print("🔥🔥🔥 BOOK ORDER FUNCTION WAS CALLED! 🔥🔥🔥")
+    print("=" * 70)
+    print(f"📅 Time: {timezone.now()}")
+    print(f"📡 Method: {request.method}")
+    print(f"🌐 Path: {request.path}")
+    print(f"🔗 Full Path: {request.get_full_path()}")
+    print(f"📦 Content-Type: {request.content_type}")
+    print(f"📏 Body Length: {len(request.body)} bytes")
+    print(f"📋 Body Raw: {request.body}")
+    print(f"🔑 Headers: {dict(request.headers)}")
+    print(f"👤 User: {request.user if request.user.is_authenticated else 'Anonymous'}")
+    print(f"🌍 IP: {get_client_ip(request)}")
+    print("=" * 70)
+    
     if request.method != 'POST':
+        print(f"❌ ERROR: Method not allowed - got {request.method}, expected POST")
         return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    print("✅ Method is POST - proceeding...")
     
     try:
         data = json.loads(request.body)
-    except:
+        print(f"✅ JSON parsed successfully: {data}")
+        print(f"   - full_name: {data.get('full_name')}")
+        print(f"   - email: {data.get('email')}")
+        print(f"   - phone: {data.get('phone')}")
+        print(f"   - quantity: {data.get('quantity')}")
+        print(f"   - delivery_type: {data.get('delivery_type')}")
+        print(f"   - address: {data.get('address', '')[:50]}...")
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON decode error: {e}")
+        print(f"   Raw body: {request.body}")
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        print(f"❌ Error parsing request: {e}")
+        return JsonResponse({'error': 'Invalid request'}, status=400)
     
-    full_name = data.get('full_name')
-    email = data.get('email')
-    phone = data.get('phone')
+    full_name = data.get('full_name', '').strip()
+    email = data.get('email', '').strip().lower()
+    phone = data.get('phone', '').strip()
     quantity = data.get('quantity', 1)
     delivery_type = data.get('delivery_type', 'digital')
-    address = data.get('address', '')
+    address = data.get('address', '').strip()
     
+    print(f"\n📝 Extracted Data:")
+    print(f"   full_name: '{full_name}'")
+    print(f"   email: '{email}'")
+    print(f"   phone: '{phone}'")
+    print(f"   quantity: {quantity}")
+    print(f"   delivery_type: '{delivery_type}'")
+    print(f"   address: '{address[:50]}...'")
+    
+    # Validation
     if not all([full_name, email, phone]):
-        return JsonResponse({'error': 'All fields required'}, status=400)
+        missing = []
+        if not full_name: missing.append("full_name")
+        if not email: missing.append("email")
+        if not phone: missing.append("phone")
+        print(f"❌ Validation failed - missing: {missing}")
+        return JsonResponse({'error': f'All fields required. Missing: {", ".join(missing)}'}, status=400)
     
-    book = Book.objects.filter(is_active=True).first()
-    if not book:
-        return JsonResponse({'error': 'Book not found'}, status=404)
+    print("✅ Basic validation passed")
     
-    if not book.is_available(quantity):
-        return JsonResponse({'error': 'Insufficient stock. Please reduce quantity.'}, status=400)
+    # Check for Book model
+    try:
+        book = Book.objects.filter(is_active=True).first()
+        if not book:
+            print("❌ No active book found in database!")
+            return JsonResponse({'error': 'Book not found'}, status=404)
+        print(f"✅ Book found: {book.title} (ID: {book.id})")
+        print(f"   Price USD: ${book.price_usd}")
+        print(f"   Price KES: KES {book.price_kes}")
+        print(f"   Stock: {book.stock}")
+        print(f"   Preorder Stock: {book.preorder_stock}")
+    except Exception as e:
+        print(f"❌ Error accessing Book model: {e}")
+        return JsonResponse({'error': 'Database error - Book model'}, status=500)
     
-    if delivery_type == 'physical':
-        amount_usd = float(book.price_usd) * quantity + 29
-        amount_kes = float(book.price_kes) * quantity + (29 * 129)
-    else:
-        amount_usd = float(book.price_usd) * quantity
-        amount_kes = float(book.price_kes) * quantity
+    # Check availability
+    try:
+        if not book.is_available(quantity):
+            print(f"❌ Insufficient stock! Requested: {quantity}, Available: {book.preorder_stock if book.status == 'preorder' else book.stock}")
+            return JsonResponse({'error': 'Insufficient stock. Please reduce quantity.'}, status=400)
+        print(f"✅ Stock available for quantity: {quantity}")
+    except Exception as e:
+        print(f"❌ Error checking availability: {e}")
+        return JsonResponse({'error': 'Error checking stock'}, status=500)
     
-    book_order = BookOrder.objects.create(
-        book=book,
-        customer_name=full_name,
-        customer_email=email,
-        customer_phone=phone,
-        delivery_address=address if delivery_type == 'physical' else '',
-        delivery_type=delivery_type,
-        quantity=quantity,
-        unit_price_usd=book.price_usd,
-        unit_price_kes=book.price_kes,
-        total_usd=Decimal(str(amount_usd)),
-        total_kes=Decimal(str(amount_kes)),
-        status='pending'
-    )
+    # Calculate amounts
+    try:
+        if delivery_type == 'physical':
+            amount_usd = float(book.price_usd) * quantity + 29
+            amount_kes = float(book.price_kes) * quantity + (29 * 129)
+            print(f"💰 Physical delivery - USD: ${amount_usd}, KES: {amount_kes}")
+        else:
+            amount_usd = float(book.price_usd) * quantity
+            amount_kes = float(book.price_kes) * quantity
+            print(f"💰 Digital delivery - USD: ${amount_usd}, KES: {amount_kes}")
+    except Exception as e:
+        print(f"❌ Error calculating amounts: {e}")
+        return JsonResponse({'error': 'Error calculating price'}, status=500)
     
-    # Create PaymentTransaction with PAYSTACK
-    transaction = PaymentTransaction.objects.create(
-        user=request.user if request.user.is_authenticated else None,
-        reference=book_order.order_number,
-        amount=Decimal(str(amount_kes)),
-        currency='KES',
-        payment_type='book',
-        payment_method='paystack',  # CHANGED from 'sasapay'
-        description=f"Book: {book.title} x{quantity}",
-        customer_email=email,
-        customer_name=full_name,
-        customer_phone=phone,
-        metadata={
-            'order_id': book_order.id,
-            'order_reference': book_order.order_number,
-            'item_type': 'book',
-            'book_id': book.id,
-            'book_title': book.title,
-            'amount_usd': amount_usd,
-            'quantity': quantity,
-            'delivery_type': delivery_type,
-            'address': address
-        },
-        status='initiated',
-        ip_address=get_client_ip(request),
-        user_agent=request.META.get('HTTP_USER_AGENT', ''),
-    )
+    # Create BookOrder
+    try:
+        book_order = BookOrder.objects.create(
+            book=book,
+            customer_name=full_name,
+            customer_email=email,
+            customer_phone=phone,
+            delivery_address=address if delivery_type == 'physical' else '',
+            delivery_type=delivery_type,
+            quantity=quantity,
+            unit_price_usd=book.price_usd,
+            unit_price_kes=book.price_kes,
+            total_usd=Decimal(str(amount_usd)),
+            total_kes=Decimal(str(amount_kes)),
+            status='pending'
+        )
+        print(f"✅ BookOrder created! ID: {book_order.id}, Order Number: {book_order.order_number}")
+    except Exception as e:
+        print(f"❌ Error creating BookOrder: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': f'Error creating order: {str(e)}'}, status=500)
+    
+    # Create PaymentTransaction
+    try:
+        transaction = PaymentTransaction.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            reference=book_order.order_number,
+            amount=Decimal(str(amount_kes)),
+            currency='KES',
+            payment_type='book',
+            payment_method='paystack',
+            description=f"Book: {book.title} x{quantity}",
+            customer_email=email,
+            customer_name=full_name,
+            customer_phone=phone,
+            metadata={
+                'order_id': book_order.id,
+                'order_reference': book_order.order_number,
+                'item_type': 'book',
+                'book_id': book.id,
+                'book_title': book.title,
+                'amount_usd': amount_usd,
+                'quantity': quantity,
+                'delivery_type': delivery_type,
+                'address': address
+            },
+            status='initiated',
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+        )
+        print(f"✅ PaymentTransaction created! Reference: {transaction.reference}")
+    except Exception as e:
+        print(f"❌ Error creating PaymentTransaction: {e}")
+        import traceback
+        traceback.print_exc()
+        # Don't fail the whole request - try to continue
+        print("⚠️ Continuing despite transaction error...")
+    
+    print("=" * 70)
+    print(f"✅✅✅ SUCCESS! Returning response to frontend")
+    print(f"   Reference: {book_order.order_number}")
+    print(f"   Amount USD: ${amount_usd}")
+    print(f"   Amount KES: {amount_kes}")
+    print("=" * 70)
     
     return JsonResponse({
         'success': True,
@@ -8829,10 +9266,8 @@ View in admin: {settings.SITE_URL}/admin/
 
 @require_http_methods(["GET"])
 def get_event_details(request):
-    """Get event details for frontend display including seat availability"""
+    """Get event details for frontend display including seat availability and pricing"""
     try:
-        from .models import Event
-        
         event = Event.objects.filter(is_active=True).first()
         
         if not event:
@@ -8841,7 +9276,9 @@ def get_event_details(request):
                 'is_sold_out': False,
                 'current_bookings': 0,
                 'max_attendees': 500,
-                'event_exists': False
+                'event_exists': False,
+                'ticket_price_usd': 249,
+                'ticket_price_kes': 32121
             })
         
         seats_remaining = event.max_attendees - event.current_bookings
@@ -8856,7 +9293,9 @@ def get_event_details(request):
             'max_attendees': event.max_attendees,
             'venue': event.venue,
             'event_exists': True,
-            'event_date': event.date.strftime('%Y-%m-%d %H:%M:%S') if event.date else None
+            'event_date': event.date.strftime('%Y-%m-%d %H:%M:%S') if event.date else None,
+            'ticket_price_usd': float(event.ticket_price_usd),
+            'ticket_price_kes': float(event.ticket_price_kes)
         })
         
     except Exception as e:
@@ -8864,7 +9303,9 @@ def get_event_details(request):
         return JsonResponse({
             'error': str(e),
             'seats_remaining': 500,
-            'is_sold_out': False
+            'is_sold_out': False,
+            'ticket_price_usd': 249,
+            'ticket_price_kes': 32121
         }, status=500)
 
 

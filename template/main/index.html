@@ -4298,8 +4298,7 @@ window.closeModal = function() {
 </script>
 
 
-
-<!-- ===== NUCLEAR FREE REGISTRATION - COMPLETELY ISOLATED ===== -->
+<!-- ===== PAID EVENT SECTION - 249 USD WITH PAYSTACK ===== -->
 <section class="events-premium-section" id="nuclear-events-section">
   <div class="container">
     <div class="section-header">
@@ -4321,20 +4320,29 @@ window.closeModal = function() {
       </div>
       
       <div class="event-premium-info">
-        <div class="event-badge" style="background: rgba(255,215,0,0.1); color: #FFD700;">🎟️ FREE REGISTRATION</div>
+        <div class="event-badge" style="background: rgba(255,215,0,0.1); color: #FFD700;">🎟️ PREMIUM EVENT</div>
         <h2>East & Central Africa Live Leveraging Summit</h2>
         <div class="event-details-list">
           <div class="event-detail"><i class="fas fa-calendar-alt"></i> Friday, 7th August 2026 | 9:00 AM - 5:00 PM EAT</div>
           <div class="event-detail"><i class="fas fa-map-marker-alt"></i> Safari Park Hotel, Nairobi, Kenya</div>
           <div class="event-detail"><i class="fas fa-microphone-alt"></i> Keynote Speaker: <strong>LEVI MURIUKI</strong> (CEO & Founder)</div>
         </div>
-        <p class="event-description">Join us for the most anticipated trading event of the year. Learn advanced leveraging strategies, network with elite traders, and gain insider knowledge from industry leaders. <strong style="color: #FFD700;">Entry is FREE!</strong></p>
+        <p class="event-description">Join us for the most anticipated trading event of the year. Learn advanced leveraging strategies, network with elite traders, and gain insider knowledge from industry leaders.</p>
+        
+        <!-- Price Display -->
+        <div style="background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,165,0,0.1)); border-radius: 16px; padding: 16px; margin: 15px 0; text-align: center;">
+          <span style="font-size: 0.85rem; color: #FFD700;">Ticket Price</span>
+          <div style="font-size: 2rem; font-weight: 800; color: #FFD700;">$249 USD</div>
+          <span style="font-size: 0.75rem; color: #aaa;">≈ KES 32,121</span>
+        </div>
+        
         <div class="event-highlights-list">
           <span><i class="fas fa-chart-line"></i> Live Trading</span>
           <span><i class="fas fa-users"></i> Networking</span>
           <span><i class="fas fa-certificate"></i> Certificate</span>
           <span><i class="fas fa-gift"></i> Giveaways</span>
           <span><i class="fas fa-coffee"></i> Lunch Included</span>
+          <span><i class="fas fa-book"></i> Event Materials</span>
         </div>
         
         <div class="countdown-premium">
@@ -4351,20 +4359,20 @@ window.closeModal = function() {
         </div>
         
         <button class="get-ticket-btn" id="nuclearOpenModalBtn" style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #0a1520;">
-          <i class="fas fa-ticket-alt"></i> Register for FREE
+          <i class="fas fa-ticket-alt"></i> Buy Ticket - $249 USD
         </button>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===== NUCLEAR TICKET MODAL - COMPLETELY NEW IDS ===== -->
+<!-- ===== TICKET MODAL - PAID VERSION ===== -->
 <div id="nuclearTicketModal" class="modern-modal" style="display: none;">
   <div class="modern-modal-overlay"></div>
-  <div class="modern-modal-content">
+  <div class="modern-modal-content" style="max-width: 500px;">
     <div class="modern-modal-header">
       <div class="modern-modal-icon"><i class="fas fa-ticket-alt"></i></div>
-      <h3>FREE Registration</h3>
+      <h3>Purchase Ticket - $249 USD</h3>
       <button class="modern-modal-close" id="nuclearCloseModalBtn">×</button>
     </div>
     <div class="modern-modal-body">
@@ -4380,7 +4388,7 @@ window.closeModal = function() {
         </div>
       </div>
       
-      <form id="nuclearFreeRegForm">
+      <form id="nuclearTicketForm">
         {% csrf_token %}
         <div class="form-group">
           <input type="text" id="nuclearAttendeeName" placeholder="Full Name" required>
@@ -4394,19 +4402,38 @@ window.closeModal = function() {
           </div>
         </div>
         
-        <div class="form-group" style="margin: 16px 0;">
-          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #ccc; font-size: 0.8rem;">
-            <input type="checkbox" id="nuclearTermsAgree" required style="width: 18px; height: 18px; cursor: pointer;">
-            I confirm that the information provided is correct and agree to receive event updates
-          </label>
+        <div class="form-row">
+          <div class="form-group">
+            <label style="color:#FFEC8B; font-size:0.75rem; margin-bottom:8px; display:block;">Number of Tickets</label>
+            <div class="quantity-selector">
+              <button type="button" class="qty-btn" id="ticketDecrementQty">−</button>
+              <span id="ticketQty" class="qty-value">1</span>
+              <button type="button" class="qty-btn" id="ticketIncrementQty">+</button>
+            </div>
+          </div>
         </div>
         
         <div class="price-summary" style="background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3);">
-          <div class="price-row"><span><i class="fas fa-gift"></i> FREE EVENT</span><strong style="color: #FFD700;">No Payment Required</strong></div>
-          <div class="price-row"><span><i class="fas fa-users"></i> Available Seats</span><strong id="nuclearSeatsRemainingText" style="color: #FFD700;">Loading...</strong></div>
+          <div class="price-row"><span>Ticket Price:</span><strong>$<span id="ticketPriceUsd">249</span></strong></div>
+          <div class="price-row"><span>Quantity:</span><strong id="ticketDisplayQty">1</strong></div>
+          <div class="price-row total" style="border-top-color: rgba(255,215,0,0.3);"><span>Total (USD):</span><strong>$<span id="ticketTotalUsd">249</span></strong></div>
+          <div class="price-row"><span>Total (KES):</span><strong>KES <span id="ticketTotalKes">32,121</span></strong></div>
         </div>
-        <button type="button" id="nuclearSubmitRegistrationBtn" class="modal-submit-btn" style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #0a1520;">
-          <i class="fas fa-check-circle"></i> Complete Registration →
+        
+        <div class="form-group" style="margin: 16px 0;">
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #ccc; font-size: 0.8rem;">
+            <input type="checkbox" id="nuclearTermsAgree" required style="width: 18px; height: 18px; cursor: pointer;">
+            I confirm that the information provided is correct and agree to the terms
+          </label>
+        </div>
+        
+        <div class="manifesto-bonus-note" style="background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3);">
+          <i class="fas fa-shield-alt gold-text"></i>
+          <span>Secure payment via Paystack - Card or M-PESA</span>
+        </div>
+        
+        <button type="submit" id="nuclearSubmitPaymentBtn" class="modal-submit-btn" style="background: linear-gradient(135deg, #FFD700, #FFA500); color: #0a1520;">
+          <i class="fas fa-lock"></i> Pay $249 USD →
         </button>
       </form>
     </div>
@@ -4422,8 +4449,8 @@ window.closeModal = function() {
         <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
       </svg>
     </div>
-    <h3 class="success-title">Registration Successful! 🎉</h3>
-    <p class="success-message" id="nuclearSuccessMessage">Your FREE ticket has been reserved!</p>
+    <h3 class="success-title">Payment Successful! 🎉</h3>
+    <p class="success-message" id="nuclearSuccessMessage">Your ticket has been purchased!</p>
     <div class="success-email-note">
       <i class="fas fa-envelope"></i>
       <span>A confirmation email has been sent to your inbox</span>
@@ -4628,6 +4655,44 @@ window.closeModal = function() {
   box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
 }
 
+/* Quantity Selector */
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 40px;
+  padding: 8px 16px;
+  width: fit-content;
+}
+
+@media (max-width: 550px) {
+  .quantity-selector {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.qty-btn {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 50%;
+  color: #FFD700;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.qty-btn:hover {
+  background: #FFD700;
+  color: #0a1520;
+  border-color: #FFD700;
+}
+
 /* Responsive */
 @media (max-width: 480px) {
   .success-modal-content {
@@ -4646,66 +4711,19 @@ window.closeModal = function() {
   .success-message {
     font-size: 0.9rem;
   }
-  
-  .success-email-note span {
-    font-size: 0.75rem;
-  }
 }
-
-/* Rest of the styles (keep your existing modal styles) */
 </style>
 
 <script>
-// NUCLEAR FREE REGISTRATION - WITH SUCCESS MODAL
+// PAID EVENT TICKET - DIRECT PAYSTACK INTEGRATION
 (function() {
     'use strict';
     
-    console.log('💣 NUCLEAR FREE REGISTRATION ACTIVATED');
+    console.log('🎟️ PAID EVENT TICKET SYSTEM ACTIVATED - $249 USD');
     
-    // Kill any existing event listeners on the entire page for ticket form
-    const killAllEventListeners = () => {
-        const originalAddEventListener = document.addEventListener;
-        document.addEventListener = function(type, listener, options) {
-            if (type === 'submit' && listener.toString().includes('ticket')) {
-                console.warn('💀 BLOCKED malicious submit listener');
-                return;
-            }
-            return originalAddEventListener.call(this, type, listener, options);
-        };
-    };
-    killAllEventListeners();
-    
-    // Block ALL fetch to paid endpoints
-    const originalFetch = window.fetch;
-    window.fetch = function(...args) {
-        const url = args[0];
-        if (typeof url === 'string') {
-            if (url.includes('/api/create-ticket-order/') || 
-                url.includes('/payment/initiate/') ||
-                url.includes('create-ticket-order') ||
-                url.includes('/payment/')) {
-                console.warn('💀 NUCLEAR BLOCK:', url);
-                return Promise.resolve({
-                    ok: false,
-                    json: () => Promise.resolve({ success: false, blocked: true, message: 'Nuclear block active' })
-                });
-            }
-        }
-        return originalFetch.apply(this, args);
-    };
-    
-    // Block XHR
-    const originalXHROpen = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function(method, url, ...rest) {
-        if (typeof url === 'string' && 
-            (url.includes('/api/create-ticket-order/') || 
-             url.includes('/payment/initiate/'))) {
-            console.warn('💀 NUCLEAR XHR BLOCK:', url);
-            this.abort();
-            return;
-        }
-        return originalXHROpen.apply(this, [method, url, ...rest]);
-    };
+    let ticketQuantity = 1;
+    const TICKET_PRICE_USD = 249;
+    const EXCHANGE_RATE = 129;
     
     // Helper functions
     function getCsrfToken() {
@@ -4714,7 +4732,7 @@ window.closeModal = function() {
             const cookies = document.cookie.split(';');
             for (let i = 0; i < cookies.length; i++) {
                 const cookie = cookies[i].trim();
-                if (cookie.substring(0, 10) === ('csrftoken=')) {
+                if (cookie.substring(0, 10) === 'csrftoken=') {
                     cookieValue = decodeURIComponent(cookie.substring(10));
                     break;
                 }
@@ -4723,8 +4741,22 @@ window.closeModal = function() {
         return cookieValue;
     }
     
-    // Show Success Modal with 5 second auto-close
-    function showSuccessModal(email) {
+    function updateTicketPrice() {
+        const totalUsd = TICKET_PRICE_USD * ticketQuantity;
+        const totalKes = totalUsd * EXCHANGE_RATE;
+        
+        const totalUsdEl = document.getElementById('ticketTotalUsd');
+        const totalKesEl = document.getElementById('ticketTotalKes');
+        const qtyDisplay = document.getElementById('ticketDisplayQty');
+        const ticketQtySpan = document.getElementById('ticketQty');
+        
+        if (totalUsdEl) totalUsdEl.textContent = totalUsd;
+        if (totalKesEl) totalKesEl.textContent = totalKes.toLocaleString();
+        if (qtyDisplay) qtyDisplay.textContent = ticketQuantity;
+        if (ticketQtySpan) ticketQtySpan.textContent = ticketQuantity;
+    }
+    
+    function showSuccessModal(email, quantity, totalUsd) {
         const modal = document.getElementById('nuclearSuccessModal');
         const messageEl = document.getElementById('nuclearSuccessMessage');
         const timerSpan = document.getElementById('timerSeconds');
@@ -4732,36 +4764,30 @@ window.closeModal = function() {
         
         if (!modal) return;
         
-        // Update message
         if (messageEl) {
-            messageEl.innerHTML = `Your FREE ticket has been reserved!<br><small style="font-size:0.8rem; color:#FFD700;">Ticket sent to ${email || 'your email'}</small>`;
+            messageEl.innerHTML = `You have successfully purchased ${quantity} ticket(s)!<br><small style="font-size:0.8rem; color:#FFD700;">Total: $${totalUsd} USD</small><br><small style="font-size:0.75rem;">Ticket sent to ${email || 'your email'}</small>`;
         }
         
-        // Show modal
         modal.style.display = 'flex';
         
-        // Auto-close after 5 seconds
         let seconds = 5;
         if (timerSpan) timerSpan.textContent = seconds;
         
-        // Create progress bar animation
         if (progressBar) {
             progressBar.style.animation = 'none';
-            progressBar.offsetHeight; // Force reflow
+            progressBar.offsetHeight;
             progressBar.style.animation = 'shrink 5s linear forwards';
         }
         
         const interval = setInterval(() => {
             seconds--;
             if (timerSpan) timerSpan.textContent = seconds;
-            
             if (seconds <= 0) {
                 clearInterval(interval);
                 closeSuccessModal();
             }
         }, 1000);
         
-        // Store interval to clear on manual close
         modal._timerInterval = interval;
     }
     
@@ -4780,22 +4806,49 @@ window.closeModal = function() {
         const modal = document.getElementById('nuclearTicketModal');
         if (modal) modal.style.display = 'none';
         document.body.style.overflow = '';
-        const form = document.getElementById('nuclearFreeRegForm');
+        const form = document.getElementById('nuclearTicketForm');
         if (form) form.reset();
+        ticketQuantity = 1;
+        updateTicketPrice();
     }
     
     function openNuclearModal() {
+        ticketQuantity = 1;
+        updateTicketPrice();
         const modal = document.getElementById('nuclearTicketModal');
         if (modal) modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
+        
         const nameInput = document.getElementById('nuclearAttendeeName');
         const emailInput = document.getElementById('nuclearAttendeeEmail');
         const phoneInput = document.getElementById('nuclearAttendeePhone');
         const termsCheckbox = document.getElementById('nuclearTermsAgree');
+        
         if (nameInput) nameInput.value = '';
         if (emailInput) emailInput.value = '';
         if (phoneInput) phoneInput.value = '';
         if (termsCheckbox) termsCheckbox.checked = false;
+        
+        // Reset quantity display
+        const qtySpan = document.getElementById('ticketQty');
+        if (qtySpan) qtySpan.textContent = '1';
+    }
+    
+    // Quantity controls
+    function incrementTicketQty() {
+        ticketQuantity++;
+        const qtyEl = document.getElementById('ticketQty');
+        if (qtyEl) qtyEl.textContent = ticketQuantity;
+        updateTicketPrice();
+    }
+    
+    function decrementTicketQty() {
+        if (ticketQuantity > 1) {
+            ticketQuantity--;
+            const qtyEl = document.getElementById('ticketQty');
+            if (qtyEl) qtyEl.textContent = ticketQuantity;
+            updateTicketPrice();
+        }
     }
     
     function startNuclearCountdown() {
@@ -4808,10 +4861,12 @@ window.closeModal = function() {
             const hours = Math.floor((diff % (86400000)) / 3600000);
             const mins = Math.floor((diff % 3600000) / 60000);
             const secs = Math.floor((diff % 60000) / 1000);
+            
             const daysEl = document.getElementById('nuclearDays');
             const hoursEl = document.getElementById('nuclearHours');
             const minsEl = document.getElementById('nuclearMins');
             const secsEl = document.getElementById('nuclearSecs');
+            
             if (daysEl) daysEl.innerHTML = String(days).padStart(2,'0');
             if (hoursEl) hoursEl.innerHTML = String(hours).padStart(2,'0');
             if (minsEl) minsEl.innerHTML = String(mins).padStart(2,'0');
@@ -4824,7 +4879,6 @@ window.closeModal = function() {
             const res = await fetch('/api/event/details/');
             const data = await res.json();
             const badge = document.getElementById('nuclearSeatsBadge');
-            const seatsText = document.getElementById('nuclearSeatsRemainingText');
             const openBtn = document.getElementById('nuclearOpenModalBtn');
             
             if (data.is_sold_out) {
@@ -4832,7 +4886,6 @@ window.closeModal = function() {
                     badge.innerHTML = '<i class="fas fa-times-circle"></i> SOLD OUT';
                     badge.style.background = '#ef4444';
                 }
-                if (seatsText) seatsText.innerHTML = 'SOLD OUT';
                 if (openBtn) {
                     openBtn.disabled = true;
                     openBtn.style.opacity = '0.5';
@@ -4840,17 +4893,20 @@ window.closeModal = function() {
                 }
             } else {
                 if (badge) badge.innerHTML = `<i class="fas fa-hourglass-half"></i> ${data.seats_remaining} Seats Left`;
-                if (seatsText) seatsText.innerHTML = `${data.seats_remaining} seats available`;
             }
         } catch(e) {
             console.error('Failed to load seats:', e);
         }
     }
     
-    // Handle registration - DIRECT TO FREE ENDPOINT ONLY
-    const submitBtn = document.getElementById('nuclearSubmitRegistrationBtn');
+    // CREATE TICKET ORDER AND PAY VIA PAYSTACK
+    const submitBtn = document.getElementById('nuclearSubmitPaymentBtn');
     if (submitBtn) {
-        submitBtn.addEventListener('click', async function(e) {
+        // Remove any existing listeners by cloning
+        const newBtn = submitBtn.cloneNode(true);
+        submitBtn.parentNode.replaceChild(newBtn, submitBtn);
+        
+        newBtn.addEventListener('click', async function(e) {
             e.preventDefault();
             e.stopPropagation();
             
@@ -4860,83 +4916,119 @@ window.closeModal = function() {
             const terms = document.getElementById('nuclearTermsAgree')?.checked;
             
             if (!name || !email || !phone) {
-                alert('Please fill all fields');
+                alert('❌ Please fill all fields');
                 return;
             }
             
             if (!terms) {
-                alert('Please agree to the terms to continue');
+                alert('❌ Please agree to the terms to continue');
                 return;
             }
             
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
-                alert('Please enter a valid email address');
+                alert('❌ Please enter a valid email address');
                 return;
             }
             
             if (phone.length < 10) {
-                alert('Please enter a valid phone number');
+                alert('❌ Please enter a valid phone number');
                 return;
             }
             
-            const btn = submitBtn;
+            const totalUsd = TICKET_PRICE_USD * ticketQuantity;
+            const totalKes = totalUsd * EXCHANGE_RATE;
+            
+            const btn = newBtn;
             const originalText = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
-            
-            const requestBody = {
-                full_name: name,
-                email: email,
-                phone: phone
-            };
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating order...';
             
             try {
-                const response = await fetch('/api/free-ticket-registration/', {
+                // Step 1: Create ticket order
+                const orderResponse = await fetch('/api/create-ticket-order/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': getCsrfToken()
                     },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify({
+                        full_name: name,
+                        email: email,
+                        phone: phone,
+                        quantity: ticketQuantity
+                    })
                 });
                 
-                let data;
-                try {
-                    data = await response.json();
-                } catch (e) {
-                    const textResponse = await response.text();
-                    console.error('Non-JSON response:', textResponse);
-                    throw new Error('Server returned an invalid response');
-                }
+                const orderData = await orderResponse.json();
+                console.log('Ticket order response:', orderData);
                 
-                if (response.ok && data.success) {
-                    closeNuclearModal();
-                    // Show the beautiful success modal
-                    showSuccessModal(email);
-                    loadNuclearSeats();
+                if (orderData.success) {
+                    // Step 2: Initialize Paystack payment
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecting to Paystack...';
+                    
+                    const paystackResponse = await fetch('/paystack/initiate/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCsrfToken()
+                        },
+                        body: JSON.stringify({
+                            reference: orderData.reference,
+                            amount: totalKes,
+                            email: email,
+                            phone: phone
+                        })
+                    });
+                    
+                    const paystackData = await paystackResponse.json();
+                    
+                    if (paystackData.success && paystackData.authorization_url) {
+                        // Close modal and redirect to Paystack
+                        closeNuclearModal();
+                        window.location.href = paystackData.authorization_url;
+                    } else {
+                        alert('❌ Payment initialization failed: ' + (paystackData.error || 'Unknown error'));
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
                 } else {
-                    const errorMsg = data.error || data.message || data.detail || 'Registration failed. Please try again.';
-                    alert(errorMsg);
-                    console.error('Registration error:', data);
+                    alert('❌ Error: ' + (orderData.error || 'Failed to create order'));
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
                 }
             } catch(err) {
-                console.error('Network error:', err);
-                alert('Network error. Please check your connection and try again.');
-            } finally {
+                console.error('Error:', err);
+                alert('❌ Network error. Please try again.');
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             }
         });
     }
     
-    // Setup button clicks
+    // Setup quantity buttons
+    const decrementBtn = document.getElementById('ticketDecrementQty');
+    const incrementBtn = document.getElementById('ticketIncrementQty');
+    
+    if (decrementBtn) {
+        const newDecBtn = decrementBtn.cloneNode(true);
+        decrementBtn.parentNode.replaceChild(newDecBtn, decrementBtn);
+        newDecBtn.onclick = decrementTicketQty;
+    }
+    
+    if (incrementBtn) {
+        const newIncBtn = incrementBtn.cloneNode(true);
+        incrementBtn.parentNode.replaceChild(newIncBtn, incrementBtn);
+        newIncBtn.onclick = incrementTicketQty;
+    }
+    
+    // Setup modal buttons
     const openBtn = document.getElementById('nuclearOpenModalBtn');
     if (openBtn) {
-        const newBtn = openBtn.cloneNode(true);
-        openBtn.parentNode.replaceChild(newBtn, openBtn);
-        newBtn.id = 'nuclearOpenModalBtn';
-        newBtn.onclick = openNuclearModal;
+        const newOpenBtn = openBtn.cloneNode(true);
+        openBtn.parentNode.replaceChild(newOpenBtn, openBtn);
+        newOpenBtn.id = 'nuclearOpenModalBtn';
+        newOpenBtn.onclick = openNuclearModal;
     }
     
     const closeBtn = document.getElementById('nuclearCloseModalBtn');
@@ -4944,19 +5036,15 @@ window.closeModal = function() {
         closeBtn.onclick = closeNuclearModal;
     }
     
-    // Close success modal button
     const closeSuccessBtn = document.getElementById('nuclearCloseSuccessBtn');
     if (closeSuccessBtn) {
         closeSuccessBtn.onclick = closeSuccessModal;
     }
     
-    // Click overlay to close success modal
     const successOverlay = document.querySelector('.success-modal-overlay');
     if (successOverlay) {
         successOverlay.onclick = function(e) {
-            if (e.target === this) {
-                closeSuccessModal();
-            }
+            if (e.target === this) closeSuccessModal();
         };
     }
     
@@ -4967,8 +5055,9 @@ window.closeModal = function() {
     
     startNuclearCountdown();
     loadNuclearSeats();
+    updateTicketPrice();
     
-    console.log('💣 NUCLEAR MODE ACTIVE - With Success Modal');
+    console.log('🎟️ PAID EVENT SYSTEM READY - $249 USD per ticket');
 })();
 </script>
 
@@ -6026,7 +6115,7 @@ updateCartUI();
         
         <div class="manifesto-bonus-note" style="background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3);">
           <i class="fas fa-shield-alt gold-text"></i>
-          <span>Secure payment via M-PESA, Bank Transfer, or USDT</span>
+          <span>Secure payment via Paystack - Card or M-PESA</span>
         </div>
         
         <button type="submit" class="modal-submit-btn">Pre-Order Now →</button>
@@ -6781,7 +6870,6 @@ updateCartUI();
 <script>
 (function() {
   // ===== BOOK PRE-ORDER FUNCTIONALITY =====
-  // Use IIFE to avoid global variable conflicts
   let bookQuantity = 1;
   const BOOK_BASE_PRICE_USD = 100;
   const BOOK_SHIPPING_COST_USD = 29;
@@ -6867,9 +6955,18 @@ updateCartUI();
     }
   };
 
+  // Get CSRF token
+  function getCSRFToken() {
+    const token = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (token) return token.value;
+    const cookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+    return cookie ? cookie.split('=')[1] : '';
+  }
+
+  const csrfToken = getCSRFToken();
+
   // Event Listeners
   document.addEventListener('DOMContentLoaded', function() {
-    // Delivery type change handler
     const deliverySelect = document.getElementById('bookDeliveryType');
     if (deliverySelect) {
       deliverySelect.addEventListener('change', function() {
@@ -6883,7 +6980,6 @@ updateCartUI();
       });
     }
     
-    // Quantity button handlers
     const decrementBtn = document.getElementById('decrementQtyBtn');
     const incrementBtn = document.getElementById('incrementQtyBtn');
     
@@ -6894,7 +6990,6 @@ updateCartUI();
       incrementBtn.addEventListener('click', window.incrementBookQty);
     }
     
-    // Open modal button
     const openBtn = document.getElementById('openBookModalBtn');
     if (openBtn) {
       openBtn.addEventListener('click', function(e) {
@@ -6903,19 +6998,16 @@ updateCartUI();
       });
     }
     
-    // Close modal button
     const closeBtn = document.getElementById('closeBookModalBtn');
     if (closeBtn) {
       closeBtn.addEventListener('click', window.closeBookModal);
     }
     
-    // Close on overlay click
     const overlay = document.querySelector('.modern-modal-overlay');
     if (overlay) {
       overlay.addEventListener('click', window.closeBookModal);
     }
     
-    // Close on escape key
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         const modal = document.getElementById('bookModal');
@@ -6926,17 +7018,7 @@ updateCartUI();
     });
   });
 
-  // Get CSRF token
-  function getCSRFToken() {
-    const token = document.querySelector('[name=csrfmiddlewaretoken]');
-    if (token) return token.value;
-    const cookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
-    return cookie ? cookie.split('=')[1] : '';
-  }
-
-  const csrfToken = getCSRFToken();
-
-  // Book Form Submission
+  // BOOK FORM SUBMISSION - DIRECT TO PAYSTACK
   const bookForm = document.getElementById('bookForm');
   if (bookForm) {
     bookForm.addEventListener('submit', async function(e) {
@@ -6958,19 +7040,14 @@ updateCartUI();
         return;
       }
       
-      // Calculate correct price
-      let priceUsd = BOOK_BASE_PRICE_USD;
-      if (deliveryType === 'physical') {
-        priceUsd = BOOK_BASE_PRICE_USD + BOOK_SHIPPING_COST_USD;
-      }
-      
       const btn = this.querySelector('.modal-submit-btn');
       const originalText = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
       
       try {
-        const response = await fetch('/api/create-book-order/', {
+        // Step 1: Create the book order
+        const orderResponse = await fetch('/api/create-book-order/', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json', 
@@ -6986,14 +7063,40 @@ updateCartUI();
           })
         });
         
-        const data = await response.json();
-        console.log('Book order response:', data);
+        const orderData = await orderResponse.json();
+        console.log('Book order response:', orderData);
         
-        if (data.success) {
-          window.closeBookModal();
-          window.location.href = `/payment/?ref=${data.reference}`;
+        if (orderData.success) {
+          // Step 2: Initialize Paystack payment directly
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecting to Paystack...';
+          
+          const paystackResponse = await fetch('/paystack/initiate/', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json', 
+              'X-CSRFToken': csrfToken 
+            },
+            body: JSON.stringify({
+              reference: orderData.reference,
+              amount: orderData.amount_kes,
+              email: email,
+              phone: phone
+            })
+          });
+          
+          const paystackData = await paystackResponse.json();
+          
+          if (paystackData.success && paystackData.authorization_url) {
+            // Close modal and redirect to Paystack payment page
+            window.closeBookModal();
+            window.location.href = paystackData.authorization_url;
+          } else {
+            alert('❌ Payment initialization failed: ' + (paystackData.error || 'Unknown error'));
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+          }
         } else {
-          alert('❌ Error: ' + (data.error || 'Failed to create order'));
+          alert('❌ Error: ' + (orderData.error || 'Failed to create order'));
           btn.disabled = false;
           btn.innerHTML = originalText;
         }
@@ -7007,6 +7110,7 @@ updateCartUI();
   }
 })();
 </script>
+
 
 
 <!-- ===== MFALME EDUCATION PROGRAMS SECTION ===== -->

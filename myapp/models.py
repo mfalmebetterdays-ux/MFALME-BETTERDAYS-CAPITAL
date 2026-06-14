@@ -2493,13 +2493,14 @@ class MerchandiseOrder(models.Model):
 # ========== EVENT MODELS ==========
 
 class Event(models.Model):
-    """Event model for seminars and summits"""
+    """Event model for seminars and summits - PAID EVENT ($249 USD)"""
     title = models.CharField(max_length=200, default="East & Central Africa Live Leveraging Summit")
     description = models.TextField(blank=True, default="")
     date = models.DateTimeField(default=datetime(2026, 8, 7, 9, 0, 0))
     venue = models.CharField(max_length=300, default="Safari Park Hotel, Nairobi")
     venue_address = models.TextField(blank=True)
-    ticket_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Now FREE
+    ticket_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=249)
+    ticket_price_kes = models.DecimalField(max_digits=10, decimal_places=2, default=32121)
     max_attendees = models.IntegerField(default=500)
     current_bookings = models.IntegerField(default=0)
     poster_image = models.URLField(max_length=500, blank=True, null=True)
@@ -2518,7 +2519,7 @@ class Event(models.Model):
         return self.current_bookings >= self.max_attendees
     
     def __str__(self):
-        return self.title
+        return f"{self.title} - ${self.ticket_price_usd}"
     
     class Meta:
         ordering = ['-date']
@@ -2529,12 +2530,21 @@ class Event(models.Model):
 
 
 class EventTicket(models.Model):
-    """Event tickets - FREE registration version"""
+    """Event tickets - PAID VERSION ($249 USD per ticket)"""
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
         ('cancelled', 'Cancelled'),
         ('attended', 'Attended'),
+        ('refunded', 'Refunded'),
+    ]
+    
+    PAYMENT_METHOD_CHOICES = [
+        ('paystack', 'Paystack'),
+        ('mpesa', 'M-PESA'),
+        ('card', 'Card'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('free', 'Free'),
     ]
     
     ticket_number = models.CharField(max_length=50, unique=True, editable=False)
@@ -2543,14 +2553,14 @@ class EventTicket(models.Model):
     attendee_phone = models.CharField(max_length=20)
     attendee_email = models.EmailField()
     quantity = models.IntegerField(default=1)
-    unit_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    unit_price_kes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    unit_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=249)
+    unit_price_kes = models.DecimalField(max_digits=10, decimal_places=2, default=32121)
     total_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount_kes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    payment_method = models.CharField(max_length=50, default='free')
+    payment_method = models.CharField(max_length=50, choices=PAYMENT_METHOD_CHOICES, default='paystack')
     payment_reference = models.CharField(max_length=100, blank=True, null=True)
     order_reference = models.CharField(max_length=100, blank=True, null=True)
-    status = models.CharField(max_length=20, default='confirmed', choices=STATUS_CHOICES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     qr_code = models.TextField(blank=True, null=True)
     checked_in = models.BooleanField(default=False)
     checked_in_at = models.DateTimeField(null=True, blank=True)
@@ -2561,16 +2571,29 @@ class EventTicket(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.ticket_number:
-            # Generate unique ticket number
             import uuid
-            self.ticket_number = f"MBC-FREE-{uuid.uuid4().hex[:8].upper()}"
+            self.ticket_number = f"MBC-TKT-{uuid.uuid4().hex[:8].upper()}"
         if self.quantity:
             self.total_amount_usd = self.quantity * self.unit_price_usd
             self.total_amount_kes = self.quantity * self.unit_price_kes
         super().save(*args, **kwargs)
     
     def __str__(self):
-        return f"{self.ticket_number} - {self.attendee_name}"
+        return f"{self.ticket_number} - {self.attendee_name} - ${self.total_amount_usd}"
+    
+    def mark_as_paid(self, payment_reference):
+        """Mark ticket as paid and confirmed"""
+        self.status = 'confirmed'
+        self.payment_reference = payment_reference
+        self.save(update_fields=['status', 'payment_reference'])
+    
+    def mark_checked_in(self):
+        """Mark ticket as checked in at event"""
+        from django.utils import timezone
+        self.checked_in = True
+        self.checked_in_at = timezone.now()
+        self.status = 'attended'
+        self.save(update_fields=['checked_in', 'checked_in_at', 'status'])
     
     class Meta:
         ordering = ['-created_at']
@@ -2579,8 +2602,8 @@ class EventTicket(models.Model):
             models.Index(fields=['attendee_email']),
             models.Index(fields=['attendee_phone']),
             models.Index(fields=['event', 'status']),
+            models.Index(fields=['payment_reference']),
         ]
-
 
 # ========== ORDER MODEL ==========
 class Order(models.Model):
