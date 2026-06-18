@@ -657,6 +657,56 @@ def process_successful_payment(transaction, request):
             except Exception as e:
                 print(f"❌ Book order error: {e}")
         
+        # ========== EDUCATION PROGRAM PURCHASE ==========
+        elif item_type == 'education':
+            try:
+                program_code = metadata.get('program_code')
+                program_name = metadata.get('program_name')
+                duration = metadata.get('duration')
+                amount_usd = metadata.get('amount_usd', 0)
+                
+                print(f"📚 Education enrollment for: {program_name}")
+                print(f"   Program Code: {program_code}")
+                print(f"   Duration: {duration}")
+                print(f"   Amount Paid: ${amount_usd}")
+                
+                # Grant access to education program content
+                # You can create an EducationEnrollment model here
+                
+                # Create a notification for the user
+                Notification.objects.create(
+                    user=user,
+                    title='Education Program Enrolled',
+                    message=f'You have successfully enrolled in {program_name} for {duration}',
+                    notification_type='SUCCESS',
+                    related_object_type='education',
+                    related_object_id=program_code
+                )
+                
+                # If you have an EducationProgram model, update enrollment count
+                try:
+                    from .models import EducationProgram
+                    edu_program = EducationProgram.objects.filter(program_type=program_code).first()
+                    if edu_program:
+                        edu_program.enrolled_count += 1
+                        edu_program.save(update_fields=['enrolled_count'])
+                        print(f"✅ Updated enrollment count for {program_code}")
+                except Exception as prog_error:
+                    print(f"⚠️ Could not update EducationProgram: {prog_error}")
+                
+                # Send confirmation email for education enrollment
+                try:
+                    send_education_enrollment_email(user, program_name, program_code, duration)
+                except Exception as email_error:
+                    print(f"⚠️ Could not send education email: {email_error}")
+                
+                print(f"✅ Education program enrollment recorded: {program_name}")
+                
+            except Exception as e:
+                print(f"❌ Education enrollment error: {e}")
+                import traceback
+                traceback.print_exc()
+        
         # ========== PACKAGE PURCHASE ==========
         elif item_type == 'package':
             try:
@@ -707,6 +757,138 @@ def process_successful_payment(transaction, request):
     )
     
     print(f"✅ Payment processing completed for {transaction.reference}")
+
+def send_education_enrollment_email(user, program_name, program_code, duration):
+    """Send education enrollment confirmation email to customer"""
+    from django.core.mail import EmailMultiAlternatives
+    from django.conf import settings
+    
+    try:
+        subject = f"Enrollment Confirmation - {program_name} - Mfalme Betterdays Capital"
+        
+        html_content = f'''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Education Enrollment Confirmation</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    background: #f5f5f5;
+                    margin: 0;
+                    padding: 40px 20px;
+                }}
+                .container {{
+                    max-width: 550px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #FFD700, #FFA500);
+                    padding: 30px;
+                    text-align: center;
+                }}
+                .header h1 {{
+                    margin: 0;
+                    color: #0a1520;
+                    font-size: 22px;
+                }}
+                .content {{
+                    padding: 30px;
+                }}
+                .success-badge {{
+                    background: #10b981;
+                    color: white;
+                    padding: 8px 20px;
+                    border-radius: 40px;
+                    display: inline-block;
+                    margin-bottom: 20px;
+                }}
+                .details {{
+                    background: #f8f9fa;
+                    border-radius: 12px;
+                    padding: 20px;
+                    margin: 20px 0;
+                }}
+                .footer {{
+                    background: #1a1a2e;
+                    padding: 20px;
+                    text-align: center;
+                    font-size: 12px;
+                    color: #aaa;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>MFALME BETTERDAYS CAPITAL</h1>
+                </div>
+                <div class="content">
+                    <div style="text-align:center;">
+                        <div class="success-badge">✓ ENROLLMENT CONFIRMED</div>
+                    </div>
+                    
+                    <h2 style="text-align:center; color:#B8860B;">{program_name}</h2>
+                    
+                    <div class="details">
+                        <p><strong>Dear {user.get_full_name() or user.username},</strong></p>
+                        <p>Your enrollment in <strong>{program_name}</strong> has been confirmed!</p>
+                        <p><strong>Program Code:</strong> {program_code}</p>
+                        <p><strong>Access Duration:</strong> {duration}</p>
+                        <p><strong>Enrollment Date:</strong> {timezone.now().strftime('%B %d, %Y')}</p>
+                    </div>
+                    
+                    <p>You can now access your program materials from your dashboard.</p>
+                    <p style="text-align:center;">
+                        <a href="{settings.SITE_URL}/dashboard/" style="background:#FFD700; color:#0a1520; padding:12px 24px; text-decoration:none; border-radius:40px; display:inline-block;">Go to Dashboard</a>
+                    </p>
+                </div>
+                <div class="footer">
+                    <p>For inquiries: +254 706 286 667 | mfalmebetterdays@gmail.com</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        '''
+        
+        text_content = f"""
+        MFALME BETTERDAYS CAPITAL - ENROLLMENT CONFIRMATION
+        
+        Dear {user.get_full_name() or user.username},
+        
+        Your enrollment in {program_name} has been confirmed!
+        
+        Program Code: {program_code}
+        Access Duration: {duration}
+        Enrollment Date: {timezone.now().strftime('%B %d, %Y')}
+        
+        You can access your program materials from your dashboard.
+        
+        Dashboard: {settings.SITE_URL}/dashboard/
+        
+        For inquiries: +254 706 286 667 | mfalmebetterdays@gmail.com
+        """
+        
+        msg = EmailMultiAlternatives(
+            subject,
+            text_content,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email]
+        )
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+        
+        print(f"✅ Education enrollment email sent to {user.email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Education enrollment email error: {e}")
+        return False
 
 # ==================== TEMPLATE FILTERS ====================
 register = Library()
@@ -4369,97 +4551,7 @@ def contact(request):
 
 
 
-def payment(request):
-    """Payment page with SasaPay integration"""
-    reference = request.GET.get('ref')
-    
-    if not reference:
-        messages.error(request, 'No transaction reference provided')
-        return redirect('index')
-    
-    try:
-        transaction = PaymentTransaction.objects.get(reference=reference)
-        
-        # If transaction is already completed, redirect to success
-        if transaction.status == 'completed':
-            return redirect('payment_success', reference=reference)
-        
-        # Get SasaPay checkout URL
-        from .sasapay_utils import create_checkout
-        
-        # Create SasaPay checkout session
-        checkout_data = create_checkout(
-            amount=int(transaction.amount),  # Amount in KES
-            reference=reference,
-            description=transaction.description,
-            email=request.user.email if request.user.is_authenticated else 'customer@example.com',
-            phone=request.user.phone if request.user.is_authenticated else '',
-            callback_url=request.build_absolute_uri('/sasapay/callback/'),
-            success_url=request.build_absolute_uri(f'/payment/success/{reference}/'),
-            failure_url=request.build_absolute_uri('/payment/failed/')
-        )
-        
-        context = {
-            'title': transaction.metadata.get('package_name', 'Package'),
-            'amount_usd': transaction.metadata.get('amount_usd', 0),
-            'amount_kes': float(transaction.amount),
-            'user': request.user,
-            'reference': reference,
-            'transaction': transaction,
-            'checkout_url': checkout_data.get('checkout_url'),
-            'sasapay_script': checkout_data.get('script_url', 'https://checkout.sasapay.app/v1.js')
-        }
-        
-        return render(request, 'payment.html', context)
-        
-    except PaymentTransaction.DoesNotExist:
-        messages.error(request, 'Transaction not found')
-        return redirect('index')
-    except Exception as e:
-        print(f"SasaPay error: {e}")
-        # Fall back to manual payment
-        context = {
-            'title': transaction.metadata.get('package_name', 'Package'),
-            'amount_usd': transaction.metadata.get('amount_usd', 0),
-            'amount_kes': float(transaction.amount),
-            'user': request.user,
-            'reference': reference,
-            'transaction': transaction
-        }
-        return render(request, 'payment/payment.html', context)
-    
 
-    
-
-@csrf_exempt
-def sasapay_initiate_payment(request):
-    """Initiate SasaPay payment"""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
-    
-    try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
-    
-    reference = data.get('reference')
-    amount = data.get('amount')
-    email = data.get('email')
-    
-    if not reference:
-        return JsonResponse({'error': 'Reference required'}, status=400)
-    
-    try:
-        transaction = PaymentTransaction.objects.get(reference=reference)
-    except PaymentTransaction.DoesNotExist:
-        return JsonResponse({'error': 'Transaction not found'}, status=404)
-    
-    # For now, return a mock checkout URL (replace with actual SasaPay integration)
-    return JsonResponse({
-        'success': True,
-        'checkout_url': f'/payment/success/{reference}/',  # This will be replaced with actual SasaPay URL
-        'message': 'Payment initiated'
-    })
 
 def accounts(request):
     context = {
@@ -7603,6 +7695,110 @@ def api_create_ticket_order(request):
     })
 
 
+
+@csrf_exempt
+def api_create_education_order(request):
+    """Create education order and return JSON for frontend redirect - PAYSTACK VERSION"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    print("=" * 60)
+    print("🎓 EDUCATION ORDER CALLED")
+    print("=" * 60)
+    
+    try:
+        data = json.loads(request.body)
+        print(f"📦 Request data: {data}")
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON decode error: {e}")
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+    full_name = data.get('full_name', '').strip()
+    email = data.get('email', '').strip().lower()
+    phone = data.get('phone', '').strip()
+    program_code = data.get('program_code')
+    program_name = data.get('program_name')
+    amount_usd = data.get('amount_usd')
+    duration = data.get('duration')
+    
+    print(f"📝 Extracted data:")
+    print(f"   Name: {full_name}")
+    print(f"   Email: {email}")
+    print(f"   Phone: {phone}")
+    print(f"   Program: {program_code} - {program_name}")
+    print(f"   Amount USD: ${amount_usd}")
+    print(f"   Duration: {duration}")
+    
+    if not all([full_name, email, phone, program_code, amount_usd]):
+        print("❌ Missing required fields")
+        return JsonResponse({'error': 'All fields required'}, status=400)
+    
+    amount_kes = amount_usd * 129
+    
+    reference = f"EDU-{uuid.uuid4().hex[:8].upper()}"
+    print(f"📋 Generated reference: {reference}")
+    
+    # Create Order
+    order = Order.objects.create(
+        reference=reference,
+        customer_name=full_name,
+        customer_email=email,
+        customer_phone=phone,
+        item_type='education',
+        amount=Decimal(str(amount_kes)),
+        status='pending',
+        metadata={
+            'program_code': program_code,
+            'program_name': program_name,
+            'duration': duration,
+            'amount_usd': amount_usd,
+            'amount_kes': amount_kes
+        }
+    )
+    print(f"✅ Order created: {order.id}")
+    
+    # Create PaymentTransaction
+    transaction = PaymentTransaction.objects.create(
+        user=request.user if request.user.is_authenticated else None,
+        reference=reference,
+        amount=Decimal(str(amount_kes)),
+        currency='KES',
+        payment_type='education_purchase',
+        payment_method='paystack',
+        description=f"Education: {program_name}",
+        customer_email=email,
+        customer_name=full_name,
+        customer_phone=phone,
+        metadata={
+            'order_id': order.id,
+            'order_reference': reference,
+            'item_type': 'education',
+            'program_code': program_code,
+            'program_name': program_name,
+            'amount_usd': amount_usd,
+            'duration': duration
+        },
+        status='initiated',
+        ip_address=get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+    )
+    print(f"✅ PaymentTransaction created: {transaction.reference}")
+    
+    print("=" * 60)
+    print(f"✅ SUCCESS! Returning response")
+    print(f"   Reference: {reference}")
+    print(f"   Amount USD: ${amount_usd}")
+    print(f"   Amount KES: KES {amount_kes}")
+    print("=" * 60)
+    
+    return JsonResponse({
+        'success': True,
+        'reference': reference,
+        'amount_usd': amount_usd,
+        'amount_kes': float(amount_kes)
+    })
+
+
 @csrf_exempt
 def api_create_merchandise_order(request):
     """Create merchandise order and return JSON for frontend redirect - PAYSTACK VERSION"""
@@ -8709,15 +8905,58 @@ def api_update_book_order_status(request, order_id):
         return JsonResponse({'error': 'Order not found'}, status=404)     
 
 
-# ==================== FREE EVENT REGISTRATION - COMPLETE VIEWS ====================
+# ==================== COMPLETE VIEWS - FREE EVENT WITH HEADWAY ACCOUNT ====================
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.core.mail import EmailMultiAlternatives, send_mail
+from django.conf import settings
+from django.utils import timezone
+from django.contrib.admin.views.decorators import staff_member_required
+import json
+import uuid
+from datetime import datetime
+import re
+
+from .models import Event, EventTicket
+
+
+def validate_headway_account(account_number):
+    """
+    Validate Headway broker account number.
+    Headway account numbers are typically 8 digits.
+    """
+    if not account_number:
+        return False, "Headway account number is required"
+    
+    # Remove any whitespace
+    account_number = account_number.strip()
+    
+    # Check if it's a valid number (8 digits typically)
+    if not re.match(r'^\d{8}$', account_number):
+        return False, "Please enter a valid 8-digit Headway account number (e.g., 16882297)"
+    
+    return True, account_number
+
+
+def get_client_ip(request):
+    """Get client IP address from request"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
 
 @csrf_exempt
 def api_free_ticket_registration(request):
     """
-    FREE ticket registration - NO PAYMENT REQUIRED
+    FREE ticket registration with Headway Account Number validation
     """
     print("=" * 60)
-    print("FREE REGISTRATION DEBUG - REQUEST RECEIVED")
+    print("FREE REGISTRATION WITH HEADWAY - REQUEST RECEIVED")
     print(f"Method: {request.method}")
     print(f"Body: {request.body}")
     print("=" * 60)
@@ -8741,12 +8980,18 @@ def api_free_ticket_registration(request):
     phone = data.get('phone', '') or data.get('phone_number', '')
     phone = phone.strip()
     
-    print(f"Extracted - Name: '{full_name}', Email: '{email}', Phone: '{phone}'")
+    # NEW: Headway Account Number
+    headway_account = data.get('headway_account', '') or data.get('headwayAccount', '')
+    headway_account = headway_account.strip()
+    
+    print(f"Extracted - Name: '{full_name}', Email: '{email}', Phone: '{phone}', Headway: '{headway_account}'")
     
     # Validation
-    if not all([full_name, email, phone]):
+    if not all([full_name, email, phone, headway_account]):
         print("FAILED: Missing required fields")
-        return JsonResponse({'error': 'All fields are required (Full Name, Email, Phone)'}, status=400)
+        return JsonResponse({
+            'error': 'All fields are required: Full Name, Email, Phone, and Headway Account Number'
+        }, status=400)
     
     # Email validation
     if '@' not in email or '.' not in email or len(email) < 5:
@@ -8758,6 +9003,14 @@ def api_free_ticket_registration(request):
     if len(phone_digits) < 10:
         print(f"FAILED: Invalid phone - {phone} (digits: {phone_digits})")
         return JsonResponse({'error': 'Valid phone number required (minimum 10 digits)'}, status=400)
+    
+    # Headway Account validation
+    is_valid, headway_result = validate_headway_account(headway_account)
+    if not is_valid:
+        print(f"FAILED: Invalid Headway account - {headway_account}")
+        return JsonResponse({'error': headway_result}, status=400)
+    
+    headway_account = headway_result  # Cleaned account number
     
     print("Basic validation passed, checking database...")
     
@@ -8775,6 +9028,7 @@ def api_free_ticket_registration(request):
             current_bookings=0,
             is_active=True,
             featured=True,
+            is_free=True,
             ticket_price_usd=0,
             ticket_price_kes=0
         )
@@ -8811,6 +9065,20 @@ def api_free_ticket_registration(request):
                 'code': 'duplicate_phone'
             }, status=400)
         
+        # Check if already registered by Headway Account Number
+        existing_by_headway = EventTicket.objects.filter(
+            event=event,
+            headway_account=headway_account,
+            status='confirmed'
+        ).exclude(status='cancelled').exists()
+        
+        if existing_by_headway:
+            print(f"FAILED: Duplicate Headway account - {headway_account}")
+            return JsonResponse({
+                'error': f'Headway account number {headway_account} is already registered for this event.',
+                'code': 'duplicate_headway'
+            }, status=400)
+        
         # Check if event is sold out
         if event.current_bookings >= event.max_attendees:
             print(f"FAILED: Sold out - {event.current_bookings} >= {event.max_attendees}")
@@ -8823,13 +9091,14 @@ def api_free_ticket_registration(request):
         ticket_number = f"FREE-{uuid.uuid4().hex[:8].upper()}"
         print(f"Generated ticket number: {ticket_number}")
         
-        # Create FREE ticket
+        # Create FREE ticket with Headway Account
         print("Attempting to create ticket...")
         ticket = EventTicket.objects.create(
             event=event,
             attendee_name=full_name,
             attendee_phone=phone,
             attendee_email=email,
+            headway_account=headway_account,  # NEW FIELD
             quantity=1,
             unit_price_usd=0,
             unit_price_kes=0,
@@ -8850,7 +9119,7 @@ def api_free_ticket_registration(request):
         
         # Send FREE ticket email (don't fail if email fails)
         try:
-            send_free_ticket_email(ticket)
+            send_free_ticket_email_with_headway(ticket)
             print("Email sent successfully")
         except Exception as email_error:
             print(f"Email failed but registration succeeded: {email_error}")
@@ -8863,7 +9132,8 @@ def api_free_ticket_registration(request):
             'success': True,
             'message': 'Registration successful! Check your email for your ticket.',
             'ticket_number': ticket.ticket_number,
-            'ticket_id': ticket.id
+            'ticket_id': ticket.id,
+            'headway_account': headway_account
         })
         
     except Exception as e:
@@ -8873,10 +9143,10 @@ def api_free_ticket_registration(request):
         return JsonResponse({'error': f'Registration failed: {str(e)}'}, status=500)
 
 
-def send_free_ticket_email(ticket):
+def send_free_ticket_email_with_headway(ticket):
     """
     Send FREE ticket confirmation email to customer AND admin
-    Uses S3 image URL - NO file attachment needed
+    Includes Headway Account Number in the ticket
     """
     from django.core.mail import EmailMultiAlternatives, send_mail
     from django.conf import settings
@@ -8905,12 +9175,14 @@ Ticket Number: {ticket.ticket_number}
 Attendee Name: {ticket.attendee_name}
 Email: {ticket.attendee_email}
 Phone: {ticket.attendee_phone}
+Headway Account: {ticket.headway_account}
 
 IMPORTANT:
 - Doors open at 8:00 AM
 - Bring valid ID for entry
 - You can show this email on your phone
 - Lunch and refreshments included
+- Your Headway account number will be used for identification
 
 For inquiries: +254 706 286 667 | mfalmebetterdays@gmail.com
 
@@ -9004,6 +9276,17 @@ For inquiries: +254 706 286 667 | mfalmebetterdays@gmail.com
                     display: inline-block;
                     letter-spacing: 1px;
                 }}
+                .headway-highlight {{
+                    background: #1a2a3a;
+                    color: #FFD700;
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    font-family: monospace;
+                    font-size: 18px;
+                    letter-spacing: 2px;
+                    border: 2px solid #FFD700;
+                    display: inline-block;
+                }}
                 .info-box {{
                     background: #e8f4f8;
                     border-radius: 10px;
@@ -9026,6 +9309,24 @@ For inquiries: +254 706 286 667 | mfalmebetterdays@gmail.com
                 .footer a {{
                     color: #FFD700;
                     text-decoration: none;
+                }}
+                .no-account-box {{
+                    background: #fef3c7;
+                    border: 2px solid #f59e0b;
+                    border-radius: 12px;
+                    padding: 15px;
+                    margin: 20px 0;
+                    text-align: center;
+                }}
+                .no-account-box a {{
+                    color: #0a1520;
+                    font-weight: bold;
+                    background: #f59e0b;
+                    padding: 8px 20px;
+                    border-radius: 40px;
+                    text-decoration: none;
+                    display: inline-block;
+                    margin-top: 10px;
                 }}
             </style>
         </head>
@@ -9051,6 +9352,7 @@ For inquiries: +254 706 286 667 | mfalmebetterdays@gmail.com
                         <p><strong>Attendee Name:</strong> {ticket.attendee_name}</p>
                         <p><strong>Email:</strong> {ticket.attendee_email}</p>
                         <p><strong>Phone:</strong> {ticket.attendee_phone}</p>
+                        <p><strong>Headway Account:</strong> <span class="headway-highlight">{ticket.headway_account}</span></p>
                         <p><strong>Date:</strong> Friday, August 7, 2026</p>
                         <p><strong>Time:</strong> 9:00 AM - 5:00 PM EAT</p>
                         <p><strong>Venue:</strong> {event.venue}</p>
@@ -9060,10 +9362,19 @@ For inquiries: +254 706 286 667 | mfalmebetterdays@gmail.com
                         <p><strong>Important Information:</strong></p>
                         <p>• Doors open at 8:00 AM</p>
                         <p>• Please bring a valid ID for entry</p>
+                        <p>• Your Headway Account Number is required for check-in</p>
                         <p>• You can show this email on your phone or print it</p>
                         <p>• Lunch and refreshments are included</p>
                         <p>• Certificate of attendance will be provided</p>
                         <p>• Seating is on a first-come, first-served basis</p>
+                    </div>
+                    
+                    <div class="no-account-box">
+                        <p style="margin:0; font-weight:bold; color:#0a1520;">Don't have a Headway Account?</p>
+                        <p style="margin:5px 0 0; font-size:13px; color:#333;">Create a FREE account in minutes and start your trading journey!</p>
+                        <a href="https://headway.partners/user/signup?hwp=2af9e5" target="_blank" style="color:#0a1520; font-weight:bold; background:#f59e0b; padding:10px 24px; border-radius:40px; text-decoration:none; display:inline-block; margin-top:10px;">
+                            🔗 Create Headway Account
+                        </a>
                     </div>
                     
                     <p style="text-align:center; margin-top:20px;">We look forward to seeing you at the summit!</p>
@@ -9090,15 +9401,16 @@ For inquiries: +254 706 286 667 | mfalmebetterdays@gmail.com
         print(f"✅ FREE ticket email sent to customer: {ticket.attendee_email}")
         
         # ========== ADMIN NOTIFICATION ==========
-        admin_subject = f"🔔 NEW FREE TICKET REGISTRATION - {ticket.ticket_number}"
+        admin_subject = f"🔔 NEW FREE REGISTRATION - Headway: {ticket.headway_account}"
         
         admin_text = f"""
-NEW FREE TICKET REGISTRATION
+NEW FREE REGISTRATION WITH HEADWAY ACCOUNT
 
 Ticket: {ticket.ticket_number}
 Attendee: {ticket.attendee_name}
 Phone: {ticket.attendee_phone}
 Email: {ticket.attendee_email}
+Headway Account: {ticket.headway_account}
 Event: {event.title}
 Date: {event.date.strftime('%B %d, %Y')}
 
@@ -9110,7 +9422,7 @@ View in admin: {settings.SITE_URL}/admin/
         <html>
         <head>
             <meta charset="UTF-8">
-            <title>New Free Ticket Registration</title>
+            <title>New Free Registration - Headway Account</title>
             <style>
                 body {{
                     font-family: 'Segoe UI', Arial, sans-serif;
@@ -9169,6 +9481,17 @@ View in admin: {settings.SITE_URL}/admin/
                     font-weight: bold;
                     color: #333;
                 }}
+                .headway-badge {{
+                    display: inline-block;
+                    background: #1a2a3a;
+                    color: #FFD700;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 14px;
+                    font-family: monospace;
+                    letter-spacing: 1px;
+                    border: 1px solid #FFD700;
+                }}
                 .free-badge {{
                     display: inline-block;
                     background: #10b981;
@@ -9204,7 +9527,7 @@ View in admin: {settings.SITE_URL}/admin/
                 </div>
                 <div class="content">
                     <div class="alert">
-                        A new FREE ticket registration has been received.
+                        A new FREE registration has been received with Headway Account number.
                     </div>
                     
                     <div class="details-card">
@@ -9225,6 +9548,10 @@ View in admin: {settings.SITE_URL}/admin/
                             <span class="value">{ticket.attendee_email}</span>
                         </div>
                         <div class="row">
+                            <span class="label">Headway Account</span>
+                            <span class="value"><span class="headway-badge">{ticket.headway_account}</span></span>
+                        </div>
+                        <div class="row">
                             <span class="label">Event Date</span>
                             <span class="value">{event.date.strftime('%B %d, 2026')}</span>
                         </div>
@@ -9237,7 +9564,7 @@ View in admin: {settings.SITE_URL}/admin/
                     <a href="{settings.SITE_URL}/admin/" class="button">VIEW IN ADMIN PANEL</a>
                 </div>
                 <div class="footer">
-                    <p>Mfalme Betterdays Capital | Free Registration Notification</p>
+                    <p>Mfalme Betterdays Capital | Free Registration with Headway Account</p>
                 </div>
             </div>
         </body>
@@ -9254,7 +9581,7 @@ View in admin: {settings.SITE_URL}/admin/
             html_message=admin_html
         )
         
-        print(f"✅ Admin notification sent for free ticket")
+        print(f"✅ Admin notification sent for free ticket with Headway account")
         return True
         
     except Exception as e:
@@ -9266,7 +9593,7 @@ View in admin: {settings.SITE_URL}/admin/
 
 @require_http_methods(["GET"])
 def get_event_details(request):
-    """Get event details for frontend display including seat availability and pricing"""
+    """Get event details for frontend display including seat availability"""
     try:
         event = Event.objects.filter(is_active=True).first()
         
@@ -9277,8 +9604,9 @@ def get_event_details(request):
                 'current_bookings': 0,
                 'max_attendees': 500,
                 'event_exists': False,
-                'ticket_price_usd': 249,
-                'ticket_price_kes': 32121
+                'is_free': True,
+                'ticket_price_usd': 0,
+                'ticket_price_kes': 0
             })
         
         seats_remaining = event.max_attendees - event.current_bookings
@@ -9293,6 +9621,7 @@ def get_event_details(request):
             'max_attendees': event.max_attendees,
             'venue': event.venue,
             'event_exists': True,
+            'is_free': event.is_free,
             'event_date': event.date.strftime('%Y-%m-%d %H:%M:%S') if event.date else None,
             'ticket_price_usd': float(event.ticket_price_usd),
             'ticket_price_kes': float(event.ticket_price_kes)
@@ -9304,17 +9633,16 @@ def get_event_details(request):
             'error': str(e),
             'seats_remaining': 500,
             'is_sold_out': False,
-            'ticket_price_usd': 249,
-            'ticket_price_kes': 32121
+            'is_free': True,
+            'ticket_price_usd': 0,
+            'ticket_price_kes': 0
         }, status=500)
 
 
+@staff_member_required
 @require_http_methods(["GET"])
 def get_event_tickets_admin(request):
     """Get all tickets for admin panel"""
-    if not request.user.is_staff:
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
-    
     try:
         from .models import EventTicket
         
@@ -9326,6 +9654,7 @@ def get_event_tickets_admin(request):
             'attendee_name': t.attendee_name,
             'attendee_email': t.attendee_email,
             'attendee_phone': t.attendee_phone,
+            'headway_account': t.headway_account,  # NEW FIELD
             'event_title': t.event.title,
             'event_date': t.event.date.strftime('%Y-%m-%d') if t.event.date else 'TBD',
             'status': t.status,
@@ -9338,7 +9667,8 @@ def get_event_tickets_admin(request):
             'tickets': data,
             'total': tickets.count(),
             'free_tickets': tickets.filter(payment_method='free').count(),
-            'paid_tickets': tickets.filter(payment_method='paid').count()
+            'paid_tickets': tickets.filter(payment_method='paid').count(),
+            'headway_tickets': tickets.exclude(headway_account='').count()
         })
         
     except Exception as e:
@@ -9346,12 +9676,10 @@ def get_event_tickets_admin(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
+@staff_member_required
 @require_http_methods(["POST"])
 def check_in_ticket(request, ticket_id):
     """Mark ticket as checked in at event entrance"""
-    if not request.user.is_staff:
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
-    
     try:
         from .models import EventTicket
         
@@ -9373,6 +9701,7 @@ def check_in_ticket(request, ticket_id):
             'success': True,
             'message': f'Ticket {ticket.ticket_number} checked in successfully',
             'attendee': ticket.attendee_name,
+            'headway_account': ticket.headway_account,
             'checked_in_at': str(ticket.checked_in_at)
         })
         
@@ -9383,24 +9712,12 @@ def check_in_ticket(request, ticket_id):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-def get_client_ip(request):
-    """Get client IP address from request"""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
-
-
 # ==================== BULK REGISTRATION FOR TESTING ====================
 
+@staff_member_required
 @csrf_exempt
 def bulk_free_registration(request):
     """Bulk registration endpoint for testing purposes (admin only)"""
-    if not request.user.is_staff:
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
-    
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
@@ -9420,10 +9737,11 @@ def bulk_free_registration(request):
             mock_request = MockRequest()
             
             # Call the registration function for each
-            result = process_free_registration(
+            result = process_free_registration_with_headway(
                 full_name=reg.get('name'),
                 email=reg.get('email'),
                 phone=reg.get('phone'),
+                headway_account=reg.get('headway_account', f"1688{str(uuid.uuid4().hex[:4]).upper()}"),
                 request=mock_request
             )
             results.append(result)
@@ -9438,8 +9756,8 @@ def bulk_free_registration(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-def process_free_registration(full_name, email, phone, request):
-    """Helper function to process a single free registration"""
+def process_free_registration_with_headway(full_name, email, phone, headway_account, request):
+    """Helper function to process a single free registration with Headway account"""
     from .models import Event, EventTicket
     
     try:
@@ -9453,9 +9771,16 @@ def process_free_registration(full_name, email, phone, request):
                 current_bookings=0,
                 is_active=True,
                 featured=True,
+                is_free=True,
                 ticket_price_usd=0,
                 ticket_price_kes=0
             )
+        
+        # Validate Headway account
+        is_valid, headway_result = validate_headway_account(headway_account)
+        if not is_valid:
+            return {'success': False, 'email': email, 'error': headway_result}
+        headway_account = headway_result
         
         # Check for duplicates
         if EventTicket.objects.filter(attendee_email=email, status='confirmed').exists():
@@ -9463,6 +9788,9 @@ def process_free_registration(full_name, email, phone, request):
         
         if EventTicket.objects.filter(attendee_phone=phone, status='confirmed').exists():
             return {'success': False, 'email': email, 'error': 'Phone already registered'}
+        
+        if EventTicket.objects.filter(headway_account=headway_account, status='confirmed').exists():
+            return {'success': False, 'email': email, 'error': 'Headway account already registered'}
         
         if event.current_bookings >= event.max_attendees:
             return {'success': False, 'email': email, 'error': 'Event sold out'}
@@ -9474,6 +9802,7 @@ def process_free_registration(full_name, email, phone, request):
             attendee_name=full_name,
             attendee_phone=phone,
             attendee_email=email,
+            headway_account=headway_account,
             quantity=1,
             unit_price_usd=0,
             unit_price_kes=0,
@@ -9489,7 +9818,7 @@ def process_free_registration(full_name, email, phone, request):
         event.current_bookings += 1
         event.save(update_fields=['current_bookings'])
         
-        return {'success': True, 'email': email, 'ticket_number': ticket_number}
+        return {'success': True, 'email': email, 'ticket_number': ticket_number, 'headway_account': headway_account}
         
     except Exception as e:
         return {'success': False, 'email': email, 'error': str(e)}

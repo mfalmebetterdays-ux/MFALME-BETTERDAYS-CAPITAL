@@ -53,6 +53,7 @@ from .views import (
     check_in_ticket,
     # Order endpoints
     create_order,
+    api_create_education_order,
     api_create_merchandise_order,
     payment_merchandise,
     # User API endpoints
@@ -189,6 +190,7 @@ urlpatterns = [
     path('api/create-order/', views.api_create_order, name='api_create_order'),
     path('payment/success/<str:reference>/', views.payment_success, name='payment_success'),
     path('education/pay/', views.education_payment, name='education_payment'),
+    path('api/create-education-order/', api_create_education_order, name='api_create_education_order'),
 
     # ==================== S3 UPLOAD ENDPOINTS ====================
     path('admin/api/get-s3-presigned-url/', s3_views.get_s3_presigned_url, name='get_s3_presigned_url'),

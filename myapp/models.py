@@ -2493,20 +2493,21 @@ class MerchandiseOrder(models.Model):
 # ========== EVENT MODELS ==========
 
 class Event(models.Model):
-    """Event model for seminars and summits - PAID EVENT ($249 USD)"""
+    """Event model for seminars and summits - FREE EVENT"""
     title = models.CharField(max_length=200, default="East & Central Africa Live Leveraging Summit")
     description = models.TextField(blank=True, default="")
     date = models.DateTimeField(default=datetime(2026, 8, 7, 9, 0, 0))
     venue = models.CharField(max_length=300, default="Safari Park Hotel, Nairobi")
     venue_address = models.TextField(blank=True)
-    ticket_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=249)
-    ticket_price_kes = models.DecimalField(max_digits=10, decimal_places=2, default=32121)
+    ticket_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    ticket_price_kes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     max_attendees = models.IntegerField(default=500)
     current_bookings = models.IntegerField(default=0)
     poster_image = models.URLField(max_length=500, blank=True, null=True)
     poster_key = models.CharField(max_length=500, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     featured = models.BooleanField(default=True)
+    is_free = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -2519,7 +2520,7 @@ class Event(models.Model):
         return self.current_bookings >= self.max_attendees
     
     def __str__(self):
-        return f"{self.title} - ${self.ticket_price_usd}"
+        return f"{self.title} - {'FREE' if self.is_free else f'${self.ticket_price_usd}'}"
     
     class Meta:
         ordering = ['-date']
@@ -2530,7 +2531,7 @@ class Event(models.Model):
 
 
 class EventTicket(models.Model):
-    """Event tickets - PAID VERSION ($249 USD per ticket)"""
+    """Event tickets - FREE Registration with Headway Account Number"""
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
@@ -2540,30 +2541,51 @@ class EventTicket(models.Model):
     ]
     
     PAYMENT_METHOD_CHOICES = [
+        ('free', 'Free Registration'),
         ('paystack', 'Paystack'),
         ('mpesa', 'M-PESA'),
         ('card', 'Card'),
         ('bank_transfer', 'Bank Transfer'),
-        ('free', 'Free'),
     ]
     
+    # Basic ticket info
     ticket_number = models.CharField(max_length=50, unique=True, editable=False)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='tickets')
+    
+    # Attendee details
     attendee_name = models.CharField(max_length=200)
     attendee_phone = models.CharField(max_length=20)
     attendee_email = models.EmailField()
+    
+    # HEADWAY ACCOUNT - Nullable in DB, enforced in views
+    headway_account = models.CharField(
+        max_length=50, 
+        blank=True,      # Allows empty in forms
+        null=True,       # Allows NULL in database - NO MIGRATION ISSUES!
+        help_text="Headway Broker Account Number (e.g., 16882297)"
+    )
+    
+    # Ticket details
     quantity = models.IntegerField(default=1)
-    unit_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=249)
-    unit_price_kes = models.DecimalField(max_digits=10, decimal_places=2, default=32121)
+    unit_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    unit_price_kes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount_kes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    payment_method = models.CharField(max_length=50, choices=PAYMENT_METHOD_CHOICES, default='paystack')
+    
+    # Payment details
+    payment_method = models.CharField(max_length=50, choices=PAYMENT_METHOD_CHOICES, default='free')
     payment_reference = models.CharField(max_length=100, blank=True, null=True)
     order_reference = models.CharField(max_length=100, blank=True, null=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Status tracking
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='confirmed')
     qr_code = models.TextField(blank=True, null=True)
+    
+    # Check-in tracking
     checked_in = models.BooleanField(default=False)
     checked_in_at = models.DateTimeField(null=True, blank=True)
+    
+    # Meta data
     registration_ip = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -2571,7 +2593,6 @@ class EventTicket(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.ticket_number:
-            import uuid
             self.ticket_number = f"MBC-TKT-{uuid.uuid4().hex[:8].upper()}"
         if self.quantity:
             self.total_amount_usd = self.quantity * self.unit_price_usd
@@ -2579,21 +2600,26 @@ class EventTicket(models.Model):
         super().save(*args, **kwargs)
     
     def __str__(self):
-        return f"{self.ticket_number} - {self.attendee_name} - ${self.total_amount_usd}"
+        headway_display = self.headway_account or 'N/A'
+        return f"{self.ticket_number} - {self.attendee_name} - Headway: {headway_display}"
     
     def mark_as_paid(self, payment_reference):
-        """Mark ticket as paid and confirmed"""
+        """Mark ticket as paid and confirmed (for legacy paid events)"""
         self.status = 'confirmed'
         self.payment_reference = payment_reference
         self.save(update_fields=['status', 'payment_reference'])
     
     def mark_checked_in(self):
         """Mark ticket as checked in at event"""
-        from django.utils import timezone
         self.checked_in = True
         self.checked_in_at = timezone.now()
         self.status = 'attended'
         self.save(update_fields=['checked_in', 'checked_in_at', 'status'])
+    
+    @property
+    def has_headway_account(self):
+        """Check if ticket has a Headway account number"""
+        return bool(self.headway_account and self.headway_account.strip())
     
     class Meta:
         ordering = ['-created_at']
@@ -2602,7 +2628,9 @@ class EventTicket(models.Model):
             models.Index(fields=['attendee_email']),
             models.Index(fields=['attendee_phone']),
             models.Index(fields=['event', 'status']),
+            models.Index(fields=['headway_account']),  # Index works with nullable field
             models.Index(fields=['payment_reference']),
+            models.Index(fields=['created_at']),
         ]
 
 # ========== ORDER MODEL ==========
