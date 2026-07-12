@@ -1,0 +1,1204 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Event Registrations | MFALME BETTERDAYS CAPITAL</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <meta name="csrf-token" content="{{ csrf_token }}" />
+    <link rel="icon" href="{% static 'assets/images/2.png' %}" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f1724;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a2332;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #f5a623;
+            border-radius: 10px;
+        }
+
+        /* ─── LOGIN MODAL ─── */
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 36, 0.92);
+            backdrop-filter: blur(12px);
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-modal {
+            background: #1a2332;
+            border-radius: 24px;
+            padding: 48px 40px 40px;
+            max-width: 400px;
+            width: 100%;
+            border: 1px solid #2a3a4a;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+            animation: modalIn 0.35s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .login-modal .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-modal .logo img {
+            height: 56px;
+            width: auto;
+            filter: brightness(0) invert(1);
+        }
+
+        .login-modal .logo h2 {
+            font-size: 22px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-top: 12px;
+        }
+
+        .login-modal .logo h2 span {
+            color: #f5a623;
+        }
+
+        .login-modal .logo p {
+            color: #8899aa;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .login-modal .form-group {
+            margin-bottom: 18px;
+        }
+
+        .login-modal .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #8899aa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .login-modal .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0f1724;
+            border: 1px solid #2a3a4a;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #e2e8f0;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .login-modal .form-group input:focus {
+            border-color: #f5a623;
+        }
+
+        .login-modal .form-group input::placeholder {
+            color: #5a6a7a;
+        }
+
+        .login-modal .login-error {
+            color: #ef4444;
+            font-size: 13px;
+            text-align: center;
+            margin-bottom: 16px;
+            display: none;
+            padding: 10px;
+            background: rgba(239, 68, 68, 0.08);
+            border-radius: 8px;
+            border: 1px solid rgba(239, 68, 68, 0.12);
+        }
+
+        .login-modal .login-error.show {
+            display: block;
+        }
+
+        .login-modal .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: #f5a623;
+            color: #0f1724;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s;
+            font-family: inherit;
+        }
+
+        .login-modal .btn-login:hover {
+            background: #d4941a;
+            transform: translateY(-1px);
+        }
+
+        .login-modal .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .login-modal .footer-note {
+            text-align: center;
+            margin-top: 20px;
+            color: #5a6a7a;
+            font-size: 12px;
+        }
+
+        /* ─── HIDE CONTENT UNTIL LOGIN ─── */
+        .app-content {
+            display: none;
+        }
+
+        .app-content.visible {
+            display: block;
+        }
+
+        /* ─── TOP BAR ─── */
+        .topbar {
+            background: #0a0f1a;
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #1a2a3a;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .topbar .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .topbar .brand img {
+            height: 38px;
+            width: auto;
+            filter: brightness(0) invert(1);
+        }
+
+        .topbar .brand h1 {
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+        }
+
+        .topbar .brand h1 span {
+            color: #f5a623;
+        }
+
+        .topbar .brand .badge-free {
+            background: #10b981;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .topbar-actions .live {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #ef4444;
+        }
+
+        .topbar-actions .live i {
+            font-size: 7px;
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+            background: transparent;
+            color: #94a3b8;
+            border: 1px solid #1a2a3a;
+        }
+
+        .btn:hover {
+            background: #1a2a3a;
+            color: #fff;
+            border-color: #f5a623;
+        }
+
+        .btn-primary {
+            background: #f5a623;
+            color: #0a0f1a;
+            border-color: #f5a623;
+        }
+
+        .btn-primary:hover {
+            background: #d4941a;
+            border-color: #d4941a;
+            color: #0a0f1a;
+        }
+
+        .btn-danger-outline {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        .btn-danger-outline:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        /* ─── STATS ─── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 14px;
+            padding: 24px 32px 0 32px;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
+            background: #1a2332;
+            padding: 18px 20px;
+            border-radius: 12px;
+            border: 1px solid #2a3a4a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: border-color 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: #3a4a5a;
+        }
+
+        .stat-card .info .number {
+            font-size: 28px;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.2;
+        }
+
+        .stat-card .info .label {
+            font-size: 11px;
+            font-weight: 500;
+            color: #8899aa;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .stat-card .icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .stat-card .icon.gold {
+            background: rgba(245, 166, 35, 0.12);
+            color: #f5a623;
+        }
+        .stat-card .icon.green {
+            background: rgba(16, 185, 129, 0.12);
+            color: #10b981;
+        }
+        .stat-card .icon.blue {
+            background: rgba(59, 130, 246, 0.12);
+            color: #3b82f6;
+        }
+        .stat-card .icon.purple {
+            background: rgba(139, 92, 246, 0.12);
+            color: #8b5cf6;
+        }
+
+        /* ─── FILTERS ─── */
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 32px;
+            max-width: 1440px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .filters .search-wrap {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .filters .search-wrap i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #5a6a7a;
+            font-size: 13px;
+        }
+
+        .filters .search-wrap input {
+            width: 100%;
+            padding: 10px 14px 10px 40px;
+            background: #1a2332;
+            border: 1px solid #2a3a4a;
+            border-radius: 10px;
+            font-size: 13px;
+            font-family: inherit;
+            color: #e2e8f0;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .filters .search-wrap input:focus {
+            border-color: #f5a623;
+        }
+
+        .filters .search-wrap input::placeholder {
+            color: #5a6a7a;
+        }
+
+        .filters select {
+            padding: 10px 14px;
+            background: #1a2332;
+            border: 1px solid #2a3a4a;
+            border-radius: 10px;
+            font-size: 13px;
+            font-family: inherit;
+            color: #e2e8f0;
+            cursor: pointer;
+            outline: none;
+            min-width: 130px;
+            transition: border-color 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235a6a7a' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+        }
+
+        .filters select:focus {
+            border-color: #f5a623;
+        }
+
+        .filters select option {
+            background: #1a2332;
+            color: #e2e8f0;
+        }
+
+        /* ─── TABLE ─── */
+        .table-wrap {
+            padding: 0 32px 32px 32px;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        .table-container {
+            background: #1a2332;
+            border-radius: 16px;
+            border: 1px solid #2a3a4a;
+            overflow: hidden;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+            font-size: 13px;
+        }
+
+        thead {
+            background: #0f1724;
+            border-bottom: 1px solid #2a3a4a;
+        }
+
+        thead th {
+            padding: 14px 18px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #8899aa;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            background: #0f1724;
+            z-index: 5;
+        }
+
+        thead th i {
+            margin-right: 5px;
+            font-size: 10px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #2a3a4a;
+            transition: background 0.15s;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #0f1724;
+        }
+
+        tbody td {
+            padding: 14px 18px;
+            vertical-align: middle;
+            color: #cbd5e1;
+        }
+
+        /* ─── Ticket ─── */
+        .ticket-id {
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            color: #f5a623;
+            background: rgba(245, 166, 35, 0.08);
+            padding: 3px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            letter-spacing: 0.3px;
+            border: 1px solid rgba(245, 166, 35, 0.12);
+        }
+
+        /* ─── Name ─── */
+        .name {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        /* ─── Headway ─── */
+        .headway {
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 3px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.04);
+            color: #94a3b8;
+            border: 1px solid #2a3a4a;
+        }
+
+        .headway.valid {
+            background: rgba(16, 185, 129, 0.08);
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.15);
+        }
+
+        .headway.invalid {
+            background: rgba(239, 68, 68, 0.06);
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.1);
+        }
+
+        /* ─── Status ─── */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pill.confirmed {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.12);
+        }
+
+        .status-pill.pending {
+            background: rgba(245, 166, 35, 0.1);
+            color: #f5a623;
+            border: 1px solid rgba(245, 166, 35, 0.12);
+        }
+
+        .status-pill.cancelled {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.12);
+        }
+
+        /* ─── EMPTY ─── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 44px;
+            color: #2a3a4a;
+            margin-bottom: 14px;
+        }
+
+        .empty-state h3 {
+            font-size: 17px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            color: #5a6a7a;
+        }
+
+        /* ─── LOADER ─── */
+        .loader-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 36, 0.85);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .loader-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid #2a3a4a;
+            border-top-color: #f5a623;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loader-text {
+            margin-top: 14px;
+            color: #94a3b8;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* ─── TOAST ─── */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1a2332;
+            color: #e2e8f0;
+            padding: 14px 22px;
+            border-radius: 12px;
+            border: 1px solid #2a3a4a;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            min-width: 260px;
+            transform: translateY(16px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+
+        .toast.show {
+            display: flex;
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left: 3px solid #10b981;
+        }
+
+        .toast.error {
+            border-left: 3px solid #ef4444;
+        }
+
+        .toast i {
+            font-size: 16px;
+        }
+
+        .toast .close-toast {
+            margin-left: auto;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: opacity 0.2s;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 16px;
+        }
+
+        .toast .close-toast:hover {
+            opacity: 1;
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 768px) {
+            .topbar {
+                padding: 12px 16px;
+            }
+
+            .topbar .brand h1 {
+                font-size: 15px;
+            }
+
+            .stats-row {
+                padding: 16px 16px 0 16px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 14px 16px;
+            }
+
+            .stat-card .info .number {
+                font-size: 20px;
+            }
+
+            .filters {
+                padding: 14px 16px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filters .search-wrap {
+                min-width: unset;
+            }
+
+            .filters select {
+                min-width: unset;
+                width: 100%;
+            }
+
+            .table-wrap {
+                padding: 0 16px 16px 16px;
+            }
+
+            .table-container {
+                border-radius: 12px;
+            }
+
+            thead th,
+            tbody td {
+                padding: 10px 12px;
+                font-size: 12px;
+            }
+
+            .login-modal {
+                padding: 32px 24px 28px;
+                margin: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .topbar .brand img {
+                height: 30px;
+            }
+
+            .topbar .brand .badge-free {
+                font-size: 7px;
+                padding: 1px 8px;
+            }
+
+            .topbar-actions .btn {
+                font-size: 10px;
+                padding: 5px 10px;
+            }
+
+            .stat-card .info .number {
+                font-size: 17px;
+            }
+
+            .stat-card .icon {
+                width: 34px;
+                height: 34px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─── LOGIN MODAL ─── -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-modal">
+            <div class="logo">
+                <img src="{% static 'assets/images/2.png' %}" alt="Logo" onerror="this.style.display='none'" />
+                <h2>Event <span>Registrations</span></h2>
+                <p>Headway Broker Access</p>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter username" value="Admin" required />
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter password" required />
+                </div>
+
+                <div class="login-error" id="loginError">Invalid credentials. Please try again.</div>
+
+                <button type="submit" class="btn-login" id="loginBtn">
+                    <i class="fas fa-lock"></i> Access Dashboard
+                </button>
+            </form>
+
+            <div class="footer-note">Authorized brokers only</div>
+        </div>
+    </div>
+
+    <!-- ─── LOADER ─── -->
+    <div class="loader-overlay" id="loaderOverlay">
+        <div class="loader-spinner"></div>
+        <div class="loader-text" id="loaderText">Loading registrations...</div>
+    </div>
+
+    <!-- ─── TOAST ─── -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle" id="toastIcon"></i>
+        <span id="toastMessage">Success</span>
+        <button class="close-toast" onclick="hideToast()">&times;</button>
+    </div>
+
+    <!-- ─── APP CONTENT ─── -->
+    <div class="app-content" id="appContent">
+
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <div class="brand">
+                <img src="{% static 'assets/images/2.png' %}" alt="Logo" onerror="this.style.display='none'" />
+                <h1>Event <span>Registrations</span></h1>
+                <span class="badge-free">&#127880; Free</span>
+            </div>
+            <div class="topbar-actions">
+                <span class="live"><i class="fas fa-circle"></i> LIVE</span>
+                <button class="btn" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="btn btn-primary" onclick="exportData()">
+                    <i class="fas fa-file-excel"></i> Export
+                </button>
+                <button class="btn btn-danger-outline" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- STATS -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="info">
+                    <div class="number" id="totalCount">0</div>
+                    <div class="label">Total</div>
+                </div>
+                <div class="icon gold"><i class="fas fa-users"></i></div>
+            </div>
+            <div class="stat-card">
+                <div class="info">
+                    <div class="number" id="confirmedCount">0</div>
+                    <div class="label">Confirmed</div>
+                </div>
+                <div class="icon green"><i class="fas fa-check-circle"></i></div>
+            </div>
+            <div class="stat-card">
+                <div class="info">
+                    <div class="number" id="pendingCount">0</div>
+                    <div class="label">Pending</div>
+                </div>
+                <div class="icon blue"><i class="fas fa-clock"></i></div>
+            </div>
+            <div class="stat-card">
+                <div class="info">
+                    <div class="number" id="headwayCount">0</div>
+                    <div class="label">Valid Headway</div>
+                </div>
+                <div class="icon purple"><i class="fas fa-user-circle"></i></div>
+            </div>
+        </div>
+
+        <!-- FILTERS -->
+        <div class="filters">
+            <div class="search-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search name, email, phone, or ticket..." oninput="filterTable()" />
+            </div>
+            <select id="statusFilter" onchange="filterTable()">
+                <option value="all">All Status</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="pending">Pending</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-wrap">
+            <div class="table-container">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-hashtag"></i> #</th>
+                                <th><i class="fas fa-ticket-alt"></i> Ticket</th>
+                                <th><i class="fas fa-user"></i> Applicant</th>
+                                <th><i class="fas fa-phone"></i> Contact</th>
+                                <th><i class="fas fa-user-circle"></i> Headway</th>
+                                <th><i class="fas fa-info-circle"></i> Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- JS renders here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ─── HARDCODED CREDENTIALS ───
+        const VALID_USERNAME = 'Admin';
+        const VALID_PASSWORD = 'Headway-Mbc@2026';
+
+        // ─── STATE ───
+        let allData = [];
+        let filtered = [];
+        let isLoggedIn = false;
+        let refreshInterval = null;
+
+        // ─── LOGIN ───
+        function handleLogin(e) {
+            e.preventDefault();
+
+            const username = $('#loginUsername').val().trim();
+            const password = $('#loginPassword').val().trim();
+            const errorEl = $('#loginError');
+            const btn = $('#loginBtn');
+
+            errorEl.removeClass('show');
+
+            if (!username || !password) {
+                errorEl.text('Please enter both username and password.');
+                errorEl.addClass('show');
+                return;
+            }
+
+            if (username === VALID_USERNAME && password === VALID_PASSWORD) {
+                isLoggedIn = true;
+                btn.text('Accessing...');
+                btn.prop('disabled', true);
+
+                sessionStorage.setItem('ticket_auth', 'true');
+
+                setTimeout(function() {
+                    $('#loginOverlay').fadeOut(300, function() {
+                        $('#appContent').addClass('visible');
+                        btn.text('Access Dashboard');
+                        btn.prop('disabled', false);
+                        loadData();
+                        startAutoRefresh();
+                    });
+                }, 500);
+            } else {
+                errorEl.text('Invalid credentials. Please try again.');
+                errorEl.addClass('show');
+                $('#loginPassword').val('').focus();
+            }
+        }
+
+        // ─── LOGOUT ───
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                isLoggedIn = false;
+                sessionStorage.removeItem('ticket_auth');
+                $('#appContent').removeClass('visible');
+                $('#loginOverlay').fadeIn(300);
+                $('#loginPassword').val('');
+                $('#loginError').removeClass('show');
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                    refreshInterval = null;
+                }
+            }
+        }
+
+        // ─── CHECK SESSION ───
+        function checkSession() {
+            if (sessionStorage.getItem('ticket_auth') === 'true') {
+                isLoggedIn = true;
+                $('#loginOverlay').hide();
+                $('#appContent').addClass('visible');
+                loadData();
+                startAutoRefresh();
+            }
+        }
+
+        // ─── TOAST ───
+        function showToast(msg, isError, duration) {
+            duration = duration || 3000;
+            isError = isError || false;
+            var el = $('#toast');
+            $('#toastMessage').text(msg);
+            $('#toastIcon').attr('class', isError ? 'fas fa-exclamation-circle' : 'fas fa-check-circle');
+            el.removeClass('success error').addClass(isError ? 'error' : 'success');
+            el.addClass('show');
+            clearTimeout(el.data('timer'));
+            el.data('timer', setTimeout(function() { el.removeClass('show'); }, duration));
+        }
+
+        function hideToast() {
+            $('#toast').removeClass('show');
+        }
+
+        // ─── LOADER ───
+        function showLoader(msg) {
+            msg = msg || 'Loading...';
+            $('#loaderText').text(msg);
+            $('#loaderOverlay').fadeIn(180);
+        }
+
+        function hideLoader() {
+            $('#loaderOverlay').fadeOut(180);
+        }
+
+        // ─── LOAD DATA ───
+        function loadData() {
+            if (!isLoggedIn) return;
+
+            showLoader('Fetching registrations...');
+            $.ajax({
+                url: '/api/tickets/',
+                method: 'GET',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                success: function(res) {
+                    allData = res.tickets || [];
+                    filtered = allData.slice(0);
+                    render();
+                    updateStats();
+                    hideLoader();
+                },
+                error: function(xhr) {
+                    hideLoader();
+                    if (xhr.status === 401 || xhr.status === 403) {
+                        showToast('Session expired. Please login again.', true);
+                        logout();
+                    } else {
+                        var errMsg = 'Failed to load data';
+                        try {
+                            var resp = JSON.parse(xhr.responseText);
+                            if (resp.error) errMsg = resp.error;
+                        } catch(e) {}
+                        showToast(errMsg, true);
+                    }
+                    console.error(xhr.responseText);
+                    allData = [];
+                    filtered = [];
+                    render();
+                    updateStats();
+                }
+            });
+        }
+
+        // ─── RENDER ───
+        function render() {
+            var tbody = $('#tableBody');
+            if (!filtered || filtered.length === 0) {
+                tbody.html(`
+                    <tr><td colspan="6">
+                        <div class="empty-state">
+                            <i class="fas fa-ticket-alt"></i>
+                            <h3>${allData && allData.length > 0 ? 'No matching registrations' : 'No registrations yet'}</h3>
+                            <p>${allData && allData.length > 0 ? 'Try adjusting your filters' : 'Check back later for new sign-ups'}</p>
+                        </div>
+                    </td></tr>
+                `);
+                return;
+            }
+
+            var html = '';
+            for (var i = 0; i < filtered.length; i++) {
+                var t = filtered[i];
+                
+                var headway = t.headway_account ?
+                    '<span class="headway ' + (t.headway_account.length === 8 ? 'valid' : 'invalid') + '">' + t.headway_account + '</span>' :
+                    '<span style="color:#5a6a7a;font-size:11px;">—</span>';
+
+                html += `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td><span class="ticket-id">${t.ticket_number}</span></td>
+                        <td><span class="name">${t.attendee_name}</span></td>
+                        <td style="font-size:12px;color:#94a3b8;">${t.attendee_phone}</td>
+                        <td>${headway}</td>
+                        <td><span class="status-pill ${t.status}">${t.status}</span></td>
+                    </tr>
+                `;
+            }
+
+            tbody.html(html);
+        }
+
+        // ─── STATS ───
+        function updateStats() {
+            var total = allData ? allData.length : 0;
+            var confirmed = 0;
+            var pending = 0;
+            var validHeadway = 0;
+
+            for (var i = 0; i < (allData || []).length; i++) {
+                var t = allData[i];
+                if (t.status === 'confirmed') confirmed++;
+                if (t.status === 'pending') pending++;
+                if (t.headway_account && t.headway_account.length === 8) validHeadway++;
+            }
+
+            $('#totalCount').text(total);
+            $('#confirmedCount').text(confirmed);
+            $('#pendingCount').text(pending);
+            $('#headwayCount').text(validHeadway);
+        }
+
+        // ─── FILTER ───
+        function filterTable() {
+            var q = $('#searchInput').val().toLowerCase().trim();
+            var status = $('#statusFilter').val();
+
+            filtered = allData.filter(function(t) {
+                var matchSearch = !q ||
+                    t.attendee_name.toLowerCase().includes(q) ||
+                    t.attendee_email.toLowerCase().includes(q) ||
+                    t.attendee_phone.includes(q) ||
+                    t.ticket_number.toLowerCase().includes(q) ||
+                    (t.headway_account && t.headway_account.includes(q));
+
+                var matchStatus = status === 'all' || t.status === status;
+
+                return matchSearch && matchStatus;
+            });
+
+            render();
+        }
+
+        // ─── EXPORT ───
+        function exportData() {
+            if (!isLoggedIn) return;
+            showLoader('Preparing export...');
+            window.location.href = '/api/tickets/export/';
+            setTimeout(hideLoader, 2000);
+        }
+
+        // ─── REFRESH ───
+        function refreshData() {
+            if (!isLoggedIn) return;
+            loadData();
+            showToast('Refreshed');
+        }
+
+        // ─── AUTO REFRESH ───
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(function() {
+                if (isLoggedIn) loadData();
+            }, 45000);
+        }
+
+        // ─── INIT ───
+        $(document).ready(function() {
+            $('#loginPassword').on('keypress', function(e) {
+                if (e.which === 13) $('#loginForm').submit();
+            });
+            $('#loginUsername').on('keypress', function(e) {
+                if (e.which === 13) $('#loginForm').submit();
+            });
+
+            checkSession();
+
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden && isLoggedIn) loadData();
+            });
+        });
+    </script>
+
+</body>
+</html>

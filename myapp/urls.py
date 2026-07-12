@@ -383,6 +383,12 @@ urlpatterns = [
     path('api/events/<int:id>/', get_event_detail, name='get_event_detail'),
     path('api/events/update/<int:id>/', update_event, name='update_event'),
 
+
+
+    path('admin/tickets/', admin_views.admin_ticket_management, name='admin_ticket_management'),
+    path('api/tickets/', admin_views.api_get_tickets, name='api_get_tickets'),
+    path('api/tickets/export/', admin_views.api_export_tickets, name='api_export_tickets'),
+
     # ==================== TICKET API ====================
     path('api/tickets/', get_tickets, name='get_tickets'),
     path('api/tickets/<int:id>/', get_ticket_detail, name='get_ticket_detail'),

@@ -36,7 +36,7 @@ from .models import (
 def sanitize_filename(filename):
     """Remove special characters and spaces from filename"""
     # Remove path
-    filename = os.path.basename(filename)
+    filename = os.path.basename(filenamea)
     # Split name and extension
     name, ext = os.path.splitext(filename)
     # Replace spaces and special characters with underscore
@@ -5578,3 +5578,147 @@ def sasapay_callback(request):
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+    
+
+# ==================== TICKET MANAGEMENT VIEWS ====================
+
+@admin_required
+def admin_ticket_management(request):
+    """
+    Render the ticket management page for Headway brokers
+    """
+    return render(request, 'ticket_management.html')
+
+
+@admin_required
+def api_get_tickets(request):
+    """
+    GET all event tickets with full registration data
+    """
+    try:
+        tickets = EventTicket.objects.select_related('event').order_by('-created_at')
+        
+        data = []
+        for ticket in tickets:
+            data.append({
+                'id': ticket.id,
+                'ticket_number': ticket.ticket_number,
+                'attendee_name': ticket.attendee_name,
+                'attendee_phone': ticket.attendee_phone,
+                'attendee_email': ticket.attendee_email,
+                'headway_account': ticket.headway_account or '',
+                'status': ticket.status or 'confirmed',
+                # Since we don't have metadata field, we use the headway_account presence as a proxy
+                # Or you can store agreements in a separate model
+                'details_confirmed': bool(ticket.headway_account),  # Has headway = details confirmed
+                'deposit_confirmed': bool(ticket.headway_account),  # Has headway = deposit confirmed
+                'terms_agreed': bool(ticket.headway_account),       # Has headway = terms agreed
+                'created_at': ticket.created_at.isoformat() if ticket.created_at else None,
+            })
+        
+        return JsonResponse({
+            'tickets': data,
+            'total': len(data)
+        })
+        
+    except Exception as e:
+        print(f"❌ Error fetching tickets: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'tickets': [],
+            'total': 0,
+            'error': str(e)
+        }, status=500)
+
+
+@admin_required
+def api_export_tickets(request):
+    """
+    Export all tickets to Excel file
+    """
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from django.http import HttpResponse
+        from datetime import datetime
+        
+        tickets = EventTicket.objects.select_related('event').order_by('-created_at')
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Event Registrations"
+        
+        # Headers
+        headers = [
+            'Ticket #', 'Name', 'Phone', 'Email', 'Headway Account',
+            'Status', 'Date'
+        ]
+        
+        # Style
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="F5A623", end_color="F5A623", fill_type="solid")
+        header_alignment = Alignment(horizontal='center', vertical='center')
+        border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        # Write headers
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = border
+        
+        # Write data
+        for row_num, ticket in enumerate(tickets, 2):
+            row_data = [
+                ticket.ticket_number,
+                ticket.attendee_name,
+                ticket.attendee_phone,
+                ticket.attendee_email,
+                ticket.headway_account or '',
+                ticket.status or 'confirmed',
+                ticket.created_at.strftime('%Y-%m-%d %H:%M') if ticket.created_at else '',
+            ]
+            
+            for col_num, value in enumerate(row_data, 1):
+                cell = ws.cell(row=row_num, column=col_num)
+                cell.value = value
+                cell.border = border
+                cell.alignment = Alignment(horizontal='left' if isinstance(value, str) else 'center')
+        
+        # Auto-adjust column widths
+        for col in ws.columns:
+            max_length = 0
+            column_letter = col[0].column_letter
+            for cell in col:
+                try:
+                    if cell.value and len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 4, 40)
+            ws.column_dimensions[column_letter].width = adjusted_width
+        
+        # Create response
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = f"event_registrations_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        wb.save(response)
+        return response
+        
+    except Exception as e:
+        print(f"❌ Export error: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
+    
