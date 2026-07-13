@@ -5582,7 +5582,7 @@ def sasapay_callback(request):
 
 # ==================== TICKET MANAGEMENT VIEWS ====================
 
-@admin_required
+
 def admin_ticket_management(request):
     """
     Render the ticket management page for Headway brokers
@@ -5590,7 +5590,7 @@ def admin_ticket_management(request):
     return render(request, 'ticket_management.html')
 
 
-@admin_required
+
 def api_get_tickets(request):
     """
     GET all event tickets with full registration data
@@ -5632,7 +5632,7 @@ def api_get_tickets(request):
         }, status=500)
 
 
-@admin_required
+
 def api_export_tickets(request):
     """
     Export all tickets to Excel file
