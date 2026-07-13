@@ -12,47 +12,12 @@
     <meta name="csrf-token" content="{{ csrf_token }}" />
     <link rel="icon" href="{% static 'assets/images/2.png' %}" />
 
-    <script>
-        // Apply saved theme immediately to avoid a flash of the wrong theme
-        (function () {
-            var saved = localStorage.getItem('ticket_theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', saved);
-        })();
-    </script>
-
     <style>
-        :root,
-        html[data-theme="dark"] {
-            --bg: #000000;
-            --topbar-bg: #f4f2ec;
-            --surface: #f4f2ec;
-            --surface-2: #e8e5dc;
-            --border: #dcd9ce;
-            --border-soft: #e6e3d9;
-            --text: #17181c;
-            --text-soft: #26262b;
-            --text-dim: #6b6a63;
-            --text-faint: #9c988c;
-            --accent: #c8850f;
-            --accent-strong: #a86e0c;
-            --green: #16a34a;
-            --red: #dc2626;
-            --blue: #2563eb;
-            --radius: 10px;
-            --radius-lg: 14px;
-            --overlay: rgba(0, 0, 0, 0.92);
-            --logo-filter: none;
-            --canvas-text: #f2f2f2;
-            --canvas-text-dim: #9a9a9a;
-            --canvas-border: #2a2a2a;
-            --brand-gold: #f5a623;
-        }
-
-        html[data-theme="light"] {
-            --bg: #f6f6f4;
+        :root {
+            --bg: #0a0a0b;
             --topbar-bg: #16181c;
             --surface: #16181c;
-            --surface-2: #202226;
+            --surface-2: #1f2126;
             --border: #2c2e33;
             --border-soft: #26282c;
             --text: #f2f2f2;
@@ -60,18 +25,28 @@
             --text-dim: #9a9a9a;
             --text-faint: #6b6b6b;
             --accent: #f5a623;
-            --accent-strong: #d4941a;
+            --accent-strong: #ffb84d;
             --green: #22c55e;
             --red: #ef4444;
             --blue: #4c8dff;
             --radius: 10px;
             --radius-lg: 14px;
-            --overlay: rgba(255, 255, 255, 0.92);
-            --logo-filter: brightness(0) invert(1);
-            --canvas-text: #16181c;
-            --canvas-text-dim: #6b7280;
-            --canvas-border: #e3e3e0;
+            --overlay: rgba(0, 0, 0, 0.92);
+            --canvas-text: #f2f2f2;
+            --canvas-text-dim: #9a9a9a;
+            --canvas-border: #2a2a2a;
             --brand-gold: #f5a623;
+            /* Light-card colors, used ONLY by dashboard stat cards + table,
+               everything else (navbar, login modal, filters) stays dark */
+            --card-light-bg: #f4f2ec;
+            --card-light-bg-2: #e8e5dc;
+            --card-light-border: #dcd9ce;
+            --card-light-text: #17181c;
+            --card-light-text-dim: #6b6a63;
+            --card-light-text-faint: #9c988c;
+            --card-light-accent: #a86e0c;
+            --card-light-green: #16a34a;
+            --card-light-red: #dc2626;
         }
 
         * {
@@ -85,7 +60,6 @@
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            transition: background 0.2s ease, color 0.2s ease;
         }
 
         ::-webkit-scrollbar {
@@ -123,6 +97,7 @@
             width: 100%;
             border: 1px solid var(--border);
             animation: modalIn 0.3s ease;
+            position: relative;
         }
 
         @keyframes modalIn {
@@ -144,7 +119,6 @@
         .login-modal .logo img {
             height: 48px;
             width: auto;
-            filter: var(--logo-filter);
         }
 
         .login-modal .logo h2 {
@@ -181,11 +155,16 @@
             margin-bottom: 6px;
         }
 
+        /* Bug fix: originally the input used var(--bg) — the page canvas color
+           — as its own background, with var(--text) as the type color. In dark
+           mode those two were nearly identical (near-black on black), making
+           anything typed invisible. Field now gets its own visibly distinct
+           background from both the card and the canvas. */
         .login-modal .form-group input {
             width: 100%;
-            padding: 12px 14px;
-            background: var(--bg);
-            border: 1px solid var(--border);
+            padding: 12px 40px 12px 14px;
+            background: var(--surface-2);
+            border: 1.5px solid var(--border);
             border-radius: 8px;
             font-size: 14px;
             font-family: inherit;
@@ -202,6 +181,29 @@
             color: var(--text-faint);
         }
 
+        .login-modal .password-wrap {
+            position: relative;
+        }
+
+        .login-modal .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-faint);
+            font-size: 14px;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+        }
+
+        .login-modal .toggle-password:hover {
+            color: var(--accent);
+        }
+
         .login-modal .login-error {
             color: var(--red);
             font-size: 12px;
@@ -209,9 +211,9 @@
             margin-bottom: 16px;
             display: none;
             padding: 10px;
-            background: rgba(239, 68, 68, 0.08);
+            background: rgba(239, 68, 68, 0.1);
             border-radius: 8px;
-            border: 1px solid rgba(239, 68, 68, 0.18);
+            border: 1px solid rgba(239, 68, 68, 0.22);
         }
 
         .login-modal .login-error.show {
@@ -222,7 +224,7 @@
             width: 100%;
             padding: 13px;
             background: var(--accent);
-            color: #000000;
+            color: #ffffff;
             border: none;
             border-radius: 8px;
             font-size: 14px;
@@ -249,39 +251,6 @@
             letter-spacing: 0.3px;
         }
 
-        /* ─── THEME TOGGLE ─── */
-        .theme-toggle {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: transparent;
-            color: var(--text-dim);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            transition: background 0.15s, color 0.15s, border-color 0.15s;
-            flex-shrink: 0;
-        }
-
-        .theme-toggle:hover {
-            background: var(--surface-2);
-            color: var(--accent);
-            border-color: var(--text-faint);
-        }
-
-        .theme-toggle-login {
-            position: absolute;
-            top: 18px;
-            right: 18px;
-        }
-
-        .login-modal {
-            position: relative;
-        }
-
         /* ─── HIDE CONTENT UNTIL LOGIN ─── */
         .app-content {
             display: none;
@@ -304,7 +273,6 @@
             z-index: 100;
             flex-wrap: wrap;
             gap: 12px;
-            transition: background 0.2s ease, border-color 0.2s ease;
         }
 
         .topbar .brand {
@@ -316,7 +284,6 @@
         .topbar .brand img {
             height: 32px;
             width: auto;
-            filter: var(--logo-filter);
         }
 
         .topbar .brand h1 {
@@ -328,17 +295,6 @@
 
         .topbar .brand h1 span {
             color: var(--accent);
-        }
-
-        .topbar .brand .badge-free {
-            background: var(--green);
-            color: #000;
-            font-size: 9px;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 20px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .topbar-actions {
@@ -387,14 +343,14 @@
 
         .btn-primary {
             background: var(--accent);
-            color: #000000;
+            color: #ffffff;
             border-color: var(--accent);
         }
 
         .btn-primary:hover {
             background: var(--accent-strong);
             border-color: var(--accent-strong);
-            color: #000000;
+            color: #ffffff;
         }
 
         .btn-danger-outline {
@@ -403,7 +359,7 @@
         }
 
         .btn-danger-outline:hover {
-            background: rgba(239, 68, 68, 0.08);
+            background: rgba(220, 38, 38, 0.08);
             border-color: var(--red);
             color: var(--red);
         }
@@ -419,10 +375,10 @@
         }
 
         .stat-card {
-            background: var(--surface);
+            background: var(--card-light-bg);
             padding: 18px 20px;
             border-radius: var(--radius);
-            border: 1px solid var(--border);
+            border: 1px solid var(--card-light-border);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -430,20 +386,20 @@
         }
 
         .stat-card:hover {
-            border-color: var(--text-faint);
+            border-color: var(--card-light-text-faint);
         }
 
         .stat-card .info .number {
             font-size: 26px;
             font-weight: 800;
-            color: var(--text);
+            color: var(--card-light-text);
             line-height: 1.2;
         }
 
         .stat-card .info .label {
             font-size: 11px;
             font-weight: 500;
-            color: var(--text-dim);
+            color: var(--card-light-text-dim);
             text-transform: uppercase;
             letter-spacing: 0.4px;
             margin-top: 2px;
@@ -457,14 +413,14 @@
             align-items: center;
             justify-content: center;
             font-size: 15px;
-            background: var(--surface-2);
-            border: 1px solid var(--border);
+            background: var(--card-light-bg-2);
+            border: 1px solid var(--card-light-border);
         }
 
-        .stat-card .icon.gold { color: var(--accent); }
-        .stat-card .icon.green { color: var(--green); }
-        .stat-card .icon.blue { color: var(--blue); }
-        .stat-card .icon.purple { color: #a78bfa; }
+        .stat-card .icon.gold { color: var(--accent-strong); }
+        .stat-card .icon.green { color: #16a34a; }
+        .stat-card .icon.blue { color: #2563eb; }
+        .stat-card .icon.purple { color: #7c3aed; }
 
         /* ─── FILTERS ─── */
         .filters {
@@ -549,9 +505,9 @@
         }
 
         .table-container {
-            background: var(--surface);
+            background: var(--card-light-bg);
             border-radius: var(--radius-lg);
-            border: 1px solid var(--border);
+            border: 1px solid var(--card-light-border);
             overflow: hidden;
         }
 
@@ -568,8 +524,8 @@
         }
 
         thead {
-            background: var(--surface-2);
-            border-bottom: 1px solid var(--border);
+            background: var(--card-light-bg-2);
+            border-bottom: 1px solid var(--card-light-border);
         }
 
         thead th {
@@ -579,22 +535,22 @@
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.6px;
-            color: var(--text-dim);
+            color: var(--card-light-text-dim);
             white-space: nowrap;
             position: sticky;
             top: 0;
-            background: var(--surface-2);
+            background: var(--card-light-bg-2);
             z-index: 5;
         }
 
         thead th i {
             margin-right: 5px;
             font-size: 10px;
-            color: var(--text-faint);
+            color: var(--card-light-text-faint);
         }
 
         tbody tr {
-            border-bottom: 1px solid var(--border-soft);
+            border-bottom: 1px solid var(--card-light-border);
             transition: background 0.12s;
         }
 
@@ -603,13 +559,13 @@
         }
 
         tbody tr:hover {
-            background: var(--surface-2);
+            background: var(--card-light-bg-2);
         }
 
         tbody td {
             padding: 14px 18px;
             vertical-align: middle;
-            color: var(--text-soft);
+            color: var(--card-light-text);
         }
 
         /* ─── Ticket ─── */
@@ -617,19 +573,19 @@
             font-family: 'SF Mono', 'Courier New', monospace;
             font-size: 11px;
             font-weight: 700;
-            color: var(--accent);
-            background: rgba(245, 166, 35, 0.08);
+            color: var(--card-light-accent);
+            background: rgba(168, 110, 12, 0.1);
             padding: 3px 10px;
             border-radius: 6px;
             display: inline-block;
             letter-spacing: 0.3px;
-            border: 1px solid rgba(245, 166, 35, 0.18);
+            border: 1px solid rgba(168, 110, 12, 0.22);
         }
 
         /* ─── Name ─── */
         .name {
             font-weight: 600;
-            color: var(--text);
+            color: var(--card-light-text);
         }
 
         /* ─── Headway ─── */
@@ -641,21 +597,21 @@
             padding: 3px 10px;
             border-radius: 6px;
             display: inline-block;
-            background: var(--surface-2);
-            color: var(--text-dim);
-            border: 1px solid var(--border);
+            background: var(--card-light-bg-2);
+            color: var(--card-light-text-dim);
+            border: 1px solid var(--card-light-border);
         }
 
         .headway.valid {
-            background: rgba(34, 197, 94, 0.08);
-            color: var(--green);
-            border-color: rgba(34, 197, 94, 0.2);
+            background: rgba(22, 163, 74, 0.1);
+            color: var(--card-light-green);
+            border-color: rgba(22, 163, 74, 0.22);
         }
 
         .headway.invalid {
-            background: rgba(239, 68, 68, 0.06);
-            color: var(--red);
-            border-color: rgba(239, 68, 68, 0.16);
+            background: rgba(220, 38, 38, 0.08);
+            color: var(--card-light-red);
+            border-color: rgba(220, 38, 38, 0.18);
         }
 
         /* ─── Status ─── */
@@ -672,46 +628,46 @@
         }
 
         .status-pill.confirmed {
-            background: rgba(34, 197, 94, 0.1);
-            color: var(--green);
-            border: 1px solid rgba(34, 197, 94, 0.2);
+            background: rgba(22, 163, 74, 0.1);
+            color: var(--card-light-green);
+            border: 1px solid rgba(22, 163, 74, 0.22);
         }
 
         .status-pill.pending {
-            background: rgba(245, 166, 35, 0.1);
-            color: var(--accent);
-            border: 1px solid rgba(245, 166, 35, 0.2);
+            background: rgba(168, 110, 12, 0.1);
+            color: var(--card-light-accent);
+            border: 1px solid rgba(168, 110, 12, 0.22);
         }
 
         .status-pill.cancelled {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--red);
-            border: 1px solid rgba(239, 68, 68, 0.2);
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--card-light-red);
+            border: 1px solid rgba(220, 38, 38, 0.22);
         }
 
         /* ─── EMPTY ─── */
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: var(--text-faint);
+            color: var(--card-light-text-faint);
         }
 
         .empty-state i {
             font-size: 40px;
-            color: var(--border);
+            color: var(--card-light-border);
             margin-bottom: 14px;
         }
 
         .empty-state h3 {
             font-size: 16px;
-            color: var(--text-dim);
+            color: var(--card-light-text-dim);
             margin-bottom: 4px;
             font-weight: 600;
         }
 
         .empty-state p {
             font-size: 13px;
-            color: var(--text-faint);
+            color: var(--card-light-text-faint);
         }
 
         /* ─── LOADER ─── */
@@ -873,11 +829,6 @@
                 height: 26px;
             }
 
-            .topbar .brand .badge-free {
-                font-size: 7px;
-                padding: 2px 7px;
-            }
-
             .topbar-actions .btn span.btn-label {
                 display: none;
             }
@@ -908,9 +859,6 @@
     <!-- ─── LOGIN MODAL ─── -->
     <div class="login-overlay" id="loginOverlay">
         <div class="login-modal">
-            <button type="button" class="theme-toggle theme-toggle-login" id="themeToggleLogin" onclick="toggleTheme()" aria-label="Toggle theme">
-                <i class="fas fa-sun" id="themeIconLogin"></i>
-            </button>
             <div class="logo">
                 <img src="{% static 'assets/images/2.png' %}" alt="Logo" onerror="this.style.display='none'" />
                 <h2>Event <span>Registrations</span></h2>
@@ -920,11 +868,16 @@
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
                     <label>Username</label>
-                    <input type="text" id="loginUsername" placeholder="Enter username" value="Admin" required />
+                    <input type="text" id="loginUsername" placeholder="Enter username" value="Admin" required autocomplete="username" />
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter password" required />
+                    <div class="password-wrap">
+                        <input type="password" id="loginPassword" placeholder="Enter password" required autocomplete="current-password" />
+                        <button type="button" class="toggle-password" id="togglePassword" aria-label="Show password">
+                            <i class="fas fa-eye" id="togglePasswordIcon"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="login-error" id="loginError">Invalid credentials. Please try again.</div>
@@ -959,13 +912,9 @@
             <div class="brand">
                 <img src="{% static 'assets/images/2.png' %}" alt="Logo" onerror="this.style.display='none'" />
                 <h1>Event <span>Registrations</span></h1>
-                <span class="badge-free">&#127880; Free</span>
             </div>
             <div class="topbar-actions">
                 <span class="live"><i class="fas fa-circle"></i> LIVE</span>
-                <button type="button" class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">
-                    <i class="fas fa-sun" id="themeIcon"></i>
-                </button>
                 <button class="btn" onclick="refreshData()">
                     <i class="fas fa-sync-alt"></i> <span class="btn-label">Refresh</span>
                 </button>
@@ -1053,20 +1002,15 @@
         const VALID_USERNAME = 'Admin';
         const VALID_PASSWORD = 'Headway-Mbc@2026';
 
-        // ─── THEME ───
-        function applyThemeIcons() {
-            var theme = document.documentElement.getAttribute('data-theme') || 'light';
-            var iconClass = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-            $('#themeIcon, #themeIconLogin').attr('class', iconClass);
-        }
-
-        function toggleTheme() {
-            var current = document.documentElement.getAttribute('data-theme') || 'light';
-            var next = current === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('ticket_theme', next);
-            applyThemeIcons();
-        }
+        // ─── PASSWORD VISIBILITY TOGGLE ───
+        $('#togglePassword').on('click', function () {
+            var input = $('#loginPassword');
+            var icon = $('#togglePasswordIcon');
+            var isHidden = input.attr('type') === 'password';
+            input.attr('type', isHidden ? 'text' : 'password');
+            icon.attr('class', isHidden ? 'fas fa-eye-slash' : 'fas fa-eye');
+            $(this).attr('aria-label', isHidden ? 'Hide password' : 'Show password');
+        });
 
         // ─── STATE ───
         let allData = [];
@@ -1226,17 +1170,17 @@
             var html = '';
             for (var i = 0; i < filtered.length; i++) {
                 var t = filtered[i];
-                
+
                 var headway = t.headway_account ?
                     '<span class="headway ' + (t.headway_account.length === 8 ? 'valid' : 'invalid') + '">' + t.headway_account + '</span>' :
-                    '<span style="color:var(--text-faint);font-size:11px;">—</span>';
+                    '<span style="color:var(--card-light-text-faint);font-size:11px;">—</span>';
 
                 html += `
                     <tr>
                         <td>${i + 1}</td>
                         <td><span class="ticket-id">${t.ticket_number}</span></td>
                         <td><span class="name">${t.attendee_name}</span></td>
-                        <td style="font-size:12px;color:var(--text-dim);">${t.attendee_phone}</td>
+                        <td style="font-size:12px;color:var(--card-light-text-dim);">${t.attendee_phone}</td>
                         <td>${headway}</td>
                         <td><span class="status-pill ${t.status}">${t.status}</span></td>
                     </tr>
@@ -1313,8 +1257,6 @@
 
         // ─── INIT ───
         $(document).ready(function() {
-            applyThemeIcons();
-
             $('#loginPassword').on('keypress', function(e) {
                 if (e.which === 13) $('#loginForm').submit();
             });
