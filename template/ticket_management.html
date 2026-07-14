@@ -519,7 +519,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 900px;
+            min-width: 1000px; /* Increased to accommodate email column */
             font-size: 13px;
         }
 
@@ -586,6 +586,19 @@
         .name {
             font-weight: 600;
             color: var(--card-light-text);
+        }
+
+        /* ─── Email ─── */
+        .email-link {
+            color: var(--card-light-text-dim);
+            text-decoration: none;
+            font-size: 12px;
+            transition: color 0.15s;
+        }
+
+        .email-link:hover {
+            color: var(--card-light-accent);
+            text-decoration: underline;
         }
 
         /* ─── Headway ─── */
@@ -983,7 +996,8 @@
                                 <th><i class="fas fa-hashtag"></i> #</th>
                                 <th><i class="fas fa-ticket-alt"></i> Ticket</th>
                                 <th><i class="fas fa-user"></i> Applicant</th>
-                                <th><i class="fas fa-phone"></i> Contact</th>
+                                <th><i class="fas fa-phone"></i> Phone</th>
+                                <th><i class="fas fa-envelope"></i> Email</th>
                                 <th><i class="fas fa-user-circle"></i> Headway</th>
                                 <th><i class="fas fa-info-circle"></i> Status</th>
                             </tr>
@@ -1156,7 +1170,7 @@
             var tbody = $('#tableBody');
             if (!filtered || filtered.length === 0) {
                 tbody.html(`
-                    <tr><td colspan="6">
+                    <tr><td colspan="7">
                         <div class="empty-state">
                             <i class="fas fa-ticket-alt"></i>
                             <h3>${allData && allData.length > 0 ? 'No matching registrations' : 'No registrations yet'}</h3>
@@ -1181,6 +1195,7 @@
                         <td><span class="ticket-id">${t.ticket_number}</span></td>
                         <td><span class="name">${t.attendee_name}</span></td>
                         <td style="font-size:12px;color:var(--card-light-text-dim);">${t.attendee_phone}</td>
+                        <td><a href="mailto:${t.attendee_email}" class="email-link">${t.attendee_email}</a></td>
                         <td>${headway}</td>
                         <td><span class="status-pill ${t.status}">${t.status}</span></td>
                     </tr>
