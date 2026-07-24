@@ -4365,8 +4365,8 @@ window.closeModal = function() {
           </div>
         </div>
         
-        <!-- DISABLED BUTTON -->
-        <button class="get-ticket-btn" id="nuclearOpenModalBtn" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; cursor: pointer; opacity: 0.9;">
+        <!-- DISABLED BUTTON - Does nothing -->
+        <button class="get-ticket-btn" id="nuclearOpenModalBtn" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; cursor: not-allowed; opacity: 0.7;" disabled>
           <i class="fas fa-times-circle"></i> Registration Closed
         </button>
         
@@ -4378,236 +4378,7 @@ window.closeModal = function() {
   </div>
 </section>
 
-<!-- ===== CLOSURE MODAL ===== -->
-<div id="seatsFullModal" class="seats-full-overlay" style="display: none;">
-  <div class="seats-full-content">
-    <div class="seats-full-icon">🚫</div>
-    <h2 class="seats-full-title">REGISTRATION CLOSED</h2>
-    <p class="seats-full-message">
-      We're sorry, but all seats for this free event have been fully booked.
-      <br><br>
-      <span style="color: #ffd93d;">Thank you for your interest!</span>
-      <br><br>
-      Stay tuned for future events and opportunities.
-    </p>
-    <div class="seats-full-notice">
-      <i class="fas fa-envelope"></i>
-      <span>We'll notify you about upcoming events</span>
-    </div>
-    <button class="seats-full-btn" onclick="closeSeatsFullModal()">
-      Got It
-    </button>
-  </div>
-</div>
-
-<!-- ===== REGISTRATION MODAL - FULLY DISABLED ===== -->
-<div id="nuclearTicketModal" class="modern-modal" style="display: none;">
-  <div class="modern-modal-overlay"></div>
-  <div class="modern-modal-content">
-    <div class="modern-modal-header">
-      <h3><i class="fas fa-ticket-alt" style="color: #FFD700; margin-right: 10px;"></i>Registration Closed</h3>
-      <button class="modern-modal-close" id="nuclearCloseModalBtn">×</button>
-    </div>
-    <div class="modern-modal-body">
-      <div style="text-align: center; padding: 30px 10px;">
-        <div style="font-size: 4rem; margin-bottom: 20px;">🚫</div>
-        <h3 style="color: #ef4444; font-size: 1.5rem; margin-bottom: 15px;">All Seats Are Booked</h3>
-        <p style="color: #aaa; font-size: 0.95rem; line-height: 1.6; max-width: 350px; margin: 0 auto;">
-          Registration for this event is now closed. 
-          All seats have been fully reserved.
-        </p>
-        <div style="margin-top: 20px; background: rgba(255,215,0,0.05); border-radius: 10px; padding: 15px; border: 1px solid rgba(255,215,0,0.1);">
-          <p style="color: #ffd93d; font-size: 0.85rem; margin: 0;">
-            <i class="fas fa-envelope"></i> We'll notify you about future events
-          </p>
-        </div>
-        <button onclick="closeNuclearModal()" style="margin-top: 25px; background: linear-gradient(135deg, #ef4444, #dc2626); border: none; padding: 12px 35px; border-radius: 40px; color: white; font-weight: 700; cursor: pointer; font-size: 0.9rem;">
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <style>
-/* ===== MODAL STYLES ===== */
-.modern-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 20000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-.modern-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.95);
-  backdrop-filter: blur(8px);
-}
-
-.modern-modal-content {
-  position: relative;
-  z-index: 20001;
-  background: #000000;
-  border-radius: 16px;
-  padding: 30px 32px 32px;
-  max-width: 440px;
-  width: 92%;
-  max-height: 90vh;
-  overflow-y: auto;
-  border: 1px solid rgba(255, 215, 0, 0.1);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
-  animation: modalSlideUp 0.3s ease;
-}
-
-@keyframes modalSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.modern-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.modern-modal-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #ffffff;
-  letter-spacing: 0.3px;
-}
-
-.modern-modal-close {
-  width: 32px;
-  height: 32px;
-  background: rgba(255, 255, 255, 0.04);
-  border: none;
-  border-radius: 50%;
-  color: #666;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: all 0.25s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 300;
-}
-
-.modern-modal-close:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
-  transform: rotate(90deg);
-}
-
-/* ===== SEATS FULL MODAL STYLES ===== */
-.seats-full-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.95);
-  backdrop-filter: blur(8px);
-  z-index: 40000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-.seats-full-content {
-  background: #000000;
-  border-radius: 20px;
-  padding: 50px 40px;
-  max-width: 500px;
-  width: 90%;
-  text-align: center;
-  border: 1px solid rgba(255, 107, 107, 0.15);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-  animation: modalSlideUp 0.4s ease;
-}
-
-.seats-full-icon {
-  font-size: 60px;
-  margin-bottom: 20px;
-}
-
-.seats-full-title {
-  color: #ff6b6b;
-  font-size: 28px;
-  margin-bottom: 15px;
-  font-weight: 700;
-}
-
-.seats-full-message {
-  color: #c8d6e5;
-  font-size: 16px;
-  line-height: 1.6;
-  margin-bottom: 25px;
-}
-
-.seats-full-message strong {
-  color: #ffd93d;
-}
-
-.seats-full-notice {
-  background: rgba(255, 107, 107, 0.1);
-  border: 1px solid rgba(255, 107, 107, 0.2);
-  border-radius: 10px;
-  padding: 15px;
-  margin-bottom: 25px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.seats-full-notice i {
-  color: #ffd93d;
-  font-size: 18px;
-}
-
-.seats-full-notice span {
-  color: #ffd93d;
-  font-size: 14px;
-}
-
-.seats-full-btn {
-  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-  color: white;
-  border: none;
-  padding: 14px 40px;
-  border-radius: 50px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-}
-
-.seats-full-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
-}
-
 /* Countdown Styles */
 .countdown-premium {
   background: rgba(255, 215, 0, 0.05);
@@ -4827,27 +4598,8 @@ window.closeModal = function() {
   transition: all 0.2s;
 }
 
-.get-ticket-btn:hover {
-  transform: translateY(-2px);
-}
-
 /* Mobile Responsive */
 @media (max-width: 550px) {
-  .modern-modal-content {
-    padding: 22px 18px 24px;
-    max-width: 96%;
-    border-radius: 14px;
-  }
-  
-  .modern-modal-header {
-    margin-bottom: 18px;
-    padding-bottom: 12px;
-  }
-  
-  .modern-modal-header h3 {
-    font-size: 1rem;
-  }
-  
   .countdown-block {
     padding: 6px 8px;
     min-width: 35px;
@@ -4855,18 +4607,6 @@ window.closeModal = function() {
   
   .countdown-block span {
     font-size: 1.3rem;
-  }
-  
-  .seats-full-content {
-    padding: 35px 25px;
-  }
-
-  .seats-full-title {
-    font-size: 22px;
-  }
-
-  .seats-full-message {
-    font-size: 14px;
   }
   
   .event-premium-info h2 {
@@ -4901,64 +4641,11 @@ window.closeModal = function() {
 </style>
 
 <script>
-// ===== REGISTRATION CLOSED SCRIPT =====
+// ===== COUNTDOWN TIMER ONLY =====
 (function() {
     'use strict';
     
-    console.log('🚫 REGISTRATION CLOSED - All seats fully booked');
-    
-    function closeNuclearModal() {
-        const modal = document.getElementById('nuclearTicketModal');
-        if (modal) modal.style.display = 'none';
-        document.body.style.overflow = '';
-    }
-    
-    function showSeatsFullModal() {
-        const modal = document.getElementById('seatsFullModal');
-        if (modal) {
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-    }
-    
-    function closeSeatsFullModal() {
-        const modal = document.getElementById('seatsFullModal');
-        if (modal) {
-            modal.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-    }
-    
-    // Make functions globally accessible
-    window.closeSeatsFullModal = closeSeatsFullModal;
-    window.closeNuclearModal = closeNuclearModal;
-    
-    // Main button - shows closure modal
-    const openBtn = document.getElementById('nuclearOpenModalBtn');
-    if (openBtn) {
-        openBtn.onclick = function(e) {
-            e.preventDefault();
-            showSeatsFullModal();
-        };
-    }
-    
-    // Close modal handlers
-    const closeBtn = document.getElementById('nuclearCloseModalBtn');
-    if (closeBtn) {
-        closeBtn.onclick = closeNuclearModal;
-    }
-    
-    const overlay = document.querySelector('.modern-modal-overlay');
-    if (overlay) {
-        overlay.onclick = closeNuclearModal;
-    }
-    
-    const seatsFullOverlay = document.querySelector('.seats-full-overlay');
-    if (seatsFullOverlay) {
-        seatsFullOverlay.onclick = function(e) {
-            if (e.target === this) closeSeatsFullModal();
-        };
-    }
+    console.log('🚫 REGISTRATION CLOSED - Event display only');
     
     // Countdown timer
     function startNuclearCountdown() {
@@ -4986,7 +4673,7 @@ window.closeModal = function() {
     
     startNuclearCountdown();
     
-    console.log('✅ Registration system locked - All seats filled');
+    console.log('✅ Event display only - Registration locked');
 })();
 </script>
 
