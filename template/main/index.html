@@ -4297,14 +4297,14 @@ window.closeModal = function() {
 };
 </script>
 
-<!-- ===== FREE EVENT REGISTRATION SECTION - WITH HEADWAY ACCOUNT ===== -->
+<!-- ===== FREE EVENT REGISTRATION SECTION - REGISTRATION CLOSED ===== -->
 <section class="events-premium-section" id="nuclear-events-section">
   <div class="container">
     <div class="section-header">
       <h2>Flagship <span class="gold-gradient-text">Event</span></h2>
       <p>The Biggest Live Leveraging Seminar in East & Central Africa</p>
-      <div style="display: inline-block; background: #10b981; color: white; padding: 6px 20px; border-radius: 40px; font-weight: 700; font-size: 0.8rem; margin-top: 10px;">
-        🎟️ FREE REGISTRATION
+      <div style="display: inline-block; background: #ef4444; color: white; padding: 6px 20px; border-radius: 40px; font-weight: 700; font-size: 0.8rem; margin-top: 10px;">
+        🚫 REGISTRATION CLOSED
       </div>
     </div>
 
@@ -4317,7 +4317,9 @@ window.closeModal = function() {
             <span class="poster-month">AUG</span>
             <span class="poster-year">2026</span>
           </div>
-          <div class="poster-seats-badge" id="nuclearSeatsBadge"><i class="fas fa-hourglass-half"></i> Few Slots Left</div>
+          <div class="poster-seats-badge" style="background: rgba(239, 68, 68, 0.95); color: #fff;">
+            <i class="fas fa-times-circle"></i> FULLY BOOKED
+          </div>
         </div>
       </div>
       
@@ -4331,11 +4333,14 @@ window.closeModal = function() {
         </div>
         <p class="event-description">Join us for the most anticipated trading event of the year. Learn advanced leveraging strategies, network with elite traders, and gain insider knowledge from industry leaders.</p>
         
-        <!-- Free Registration Notice -->
-        <div style="background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05)); border-radius: 16px; padding: 16px; margin: 15px 0; text-align: center; border: 1px solid rgba(16,185,129,0.3);">
-          <span style="font-size: 0.85rem; color: #10b981;">🎟️ Ticket Price</span>
-          <div style="font-size: 2rem; font-weight: 800; color: #10b981;">FREE</div>
-          <span style="font-size: 0.75rem; color: #aaa;">Limited slots available - Register now!</span>
+        <!-- Registration Closed Notice -->
+        <div style="background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(239,68,68,0.05)); border-radius: 16px; padding: 24px 20px; margin: 15px 0; text-align: center; border: 2px solid rgba(239,68,68,0.5);">
+          <div style="font-size: 3rem; margin-bottom: 10px;">🚫</div>
+          <div style="font-size: 1.5rem; font-weight: 800; color: #ef4444;">REGISTRATION CLOSED</div>
+          <div style="font-size: 0.9rem; color: #fca5a5; margin-top: 5px;">All seats have been fully booked</div>
+          <div style="font-size: 0.8rem; color: #aaa; margin-top: 10px; border-top: 1px solid rgba(239,68,68,0.2); padding-top: 12px;">
+            <i class="fas fa-envelope"></i> Stay tuned for future events and opportunities
+          </div>
         </div>
         
         <div class="event-highlights-list">
@@ -4360,136 +4365,67 @@ window.closeModal = function() {
           </div>
         </div>
         
-        <button class="get-ticket-btn" id="nuclearOpenModalBtn" style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
-          <i class="fas fa-ticket-alt"></i> Register Free - Headway Account Required
+        <!-- DISABLED BUTTON -->
+        <button class="get-ticket-btn" id="nuclearOpenModalBtn" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; cursor: pointer; opacity: 0.9;">
+          <i class="fas fa-times-circle"></i> Registration Closed
         </button>
         
-        <div style="margin-top: 12px; text-align: center; font-size: 0.7rem; color: #888;">
-          <i class="fas fa-info-circle"></i> Headway broker account number required for identification
+        <div style="margin-top: 12px; text-align: center; font-size: 0.7rem; color: #ef4444;">
+          <i class="fas fa-info-circle"></i> All seats have been reserved
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===== REGISTRATION MODAL - PURE BLACK WITH YELLOW/RED/WHITE/GREEN ===== -->
+<!-- ===== CLOSURE MODAL ===== -->
+<div id="seatsFullModal" class="seats-full-overlay" style="display: none;">
+  <div class="seats-full-content">
+    <div class="seats-full-icon">🚫</div>
+    <h2 class="seats-full-title">REGISTRATION CLOSED</h2>
+    <p class="seats-full-message">
+      We're sorry, but all seats for this free event have been fully booked.
+      <br><br>
+      <span style="color: #ffd93d;">Thank you for your interest!</span>
+      <br><br>
+      Stay tuned for future events and opportunities.
+    </p>
+    <div class="seats-full-notice">
+      <i class="fas fa-envelope"></i>
+      <span>We'll notify you about upcoming events</span>
+    </div>
+    <button class="seats-full-btn" onclick="closeSeatsFullModal()">
+      Got It
+    </button>
+  </div>
+</div>
+
+<!-- ===== REGISTRATION MODAL - FULLY DISABLED ===== -->
 <div id="nuclearTicketModal" class="modern-modal" style="display: none;">
   <div class="modern-modal-overlay"></div>
   <div class="modern-modal-content">
     <div class="modern-modal-header">
-      <h3><i class="fas fa-ticket-alt" style="color: #FFD700; margin-right: 10px;"></i>Free Registration</h3>
+      <h3><i class="fas fa-ticket-alt" style="color: #FFD700; margin-right: 10px;"></i>Registration Closed</h3>
       <button class="modern-modal-close" id="nuclearCloseModalBtn">×</button>
     </div>
     <div class="modern-modal-body">
-      <form id="nuclearTicketForm">
-        {% csrf_token %}
-        
-        <!-- Full Name -->
-        <div class="form-group">
-          <label>FULL NAME</label>
-          <input type="text" id="nuclearAttendeeName" placeholder="Enter your full name" required>
+      <div style="text-align: center; padding: 30px 10px;">
+        <div style="font-size: 4rem; margin-bottom: 20px;">🚫</div>
+        <h3 style="color: #ef4444; font-size: 1.5rem; margin-bottom: 15px;">All Seats Are Booked</h3>
+        <p style="color: #aaa; font-size: 0.95rem; line-height: 1.6; max-width: 350px; margin: 0 auto;">
+          Registration for this event is now closed. 
+          All seats have been fully reserved.
+        </p>
+        <div style="margin-top: 20px; background: rgba(255,215,0,0.05); border-radius: 10px; padding: 15px; border: 1px solid rgba(255,215,0,0.1);">
+          <p style="color: #ffd93d; font-size: 0.85rem; margin: 0;">
+            <i class="fas fa-envelope"></i> We'll notify you about future events
+          </p>
         </div>
-        
-        <!-- Email and Phone Row -->
-        <div class="form-row">
-          <div class="form-group">
-            <label>EMAIL ADDRESS</label>
-            <input type="email" id="nuclearAttendeeEmail" placeholder="your@email.com" required>
-          </div>
-          <div class="form-group">
-            <label>PHONE NUMBER</label>
-            <input type="tel" id="nuclearAttendeePhone" placeholder="+254 7XX XXX XXX" required>
-          </div>
-        </div>
-        
-        <!-- HEADWAY ACCOUNT NUMBER -->
-        <div class="form-group">
-          <label><i class="fas fa-user-circle"></i> HEADWAY ACCOUNT NUMBER <span class="required-star">*</span></label>
-          <input 
-            type="text" 
-            id="headwayAccountInput" 
-            placeholder="Enter 8-digit account number (e.g., 17053130)" 
-            required
-            maxlength="8"
-          >
-          <div class="field-helper">
-            <span><i class="fas fa-info-circle"></i> Required for identification at the event</span>
-            <a href="https://headway.partners/user/signup?hwp=2af9e5" target="_blank" class="create-account-link">
-              <i class="fas fa-external-link-alt"></i> Create Free Account
-            </a>
-          </div>
-        </div>
-        
-        <!-- $100 DEPOSIT REQUIREMENT -->
-        <div class="deposit-notice">
-          <i class="fas fa-dollar-sign deposit-icon"></i>
-          <div class="deposit-content">
-            <div class="deposit-title">$100 USD Deposit Required</div>
-            <div class="deposit-text">
-              Applicants must have at least <strong>$100 USD</strong> deposited in their Headway account to participate in the live trading session and leverage the experience and skills of the CEO, <strong>MFALME BETTERDAYS CAPITAL</strong>, to get the chance to change your story — one setup, one life, one goal.
-            </div>
-          </div>
-        </div>
-        
-        <!-- CONFIRMATION CHECKBOXES -->
-        <div class="checkbox-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="nuclearDetailsConfirm" required>
-            <span class="checkmark-custom"></span>
-            <span class="checkbox-text">I confirm that all information provided is correct and complete</span>
-          </label>
-        </div>
-        
-        <div class="checkbox-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="nuclearDepositConfirm" required>
-            <span class="checkmark-custom"></span>
-            <span class="checkbox-text">I confirm that I have at least <strong>$100 USD</strong> deposited in my Headway account for the live trading session</span>
-          </label>
-        </div>
-        
-        <div class="checkbox-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="nuclearTermsAgree" required>
-            <span class="checkmark-custom"></span>
-            <span class="checkbox-text">I understand that my Headway account number will be used for event identification and verification</span>
-          </label>
-        </div>
-        
-        <button type="submit" id="nuclearSubmitPaymentBtn" class="modal-submit-btn">
-          <i class="fas fa-check-circle"></i> Register Free
+        <button onclick="closeNuclearModal()" style="margin-top: 25px; background: linear-gradient(135deg, #ef4444, #dc2626); border: none; padding: 12px 35px; border-radius: 40px; color: white; font-weight: 700; cursor: pointer; font-size: 0.9rem;">
+          Close
         </button>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- ===== SUCCESS MODAL ===== -->
-<div id="nuclearSuccessModal" class="success-modal-overlay" style="display: none;">
-  <div class="success-modal-content">
-    <div class="success-animation">
-      <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
-        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-      </svg>
-    </div>
-    <h3 class="success-title">Registration Successful!</h3>
-    <p class="success-message" id="nuclearSuccessMessage">Your free ticket has been reserved!</p>
-    <div class="success-email-note">
-      <i class="fas fa-envelope"></i>
-      <span>A confirmation email has been sent to your inbox</span>
-    </div>
-    <div class="success-headway-display">
-      <i class="fas fa-user-circle"></i>
-      Headway Account: <strong id="successHeadwayDisplay">---</strong>
-    </div>
-    <div class="success-timer">
-      <div class="timer-bar">
-        <div class="timer-progress" id="timerProgress"></div>
       </div>
-      <p class="timer-text">Closing in <span id="timerSeconds">5</span> seconds...</p>
     </div>
-    <button class="success-close-btn" id="nuclearCloseSuccessBtn">Close</button>
   </div>
 </div>
 
@@ -4532,17 +4468,6 @@ window.closeModal = function() {
   animation: modalSlideUp 0.3s ease;
 }
 
-.modern-modal-content::-webkit-scrollbar {
-  width: 3px;
-}
-.modern-modal-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-.modern-modal-content::-webkit-scrollbar-thumb {
-  background: #FFD700;
-  border-radius: 10px;
-}
-
 @keyframes modalSlideUp {
   from {
     opacity: 0;
@@ -4554,7 +4479,6 @@ window.closeModal = function() {
   }
 }
 
-/* Header */
 .modern-modal-header {
   display: flex;
   align-items: center;
@@ -4570,10 +4494,6 @@ window.closeModal = function() {
   font-weight: 600;
   color: #ffffff;
   letter-spacing: 0.3px;
-}
-
-.modern-modal-header h3 i {
-  color: #FFD700;
 }
 
 .modern-modal-close {
@@ -4598,243 +4518,8 @@ window.closeModal = function() {
   transform: rotate(90deg);
 }
 
-/* Form Styles */
-.form-group {
-  margin-bottom: 14px;
-}
-
-.form-group label {
-  display: block;
-  color: #888;
-  font-size: 0.7rem;
-  font-weight: 600;
-  margin-bottom: 5px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.form-group label .required-star {
-  color: #ef4444;
-  margin-left: 2px;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 11px 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 0.9rem;
-  transition: all 0.3s;
-  box-sizing: border-box;
-  font-family: inherit;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #FFD700;
-  background: rgba(255, 215, 0, 0.04);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.06);
-}
-
-.form-group input::placeholder {
-  color: #444;
-  font-size: 0.85rem;
-}
-
-.form-group input.error {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
-}
-
-.form-group input.valid {
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.08);
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-@media (max-width: 480px) {
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-}
-
-.field-helper {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 6px;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.field-helper span {
-  font-size: 0.62rem;
-  color: #555;
-}
-
-.field-helper span i {
-  margin-right: 4px;
-  color: #666;
-}
-
-.create-account-link {
-  font-size: 0.62rem;
-  color: #FFD700;
-  text-decoration: none;
-  background: rgba(255, 215, 0, 0.06);
-  padding: 3px 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 215, 0, 0.1);
-  transition: all 0.3s;
-  white-space: nowrap;
-}
-
-.create-account-link:hover {
-  background: rgba(255, 215, 0, 0.12);
-  border-color: rgba(255, 215, 0, 0.25);
-}
-
-/* Deposit Notice */
-.deposit-notice {
-  display: flex;
-  gap: 12px;
-  background: rgba(255, 215, 0, 0.04);
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin: 16px 0 18px;
-  border: 1px solid rgba(255, 215, 0, 0.08);
-}
-
-.deposit-icon {
-  color: #FFD700;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.deposit-content {
-  flex: 1;
-}
-
-.deposit-title {
-  color: #FFD700;
-  font-weight: 700;
-  font-size: 0.75rem;
-  margin-bottom: 3px;
-  letter-spacing: 0.3px;
-}
-
-.deposit-text {
-  color: #888;
-  font-size: 0.7rem;
-  line-height: 1.5;
-}
-
-.deposit-text strong {
-  color: #FFD700;
-}
-
-/* Checkbox Styles */
-.checkbox-group {
-  margin-bottom: 10px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  cursor: pointer;
-  color: #aaa;
-  font-size: 0.75rem;
-  line-height: 1.4;
-  padding: 2px 0;
-}
-
-.checkbox-label input[type="checkbox"] {
-  display: none;
-}
-
-.checkmark-custom {
-  width: 17px;
-  height: 17px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
-  flex-shrink: 0;
-  margin-top: 1px;
-  transition: all 0.25s;
-  position: relative;
-}
-
-.checkbox-label input:checked + .checkmark-custom {
-  background: #FFD700;
-  border-color: #FFD700;
-}
-
-.checkbox-label input:checked + .checkmark-custom::after {
-  content: "✓";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #000000;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.checkbox-label:hover .checkmark-custom {
-  border-color: rgba(255, 215, 0, 0.3);
-}
-
-.checkbox-text strong {
-  color: #FFD700;
-}
-
-/* Submit Button */
-.modal-submit-btn {
-  width: 100%;
-  padding: 13px;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: #ffffff;
-  margin-top: 4px;
-}
-
-.modal-submit-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.25);
-}
-
-.modal-submit-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-.modal-submit-btn i {
-  font-size: 0.95rem;
-}
-
-/* Success Modal */
-.success-modal-overlay {
+/* ===== SEATS FULL MODAL STYLES ===== */
+.seats-full-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -4842,197 +4527,88 @@ window.closeModal = function() {
   height: 100%;
   background: rgba(0, 0, 0, 0.95);
   backdrop-filter: blur(8px);
-  z-index: 30000;
+  z-index: 40000;
   display: none;
   align-items: center;
   justify-content: center;
 }
 
-.success-modal-content {
+.seats-full-content {
   background: #000000;
-  border-radius: 16px;
-  padding: 36px 32px 32px;
-  text-align: center;
-  max-width: 370px;
+  border-radius: 20px;
+  padding: 50px 40px;
+  max-width: 500px;
   width: 90%;
-  border: 1px solid rgba(16, 185, 129, 0.15);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
-  animation: slideUp 0.4s ease;
+  text-align: center;
+  border: 1px solid rgba(255, 107, 107, 0.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  animation: modalSlideUp 0.4s ease;
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.seats-full-icon {
+  font-size: 60px;
+  margin-bottom: 20px;
 }
 
-.success-animation {
-  margin-bottom: 18px;
-}
-
-.checkmark {
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  display: block;
-  stroke-width: 2;
-  stroke: #4caf50;
-  stroke-miterlimit: 10;
-  margin: 0 auto;
-  animation: scale 0.5s ease-in-out 0.2s both;
-}
-
-.checkmark-circle {
-  stroke-dasharray: 166;
-  stroke-dashoffset: 166;
-  stroke-width: 2;
-  stroke-miterlimit: 10;
-  stroke: #4caf50;
-  fill: none;
-  animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
-}
-
-.checkmark-check {
-  transform-origin: 50% 50%;
-  stroke-dasharray: 48;
-  stroke-dashoffset: 48;
-  animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.4s forwards;
-}
-
-@keyframes stroke {
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes scale {
-  0%, 100% {
-    transform: none;
-  }
-  50% {
-    transform: scale3d(1.1, 1.1, 1);
-  }
-}
-
-.success-title {
-  font-size: 1.3rem;
+.seats-full-title {
+  color: #ff6b6b;
+  font-size: 28px;
+  margin-bottom: 15px;
   font-weight: 700;
-  color: #fff;
-  margin-bottom: 6px;
 }
 
-.success-message {
-  color: #aaa;
-  font-size: 0.9rem;
-  margin-bottom: 16px;
-  line-height: 1.5;
+.seats-full-message {
+  color: #c8d6e5;
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 25px;
 }
 
-.success-email-note {
-  background: rgba(255, 215, 0, 0.04);
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin-bottom: 12px;
+.seats-full-message strong {
+  color: #ffd93d;
+}
+
+.seats-full-notice {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 25px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  border: 1px solid rgba(255, 215, 0, 0.06);
 }
 
-.success-email-note i {
-  color: #FFD700;
-  font-size: 0.95rem;
+.seats-full-notice i {
+  color: #ffd93d;
+  font-size: 18px;
 }
 
-.success-email-note span {
-  color: #FFD700;
-  font-size: 0.78rem;
-  font-weight: 500;
+.seats-full-notice span {
+  color: #ffd93d;
+  font-size: 14px;
 }
 
-.success-headway-display {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin: 12px 0 16px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  color: #888;
-  font-size: 0.78rem;
-}
-
-.success-headway-display i {
-  color: #10b981;
-  margin-right: 8px;
-}
-
-.success-headway-display strong {
-  color: #FFD700;
-  font-family: monospace;
-  letter-spacing: 1px;
-}
-
-.success-timer {
-  margin-bottom: 18px;
-}
-
-.timer-bar {
-  width: 100%;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 6px;
-}
-
-.timer-progress {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, #10b981, #059669);
-  border-radius: 2px;
-  animation: shrink 5s linear forwards;
-}
-
-@keyframes shrink {
-  from { width: 100%; }
-  to { width: 0%; }
-}
-
-.timer-text {
-  color: #555;
-  font-size: 0.68rem;
-  margin: 0;
-}
-
-#timerSeconds {
-  color: #10b981;
-  font-weight: 700;
-}
-
-.success-close-btn {
-  background: linear-gradient(135deg, #10b981, #059669);
-  border: none;
-  padding: 11px;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 0.85rem;
+.seats-full-btn {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
   color: white;
+  border: none;
+  padding: 14px 40px;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  width: 100%;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
 }
 
-.success-close-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2);
+.seats-full-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
 }
 
-/* Countdown Styles (existing) */
+/* Countdown Styles */
 .countdown-premium {
   background: rgba(255, 215, 0, 0.05);
   border-radius: 16px;
@@ -5093,6 +4669,168 @@ window.closeModal = function() {
   background-clip: text;
 }
 
+.event-premium-poster {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.poster-wrapper {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,215,0,0.3);
+  max-width: 100%;
+  width: 100%;
+}
+
+.event-poster-img {
+  width: 100%;
+  max-width: 350px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.poster-date-badge {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 8px 16px;
+  text-align: center;
+  border-left: 3px solid #FFD700;
+}
+
+.poster-day {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #FFD700;
+  line-height: 1;
+}
+
+.poster-month, .poster-year {
+  font-size: 0.6rem;
+  color: #f5f5f5;
+}
+
+.poster-seats-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(239,68,68,0.9);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 30px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.events-premium-section {
+  padding: 80px 0;
+  background: linear-gradient(145deg, #0a1420, #0c1828);
+}
+
+.event-premium-card {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 40px;
+  background: rgba(10,21,32,0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 28px;
+  border: 1px solid rgba(255,215,0,0.2);
+  overflow: hidden;
+  margin-top: 50px;
+}
+
+@media (max-width: 900px) {
+  .event-premium-card {
+    grid-template-columns: 1fr;
+  }
+  .event-premium-info {
+    padding: 0 25px 35px 25px;
+  }
+}
+
+.event-premium-info {
+  padding: 35px 35px 35px 0;
+}
+
+.event-premium-info h2 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+.event-details-list {
+  margin-bottom: 20px;
+}
+
+.event-detail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #ccc;
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+}
+
+.event-detail i {
+  width: 22px;
+  color: #FFD700;
+}
+
+.event-description {
+  color: #f5f5f5;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.event-highlights-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.event-highlights-list span {
+  background: rgba(255,215,0,0.08);
+  padding: 5px 12px;
+  border-radius: 30px;
+  font-size: 0.7rem;
+  color: #FFEC8B;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.get-ticket-btn {
+  border: none;
+  padding: 12px 28px;
+  border-radius: 40px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.get-ticket-btn:hover {
+  transform: translateY(-2px);
+}
+
 /* Mobile Responsive */
 @media (max-width: 550px) {
   .modern-modal-content {
@@ -5119,21 +4857,20 @@ window.closeModal = function() {
     font-size: 1.3rem;
   }
   
-  .success-modal-content {
-    padding: 28px 20px 24px;
+  .seats-full-content {
+    padding: 35px 25px;
+  }
+
+  .seats-full-title {
+    font-size: 22px;
+  }
+
+  .seats-full-message {
+    font-size: 14px;
   }
   
-  .checkmark {
-    width: 56px;
-    height: 56px;
-  }
-  
-  .success-title {
-    font-size: 1.15rem;
-  }
-  
-  .deposit-notice {
-    padding: 12px 14px;
+  .event-premium-info h2 {
+    font-size: 1.3rem;
   }
 }
 
@@ -5155,117 +4892,75 @@ window.closeModal = function() {
     font-size: 1rem;
   }
 }
+
+@media (max-width: 576px) {
+  .event-poster-img {
+    max-width: 100%;
+  }
+}
 </style>
 
 <script>
-// ===== FREE EVENT REGISTRATION WITH HEADWAY ACCOUNT =====
+// ===== REGISTRATION CLOSED SCRIPT =====
 (function() {
     'use strict';
     
-    console.log('🎟️ FREE EVENT REGISTRATION SYSTEM ACTIVATED');
-    
-    function getCsrfToken() {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, 10) === 'csrftoken=') {
-                    cookieValue = decodeURIComponent(cookie.substring(10));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-    
-    function showSuccessModal(email, headwayAccount, ticketNumber) {
-        const modal = document.getElementById('nuclearSuccessModal');
-        const messageEl = document.getElementById('nuclearSuccessMessage');
-        const headwayDisplay = document.getElementById('successHeadwayDisplay');
-        const timerSpan = document.getElementById('timerSeconds');
-        const progressBar = document.getElementById('timerProgress');
-        
-        if (!modal) return;
-        
-        if (messageEl) {
-            messageEl.innerHTML = `Your free ticket has been reserved!<br><span style="font-size:0.7rem; color:#10b981;">Ticket: ${ticketNumber || 'Check your email'}</span>`;
-        }
-        
-        if (headwayDisplay) {
-            headwayDisplay.textContent = headwayAccount || '---';
-        }
-        
-        modal.style.display = 'flex';
-        
-        let seconds = 5;
-        if (timerSpan) timerSpan.textContent = seconds;
-        
-        if (progressBar) {
-            progressBar.style.animation = 'none';
-            progressBar.offsetHeight;
-            progressBar.style.animation = 'shrink 5s linear forwards';
-        }
-        
-        const interval = setInterval(() => {
-            seconds--;
-            if (timerSpan) timerSpan.textContent = seconds;
-            if (seconds <= 0) {
-                clearInterval(interval);
-                closeSuccessModal();
-            }
-        }, 1000);
-        
-        modal._timerInterval = interval;
-    }
-    
-    function closeSuccessModal() {
-        const modal = document.getElementById('nuclearSuccessModal');
-        if (modal) {
-            if (modal._timerInterval) {
-                clearInterval(modal._timerInterval);
-                modal._timerInterval = null;
-            }
-            modal.style.display = 'none';
-        }
-    }
+    console.log('🚫 REGISTRATION CLOSED - All seats fully booked');
     
     function closeNuclearModal() {
         const modal = document.getElementById('nuclearTicketModal');
         if (modal) modal.style.display = 'none';
         document.body.style.overflow = '';
-        const form = document.getElementById('nuclearTicketForm');
-        if (form) form.reset();
     }
     
-    function openNuclearModal() {
-        const modal = document.getElementById('nuclearTicketModal');
-        if (modal) modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        
-        const nameInput = document.getElementById('nuclearAttendeeName');
-        const emailInput = document.getElementById('nuclearAttendeeEmail');
-        const phoneInput = document.getElementById('nuclearAttendeePhone');
-        const headwayInput = document.getElementById('headwayAccountInput');
-        const termsCheckbox = document.getElementById('nuclearTermsAgree');
-        const detailsConfirm = document.getElementById('nuclearDetailsConfirm');
-        const depositConfirm = document.getElementById('nuclearDepositConfirm');
-        
-        if (nameInput) nameInput.value = '';
-        if (emailInput) emailInput.value = '';
-        if (phoneInput) phoneInput.value = '';
-        if (headwayInput) headwayInput.value = '';
-        if (termsCheckbox) termsCheckbox.checked = false;
-        if (detailsConfirm) detailsConfirm.checked = false;
-        if (depositConfirm) depositConfirm.checked = false;
-        
-        if (headwayInput) {
-            headwayInput.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-            headwayInput.style.boxShadow = 'none';
-            headwayInput.classList.remove('error', 'valid');
+    function showSeatsFullModal() {
+        const modal = document.getElementById('seatsFullModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
         }
     }
     
+    function closeSeatsFullModal() {
+        const modal = document.getElementById('seatsFullModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+    
+    // Make functions globally accessible
+    window.closeSeatsFullModal = closeSeatsFullModal;
+    window.closeNuclearModal = closeNuclearModal;
+    
+    // Main button - shows closure modal
+    const openBtn = document.getElementById('nuclearOpenModalBtn');
+    if (openBtn) {
+        openBtn.onclick = function(e) {
+            e.preventDefault();
+            showSeatsFullModal();
+        };
+    }
+    
+    // Close modal handlers
+    const closeBtn = document.getElementById('nuclearCloseModalBtn');
+    if (closeBtn) {
+        closeBtn.onclick = closeNuclearModal;
+    }
+    
+    const overlay = document.querySelector('.modern-modal-overlay');
+    if (overlay) {
+        overlay.onclick = closeNuclearModal;
+    }
+    
+    const seatsFullOverlay = document.querySelector('.seats-full-overlay');
+    if (seatsFullOverlay) {
+        seatsFullOverlay.onclick = function(e) {
+            if (e.target === this) closeSeatsFullModal();
+        };
+    }
+    
+    // Countdown timer
     function startNuclearCountdown() {
         const eventDate = new Date(2026, 7, 7, 9, 0, 0);
         setInterval(function() {
@@ -5289,194 +4984,9 @@ window.closeModal = function() {
         }, 1000);
     }
     
-    function isValidHeadwayAccount(account) {
-        if (!/^\d{8}$/.test(account)) return false;
-        
-        const sequentialPatterns = [
-            '12345678', '23456789', '34567890', '45678901', '56789012',
-            '67890123', '78901234', '89012345', '90123456', '01234567',
-            '11111111', '22222222', '33333333', '44444444', '55555555',
-            '66666666', '77777777', '88888888', '99999999', '00000000'
-        ];
-        
-        if (sequentialPatterns.includes(account)) return false;
-        
-        const digits = account.split('').map(Number);
-        const isAscending = digits.every((d, i) => i === 0 || d === digits[i-1] + 1);
-        const isDescending = digits.every((d, i) => i === 0 || d === digits[i-1] - 1);
-        
-        if (isAscending || isDescending) return false;
-        
-        const half = account.substring(0, 4);
-        if (account === half + half) return false;
-        
-        const isAlternating = digits.every((d, i) => i < 2 || d === digits[i-2]);
-        if (isAlternating && digits[0] !== digits[1]) return false;
-        
-        return true;
-    }
-    
-    const submitBtn = document.getElementById('nuclearSubmitPaymentBtn');
-    if (submitBtn) {
-        const newBtn = submitBtn.cloneNode(true);
-        submitBtn.parentNode.replaceChild(newBtn, submitBtn);
-        
-        newBtn.addEventListener('click', async function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const name = document.getElementById('nuclearAttendeeName')?.value.trim();
-            const email = document.getElementById('nuclearAttendeeEmail')?.value.trim();
-            const phone = document.getElementById('nuclearAttendeePhone')?.value.trim();
-            const headwayAccount = document.getElementById('headwayAccountInput')?.value.trim();
-            const terms = document.getElementById('nuclearTermsAgree')?.checked;
-            const detailsConfirm = document.getElementById('nuclearDetailsConfirm')?.checked;
-            const depositConfirm = document.getElementById('nuclearDepositConfirm')?.checked;
-            
-            if (!name || !email || !phone || !headwayAccount) {
-                alert('Please fill all fields including your Headway Account Number');
-                return;
-            }
-            
-            if (!detailsConfirm) {
-                alert('Please confirm that all information provided is correct');
-                return;
-            }
-            
-            if (!depositConfirm) {
-                alert('Please confirm that you have at least $100 USD deposited in your Headway account for the live trading session');
-                return;
-            }
-            
-            if (!terms) {
-                alert('Please agree to the terms to continue');
-                return;
-            }
-            
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                alert('Please enter a valid email address');
-                return;
-            }
-            
-            if (phone.length < 10) {
-                alert('Please enter a valid phone number');
-                return;
-            }
-            
-            if (!isValidHeadwayAccount(headwayAccount)) {
-                alert('Please enter a valid 8-digit Headway account number.\n\nInvalid patterns like "12345678" or repeated numbers are not accepted.\nExample: 17053130');
-                return;
-            }
-            
-            const btn = newBtn;
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
-            
-            try {
-                const response = await fetch('/api/free-ticket-registration/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrfToken()
-                    },
-                    body: JSON.stringify({
-                        full_name: name,
-                        email: email,
-                        phone: phone,
-                        headway_account: headwayAccount
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    closeNuclearModal();
-                    showSuccessModal(email, headwayAccount, data.ticket_number);
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                } else {
-                    alert(data.error || 'Registration failed. Please try again.');
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                }
-            } catch(err) {
-                console.error('Error:', err);
-                alert('Network error. Please try again.');
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
-        });
-    }
-    
-    const openBtn = document.getElementById('nuclearOpenModalBtn');
-    if (openBtn) {
-        const newOpenBtn = openBtn.cloneNode(true);
-        openBtn.parentNode.replaceChild(newOpenBtn, openBtn);
-        newOpenBtn.id = 'nuclearOpenModalBtn';
-        newOpenBtn.onclick = openNuclearModal;
-    }
-    
-    const closeBtn = document.getElementById('nuclearCloseModalBtn');
-    if (closeBtn) {
-        closeBtn.onclick = closeNuclearModal;
-    }
-    
-    const closeSuccessBtn = document.getElementById('nuclearCloseSuccessBtn');
-    if (closeSuccessBtn) {
-        closeSuccessBtn.onclick = closeSuccessModal;
-    }
-    
-    const successOverlay = document.querySelector('.success-modal-overlay');
-    if (successOverlay) {
-        successOverlay.onclick = function(e) {
-            if (e.target === this) closeSuccessModal();
-        };
-    }
-    
-    const overlay = document.querySelector('.modern-modal-overlay');
-    if (overlay) {
-        overlay.onclick = closeNuclearModal;
-    }
-    
-    const headwayInput = document.getElementById('headwayAccountInput');
-    if (headwayInput) {
-        headwayInput.addEventListener('input', function(e) {
-            this.value = this.value.replace(/\D/g, '');
-            if (this.value.length > 8) {
-                this.value = this.value.slice(0, 8);
-            }
-            
-            const val = this.value;
-            this.classList.remove('error', 'valid');
-            
-            if (val.length === 8) {
-                if (isValidHeadwayAccount(val)) {
-                    this.classList.add('valid');
-                } else {
-                    this.classList.add('error');
-                }
-            }
-        });
-        
-        headwayInput.addEventListener('blur', function(e) {
-            const val = this.value;
-            this.classList.remove('error', 'valid');
-            
-            if (val.length === 8) {
-                if (isValidHeadwayAccount(val)) {
-                    this.classList.add('valid');
-                } else {
-                    this.classList.add('error');
-                }
-            }
-        });
-    }
-    
     startNuclearCountdown();
     
-    console.log('✅ Registration System Ready');
+    console.log('✅ Registration system locked - All seats filled');
 })();
 </script>
 
